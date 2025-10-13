@@ -22,6 +22,7 @@ import {
   ConfirmationNumber as TicketIcon,
   Assignment as TaskIcon,
   SupervisorAccount as UsersIcon,
+  BarChart as ReportsIcon,
   Menu as MenuIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
@@ -32,6 +33,7 @@ import TicketsManagement from "./components/TicketsManagement";
 import TasksManagement from "./components/TasksManagement";
 import UserManagement from "./components/UserManagement";
 import AdminDashboard from "./components/AdminDashboard";
+import ReportsManagement from "./components/ReportsManagement";
 
 const drawerWidth = 240;
 
@@ -57,6 +59,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
     { id: "applications", label: "Applications", icon: <AppsIcon /> },
     { id: "tickets", label: "Tickets", icon: <TicketIcon /> },
     { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
+    { id: "reports", label: "Reports", icon: <ReportsIcon /> },
   ];
 
   const renderContent = () => {
@@ -71,6 +74,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         return <TicketsManagement />;
       case "tasks":
         return <TasksManagement />;
+      case "reports":
+        return <ReportsManagement />;
       default:
         return <AdminDashboard />;
     }
