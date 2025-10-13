@@ -1,7 +1,7 @@
 import React from "react";
 import type { Application } from "../../../services/api";
 import getApplicationsColumns from "./ApplicationsColumns";
-import AdminDataGrid from "../../common/AdminDataGrid";
+import { AdminDataGrid } from "../../common";
 
 export interface ApplicationsTableProps {
   applications: Application[];

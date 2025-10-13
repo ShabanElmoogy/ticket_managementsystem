@@ -5,6 +5,7 @@ import type {
   GridColDef,
   DataGridProps,
   GridRenderCellParams,
+  GridValidRowModel,
 } from "@mui/x-data-grid";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
@@ -88,7 +89,7 @@ export interface ActionsCellProps<R = any> {
   size?: "small" | "medium";
 }
 
-export function ActionsCell<R = any>({
+export function ActionsCell<R extends GridValidRowModel = GridValidRowModel>({
   row,
   onEdit,
   onDelete,
@@ -96,7 +97,7 @@ export function ActionsCell<R = any>({
   size = "small",
 }: ActionsCellProps<R>) {
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+    <Box sx={{ display: "flex", justifyContent: "center", gap: 1, alignItems: "center", width: "100%" }}>
       {onEdit && (
         <Tooltip title="Edit">
           <IconButton size={size} onClick={() => onEdit(row)}>
@@ -131,7 +132,7 @@ export function ActionsCell<R = any>({
   );
 }
 
-export function buildActionsColumn<R = any>(opts: {
+export function buildActionsColumn<R extends GridValidRowModel = GridValidRowModel>(opts: {
   headerName?: string;
   width?: number;
   onEdit?: (row: R) => void;
@@ -141,11 +142,14 @@ export function buildActionsColumn<R = any>(opts: {
   const { headerName = "Actions", width = 140, onEdit, onDelete, actions } = opts;
   return {
     field: "actions",
+    flex: 1,
     headerName,
     width,
+    align: "center",
+    headerAlign: "center",
     sortable: false,
     filterable: false,
-    renderCell: (params: GridRenderCellParams<R>) => (
+    renderCell: (params: GridRenderCellParams<any, R>) => (
       <ActionsCell<R>
         row={params.row}
         onEdit={onEdit}

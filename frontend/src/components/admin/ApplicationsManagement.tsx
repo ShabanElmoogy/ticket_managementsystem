@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Button,
   Alert,
   Snackbar,
 } from "@mui/material";
-import ApplicationsTable from "./applicationsManagement/ApplicationsTable";
+import ApplicationsTable  from "./applicationsManagement/ApplicationsTable";
 import { useAuthStore } from "../../stores/authStore";
 import {
   apiService,
@@ -14,7 +13,7 @@ import {
 } from "../../services/api";
 import DeleteConfirmDialog from "../common/DeleteConfirmDialog";
 import AdminGridHeader from "../common/AdminGridHeader";
-import ApplicationFormDialog from "./applicationsManagement/ApplicationFormDialog";
+import ApplicationFormDialog  from "./applicationsManagement/ApplicationFormDialog";
 
 const ApplicationsManagement: React.FC = () => {
   const { token } = useAuthStore();

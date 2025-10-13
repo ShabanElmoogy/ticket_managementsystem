@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Zod schema for Application form validation
 export const applicationFormSchema = z.object({
   name: z
     .string()
