@@ -75,7 +75,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   );
 
   return (
-    <nav style={{ width: drawerWidth }}>
+    <nav style={{ width: desktopOpen ? drawerWidth : 0 }}>
       <Drawer
         variant="temporary"
         open={!!mobileOpen}
