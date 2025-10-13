@@ -1,5 +1,7 @@
-export { default as TicketsHeader } from "./TicketsHeader";
-export type { TicketsHeaderProps } from "./TicketsHeader";
 
-export { default as TicketsTable } from "./TicketsTable";
-export type { TicketsTableProps } from "./TicketsTable";
+export { default as TicketsTable } from "./components/TicketsTable";
+export type { TicketsTableProps } from "./components/TicketsTable";
+
+export { default as TicketsColumns, getTicketsColumns } from "./components/TicketsColumns";
+
+export { default as useTicketsManagement } from "./hooks/useTicketsManagement";

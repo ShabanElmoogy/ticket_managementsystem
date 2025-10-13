@@ -26,12 +26,12 @@ import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
-import CustomersManagement from "./CustomersManagement";
-import ApplicationsManagement from "./ApplicationsManagement";
-import TicketsManagement from "./TicketsManagement";
-import TasksManagement from "./TasksManagement";
-import UserManagement from "./UserManagement";
-import AdminDashboard from "./AdminDashboard";
+import CustomersManagement from "./components/CustomersManagement";
+import ApplicationsManagement from "./components/ApplicationsManagement";
+import TicketsManagement from "./components/TicketsManagement";
+import TasksManagement from "./components/TasksManagement";
+import UserManagement from "./components/UserManagement";
+import AdminDashboard from "./components/AdminDashboard";
 
 const drawerWidth = 240;
 

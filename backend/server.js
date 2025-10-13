@@ -116,7 +116,6 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/kanban", kanbanRoutes);
 app.use("/api/labels", labelRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/whatsapp", whatsappRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

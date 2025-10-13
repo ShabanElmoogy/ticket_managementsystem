@@ -1,13 +1,17 @@
-export { default as ApplicationsTable } from "./ApplicationsTable";
-export type { ApplicationsTableProps } from "./ApplicationsTable";
+export { default as ApplicationsTable } from "./components/ApplicationsTable";
+export type { ApplicationsTableProps } from "./components/ApplicationsTable";
 
-export { default as ApplicationsColumns, getApplicationsColumns } from "./ApplicationsColumns";
+export { default as ApplicationsColumns, getApplicationsColumns } from "./components/ApplicationsColumns";
 
-export { default as ApplicationFormDialog } from "./ApplicationFormDialog";
+export { default as ApplicationFormDialog } from "./components/ApplicationFormDialog";
 
-export { default as useApplicationForm } from "./useApplicationForm";
+export { default as useApplicationForm } from "./hooks/useApplicationForm";
 
-export { applicationFormSchema } from "./validation";
-export type { ApplicationFormSchema, ApplicationFormSchemaValues } from "./validation";
+export { applicationFormSchema } from "./utils/validation";
+export type { ApplicationFormSchema, ApplicationFormSchemaValues } from "./utils/validation";
 
-export type { ApplicationFormValues, ApplicationFormDialogProps, UseApplicationFormArgs } from "./types";
+export type {
+  ApplicationFormValues,
+  ApplicationFormDialogProps,
+  UseApplicationFormArgs,
+} from "./types/types";

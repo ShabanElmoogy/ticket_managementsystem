@@ -1,7 +1,7 @@
 import React from "react";
-import type { KanbanTask } from "../../../types/kanban";
+import type { KanbanTask } from "../../../../types/kanban";
 import getTasksColumns from "./TasksColumns";
-import { AdminDataGrid } from "../../common";
+import { AdminDataGrid } from "../../../common";
 
 export interface TasksTableProps {
   tasks: KanbanTask[];

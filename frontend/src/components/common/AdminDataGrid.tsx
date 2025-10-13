@@ -30,11 +30,25 @@ const AdminDataGrid: React.FC<AdminDataGridProps> = ({
   sx,
   ...rest
 }) => {
+  const processedColumns = React.useMemo(() => {
+    const hasFlex = columns.some((c: any) => c && typeof c.flex === "number" && c.flex > 0);
+    if (hasFlex) return columns;
+    const firstContentIdx = columns.findIndex((c: any) => c && c.field !== "actions" && c.type !== "actions");
+    if (firstContentIdx === -1) return columns;
+    return columns.map((c: any, i: number) => {
+      if (i === firstContentIdx) {
+        // Ensure one content column flexes to avoid right-side filler space
+        return { ...c, flex: 1 };
+      }
+      return c;
+    });
+  }, [columns]);
+
   return (
     <Box sx={{ height, width: "100%" }}>
       <DataGrid
         rows={rows}
-        columns={columns}
+        columns={processedColumns}
         loading={loading}
         pageSizeOptions={pageSizeOptions}
         initialState={{
@@ -142,7 +156,6 @@ export function buildActionsColumn<R extends GridValidRowModel = GridValidRowMod
   const { headerName = "Actions", width = 140, onEdit, onDelete, actions } = opts;
   return {
     field: "actions",
-    flex: 1,
     headerName,
     width,
     align: "center",
