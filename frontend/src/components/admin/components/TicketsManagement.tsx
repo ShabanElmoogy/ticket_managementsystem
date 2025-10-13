@@ -1,10 +1,11 @@
 import React from "react";
-import { Box, Alert, Snackbar } from "@mui/material";
+import { Box, Alert, Snackbar, Button } from "@mui/material";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import CreateTicketDialog from "../../tickets/CreateTicketDialog";
 import { TicketsTable } from "../ticketsManagement";
 import AdminGridHeader from "../../common/AdminGridHeader";
 import useTicketsManagement from "../ticketsManagement/hooks/useTicketsManagement";
+import generateCustomersTicketReport from "../../../utils/reports/customersTicketReport";
 
 const TicketsManagement: React.FC = () => {
   const {
@@ -35,6 +36,22 @@ const TicketsManagement: React.FC = () => {
         title="Tickets Management"
         onAdd={handleOpenDialog}
         addLabel="Add Ticket"
+        rightActions={
+          <Button
+            variant="outlined"
+            onClick={() =>
+              generateCustomersTicketReport(tickets, {
+                title: "Customers Ticket Report",
+                companyName: "Ticket Management System",
+                filters: {},
+                orientation: "landscape",
+              })
+            }
+            disabled={loading || tickets.length === 0}
+          >
+            Generate Report
+          </Button>
+        }
       />
       <TicketsTable
         tickets={tickets}
