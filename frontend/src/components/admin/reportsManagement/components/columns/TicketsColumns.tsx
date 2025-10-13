@@ -6,6 +6,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     field: "title",
     headerName: "Title",
     headerAlign: "center",
+    align: "center",
     minWidth: 240,
     flex: 1,
   },
