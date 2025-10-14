@@ -90,18 +90,6 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
             error={!!errors.phone}
             helperText={errors.phone?.message || "Include country code (e.g., +1234567890)"}
           />
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={!!whatsappValue}
-                onChange={(e) => setValue("whatsappNotifications", e.target.checked, { shouldValidate: false })}
-                color="success"
-              />
-            }
-            label="Enable WhatsApp Notifications"
-            sx={{ mb: 1 }}
-          />
         </Box>
       </DialogContent>
       <DialogActions>

@@ -23,7 +23,10 @@ export const userFormSchema = z.object({
     .trim()
     .regex(/^\+?[\d\s\-\(\)]+$/, "Invalid phone number format")
     .optional()
-    .or(z.literal("")),
+    .or(z.literal(""))
+    .refine((val) => val === undefined || val === "" || (val.replace(/\D/g, "").length >= 11), {
+      message: "Phone must be at least 11 digits",
+    }),
   whatsappNotifications: z.boolean().optional(),
 });
 

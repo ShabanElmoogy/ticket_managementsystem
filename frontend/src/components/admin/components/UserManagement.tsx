@@ -1,8 +1,9 @@
 import React from "react";
-import { Box, Paper, Typography, Alert, Snackbar, Grid, Card, CardContent } from "@mui/material";
+import { Box, Paper, Alert, Snackbar } from "@mui/material";
 import AdminGridHeader from "../../common/AdminGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import { UsersTable, UserFormDialog, useUsersManagement } from "../usersManagement";
+import UsersStatsCards from "../usersManagement/components/UsersStatsCards";
 
 const UserManagement: React.FC = () => {
   const {
@@ -27,50 +28,7 @@ const UserManagement: React.FC = () => {
     <Box>
       <AdminGridHeader title="Users Management" onAdd={() => handleOpenDialog()} addLabel="Add User" />
 
-      {stats && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h4">{stats.total}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Active Users
-                </Typography>
-                <Typography variant="h4">{stats.active}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Administrators
-                </Typography>
-                <Typography variant="h4">{stats.byRole.ADMIN || 0}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Employees
-                </Typography>
-                <Typography variant="h4">{stats.byRole.EMPLOYEE || 0}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
+      {/* {stats && <UsersStatsCards stats={stats} />} */}
 
       <Paper sx={{ height: 600, width: "100%" }}>
         <UsersTable users={users} loading={loading} onEdit={(u) => handleOpenDialog(u)} onDelete={handleDeleteClick} />

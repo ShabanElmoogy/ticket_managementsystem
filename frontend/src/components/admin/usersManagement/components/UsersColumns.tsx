@@ -20,9 +20,10 @@ export const getUsersColumns = (handlers: {
     {
       field: "name",
       headerName: "Name",
-      headerAlign: "center",
-      align: "center",
-      width: 200,
+      flex: 1,
+      minWidth: 200,
+      headerAlign: "left",
+      align: "left",
     },
     {
       field: "email",
@@ -66,22 +67,6 @@ export const getUsersColumns = (handlers: {
             </Typography>
           )}
         </Box>
-      ),
-    },
-    {
-      field: "whatsappNotifications",
-      headerName: "WhatsApp",
-      width: 110,
-      align: "center",
-      headerAlign: "center",
-      renderCell: (params) => (
-        <Chip
-          icon={<WhatsAppIcon />}
-          label={params.value ? "ON" : "OFF"}
-          color={params.value ? "success" : "default"}
-          size="small"
-          variant={params.value ? "filled" : "outlined"}
-        />
       ),
     },
     {
