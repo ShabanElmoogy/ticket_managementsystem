@@ -23,7 +23,7 @@ import {
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import type { KanbanTicket, Priority } from '../../types/kanban';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
-import TicketWhatsAppButton from './TicketWhatsAppButton';
+import WhatsAppButton from '../WhatsAppButton';
 
 interface KanbanTicketCardProps {
   ticket: KanbanTicket;
@@ -115,11 +115,12 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
               </Typography>
             </Box>
             <Box display="flex" alignItems="center">
-              <TicketWhatsAppButton
+              <WhatsAppButton
                 ticket={ticket}
-                defaultRecipient="assignee"
+                defaultPhone={ticket.assignedTo?.phone || ''}
+                defaultMessage={`🎫 Ticket Update\n\nID: ${ticket.id}\nTitle: ${ticket.title}\nPriority: ${ticket.priority}\nStatus: ${ticket.status}\n\nPlease check the ticket management system for more details.`}
                 size="small"
-                onSent={(result) => console.log('WhatsApp message sent:', result)}
+                onSent={(result) => console.log('WhatsApp message opened:', result)}
                 onError={(error) => console.error('WhatsApp error:', error)}
               />
               <IconButton

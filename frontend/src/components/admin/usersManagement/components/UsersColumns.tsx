@@ -1,7 +1,12 @@
 import { CountChip, buildActionsColumn } from "../../../common";
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip, Box, Typography } from "@mui/material";
-import { AdminPanelSettings as AdminIcon, Person as PersonIcon, Phone as PhoneIcon, WhatsApp as WhatsAppIcon } from "@mui/icons-material";
+import {
+  AdminPanelSettings as AdminIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
+  WhatsApp as WhatsAppIcon,
+} from "@mui/icons-material";
 import type { User } from "../../../../services/api";
 
 // Columns factory
@@ -15,11 +20,15 @@ export const getUsersColumns = (handlers: {
     {
       field: "name",
       headerName: "Name",
+      headerAlign: "center",
+      align: "center",
       width: 200,
     },
     {
       field: "email",
       headerName: "Email",
+      headerAlign: "center",
+      align: "center",
       width: 240,
       renderCell: (params) => params.value || "-",
     },
@@ -41,6 +50,8 @@ export const getUsersColumns = (handlers: {
     {
       field: "phone",
       headerName: "Phone",
+      headerAlign: "center",
+      align: "center",
       width: 160,
       renderCell: (params) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -50,7 +61,9 @@ export const getUsersColumns = (handlers: {
               {params.value}
             </>
           ) : (
-            <Typography variant="body2" color="text.secondary">-</Typography>
+            <Typography variant="body2" color="text.secondary">
+              -
+            </Typography>
           )}
         </Box>
       ),
@@ -78,7 +91,10 @@ export const getUsersColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
-        <CountChip count={params.row._count?.assignedTickets || 0} color="primary" />
+        <CountChip
+          count={params.row._count?.assignedTickets || 0}
+          color="primary"
+        />
       ),
     },
     {
@@ -88,7 +104,10 @@ export const getUsersColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
-        <CountChip count={params.row._count?.createdTickets || 0} color="primary" />
+        <CountChip
+          count={params.row._count?.createdTickets || 0}
+          color="primary"
+        />
       ),
     },
     {
@@ -104,10 +123,17 @@ export const getUsersColumns = (handlers: {
     {
       field: "createdAt",
       headerName: "Created",
+      headerAlign: "center",
+      align: "center",
       width: 130,
       renderCell: (params) => new Date(params.value).toLocaleDateString(),
     },
-    buildActionsColumn<User>({ headerName: "Actions", width: 140, onEdit, onDelete }),
+    buildActionsColumn<User>({
+      headerName: "Actions",
+      width: 140,
+      onEdit,
+      onDelete,
+    }),
   ];
 };
 

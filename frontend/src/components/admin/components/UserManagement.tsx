@@ -1,6 +1,7 @@
 import React from "react";
-import { Box, Paper, Typography, Alert, Snackbar, Grid, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
+import { Box, Paper, Typography, Alert, Snackbar, Grid, Card, CardContent } from "@mui/material";
 import AdminGridHeader from "../../common/AdminGridHeader";
+import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import { UsersTable, UserFormDialog, useUsersManagement } from "../usersManagement";
 
 const UserManagement: React.FC = () => {
@@ -84,28 +85,22 @@ const UserManagement: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete user "{deleteDialog.user?.name}"? This action cannot be undone.
-          </Typography>
-          {deleteDialog.user?._count &&
-            (deleteDialog.user._count.assignedTickets > 0 ||
-              deleteDialog.user._count.createdTickets > 0 ||
-              deleteDialog.user._count.comments > 0) && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                This user has associated data (tickets or comments). Deletion may fail if there are dependencies.
-              </Alert>
-            )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={deleteDialog.loading}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={deleteDialog.open}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        itemName={deleteDialog.user?.name}
+        itemType="user"
+        loading={deleteDialog.loading}
+        warningMessage={
+          deleteDialog.user?._count &&
+          (deleteDialog.user._count.assignedTickets > 0 ||
+            deleteDialog.user._count.createdTickets > 0 ||
+            deleteDialog.user._count.comments > 0)
+            ? `This user has associated data: ${deleteDialog.user._count.assignedTickets || 0} assigned ticket(s), ${deleteDialog.user._count.createdTickets || 0} created ticket(s), ${deleteDialog.user._count.comments || 0} comment(s). Deletion may fail if there are dependencies.`
+            : undefined
+        }
+      />
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
         <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>

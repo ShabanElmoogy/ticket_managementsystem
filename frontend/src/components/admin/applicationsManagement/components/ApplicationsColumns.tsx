@@ -1,7 +1,12 @@
-import { VersionCell, CustomersCell, CountChip, StatusCell, buildActionsColumn } from "../../../common";
+import {
+  VersionCell,
+  CustomersCell,
+  CountChip,
+  StatusCell,
+  buildActionsColumn,
+} from "../../../common";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Application } from "../../../../services/api";
-
 
 // Columns factory
 export const getApplicationsColumns = (handlers: {
@@ -14,25 +19,35 @@ export const getApplicationsColumns = (handlers: {
     {
       field: "name",
       headerName: "Name",
+      align: "center",
+      headerAlign: "center",
       width: 200,
     },
     {
       field: "description",
       headerName: "Description",
+      align: "center",
+      headerAlign: "center",
       width: 250,
       renderCell: (params) => params.value || "-",
     },
     {
       field: "version",
       headerName: "Version",
+      align: "center",
+      headerAlign: "center",
       width: 120,
       renderCell: (params) => <VersionCell value={params.value} />,
     },
     {
       field: "customers",
       headerName: "Customers",
+      align: "center",
+      headerAlign: "center",
       width: 300,
-      renderCell: (params) => <CustomersCell customers={params.row.customers} />,
+      renderCell: (params) => (
+        <CustomersCell customers={params.row.customers} />
+      ),
     },
     {
       field: "ticketCount",
@@ -57,16 +72,25 @@ export const getApplicationsColumns = (handlers: {
     {
       field: "isActive",
       headerName: "Status",
+      align: "center",
+      headerAlign: "center",
       width: 100,
       renderCell: (params) => <StatusCell active={params.value} />,
     },
     {
       field: "createdAt",
       headerName: "Created",
+      align: "center",
+      headerAlign: "center",
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString(),
     },
-    buildActionsColumn<Application>({ headerName: "Actions", width: 120, onEdit, onDelete }),
+    buildActionsColumn<Application>({
+      headerName: "Actions",
+      width: 120,
+      onEdit,
+      onDelete,
+    }),
   ];
 };
 
