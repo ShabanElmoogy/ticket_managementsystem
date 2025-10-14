@@ -40,10 +40,9 @@ import MobileSearchOverlay from "../tickets/MobileSearchOverlay";
 import KanbanPage from "../kanban/KanbanPage";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { io, Socket } from "socket.io-client";
-import WhatsAppTestPage from "../../pages/WhatsAppTestPage";
-import WhatsAppPage from "../../pages/WhatsAppPage";
 
-type ViewType = 'dashboard' | 'kanban' | 'admin' | 'whatsapp' | 'whatsapp-users';
+
+type ViewType = 'dashboard' | 'kanban' | 'admin' ;
 
 const Dashboard: React.FC = () => {
   const { user, token } = useAuthStore();
@@ -452,10 +451,6 @@ const Dashboard: React.FC = () => {
         );
       case 'admin':
         return <AdminPanel onBackToDashboard={() => setCurrentView('dashboard')} />;
-      case 'whatsapp':
-        return <WhatsAppTestPage />;
-      case 'whatsapp-users':
-        return <WhatsAppPage />;
       case 'dashboard':
       default:
         return renderDashboardContent();
