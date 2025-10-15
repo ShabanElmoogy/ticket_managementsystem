@@ -373,10 +373,11 @@ class ApiService {
     return response.data;
   }
 
-  async deleteUser(token: string, id: string): Promise<{ message: string }> {
+  async deleteUser(token: string, id: string, opts?: { force?: boolean }): Promise<{ message: string }> {
+    const params = opts?.force ? { force: 'true' } : undefined;
     const response = await this.axiosInstance.delete<{ message: string }>(
       `/users/${id}`,
-      this.getAuthConfig(token)
+      { ...this.getAuthConfig(token), params }
     );
     return response.data;
   }
