@@ -120,8 +120,32 @@ export const moveNode = async (req, res, next) => {
 export const deleteNode = async (req, res, next) => {
   try {
     const { id } = req.params;
-    // Cascade delete handled via relations
-    await prisma.docNode.delete({ where: { id } });
+
+    // collect all docIds in the subtree BEFORE deleting nodes
+    const collectDocIdsRecursively = async (nodeId) => {
+      const node = await prisma.docNode.findUnique({ where: { id: nodeId } });
+      if (!node) return [];
+      let ids = [];
+      if (node.type === 'DOC' && node.docId) ids.push(node.docId);
+      const children = await prisma.docNode.findMany({ where: { parentId: nodeId } });
+      for (const child of children) {
+        const childIds = await collectDocIdsRecursively(child.id);
+        if (childIds.length) ids = ids.concat(childIds);
+      }
+      return ids;
+    };
+
+    const docIds = await collectDocIdsRecursively(id);
+
+    await prisma.$transaction(async (tx) => {
+      // delete the node (children will cascade via onDelete: Cascade)
+      await tx.docNode.delete({ where: { id } });
+      if (docIds.length) {
+        // remove documents now that nodes are gone
+        await tx.doc.deleteMany({ where: { id: { in: docIds } } });
+      }
+    });
+
     res.status(204).end();
   } catch (err) { next(err); }
 };

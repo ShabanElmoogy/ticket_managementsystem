@@ -428,21 +428,21 @@ const BlockContainer: React.FC<{
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mb: 1 }}>
           {onMoveUp && (
             <Tooltip title="Move up">
-              <IconButton size="small" onClick={onMoveUp}>
+              <IconButton size="small" onMouseDown={(e) => e.stopPropagation()} onClick={onMoveUp}>
                 <ArrowUpwardIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
           {onMoveDown && (
             <Tooltip title="Move down">
-              <IconButton size="small" onClick={onMoveDown}>
+              <IconButton size="small" onMouseDown={(e) => e.stopPropagation()} onClick={onMoveDown}>
                 <ArrowDownwardIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
           {onDelete && (
             <Tooltip title="Delete block">
-              <IconButton size="small" color="error" onClick={onDelete}>
+              <IconButton size="small" color="error" onMouseDown={(e) => e.stopPropagation()} onClick={onDelete}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -673,7 +673,11 @@ const DocsBuilder: React.FC = () => {
 
   const removeBlock = useCallback((id: string) => {
     if (!currentDoc) return;
-    setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? { ...d, blocks: d.blocks.filter((b) => b.id !== id), updatedAt: new Date().toISOString() } : d)));
+    const newBlocks = currentDoc.blocks.filter((b) => b.id !== id);
+    const updated: Doc = { ...currentDoc, blocks: newBlocks, updatedAt: new Date().toISOString() };
+    setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? updated : d)));
+    // persist to server (fire-and-forget)
+    saveDocServer(updated);
   }, [currentDoc]);
 
   const moveBlock = useCallback((id: string, dir: -1 | 1) => {
