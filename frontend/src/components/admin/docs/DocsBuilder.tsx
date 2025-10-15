@@ -17,6 +17,7 @@ import {
   useTheme,
   alpha,
   Stack,
+  Collapse,
 } from '@mui/material';
 import TitleIcon from '@mui/icons-material/Title';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
@@ -42,6 +43,11 @@ import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import NotesIcon from '@mui/icons-material/Notes';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import FolderIcon from '@mui/icons-material/Folder';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import MyGridHeader from '../../common/MyGridHeader';
 
 // Types
@@ -100,6 +106,25 @@ export interface Doc {
   blocks: DocBlock[];
   updatedAt: string;
 }
+
+// Tree for organizing documents in levels
+export type TreeNode = FolderNode | DocRefNode;
+
+export interface FolderNode {
+  id: string;
+  type: 'folder';
+  title: string;
+  children: TreeNode[];
+}
+
+export interface DocRefNode {
+  id: string;
+  type: 'doc';
+  title: string; // mirrored from the doc's title
+  docId: string; // reference to Doc.id
+}
+
+const STORAGE_TREE_KEY = 'admin-docs-tree-v1';
 
 // Helpers
 const newId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -461,6 +486,10 @@ const DocsBuilder: React.FC = () => {
   const [currentDocId, setCurrentDocId] = useState<string | null>(null);
   const [preview, setPreview] = useState<boolean>(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
+  const treeInitialized = useRef(false);
 
   const currentDoc = useMemo(() => docs.find((d) => d.id === currentDocId) || null, [docs, currentDocId]);
 
@@ -504,8 +533,33 @@ const DocsBuilder: React.FC = () => {
     } catch {}
   }, [docs]);
 
+  // Initialize tree once when docs are available
+  useEffect(() => {
+    if (treeInitialized.current) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_TREE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as TreeNode[];
+        setTree(parsed);
+        treeInitialized.current = true;
+        return;
+      }
+    } catch {}
+    if (docs.length) {
+      const nodes: TreeNode[] = docs.map((d) => ({ id: newId(), type: 'doc', title: d.title, docId: d.id }));
+      setTree(nodes);
+      treeInitialized.current = true;
+    }
+  }, [docs]);
+
+  // Persist tree
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_TREE_KEY, JSON.stringify(tree));
+    } catch {}
+  }, [tree]);
+
   const addBlock = useCallback((type: BlockType) => {
-    if (!currentDoc) return;
     const base = { id: newId(), type, settings: {} } as DocBlock;
     let block: DocBlock;
     switch (type) {
@@ -530,8 +584,29 @@ const DocsBuilder: React.FC = () => {
       default:
         block = base;
     }
+
+    if (!currentDoc) {
+      // No document selected: auto-create one and place it in the selected folder (if any)
+      const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
+      const parentId = parent && parent.type === 'folder' ? parent.id : null;
+      const newDoc: Doc = {
+        id: newId(),
+        title: 'Untitled',
+        updatedAt: new Date().toISOString(),
+        blocks: [
+          { id: newId(), type: 'heading', text: 'New Document', settings: { align: 'left' } } as HeadingBlock,
+          block,
+        ],
+      };
+      setDocs((prev) => [newDoc, ...prev]);
+      const node: DocRefNode = { id: newId(), type: 'doc', title: newDoc.title, docId: newDoc.id };
+      setTree((prev) => insertChild(prev, parentId, node));
+      setCurrentDocId(newDoc.id);
+      return;
+    }
+
     setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? { ...d, blocks: [...d.blocks, block], updatedAt: new Date().toISOString() } : d)));
-  }, [currentDoc]);
+  }, [currentDoc, selectedTreeId, tree]);
 
   const updateBlock = useCallback(<T extends DocBlock>(id: string, patch: Partial<T>) => {
     if (!currentDoc) return;
@@ -591,8 +666,74 @@ const DocsBuilder: React.FC = () => {
     },
   });
 
-  // Docs management
-  const addNewDoc = () => {
+  // Tree helpers
+  const isFolder = (n: TreeNode): n is FolderNode => n.type === 'folder';
+
+  const findNode = (nodes: TreeNode[], id: string): TreeNode | null => {
+    for (const n of nodes) {
+      if (n.id === id) return n;
+      if (isFolder(n)) {
+        const found = findNode(n.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const insertChild = (nodes: TreeNode[], parentId: string | null, child: TreeNode): TreeNode[] => {
+    if (!parentId) return [...nodes, child];
+    return nodes.map((n) => {
+      if (isFolder(n)) {
+        if (n.id === parentId) {
+          return { ...n, children: [...n.children, child] };
+        }
+        return { ...n, children: insertChild(n.children, parentId, child) };
+      }
+      return n;
+    });
+  };
+
+  const mapTree = (nodes: TreeNode[], mapper: (n: TreeNode) => TreeNode): TreeNode[] => {
+    return nodes.map((n) => {
+      if (isFolder(n)) {
+        const mapped = mapper({ ...n, children: mapTree(n.children, mapper) });
+        return mapped;
+      }
+      return mapper(n);
+    });
+  };
+
+  const removeNode = (nodes: TreeNode[], id: string): { nodes: TreeNode[]; removed?: TreeNode } => {
+    const result: TreeNode[] = [];
+    let removed: TreeNode | undefined;
+    for (const n of nodes) {
+      if (n.id === id) {
+        removed = n;
+        continue;
+      }
+      if (isFolder(n)) {
+        const { nodes: childNodes, removed: r } = removeNode(n.children, id);
+        if (r) removed = r;
+        result.push({ ...n, children: childNodes });
+      } else {
+        result.push(n);
+      }
+    }
+    return { nodes: result, removed };
+  };
+
+  const collectDocIds = (node: TreeNode): string[] => {
+    if (node.type === 'doc') return [node.docId];
+    return node.children.flatMap(collectDocIds);
+  };
+
+  const addFolder = (parentId: string | null) => {
+    const folder: FolderNode = { id: newId(), type: 'folder', title: 'New Folder', children: [] };
+    setTree((prev) => insertChild(prev, parentId, folder));
+    if (parentId) setExpanded((e) => ({ ...e, [parentId]: true }));
+  };
+
+  const addDocUnder = (parentId: string | null) => {
     const doc: Doc = {
       id: newId(),
       title: 'Untitled',
@@ -602,7 +743,106 @@ const DocsBuilder: React.FC = () => {
       ],
     };
     setDocs((prev) => [doc, ...prev]);
+    const node: DocRefNode = { id: newId(), type: 'doc', title: doc.title, docId: doc.id };
+    setTree((prev) => insertChild(prev, parentId, node));
     setCurrentDocId(doc.id);
+  };
+
+  const renameNode = (id: string, newTitle: string) => {
+    setTree((prev) => mapTree(prev, (n) => {
+      if (n.id === id) {
+        if (n.type === 'doc') {
+          setDocs((docsPrev) => docsPrev.map((d) => (d.id === n.docId ? { ...d, title: newTitle, updatedAt: new Date().toISOString() } : d)));
+        }
+        return { ...(n as any), title: newTitle } as TreeNode;
+      }
+      return n;
+    }));
+  };
+
+  const deleteNodeAndDocs = (id: string) => {
+    setTree((prev) => {
+      const { nodes: newTree, removed } = removeNode(prev, id);
+      if (removed) {
+        const docIds = collectDocIds(removed);
+        if (docIds.length) {
+          setDocs((prevDocs) => prevDocs.filter((d) => !docIds.includes(d.id)));
+          if (currentDocId && docIds.includes(currentDocId)) {
+            setCurrentDocId(null);
+          }
+        }
+      }
+      return newTree;
+    });
+  };
+
+  const toggleExpand = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
+
+  const renderTree = (nodes: TreeNode[], depth = 0): React.ReactNode => {
+    return nodes.map((node) => {
+      if (node.type === 'folder') {
+        const open = !!expanded[node.id];
+        return (
+          <Box key={node.id}>
+            <ListItem
+              disablePadding
+              secondaryAction={
+                <Stack direction="row" spacing={0.5}>
+                  <IconButton size="small" onClick={() => addFolder(node.id)}><CreateNewFolderIcon fontSize="small" /></IconButton>
+                  <IconButton size="small" onClick={() => addDocUnder(node.id)}><AddIcon fontSize="small" /></IconButton>
+                  <IconButton size="small" onClick={() => {
+                    const title = prompt('Rename folder', node.title) || node.title;
+                    renameNode(node.id, title);
+                  }}><DriveFileRenameOutlineIcon fontSize="small" /></IconButton>
+                  <IconButton size="small" color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon fontSize="small" /></IconButton>
+                </Stack>
+              }
+            >
+              <ListItemButton onClick={() => { toggleExpand(node.id); setSelectedTreeId(node.id); }} sx={{ pl: 1 + depth * 2 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>{open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}</ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 28 }}><FolderIcon fontSize="small" /></ListItemIcon>
+                <ListItemText primary={node.title} />
+              </ListItemButton>
+            </ListItem>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <List dense disablePadding>
+                {renderTree(node.children, depth + 1)}
+              </List>
+            </Collapse>
+          </Box>
+        );
+      }
+      return (
+        <ListItem
+          key={node.id}
+          disablePadding
+          secondaryAction={
+            <Stack direction="row" spacing={0.5}>
+              <IconButton size="small" onClick={() => {
+                const title = prompt('Rename document', node.title) || node.title;
+                renameNode(node.id, title);
+              }}><DriveFileRenameOutlineIcon fontSize="small" /></IconButton>
+              <IconButton size="small" color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon fontSize="small" /></IconButton>
+            </Stack>
+          }
+        >
+          <ListItemButton selected={currentDocId === node.docId} onClick={() => { setCurrentDocId(node.docId); setSelectedTreeId(node.id); }} sx={{ pl: 7 + depth * 2 }}>
+            <ListItemIcon sx={{ minWidth: 28 }}><DescriptionIcon fontSize="small" /></ListItemIcon>
+            <ListItemText primary={node.title} secondary={(() => {
+              const d = docs.find((x) => x.id === node.docId);
+              return d ? new Date(d.updatedAt).toLocaleString() : undefined;
+            })()} />
+          </ListItemButton>
+        </ListItem>
+      );
+    });
+  };
+
+  // Docs management
+  const addNewDoc = () => {
+    const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
+    const parentId = parent && parent.type === 'folder' ? parent.id : null;
+    addDocUnder(parentId);
   };
 
   const renameDoc = (id: string, title: string) => {
@@ -777,6 +1017,7 @@ const DocsBuilder: React.FC = () => {
             sx={{
               width: 320,
               flexShrink: 0,
+              order: 1,
               borderRadius: 2,
               border: '1px solid',
               borderColor: alpha(theme.palette.primary.main, 0.25),
@@ -784,32 +1025,6 @@ const DocsBuilder: React.FC = () => {
             }}
           >
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NotesIcon fontSize="small" /> Documents
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={addNewDoc}>New</Button>
-                <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={saveCurrentDoc} disabled={!currentDoc}>Save</Button>
-              </Stack>
-              <List dense sx={{ mb: 2, maxHeight: 220, overflow: 'auto' }}>
-                {docs.map((d) => (
-                  <ListItem key={d.id} disablePadding secondaryAction={
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton size="small" onClick={() => {
-                        const title = prompt('Rename document', d.title) || d.title;
-                        renameDoc(d.id, title);
-                      }}><DriveFileRenameOutlineIcon fontSize="small" /></IconButton>
-                      <IconButton size="small" color="error" onClick={() => deleteDoc(d.id)}><DeleteIcon fontSize="small" /></IconButton>
-                    </Stack>
-                  }>
-                    <ListItemButton selected={currentDocId === d.id} onClick={() => setCurrentDocId(d.id)}>
-                      <ListItemText primary={d.title} secondary={new Date(d.updatedAt).toLocaleString()} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-
-              <Divider sx={{ my: 2 }} />
               <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
                 Components
               </Typography>
@@ -827,14 +1042,41 @@ const DocsBuilder: React.FC = () => {
                 ))}
               </List>
               <Divider sx={{ my: 2 }} />
-              <Button fullWidth startIcon={<AddIcon />} variant="outlined" onClick={() => addBlock('text')} disabled={!currentDoc}>
+              <Button fullWidth startIcon={<AddIcon />} variant="outlined" onClick={() => addBlock('text')}>
                 New Text
               </Button>
             </CardContent>
           </Card>
 
+          {/* Right - Documents Tree */}
+          <Card
+            sx={{
+              width: 320,
+              flexShrink: 0,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: alpha(theme.palette.primary.main, 0.25),
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+              order: 3,
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <NotesIcon fontSize="small" /> Documents
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                <Button size="small" variant="outlined" startIcon={<CreateNewFolderIcon />} onClick={() => addFolder(null)}>New Folder</Button>
+                <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => addDocUnder(selectedTreeId && findNode(tree, selectedTreeId)?.type === 'folder' ? selectedTreeId : null)}>New Doc</Button>
+                <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={saveCurrentDoc} disabled={!currentDoc}>Save</Button>
+              </Stack>
+              <List dense sx={{ mb: 2, maxHeight: 220, overflow: 'auto' }}>
+                {renderTree(tree, 0)}
+              </List>
+            </CardContent>
+          </Card>
+
           {/* Editor area */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1, order: 2 }}>
             {!currentDoc || currentDoc.blocks.length === 0 ? (
               <Card sx={{ borderRadius: 2, p: 3, mb: 2 }}>
                 <Typography variant="body1" color="text.secondary">

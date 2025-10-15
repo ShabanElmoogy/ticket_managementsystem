@@ -19,6 +19,7 @@
     "@mui/x-data-grid": "^8.6.0",
     "@mui/x-date-pickers": "^8.7.0",
     "@mui/x-date-pickers-pro": "^8.7.0",
+    "@mui/x-tree-view": "^8.14.0",
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",
