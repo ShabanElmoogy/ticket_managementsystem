@@ -479,6 +479,110 @@ async function loadDocsServer(): Promise<Doc[] | null> {
   }
 }
 
+// Tree server helpers
+type ServerDocNode = {
+  id: string;
+  type: 'FOLDER' | 'DOC';
+  title: string;
+  parentId: string | null;
+  position: number;
+  docId?: string | null;
+};
+
+async function loadTreeServer(): Promise<ServerDocNode[] | null> {
+  try {
+    const res = await fetch('/api/docsbuilder/tree', { method: 'GET' });
+    if (!res.ok) return null;
+    return (await res.json()) as ServerDocNode[];
+  } catch {
+    return null;
+  }
+}
+
+async function createFolderServer(title: string, parentId: string | null) {
+  const res = await fetch('/api/docsbuilder/tree/folder', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, parentId }),
+  });
+  if (!res.ok) throw new Error('Failed to create folder');
+  return (await res.json()) as ServerDocNode;
+}
+
+async function createDocServer(title: string, blocks: DocBlock[]) {
+  const res = await fetch('/api/docs', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, blocks }),
+  });
+  if (!res.ok) throw new Error('Failed to create doc');
+  return (await res.json()) as Doc;
+}
+
+async function createDocNodeServer(title: string, parentId: string | null, docId: string) {
+  const res = await fetch('/api/docsbuilder/tree/doc', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, parentId, docId }),
+  });
+  if (!res.ok) throw new Error('Failed to create doc node');
+  return (await res.json()) as ServerDocNode;
+}
+
+async function renameNodeServer(id: string, title: string) {
+  const res = await fetch(`/api/docsbuilder/tree/${id}/rename`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error('Failed to rename node');
+  return (await res.json()) as ServerDocNode;
+}
+
+async function deleteNodeServer(id: string) {
+  const res = await fetch(`/api/docsbuilder/tree/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete node');
+}
+
+// Build nested tree from flat list
+function buildTree(nodes: ServerDocNode[]): TreeNode[] {
+  const byId: Record<string, FolderNode | DocRefNode> = {};
+  const childrenMap: Record<string, (FolderNode | DocRefNode)[]> = {};
+  const roots: (FolderNode | DocRefNode)[] = [];
+
+  // Create shallow nodes
+  nodes.forEach((n) => {
+    if (n.type === 'FOLDER') {
+      byId[n.id] = { id: n.id, type: 'folder', title: n.title, children: [] };
+    } else {
+      byId[n.id] = { id: n.id, type: 'doc', title: n.title, docId: n.docId || '' } as DocRefNode;
+    }
+  });
+
+  // Group by parent
+  nodes.forEach((n) => {
+    const node = byId[n.id];
+    const pid = n.parentId || '__root__';
+    if (!childrenMap[pid]) childrenMap[pid] = [];
+    childrenMap[pid].push(node);
+  });
+
+  // Assign children with order
+  Object.keys(childrenMap).forEach((pid) => {
+    const arr = childrenMap[pid];
+    // sort by position by referencing original nodes
+    arr.sort((a, b) => {
+      const pa = nodes.find((x) => x.id === a.id)?.position ?? 0;
+      const pb = nodes.find((x) => x.id === b.id)?.position ?? 0;
+      return pa - pb;
+    });
+    if (pid === '__root__') {
+      roots.push(...arr);
+    } else {
+      const p = byId[pid];
+      if (p && p.type === 'folder') (p as FolderNode).children = arr as TreeNode[];
+    }
+  });
+
+  return roots as TreeNode[];
+}
+
 // Main builder component
 const DocsBuilder: React.FC = () => {
   const theme = useTheme();
@@ -493,73 +597,25 @@ const DocsBuilder: React.FC = () => {
 
   const currentDoc = useMemo(() => docs.find((d) => d.id === currentDocId) || null, [docs, currentDocId]);
 
-  // Persistence - initial load
+  // Initial load: fetch docs and tree from server
   useEffect(() => {
     (async () => {
       const serverDocs = await loadDocsServer();
-      if (serverDocs && serverDocs.length) {
-        setDocs(serverDocs);
-        setCurrentDocId(serverDocs[0]?.id || null);
-        return;
-      }
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as Doc[];
-          setDocs(parsed);
-          setCurrentDocId(parsed[0]?.id || null);
-        } else {
-          // Initialize with one default doc
-          const initial: Doc = {
-            id: newId(),
-            title: 'Welcome Document',
-            updatedAt: new Date().toISOString(),
-            blocks: [
-              { id: newId(), type: 'heading', text: 'Getting Started', settings: { align: 'left' } } as HeadingBlock,
-              { id: newId(), type: 'text', html: '<p>Use the sidebar to add blocks.</p>', settings: { align: 'left' } } as TextBlock,
-            ],
-          };
-          setDocs([initial]);
-          setCurrentDocId(initial.id);
-        }
-      } catch {}
+      setDocs(serverDocs || []);
+      setCurrentDocId(serverDocs && serverDocs.length ? serverDocs[0].id : null);
+
+      const serverNodes = await loadTreeServer();
+      setTree(serverNodes ? buildTree(serverNodes) : []);
     })();
   }, []);
 
-  // Save to localStorage whenever docs change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
-    } catch {}
-  }, [docs]);
+  // No localStorage persistence for docs. All saved via API.
+  useEffect(() => {}, [docs]);
 
-  // Initialize tree once when docs are available
-  useEffect(() => {
-    if (treeInitialized.current) return;
-    try {
-      const raw = localStorage.getItem(STORAGE_TREE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as TreeNode[];
-        setTree(parsed);
-        treeInitialized.current = true;
-        return;
-      }
-    } catch {}
-    if (docs.length) {
-      const nodes: TreeNode[] = docs.map((d) => ({ id: newId(), type: 'doc', title: d.title, docId: d.id }));
-      setTree(nodes);
-      treeInitialized.current = true;
-    }
-  }, [docs]);
+  // No localStorage persistence for tree. Load from API on mount.
+  useEffect(() => {}, [tree]);
 
-  // Persist tree
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_TREE_KEY, JSON.stringify(tree));
-    } catch {}
-  }, [tree]);
-
-  const addBlock = useCallback((type: BlockType) => {
+  const addBlock = useCallback(async (type: BlockType) => {
     const base = { id: newId(), type, settings: {} } as DocBlock;
     let block: DocBlock;
     switch (type) {
@@ -586,22 +642,19 @@ const DocsBuilder: React.FC = () => {
     }
 
     if (!currentDoc) {
-      // No document selected: auto-create one and place it in the selected folder (if any)
+      // No document selected: create one on server then insert block
       const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
       const parentId = parent && parent.type === 'folder' ? parent.id : null;
-      const newDoc: Doc = {
-        id: newId(),
-        title: 'Untitled',
-        updatedAt: new Date().toISOString(),
-        blocks: [
-          { id: newId(), type: 'heading', text: 'New Document', settings: { align: 'left' } } as HeadingBlock,
-          block,
-        ],
-      };
-      setDocs((prev) => [newDoc, ...prev]);
-      const node: DocRefNode = { id: newId(), type: 'doc', title: newDoc.title, docId: newDoc.id };
-      setTree((prev) => insertChild(prev, parentId, node));
-      setCurrentDocId(newDoc.id);
+      const initialBlocks: DocBlock[] = [
+        { id: newId(), type: 'heading', text: 'New Document', settings: { align: 'left' } } as HeadingBlock,
+        block,
+      ];
+      const created = await createDocServer('Untitled', initialBlocks);
+      setDocs((prev) => [created, ...prev]);
+      const node = await createDocNodeServer(created.title, parentId, created.id);
+      const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+      setTree((prev) => insertChild(prev, parentId, localNode));
+      setCurrentDocId(created.id);
       return;
     }
 
@@ -727,53 +780,57 @@ const DocsBuilder: React.FC = () => {
     return node.children.flatMap(collectDocIds);
   };
 
-  const addFolder = (parentId: string | null) => {
-    const folder: FolderNode = { id: newId(), type: 'folder', title: 'New Folder', children: [] };
+  const addFolder = async (parentId: string | null) => {
+    const node = await createFolderServer('New Folder', parentId);
+    const folder: FolderNode = { id: node.id, type: 'folder', title: node.title, children: [] };
     setTree((prev) => insertChild(prev, parentId, folder));
     if (parentId) setExpanded((e) => ({ ...e, [parentId]: true }));
   };
 
-  const addDocUnder = (parentId: string | null) => {
-    const doc: Doc = {
-      id: newId(),
-      title: 'Untitled',
-      updatedAt: new Date().toISOString(),
-      blocks: [
-        { id: newId(), type: 'heading', text: 'New Document', settings: { align: 'left' } } as HeadingBlock,
-      ],
-    };
-    setDocs((prev) => [doc, ...prev]);
-    const node: DocRefNode = { id: newId(), type: 'doc', title: doc.title, docId: doc.id };
-    setTree((prev) => insertChild(prev, parentId, node));
-    setCurrentDocId(doc.id);
+  const addDocUnder = async (parentId: string | null) => {
+    const initialBlocks: DocBlock[] = [
+      { id: newId(), type: 'heading', text: 'New Document', settings: { align: 'left' } } as HeadingBlock,
+    ];
+    const created = await createDocServer('Untitled', initialBlocks);
+    setDocs((prev) => [created, ...prev]);
+    const node = await createDocNodeServer(created.title, parentId, created.id);
+    const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+    setTree((prev) => insertChild(prev, parentId, localNode));
+    setCurrentDocId(created.id);
   };
 
-  const renameNode = (id: string, newTitle: string) => {
-    setTree((prev) => mapTree(prev, (n) => {
-      if (n.id === id) {
-        if (n.type === 'doc') {
-          setDocs((docsPrev) => docsPrev.map((d) => (d.id === n.docId ? { ...d, title: newTitle, updatedAt: new Date().toISOString() } : d)));
-        }
-        return { ...(n as any), title: newTitle } as TreeNode;
+  const renameNode = async (id: string, newTitle: string) => {
+    const updated = await renameNodeServer(id, newTitle);
+    setTree((prev) => mapTree(prev, (n) => (n.id === id ? ({ ...(n as any), title: updated.title } as TreeNode) : n)));
+    // Mirror doc title in local state too
+    const node = (function find(nodes: TreeNode[]): DocRefNode | null {
+      for (const n of nodes) {
+        if (n.id === id && n.type === 'doc') return n as DocRefNode;
+        if (n.type === 'folder') { const f = find((n as FolderNode).children); if (f) return f; }
       }
-      return n;
-    }));
+      return null;
+    })(tree);
+    if (node && node.docId) {
+      setDocs((prev) => prev.map((d) => (d.id === node.docId ? { ...d, title: updated.title, updatedAt: new Date().toISOString() } : d)));
+    }
   };
 
-  const deleteNodeAndDocs = (id: string) => {
+  const deleteNodeAndDocs = async (id: string) => {
+    // Capture doc ids before deleting
+    let removedNode: TreeNode | null = null;
     setTree((prev) => {
       const { nodes: newTree, removed } = removeNode(prev, id);
-      if (removed) {
-        const docIds = collectDocIds(removed);
-        if (docIds.length) {
-          setDocs((prevDocs) => prevDocs.filter((d) => !docIds.includes(d.id)));
-          if (currentDocId && docIds.includes(currentDocId)) {
-            setCurrentDocId(null);
-          }
-        }
-      }
-      return newTree;
+      removedNode = removed || null;
+      return newTree; // optimistic UI; will persist below
     });
+    await deleteNodeServer(id);
+    if (removedNode) {
+      const docIds = collectDocIds(removedNode);
+      if (docIds.length) {
+        setDocs((prevDocs) => prevDocs.filter((d) => !docIds.includes(d.id)));
+        if (currentDocId && docIds.includes(currentDocId)) setCurrentDocId(null);
+      }
+    }
   };
 
   const toggleExpand = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));

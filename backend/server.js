@@ -20,6 +20,7 @@ import kanbanRoutes from "./routes/kanbanRoutes.js";
 import labelRoutes from "./routes/labelRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import whatsappRoutes from "./routes/whatsappRoutes.js";
+import docRoutes from "./routes/docRoutes.js";
 
 // Import middleware
 import socketMiddleware from "./middleware/socketMiddleware.js";
@@ -116,6 +117,8 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/kanban", kanbanRoutes);
 app.use("/api/labels", labelRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/docsbuilder", docRoutes);
+app.use("/api", docRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
