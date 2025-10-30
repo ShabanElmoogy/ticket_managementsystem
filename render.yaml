@@ -3,7 +3,7 @@ services:
     name: ticket-backend
     runtime: node
     buildCommand: cd backend && npm install && npx prisma generate
-    startCommand: cd backend && node server.js
+    startCommand: cd backend && npx prisma migrate deploy && node server.js
 
     envVars:
       - key: NODE_ENV
