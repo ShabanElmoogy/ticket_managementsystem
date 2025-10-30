@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "echo 'Building frontend...' && cd frontend && npm install && npm run build && echo 'Setting up backend...' && cd ../backend && npm install && npx prisma generate && echo 'Build complete!'",
-    "start": "cd backend && npx prisma migrate deploy && node server.js",
+    "start": "cd backend && npm install --production && npx prisma migrate deploy && node server.js",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev"
   },
