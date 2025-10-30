@@ -2,18 +2,12 @@
   "name": "ticket-management-system",
   "version": "1.0.0",
   "scripts": {
-    "install:backend": "cd backend && npm install",
-    "install:frontend": "cd frontend && npm install",
-    "postinstall": "npm run install:backend && npm run install:frontend",
-    "build:backend": "cd backend && npx prisma generate",
-    "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:frontend && npm run build:backend && cd backend && npx prisma migrate deploy",
-    "dev": "npx concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "start": "npx concurrently \"npm run start --prefix backend\" \"npm run preview --prefix frontend\"",
-    "start:backend": "cd backend && npm start",
-    "start:frontend": "cd frontend && npm run preview"
+    "build": "echo 'Building frontend...' && cd frontend && npm install && npm run build && echo 'Setting up backend...' && cd ../backend && npm install && npx prisma generate && echo 'Build complete!'",
+    "start": "cd backend && npx prisma migrate deploy && node index.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
+  "keywords": ["portfolio", "react", "express", "prisma"],
+  "author": "",
+  "license": "ISC"
 }
