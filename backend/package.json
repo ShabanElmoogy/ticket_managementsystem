@@ -7,7 +7,7 @@
   "scripts": {
     "start": "npm list express > /dev/null 2>&1 || npm install && node server.js",
     "dev": "nodemon server.js",
-    "build": "prisma generate",
+    "build": "prisma generate && prisma migrate deploy && prisma db seed",
     "postbuild": "prisma db seed",
 
     "db:generate": "prisma generate",
