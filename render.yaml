@@ -4,10 +4,10 @@ services:
     env: node
     plan: free
     buildCommand: |
-      npm install --no-audit --no-fund
-      cd frontend && npm install --no-audit --no-fund && npm run build
-      cd ../backend && npm install --no-audit --no-fund && npx prisma generate
-    startCommand: cd backend && node start.js
+      cd backend && npm install --no-audit --no-fund && npx prisma generate
+      cd ../frontend && npm install --no-audit --no-fund && npm run build
+      cd ../backend && mkdir -p public && cp -r ../frontend/dist/* public/
+    startCommand: cd backend && npx prisma migrate deploy && node server.js
     # postDeployCommand removed; migrations run in startCommand
     autoDeploy: true
     envVars:

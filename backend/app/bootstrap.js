@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { PORT, HOST, CORS_ORIGINS } from './config/env.js';
@@ -25,6 +26,16 @@ export async function startServer() {
 
   // Routes
   registerRoutes(app);
+
+  // Static frontend (if available) and SPA fallback for same-origin deploys
+  const publicDir = path.join(__dirname, '..', 'public');
+  if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(path.join(publicDir, 'index.html'));
+    });
+  }
 
   // Errors
   registerErrorHandlers(app);
