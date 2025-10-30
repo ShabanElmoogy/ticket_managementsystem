@@ -24,10 +24,14 @@ import {
   Lock as LockIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  RocketLaunch as RocketLaunchIcon,
   ContentCopy as ContentCopyIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
-  PersonOutline as PersonOutlineIcon
+  PersonOutline as PersonOutlineIcon,
+  Assignment as AssignmentIcon,
+  SupportAgent as SupportAgentIcon,
+  Dashboard as DashboardIcon,
+  Notifications as NotificationsIcon,
+  Timeline as TimelineIcon
 } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -92,8 +96,18 @@ const LoginForm: React.FC = () => {
         gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
         position: 'relative',
         background: (theme) => theme.palette.mode === 'dark'
-          ? 'linear-gradient(135deg, #0f172a 0%, #111827 60%, #1f2937 100%)'
-          : 'linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 60%, #f0f9ff 100%)',
+          ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 30%, #312e81 60%, #1f2937 100%)'
+          : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 30%, #f59e0b 60%, #f0f9ff 100%)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+          pointerEvents: 'none',
+        },
       }}
     >
       {/* Theme toggle */}
@@ -125,38 +139,115 @@ const LoginForm: React.FC = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Decorative blobs */}
+        {/* Decorative elements */}
         <Box sx={{
           position: 'absolute',
-          width: 320,
-          height: 320,
-          top: 40,
-          left: 80,
+          width: 350,
+          height: 350,
+          top: 20,
+          left: 60,
           bgcolor: 'primary.main',
-          filter: 'blur(80px)',
+          filter: 'blur(100px)',
           borderRadius: '50%',
-          opacity: 0.25,
+          opacity: 0.15,
+          animation: 'float 6s ease-in-out infinite',
+          '@keyframes float': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-20px)' },
+          },
         }} />
         <Box sx={{
           position: 'absolute',
-          width: 280,
-          height: 280,
-          bottom: 40,
-          right: 60,
-          bgcolor: 'secondary.main',
-          filter: 'blur(90px)',
+          width: 300,
+          height: 300,
+          bottom: 20,
+          right: 40,
+          bgcolor: 'warning.main',
+          filter: 'blur(120px)',
           borderRadius: '50%',
-          opacity: 0.25,
+          opacity: 0.12,
+          animation: 'float 8s ease-in-out infinite reverse',
+          '@keyframes float': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-20px)' },
+          },
         }} />
 
+        {/* Floating ticket icons */}
+        <Box sx={{
+          position: 'absolute',
+          top: '30%',
+          left: '15%',
+          animation: 'bounce 4s ease-in-out infinite',
+          '@keyframes bounce': {
+            '0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0)' },
+            '40%': { transform: 'translateY(-10px)' },
+            '60%': { transform: 'translateY(-5px)' },
+          },
+        }}>
+          <AssignmentIcon sx={{ fontSize: 48, color: 'rgba(255,255,255,0.6)', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
+        </Box>
+        <Box sx={{
+          position: 'absolute',
+          bottom: '25%',
+          right: '20%',
+          animation: 'bounce 5s ease-in-out infinite 1s',
+          '@keyframes bounce': {
+            '0%, 20%, 50%, 80%, 100%': { transform: 'translateY(0)' },
+            '40%': { transform: 'translateY(-10px)' },
+            '60%': { transform: 'translateY(-5px)' },
+          },
+        }}>
+          <SupportAgentIcon sx={{ fontSize: 40, color: 'rgba(255,255,255,0.5)', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
+        </Box>
+
         <Box sx={{ position: 'relative', textAlign: 'center' }}>
-          <RocketLaunchIcon sx={{ fontSize: 72, color: 'primary.main' }} />
-          <Typography variant="h3" fontWeight={800} sx={{ mt: 2 }}>
-            Ticket Management
+          <Box sx={{ position: 'relative', display: 'inline-block' }}>
+            <AssignmentIcon sx={{
+              fontSize: 80,
+              color: 'primary.main',
+              filter: 'drop-shadow(0 4px 8px rgba(25, 118, 210, 0.3))'
+            }} />
+            <SupportAgentIcon sx={{
+              position: 'absolute',
+              top: -8,
+              right: -8,
+              fontSize: 32,
+              color: 'secondary.main',
+              bgcolor: 'background.paper',
+              borderRadius: '50%',
+              p: 0.5,
+              boxShadow: 2
+            }} />
+          </Box>
+          <Typography variant="h3" fontWeight={800} sx={{ mt: 3, background: 'linear-gradient(45deg, #1976d2, #9c27b0)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            TicketFlow Pro
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 520, mx: 'auto', mt: 1 }}>
-            Streamline your support workflow with real‑time updates, Kanban boards and notifications.
+          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 520, mx: 'auto', mt: 2, lineHeight: 1.6 }}>
+            Professional ticket management system with real-time collaboration, advanced analytics, and seamless workflow automation.
           </Typography>
+
+          {/* Feature highlights */}
+          <Stack direction="row" spacing={3} justifyContent="center" sx={{ mt: 3 }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <DashboardIcon sx={{ fontSize: 28, color: 'primary.main', mb: 0.5 }} />
+              <Typography variant="caption" color="text.secondary" display="block">
+                Dashboard
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <TimelineIcon sx={{ fontSize: 28, color: 'secondary.main', mb: 0.5 }} />
+              <Typography variant="caption" color="text.secondary" display="block">
+                Kanban
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <NotificationsIcon sx={{ fontSize: 28, color: 'warning.main', mb: 0.5 }} />
+              <Typography variant="caption" color="text.secondary" display="block">
+                Alerts
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
       </Box>
 
@@ -169,22 +260,31 @@ const LoginForm: React.FC = () => {
             maxWidth: 440,
             borderRadius: 4,
             p: 1,
-            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(17, 24, 39, 0.7)' : 'rgba(255, 255, 255, 0.7)'),
+            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(17, 24, 39, 0.8)' : 'rgba(255, 255, 255, 0.9)'),
             border: (t) => `1px solid ${t.palette.divider}`,
-            boxShadow: (t) => t.shadows[8],
-            backdropFilter: 'blur(10px)',
-            animation: 'fadeInUp 600ms ease',
-            '@keyframes fadeInUp': {
-              from: { opacity: 0, transform: 'translateY(8px)' },
-              to: { opacity: 1, transform: 'translateY(0)' },
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1)',
+            backdropFilter: 'blur(20px)',
+            animation: 'slideInFromRight 700ms ease-out',
+            '@keyframes slideInFromRight': {
+              from: { opacity: 0, transform: 'translateX(30px)' },
+              to: { opacity: 1, transform: 'translateX(0)' },
+            },
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease',
             },
           }}
         >
           <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-            <Stack spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <Typography variant="overline" color="primary">Welcome back</Typography>
-              <Typography variant="h4" fontWeight={700}>Sign in</Typography>
-              <Typography variant="body2" color="text.secondary">Use your credentials to access dashboard</Typography>
+            <Stack spacing={1} alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="overline" color="primary" sx={{ letterSpacing: 1.5, fontWeight: 600 }}>Welcome back</Typography>
+              <Typography variant="h4" fontWeight={700} sx={{ background: 'linear-gradient(45deg, #1976d2, #9c27b0)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Sign in to TicketFlow
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 280, textAlign: 'center' }}>
+                Access your professional ticket management dashboard
+              </Typography>
             </Stack>
 
             <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
@@ -243,10 +343,25 @@ const LoginForm: React.FC = () => {
                 fullWidth
                 variant="contained"
                 size="large"
-                sx={{ mt: 3, mb: 2, py: 1.2, textTransform: 'none', fontWeight: 700 }}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  background: 'linear-gradient(45deg, #1976d2, #9c27b0)',
+                  boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #1565c0, #7b1fa2)',
+                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+                    transform: 'translateY(-1px)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
                 disabled={loading}
               >
-                {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign in'}
+                {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign in to Dashboard'}
               </Button>
             </Box>
 
