@@ -4,7 +4,6 @@ import {
   IconButton,
   Tooltip,
   useTheme,
-  useMediaQuery,
   Snackbar,
   Alert,
 } from '@mui/material';
@@ -20,6 +19,12 @@ interface BeforeInstallPromptEvent extends Event {
     platform: string;
   }>;
   prompt(): Promise<void>;
+}
+
+declare global {
+  interface Navigator {
+    standalone?: boolean;
+  }
 }
 
 interface PWAInstallButtonProps {
@@ -38,7 +43,6 @@ const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   onVisible,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);

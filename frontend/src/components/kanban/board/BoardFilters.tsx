@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Button,
@@ -10,12 +10,12 @@ import {
   Grid,
   TextField,
   Typography,
-} from '@mui/material';
+} from "@mui/material";
 import {
   DateRange as DateRangeIcon,
   Clear as ClearIcon,
-} from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+} from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 interface BoardFiltersProps {
   filtersOpen: boolean;
@@ -28,8 +28,8 @@ interface BoardFiltersProps {
   customerFilter: string;
   applicationFilter: string;
   createdByFilter: string;
-  estimatedHoursMin: number | '';
-  estimatedHoursMax: number | '';
+  estimatedHoursMin: number | "";
+  estimatedHoursMax: number | "";
   uniqueAssignees: any[];
   uniqueCustomers: any[];
   uniqueApplications: any[];
@@ -42,8 +42,8 @@ interface BoardFiltersProps {
   onCustomerChange: (value: string) => void;
   onApplicationChange: (value: string) => void;
   onCreatedByChange: (value: string) => void;
-  onEstimatedHoursMinChange: (value: number | '') => void;
-  onEstimatedHoursMaxChange: (value: number | '') => void;
+  onEstimatedHoursMinChange: (value: number | "") => void;
+  onEstimatedHoursMaxChange: (value: number | "") => void;
   onClearFilters: () => void;
 }
 
@@ -74,7 +74,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
   onCreatedByChange,
   onEstimatedHoursMinChange,
   onEstimatedHoursMaxChange,
-  onClearFilters
+  onClearFilters,
 }) => {
   return (
     <Collapse in={filtersOpen}>
@@ -94,14 +94,14 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
         >
           <Typography
             variant="h6"
-            sx={{ 
-              display: "flex", 
-              alignItems: "center", 
+            sx={{
+              display: "flex",
+              alignItems: "center",
               gap: 1,
-              fontSize: { xs: '1rem', sm: '1.25rem' }
+              fontSize: { xs: "1rem", sm: "1.25rem" },
             }}
           >
-            <DateRangeIcon sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />
+            <DateRangeIcon sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
             Filters
           </Typography>
           {hasActiveFilters && (
@@ -110,12 +110,18 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
               onClick={onClearFilters}
               size="small"
               variant="outlined"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
             >
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              <Box
+                component="span"
+                sx={{ display: { xs: "none", sm: "inline" } }}
+              >
                 Clear All
               </Box>
-              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+              <Box
+                component="span"
+                sx={{ display: { xs: "inline", sm: "none" } }}
+              >
                 Clear
               </Box>
             </Button>
@@ -124,7 +130,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
 
         {/* First Row - Search and Due Dates */}
         <Grid container spacing={{ xs: 1.5, sm: 2 }} mb={2}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               label="Search"
               placeholder="Search tickets..."
@@ -136,7 +142,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Due Date From */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <DatePicker
               label="Due Date From"
               value={dueDateFrom}
@@ -151,7 +157,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Due Date To */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <DatePicker
               label="Due Date To"
               value={dueDateTo}
@@ -169,7 +175,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
         {/* Second Row - Other Filters */}
         <Grid container spacing={{ xs: 1.5, sm: 2 }}>
           {/* Priority Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Priority</InputLabel>
               <Select
@@ -187,7 +193,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Assignee Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Assignee</InputLabel>
               <Select
@@ -207,7 +213,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Customer Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Customer</InputLabel>
               <Select
@@ -227,7 +233,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Application Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Application</InputLabel>
               <Select
@@ -247,7 +253,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Created By Filter */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Created By</InputLabel>
               <Select
@@ -266,12 +272,16 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Estimated Hours Min */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <TextField
               label="Min Hours"
               type="number"
               value={estimatedHoursMin}
-              onChange={(e) => onEstimatedHoursMinChange(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                onEstimatedHoursMinChange(
+                  e.target.value === "" ? "" : Number(e.target.value)
+                )
+              }
               size="small"
               fullWidth
               inputProps={{ min: 0, step: 0.5 }}
@@ -279,12 +289,16 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
           </Grid>
 
           {/* Estimated Hours Max */}
-          <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
             <TextField
               label="Max Hours"
               type="number"
               value={estimatedHoursMax}
-              onChange={(e) => onEstimatedHoursMaxChange(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                onEstimatedHoursMaxChange(
+                  e.target.value === "" ? "" : Number(e.target.value)
+                )
+              }
               size="small"
               fullWidth
               inputProps={{ min: 0, step: 0.5 }}

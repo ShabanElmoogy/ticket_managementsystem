@@ -13,7 +13,6 @@ import {
   Chip,
   Box,
   Typography,
-  Autocomplete,
   Grid,
   Alert
 } from '@mui/material';
@@ -21,7 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useKanbanStore } from '../../stores/kanbanStore';
-import type { Priority, Label } from '../../types/kanban';
+import type { Priority } from '../../types/kanban';
 import { ticketApi } from '../../services/ticketApi';
 
 interface CreateTicketDialogProps {
@@ -184,7 +183,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
 
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {/* Title */}
-            <Grid item xs={12}>
+            <Grid size={{xs:12}}>
               <TextField
                 label="Title"
                 fullWidth
@@ -195,7 +194,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Grid>
 
             {/* Description */}
-            <Grid item xs={12}>
+            <Grid size={{xs:12}}>
               <TextField
                 label="Description"
                 fullWidth
@@ -207,7 +206,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Grid>
 
             {/* Priority and Assignee */}
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <FormControl fullWidth>
                 <InputLabel>Priority</InputLabel>
                 <Select
@@ -223,7 +222,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <FormControl fullWidth>
                 <InputLabel>Assignee</InputLabel>
                 <Select
@@ -242,7 +241,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Grid>
 
             {/* Customer and Application */}
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <FormControl fullWidth>
                 <InputLabel>Customer</InputLabel>
                 <Select
@@ -260,7 +259,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <FormControl fullWidth>
                 <InputLabel>Application</InputLabel>
                 <Select
@@ -279,7 +278,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Grid>
 
             {/* Due Date and Estimated Hours */}
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <DatePicker
                 label="Due Date"
                 value={formData.dueDate}
@@ -288,7 +287,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{xs:6}}>
               <TextField
                 label="Estimated Hours"
                 type="number"
@@ -300,7 +299,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Grid>
 
             {/* Labels */}
-            <Grid item xs={12}>
+            <Grid size={{xs:12}}>
               <Typography variant="subtitle2" gutterBottom>
                 Labels
               </Typography>
@@ -313,11 +312,11 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                     variant={formData.selectedLabels.includes(label.id) ? 'filled' : 'outlined'}
                     onClick={() => handleLabelToggle(label.id)}
                     sx={{
-                      backgroundColor: formData.selectedLabels.includes(label.id) 
-                        ? label.color 
+                      backgroundColor: formData.selectedLabels.includes(label.id)
+                        ? label.color
                         : 'transparent',
-                      color: formData.selectedLabels.includes(label.id) 
-                        ? 'white' 
+                      color: formData.selectedLabels.includes(label.id)
+                        ? 'white'
                         : label.color,
                       borderColor: label.color
                     }}

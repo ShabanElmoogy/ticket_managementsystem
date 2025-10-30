@@ -207,12 +207,12 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({
                 {filteredTickets.map((ticket) => (
                   <ListItem
                     key={ticket.id}
-                    button
                     onClick={() => handleTicketSelect(ticket)}
                     sx={{
                       borderBottom: '1px solid',
                       borderColor: 'divider',
                       py: 2,
+                      cursor: 'pointer',
                     }}
                   >
                     <ListItemAvatar>

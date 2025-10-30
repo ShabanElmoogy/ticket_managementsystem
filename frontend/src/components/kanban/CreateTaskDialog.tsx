@@ -6,8 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  Box,
-  Typography,
   Grid,
   FormControl,
   InputLabel,
@@ -19,6 +17,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useKanbanStore } from '../../stores/kanbanStore';
+import type { TaskStatus } from '../../types/kanban';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -66,7 +65,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         columnId: formData.columnId,
         assigneeId: formData.assigneeId || undefined,
         dueDate: formData.dueDate ? formData.dueDate.toISOString() : undefined,
-        status: 'TODO'
+        status: 'TODO' as TaskStatus
       };
 
       await createTask(taskData);
@@ -89,7 +88,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   };
 
   // Get available users for assignment (you might want to fetch this from a users store)
-  const availableUsers = [
+  const availableUsers: any[] = [
     // This should come from a users store or API call
     // For now, using mock data
   ];
@@ -107,7 +106,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           )}
 
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={{xs:12}}>
               <TextField
                 label="Task Title"
                 fullWidth
@@ -116,8 +115,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               />
             </Grid>
-            
-            <Grid item xs={12}>
+
+            <Grid size={{xs:12}}>
               <TextField
                 label="Description"
                 fullWidth
@@ -128,7 +127,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{xs:12, sm:6}}>
               <FormControl fullWidth required>
                 <InputLabel>Column</InputLabel>
                 <Select
@@ -145,7 +144,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{xs:12, sm:6}}>
               <FormControl fullWidth>
                 <InputLabel>Assignee</InputLabel>
                 <Select
@@ -163,7 +162,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{xs:12, sm:6}}>
               <DatePicker
                 label="Due Date"
                 value={formData.dueDate}

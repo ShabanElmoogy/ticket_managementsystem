@@ -20,12 +20,12 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon,
-  ColorLens as ColorIcon
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { HexColorPicker } from 'react-colorful';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import { getColorPair } from '../../utils/colorContrast';
+import type { BoardType } from '../../types/kanban';
 
 interface CreateBoardDialogProps {
   open: boolean;
@@ -38,6 +38,7 @@ interface ColumnData {
   color: string;
   darkColor: string;
   wipLimit: string;
+  position?: number;
 }
 
 const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
@@ -50,7 +51,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
     name: '',
     description: '',
     isDefault: false,
-    type: 'tickets', // 'tickets' or 'tasks'
+    type: 'tickets' as BoardType | string, // 'tickets' or 'tasks'
   });
 
   const [columns, setColumns] = useState<ColumnData[]>(() => {
@@ -93,14 +94,18 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
         name: formData.name,
         description: formData.description,
         isDefault: formData.isDefault,
-        type: formData.type,
+        type: formData.type as BoardType,
         columns: columns.map((col, index) => ({
           name: col.name,
           description: col.description,
           color: col.color,
-          darkColor: col.darkColor,
           position: index,
-          wipLimit: col.wipLimit ? parseInt(col.wipLimit) : undefined
+          wipLimit: col.wipLimit ? parseInt(col.wipLimit) : undefined,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          boardId: '', // Will be set by backend
+          id: '' // Will be set by backend
         }))
       };
 
@@ -181,7 +186,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
 
         {/* Board Details */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12}>
+          <Grid size={{xs:12}}>
             <TextField
               label="Board Name"
               fullWidth
@@ -190,7 +195,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={{xs:12}}>
             <TextField
               label="Description"
               fullWidth
@@ -200,7 +205,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{xs:12,sm:6}}>
             <FormControl fullWidth>
               <InputLabel id="board-type-label">Board Type</InputLabel>
               <Select
@@ -214,7 +219,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6}>
+           <Grid size={{xs:12,sm:6}}>
             <FormControlLabel
               control={
                 <Switch
@@ -239,7 +244,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
           {columns.map((column, index) => (
             <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={3}>
+                <Grid size={{xs:3}}>
                   <TextField
                     label="Column Name"
                     fullWidth
@@ -248,7 +253,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
                     onChange={(e) => updateColumn(index, 'name', e.target.value)}
                   />
                 </Grid>
-                <Grid item xs={4}>
+                <Grid size={{xs:4}}>
                   <TextField
                     label="Description"
                     fullWidth
@@ -256,7 +261,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
                     onChange={(e) => updateColumn(index, 'description', e.target.value)}
                   />
                 </Grid>
-                <Grid item xs={2}>
+                <Grid size={{xs:2}}>
                   <TextField
                     label="WIP Limit"
                     type="number"
@@ -266,7 +271,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
                     inputProps={{ min: 0 }}
                   />
                 </Grid>
-                <Grid item xs={2}>
+                <Grid size={{xs:2}}>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="body2">Color:</Typography>
                     <Box display="flex" gap={0.5}>
@@ -403,8 +408,8 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
                     </Box>
                   )}
                 </Grid>
-                <Grid item xs={1}>
-                  <IconButton 
+                <Grid size={{xs:1}}>
+                  <IconButton
                     onClick={() => removeColumn(index)}
                     disabled={columns.length <= 1}
                   >

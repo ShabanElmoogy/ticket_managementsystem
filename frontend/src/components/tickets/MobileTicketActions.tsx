@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Fab,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,

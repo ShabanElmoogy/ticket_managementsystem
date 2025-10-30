@@ -14,7 +14,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { apiService, type Ticket, type TicketWithComments, type Comment } from '../../services/api';
+import { apiService, type Ticket, type Comment } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 
 interface TicketDetailsDialogProps {
@@ -114,7 +114,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       <DialogTitle>{ticket.title}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6}>
+          <Grid size={{xs:12,sm:6}}>
             <Typography variant="subtitle2" color="textSecondary">
               Status
             </Typography>
@@ -123,7 +123,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
               color={getStatusColor(ticket.status) as any}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+           <Grid size={{xs:12,sm:6}}>
             <Typography variant="subtitle2" color="textSecondary">
               Priority
             </Typography>
@@ -133,7 +133,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
               variant="outlined"
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+           <Grid size={{xs:12,sm:6}}>
             <Typography variant="subtitle2" color="textSecondary">
               Assigned To
             </Typography>
@@ -141,7 +141,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
               {ticket.assignedTo ? ticket.assignedTo.name : 'Unassigned'}
             </Typography>
           </Grid>
-          <Grid item xs={12} sm={6}>
+           <Grid size={{xs:12,sm:6}}>
             <Typography variant="subtitle2" color="textSecondary">
               Created By
             </Typography>

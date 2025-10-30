@@ -19,6 +19,8 @@ import {
   Send as SendIcon,
 } from '@mui/icons-material';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 interface TicketWhatsAppButtonProps {
   ticket: {
     id: string;

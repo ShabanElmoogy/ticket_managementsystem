@@ -20,7 +20,7 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
-import { format, isAfter, isBefore, addDays } from 'date-fns';
+import { format, isBefore, addDays } from 'date-fns';
 import type { KanbanTicket, Priority } from '../../types/kanban';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
 import WhatsAppButton from '../WhatsAppButton';
@@ -33,8 +33,7 @@ interface KanbanTicketCardProps {
 
 const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
   ticket,
-  isDragging,
-  boardId
+  isDragging
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -117,7 +116,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
             <Box display="flex" alignItems="center">
               <WhatsAppButton
                 ticket={ticket}
-                defaultPhone={ticket.assignedTo?.phone || ''}
+                defaultPhone={''}
                 defaultMessage={`🎫 Ticket Update\n\nID: ${ticket.id}\nTitle: ${ticket.title}\nPriority: ${ticket.priority}\nStatus: ${ticket.status}\n\nPlease check the ticket management system for more details.`}
                 size="small"
                 onSent={(result) => console.log('WhatsApp message opened:', result)}
@@ -315,7 +314,9 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
       <TicketDetailsDialog
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
-        ticketId={ticket.id}
+        ticket={ticket as any}
+        onUpdateStatus={() => {}}
+        token={''}
       />
     </>
   );

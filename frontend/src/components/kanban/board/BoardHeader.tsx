@@ -29,8 +29,6 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-
   // Generate board icon based on type or name
   const getBoardIcon = () => {
     const iconProps = {

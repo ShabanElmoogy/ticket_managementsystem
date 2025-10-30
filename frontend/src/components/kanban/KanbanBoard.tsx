@@ -154,7 +154,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   };
 
   // Mobile navigation helpers
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -533,7 +533,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             },
           }}
         >
-          {statusColumns.map((status, index) => {
+          {statusColumns.map((status) => {
             const column = getColumnByStatus(status);
             const tickets = getTicketsForColumn(status);
             const color = getColumnColor(status);
@@ -640,7 +640,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             return (
               <ListItem
                 key={status}
-                button
                 onClick={() => {
                   setActiveTab(index);
                   setColumnsDrawerOpen(false);
@@ -650,6 +649,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   mb: 1,
                   backgroundColor:
                     index === activeTab ? alpha(color, 0.1) : "transparent",
+                  cursor: 'pointer',
                 }}
               >
                 <ListItemIcon>
