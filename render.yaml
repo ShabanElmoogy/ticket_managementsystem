@@ -2,7 +2,7 @@ services:
   - type: web
     name: ticket-backend
     runtime: node
-    buildCommand: npm run install:backend && npm run build:backend
+    buildCommand: cd backend && npm install && npx prisma generate
     startCommand: cd backend && node server.js
 
     envVars:
@@ -20,7 +20,7 @@ services:
   - type: web
     name: ticket-frontend
     runtime: static
-    buildCommand: npm run install:frontend && npm run build:frontend
+    buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
