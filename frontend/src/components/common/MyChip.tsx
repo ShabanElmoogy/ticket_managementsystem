@@ -13,7 +13,6 @@ interface MyChipProps extends Omit<ChipProps, "variant"> {
   variant: ChipVariant;
   priorityColor?: string;
   statusColor?: string;
-  children?: React.ReactNode;
 }
 
 const MyChip: React.FC<MyChipProps> = ({

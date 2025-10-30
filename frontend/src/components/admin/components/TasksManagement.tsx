@@ -14,7 +14,6 @@ const TasksManagement: React.FC = () => {
     boards,
     users,
     loading,
-    boardsLoading,
 
     dialogOpen,
     editingTask,
@@ -33,8 +32,6 @@ const TasksManagement: React.FC = () => {
 
     handleSnackbarClose,
   } = useTasksManagement();
-
-  const getTaskBoards = () => boards.filter((board) => board.type === "TASKS");
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>

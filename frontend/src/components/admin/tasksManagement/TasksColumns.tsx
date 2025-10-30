@@ -1,4 +1,3 @@
-import React from "react";
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
 import { buildActionsColumn } from "../../common";

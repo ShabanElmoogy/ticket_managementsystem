@@ -1,5 +1,5 @@
 export { default as ApplicationsTable } from "./components/ApplicationsTable";
-export type { ApplicationsTableProps } from "./components/ApplicationsTable";
+export type { ApplicationsTableProps } from "./types/types";
 
 export { default as ApplicationsColumns, getApplicationsColumns } from "./components/ApplicationsColumns";
 

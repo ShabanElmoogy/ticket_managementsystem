@@ -15,7 +15,7 @@ interface UseNotificationsProps {
 export const useNotifications = ({ user, token }: UseNotificationsProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Setup socket connection for notifications

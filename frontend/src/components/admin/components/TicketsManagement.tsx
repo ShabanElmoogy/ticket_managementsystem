@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Alert, Snackbar, Button } from "@mui/material";
+import { Box, Alert, Snackbar } from "@mui/material";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import CreateTicketDialog from "../../tickets/CreateTicketDialog";
 import { TicketsTable } from "../ticketsManagement";
@@ -14,8 +14,6 @@ const TicketsManagement: React.FC = () => {
     loading,
 
     dialogOpen,
-    editingTicket,
-
     snackbar,
     deleteDialog,
 

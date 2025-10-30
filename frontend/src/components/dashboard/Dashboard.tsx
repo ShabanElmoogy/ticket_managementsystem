@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -296,7 +296,7 @@ const Dashboard: React.FC = () => {
 
     // Listen for ticket-related notifications
     newSocket.on("notification", (notification: any) => {
-      const { type, data } = notification;
+      const { type } = notification;
 
       // Handle different notification types
       switch (type) {
@@ -926,8 +926,6 @@ const Dashboard: React.FC = () => {
       <Header
         onOpenAdminPanel={() => setCurrentView('admin')}
         onOpenKanban={() => setCurrentView('kanban')}
-        onOpenWhatsApp={() => setCurrentView('whatsapp')}
-        onOpenWhatsAppUsers={() => setCurrentView('whatsapp-users')}
         onTicketClick={handleTicketClick}
       />
       {renderCurrentView()}

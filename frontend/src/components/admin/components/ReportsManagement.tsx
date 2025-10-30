@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { useAuthStore } from "../../../stores/authStore";
 import { apiService, type Ticket, type Customer } from "../../../services/api";

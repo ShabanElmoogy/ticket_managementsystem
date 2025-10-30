@@ -7,7 +7,6 @@ import {
   Button,
   Box,
   Typography,
-  Grid,
   Card,
   CardContent,
   CircularProgress,
@@ -17,6 +16,7 @@ import {
   Select,
   MenuItem
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   PieChart,
   Pie,
@@ -27,7 +27,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -35,7 +34,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { subDays, subMonths } from 'date-fns';
 import { useKanbanStore } from '../../stores/kanbanStore';
-import type { BoardAnalytics } from '../../types/kanban';
 
 interface BoardAnalyticsDialogProps {
   open: boolean;
@@ -43,7 +41,7 @@ interface BoardAnalyticsDialogProps {
   boardId: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
 
 const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
   open,
@@ -146,7 +144,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
           {/* Date Range Selector */}
           <Box sx={{ mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={4}>
+              <Grid size={{xs: 4}}>
                 <FormControl fullWidth>
                   <InputLabel>Date Range</InputLabel>
                   <Select
@@ -165,7 +163,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
               
               {customRange && (
                 <>
-                  <Grid item xs={4}>
+                  <Grid size={{xs: 4}}>
                     <DatePicker
                       label="Start Date"
                       value={startDate}
@@ -173,7 +171,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={{xs: 4}}>
                     <DatePicker
                       label="End Date"
                       value={endDate}
@@ -201,7 +199,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
           {analytics && !loading && (
             <Grid container spacing={3}>
               {/* Summary Cards */}
-              <Grid item xs={12} md={3}>
+              <Grid size={{xs: 12, md: 3}}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -214,7 +212,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
               
-              <Grid item xs={12} md={3}>
+              <Grid size={{xs: 12, md: 3}}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -227,7 +225,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
               
-              <Grid item xs={12} md={3}>
+              <Grid size={{xs: 12, md: 3}}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -240,7 +238,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
               
-              <Grid item xs={12} md={3}>
+              <Grid size={{xs: 12, md: 3}}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -254,7 +252,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
               </Grid>
 
               {/* Charts */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
@@ -283,7 +281,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>

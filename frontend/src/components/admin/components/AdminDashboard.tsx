@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
   Card,
   CardContent,
   Typography,
   CircularProgress,
   Alert,
 } from "@mui/material";
+import Grid from '@mui/material/Grid';
 import {
   People as PeopleIcon,
   Apps as AppsIcon,
@@ -39,7 +39,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
       <Box
         sx={{
           display: "flex",
-          aligns: "center",
+          alignItems: "center",
           justifyContent: "space-between",
         }}
       >
@@ -57,13 +57,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
             borderRadius: "50%",
             p: 1,
             display: "flex",
-            aligns: "center",
+            alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {React.cloneElement(icon as React.ReactElement, {
-            sx: { color: "white", fontSize: 24 },
-          })}
+          <Box sx={{ color: "white", fontSize: 24 }}>
+            {icon}
+          </Box>
         </Box>
       </Box>
     </CardContent>
@@ -134,7 +134,7 @@ const AdminDashboard: React.FC = () => {
       <Box
         display="flex"
         justifyContent="center"
-        aligns="center"
+        alignItems="center"
         minHeight="400px"
       >
         <CircularProgress />
@@ -158,7 +158,7 @@ const AdminDashboard: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Customer Stats */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Total Customers"
             value={stats.totalCustomers}
@@ -166,7 +166,7 @@ const AdminDashboard: React.FC = () => {
             color="#1976d2"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Active Customers"
             value={stats.activeCustomers}
@@ -176,7 +176,7 @@ const AdminDashboard: React.FC = () => {
         </Grid>
 
         {/* Application Stats */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Total Applications"
             value={stats.totalApplications}
@@ -185,7 +185,7 @@ const AdminDashboard: React.FC = () => {
           />
         </Grid>
 
-       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+       <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Active Applications"
             value={stats.activeApplications}
@@ -195,7 +195,7 @@ const AdminDashboard: React.FC = () => {
         </Grid>
 
         {/* Ticket Stats */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Total Tickets"
             value={stats.totalTickets}
@@ -203,7 +203,7 @@ const AdminDashboard: React.FC = () => {
             color="#f57c00"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Open Tickets"
             value={stats.openTickets}
@@ -211,7 +211,7 @@ const AdminDashboard: React.FC = () => {
             color="#d32f2f"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="In Progress"
             value={stats.inProgressTickets}
@@ -219,7 +219,7 @@ const AdminDashboard: React.FC = () => {
             color="#f9a825"
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{xs:12,sm:6,md:3}}>
           <StatCard
             title="Resolved"
             value={stats.resolvedTickets}
@@ -231,7 +231,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mt: 2 }}>
-        <Grid size={{ xs: 12,  md: 4 }}>
+        <Grid size={{xs:12,md:4}}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -254,7 +254,7 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12,  md: 4 }}>
+        <Grid size={{xs:12,md:4}}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -277,7 +277,7 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </Grid>
 
-       <Grid size={{ xs: 12,  md: 4 }}>
+       <Grid size={{xs:12,md:4}}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

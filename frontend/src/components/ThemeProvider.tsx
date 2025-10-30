@@ -1,4 +1,5 @@
-import React, { ReactNode, useEffect } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useThemeStore } from '../stores/themeStore';
 
@@ -131,7 +132,7 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
     components: {
       MuiCard: {
         styleOverrides: {
-          root: ({ theme }) => ({
+          root: () => ({
             boxShadow: mode === 'dark' 
               ? '0px 4px 6px rgba(0, 0, 0, 0.3)' 
               : '0px 4px 6px rgba(0, 0, 0, 0.05)',
@@ -176,7 +177,7 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
       },
       MuiPaper: {
         styleOverrides: {
-          root: ({ theme }) => ({
+          root: () => ({
             backgroundImage: 'none',
             backgroundColor: mode === 'dark' ? '#1e293b' : '#ffffff',
           }),
@@ -184,7 +185,7 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
       },
       MuiAppBar: {
         styleOverrides: {
-          root: ({ theme }) => ({
+          root: () => ({
             backgroundColor: mode === 'dark' ? '#1e293b' : undefined,
           }),
         },

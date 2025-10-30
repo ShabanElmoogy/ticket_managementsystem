@@ -30,7 +30,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     headerAlign: "center",
     align: "center",
     width: 180,
-    valueGetter: (p) => p?.name || "-",
+    valueGetter: (value: any) => value?.name || "-",
   },
   {
     field: "application",
@@ -38,7 +38,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     headerAlign: "center",
     align: "center",
     width: 180,
-    valueGetter: (p) => p?.name || "-",
+    valueGetter: (value: any) => value?.name || "-",
   },
   {
     field: "assignedTo",
@@ -46,7 +46,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     headerAlign: "center",
     align: "center",
     width: 180,
-    valueGetter: (p) => p?.name || "Unassigned",
+    valueGetter: (value: any) => value?.name || "Unassigned",
   },
   {
     field: "createdAt",
@@ -54,9 +54,8 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     headerAlign: "center",
     align: "center",
     width: 160,
-    valueGetter: (p) => {
-      const v = (p as any)?.row?.createdAt as string | undefined;
-      return v ? new Date(v).toLocaleString() : "-";
+    valueGetter: (_, row) => {
+      return row.createdAt ? new Date(row.createdAt).toLocaleString() : "-";
     },
   },
   {
@@ -65,9 +64,8 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     headerAlign: "center",
     align: "center",
     width: 140,
-    valueGetter: (p) => {
-      const v = (p as any)?.row?.dueDate as string | undefined;
-      return v ? new Date(v).toLocaleDateString() : "-";
+    valueGetter: (_, row) => {
+      return row.dueDate ? new Date(row.dueDate).toLocaleDateString() : "-";
     },
   },
 ];

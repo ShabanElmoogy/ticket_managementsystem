@@ -72,7 +72,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       arrow
     >
       <ListItem
-        button={hasTicketData}
+        component={hasTicketData ? "button" : "div"}
         onClick={hasTicketData ? () => onItemClick(notification) : undefined}
         sx={{
           py: 1.5,

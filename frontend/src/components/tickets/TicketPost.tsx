@@ -55,7 +55,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [newComment, setNewComment] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const [, setLoadingComments] = useState(false);
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
 
@@ -169,20 +169,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
     }
   };
 
-  const getStatusEmoji = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return "🔵";
-      case "IN_PROGRESS":
-        return "🟡";
-      case "RESOLVED":
-        return "🟢";
-      case "CLOSED":
-        return "⚫";
-      default:
-        return "🔵";
-    }
-  };
+
 
   const getPriorityEmoji = (priority: string) => {
     switch (priority) {

@@ -1,5 +1,4 @@
-import React from "react";
-import { Chip, Box, Tooltip, IconButton, Typography } from "@mui/material";
+import { Chip, Box, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { buildActionsColumn } from "../../../common";
 import type { Ticket } from "../../../../services/api";

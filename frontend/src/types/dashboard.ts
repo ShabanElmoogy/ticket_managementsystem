@@ -12,6 +12,7 @@ export interface ActiveFilters {
   user?: string;
   customer?: string;
   application?: string;
+  search?: string;
   userName?: string;
   customerName?: string;
   applicationName?: string;

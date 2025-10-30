@@ -53,7 +53,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -415,7 +415,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                       placement="left"
                     >
                       <ListItem
-                        button={hasTicket}
+                        component={hasTicket ? "button" : "div"}
                         onClick={
                           hasTicket
                             ? () => handleActivityClick(activity)

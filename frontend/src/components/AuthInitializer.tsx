@@ -1,4 +1,5 @@
-import React, { useEffect, ReactNode } from 'react';
+import React, { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useAuthStore } from '../stores/authStore';
 
 interface AuthInitializerProps {

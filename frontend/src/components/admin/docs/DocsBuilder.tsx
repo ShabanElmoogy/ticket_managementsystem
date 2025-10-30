@@ -124,11 +124,8 @@ export interface DocRefNode {
   docId: string; // reference to Doc.id
 }
 
-const STORAGE_TREE_KEY = 'admin-docs-tree-v1';
-
 // Helpers
 const newId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-const STORAGE_KEY = 'admin-docs-docs-v1';
 
 // Sidebar palette item definition
 const palette: { type: BlockType; label: string; description: string; icon: React.ReactNode }[] = [
@@ -593,7 +590,6 @@ const DocsBuilder: React.FC = () => {
   const [tree, setTree] = useState<TreeNode[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
-  const treeInitialized = useRef(false);
 
   const currentDoc = useMemo(() => docs.find((d) => d.id === currentDocId) || null, [docs, currentDocId]);
 
@@ -900,27 +896,8 @@ const DocsBuilder: React.FC = () => {
   };
 
   // Docs management
-  const addNewDoc = () => {
-    const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
-    const parentId = parent && parent.type === 'folder' ? parent.id : null;
-    addDocUnder(parentId);
-  };
 
-  const renameDoc = (id: string, title: string) => {
-    setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, title, updatedAt: new Date().toISOString() } : d)));
-  };
-
-  const deleteDoc = (id: string) => {
-    setDocs((prev) => prev.filter((d) => d.id !== id));
-    if (currentDocId === id) {
-      setCurrentDocId((prev) => {
-        const remaining = docs.filter((d) => d.id !== id);
-        return remaining[0]?.id || null;
-      });
-    }
-  };
-
-  const saveCurrentDoc = async () => {
+ const saveCurrentDoc = async () => {
     if (!currentDoc) return;
     const success = await saveDocServer(currentDoc);
     if (!success) {

@@ -4,8 +4,7 @@ import { Chip, Box, Typography } from "@mui/material";
 import {
   AdminPanelSettings as AdminIcon,
   Person as PersonIcon,
-  Phone as PhoneIcon,
-  WhatsApp as WhatsAppIcon,
+  Phone as PhoneIcon
 } from "@mui/icons-material";
 import type { User } from "../../../../services/api";
 

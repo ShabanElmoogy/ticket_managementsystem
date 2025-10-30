@@ -12,7 +12,6 @@ import {
   IconButton,
 } from '@mui/material';
 import {
-  Refresh as RefreshIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
@@ -404,7 +403,6 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                   color: 'text.secondary',
                   '&:hover': {
                     borderColor: 'primary.main',
-                    color: 'primary.main',
                     backgroundColor: 'primary.main',
                     color: 'primary.contrastText',
                   },

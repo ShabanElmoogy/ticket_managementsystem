@@ -9,9 +9,7 @@ import {
   Box,
   FormControl,
   InputLabel,
-  MenuItem,
-  FormControlLabel,
-  Switch,
+  MenuItem
 } from "@mui/material";
 import type { UserFormDialogProps } from "../types/types";
 import useUserForm from "../hooks/useUserForm";
@@ -32,8 +30,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   });
 
   const roleValue = watch("role");
-  const whatsappValue = watch("whatsappNotifications");
-
+ 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editing ? "Edit User" : "Create New User"}</DialogTitle>

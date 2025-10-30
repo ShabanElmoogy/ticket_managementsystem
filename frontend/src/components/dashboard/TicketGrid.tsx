@@ -80,7 +80,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
   return (
     <Grid container spacing={3}>
       {tickets.map((ticket, index) => (
-        <Grid item xs={12} md={6} lg={4} key={ticket.id}>
+        <Grid size={{xs:12,md:6,lg:4}} key={ticket.id}>
           <Grow in={true} timeout={300 + index * 100}>
             <Card 
               sx={{ 

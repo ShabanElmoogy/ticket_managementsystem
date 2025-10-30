@@ -38,7 +38,9 @@ const DesktopMenu: React.FC<DesktopMenuProps> = ({
             onClick={item.onClick}
             sx={{ color: item.color || "inherit" }}
           >
-            {React.cloneElement(item.icon, { sx: { mr: 2 } })}
+            <span style={{ marginRight: 16, display: 'flex', alignItems: 'center' }}>
+              {item.icon}
+            </span>
             {item.label}
           </MenuItem>,
         ])

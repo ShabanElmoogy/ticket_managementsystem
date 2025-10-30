@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { 
   KanbanBoard, 
-  KanbanTicket, 
   KanbanTask,
   Label, 
   Notification, 
@@ -54,7 +53,7 @@ interface KanbanState {
 
 export const useKanbanStore = create<KanbanState>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       boards: [],
       currentBoard: null,
