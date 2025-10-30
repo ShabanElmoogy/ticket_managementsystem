@@ -1,11 +1,12 @@
 import React from "react";
-import { Box, Alert, Snackbar, Typography } from "@mui/material";
+import { Box, Alert, Snackbar } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
-import AdminGridHeader from "../../common/AdminGridHeader";
 import { TasksTable, TaskFormDialog } from "../tasksManagement";
 import useTasksManagement from "../tasksManagement/hooks/useTasksManagement";
+import MyGridHeader from "../../common/MyGridHeader";
+import AddTaskIcon from "@mui/icons-material/AddTask";
 
 const TasksManagement: React.FC = () => {
   const {
@@ -38,11 +39,14 @@ const TasksManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
-        <AdminGridHeader
+        <MyGridHeader
           title="Tasks Management"
-          onAdd={() => handleOpenDialog()}
-          addLabel="Add Task"
+          onAdd={handleOpenDialog}
+          addButtonText="Add Task"
+          addTooltip="Add Task"
+          icon={AddTaskIcon}
         />
+
         <TasksTable
           tasks={tasks}
           loading={loading}
@@ -76,10 +80,7 @@ const TasksManagement: React.FC = () => {
           autoHideDuration={6000}
           onClose={handleSnackbarClose}
         >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={snackbar.severity}
-          >
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
             {snackbar.message}
           </Alert>
         </Snackbar>

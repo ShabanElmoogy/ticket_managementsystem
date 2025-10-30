@@ -2,8 +2,9 @@ import React from "react";
 import { Box, Alert, Snackbar } from "@mui/material";
 import { CustomersTable, CustomerFormDialog } from "../customersManagement";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
-import AdminGridHeader from "../../common/AdminGridHeader";
+import PeopleIcon from "@mui/icons-material/People";
 import useCustomersManagement from "../customersManagement/hooks/useCustomersManagement";
+import MyGridHeader from "../../common/MyGridHeader";
 
 const CustomersManagement: React.FC = () => {
   const {
@@ -31,12 +32,14 @@ const CustomersManagement: React.FC = () => {
 
   return (
     <Box>
-      <AdminGridHeader
+      <MyGridHeader
         title="Customers Management"
         onAdd={handleOpenDialog}
-        addLabel="Add Customer"
+        addButtonText="Add Customer"
+        addTooltip="Add Customer"
+        icon={PeopleIcon}
       />
-      
+
       <CustomersTable
         customers={customers}
         loading={loading}
@@ -76,10 +79,7 @@ const CustomersManagement: React.FC = () => {
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>

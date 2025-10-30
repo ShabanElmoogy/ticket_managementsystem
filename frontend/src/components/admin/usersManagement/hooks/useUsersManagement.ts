@@ -13,6 +13,7 @@ export type DeleteDialogState = {
   open: boolean;
   user: User | null;
   loading: boolean;
+  forceDialogOpen?: boolean;
 };
 
 export interface UsersControllerReturn {
@@ -34,6 +35,8 @@ export interface UsersControllerReturn {
   handleDeleteClick: (user: User) => void;
   handleDeleteConfirm: () => Promise<void>;
   handleDeleteCancel: () => void;
+  handleForceDeleteConfirm: () => Promise<void>;
+  handleForceDeleteCancel: () => void;
 
   handleSnackbarClose: () => void;
   refetch: () => Promise<void>;
@@ -60,7 +63,7 @@ export function useUsersManagement(): UsersControllerReturn {
   const [formData, setFormData] = useState<UserFormValues>(DEFAULT_FORM_VALUES);
 
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: "", severity: "success" });
-  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, user: null, loading: false });
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, user: null, loading: false, forceDialogOpen: false });
 
   const showSnackbar = useCallback((message: string, severity: "success" | "error") => {
     setSnackbar({ open: true, message, severity });
@@ -156,7 +159,33 @@ export function useUsersManagement(): UsersControllerReturn {
     try {
       await apiService.deleteUser(token, deleteDialog.user.id);
       showSnackbar("User deleted successfully", "success");
-      setDeleteDialog({ open: false, user: null, loading: false });
+      setDeleteDialog({ open: false, user: null, loading: false, forceDialogOpen: false });
+      fetchData();
+    } catch (error) {
+      // If deletion fails due to related data, open force dialog
+      const msg = error instanceof Error ? error.message : "Error deleting user";
+      const relatedDataError = msg.toLowerCase().includes('associated tickets') || msg.toLowerCase().includes('associated data');
+      if (relatedDataError) {
+        setDeleteDialog((prev) => ({ ...prev, loading: false, open: false, forceDialogOpen: true }));
+      } else {
+        showSnackbar(msg, "error");
+        setDeleteDialog((prev) => ({ ...prev, loading: false }));
+      }
+    }
+  }, [token, deleteDialog.user, fetchData, showSnackbar]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteDialog({ open: false, user: null, loading: false, forceDialogOpen: false });
+  }, []);
+
+  const handleForceDeleteConfirm = useCallback(async () => {
+    if (!token || !deleteDialog.user) return;
+
+    setDeleteDialog((prev) => ({ ...prev, loading: true }));
+    try {
+      await apiService.deleteUser(token, deleteDialog.user.id, { force: true });
+      showSnackbar("User and related data deleted successfully", "success");
+      setDeleteDialog({ open: false, user: null, loading: false, forceDialogOpen: false });
       fetchData();
     } catch (error) {
       showSnackbar(error instanceof Error ? error.message : "Error deleting user", "error");
@@ -164,8 +193,8 @@ export function useUsersManagement(): UsersControllerReturn {
     }
   }, [token, deleteDialog.user, fetchData, showSnackbar]);
 
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteDialog({ open: false, user: null, loading: false });
+  const handleForceDeleteCancel = useCallback(() => {
+    setDeleteDialog((prev) => ({ ...prev, forceDialogOpen: false }));
   }, []);
 
   const handleSnackbarClose = useCallback(() => {
@@ -191,6 +220,8 @@ export function useUsersManagement(): UsersControllerReturn {
     handleDeleteClick,
     handleDeleteConfirm,
     handleDeleteCancel,
+    handleForceDeleteConfirm,
+    handleForceDeleteCancel,
 
     handleSnackbarClose,
     refetch: fetchData,

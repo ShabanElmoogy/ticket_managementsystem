@@ -1,9 +1,13 @@
 import React from "react";
 import { Box, Alert, Snackbar } from "@mui/material";
-import { ApplicationsTable, ApplicationFormDialog } from "../applicationsManagement";
+import {
+  ApplicationsTable,
+  ApplicationFormDialog,
+} from "../applicationsManagement";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
-import AdminGridHeader from "../../common/AdminGridHeader";
 import useApplicationsManagement from "../applicationsManagement/hooks/useApplicationsManagement";
+import MyGridHeader from "../../common/MyGridHeader";
+import ApiIcon from "@mui/icons-material/Api";
 
 const ApplicationsManagement: React.FC = () => {
   const {
@@ -30,10 +34,12 @@ const ApplicationsManagement: React.FC = () => {
 
   return (
     <Box>
-      <AdminGridHeader
+      <MyGridHeader
         title="Applications Management"
         onAdd={handleOpenDialog}
-        addLabel="Add Application"
+        addButtonText="Add Category"
+        addTooltip="Add Application"
+        icon={ApiIcon}
       />
 
       <ApplicationsTable

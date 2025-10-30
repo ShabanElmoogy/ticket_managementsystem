@@ -3,9 +3,9 @@ import { Box, Alert, Snackbar, Button } from "@mui/material";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import CreateTicketDialog from "../../tickets/CreateTicketDialog";
 import { TicketsTable } from "../ticketsManagement";
-import AdminGridHeader from "../../common/AdminGridHeader";
 import useTicketsManagement from "../ticketsManagement/hooks/useTicketsManagement";
-import generateCustomersTicketReport from "../../../utils/reports/customersTicketReport";
+import MyGridHeader from "../../common/MyGridHeader";
+import BookOnlineIcon from "@mui/icons-material/BookOnline";
 
 const TicketsManagement: React.FC = () => {
   const {
@@ -32,27 +32,14 @@ const TicketsManagement: React.FC = () => {
 
   return (
     <Box>
-      <AdminGridHeader
+      <MyGridHeader
         title="Tickets Management"
         onAdd={handleOpenDialog}
-        addLabel="Add Ticket"
-        rightActions={
-          <Button
-            variant="outlined"
-            onClick={() =>
-              generateCustomersTicketReport(tickets, {
-                title: "Customers Ticket Report",
-                companyName: "Ticket Management System",
-                filters: {},
-                orientation: "landscape",
-              })
-            }
-            disabled={loading || tickets.length === 0}
-          >
-            Generate Report
-          </Button>
-        }
+        addButtonText="Add Ticket"
+        addTooltip="Add Ticket"
+        icon={BookOnlineIcon}
       />
+
       <TicketsTable
         tickets={tickets}
         loading={loading}
@@ -83,10 +70,7 @@ const TicketsManagement: React.FC = () => {
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>

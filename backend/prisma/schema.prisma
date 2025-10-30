@@ -329,3 +329,43 @@ enum NotificationType {
   MENTION
   STATUS_CHANGED
 }
+
+// Doc Builder models
+model Doc {
+  id        String   @id @default(cuid())
+  title     String
+  blocks    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  nodes DocNode[]
+
+  @@map("docs")
+}
+
+enum DocNodeType {
+  FOLDER
+  DOC
+}
+
+model DocNode {
+  id        String      @id @default(cuid())
+  type      DocNodeType
+  title     String
+  position  Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Self-relation for tree
+  parentId String?
+  parent   DocNode?     @relation("ParentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children DocNode[]    @relation("ParentChildren")
+
+  // Optional relation to Doc when type == DOC
+  docId String?
+  doc   Doc?        @relation(fields: [docId], references: [id], onDelete: Cascade)
+
+  @@index([parentId, position])
+  @@map("doc_nodes")
+}

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import AdminGridHeader from "../../common/AdminGridHeader";
 import type { GridColDef } from "@mui/x-data-grid";
 import { useAuthStore } from "../../../stores/authStore";
 import { apiService, type Ticket, type Customer } from "../../../services/api";
@@ -20,6 +19,8 @@ import {
   getTicketColumns,
 } from "../reportsManagement/components/columns";
 import { generatePdf } from "../reportsManagement/PdfGenerators";
+import MyGridHeader from "../../common/MyGridHeader";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 
 const ReportsManagement: React.FC = () => {
   const { token } = useAuthStore();
@@ -48,28 +49,53 @@ const ReportsManagement: React.FC = () => {
   }, [fetchData]);
 
   // Build rows for each report shape
-  const summaryRows = useMemo(() => buildSummaryRows(tickets, customers), [tickets, customers]);
-  const statusRows = useMemo(() => buildCustomerStatusRows(tickets, customers), [tickets, customers]);
-  const activityRows = useMemo(() => buildCustomerActivityRows(tickets, customers), [tickets, customers]);
+  const summaryRows = useMemo(
+    () => buildSummaryRows(tickets, customers),
+    [tickets, customers]
+  );
+  const statusRows = useMemo(
+    () => buildCustomerStatusRows(tickets, customers),
+    [tickets, customers]
+  );
+  const activityRows = useMemo(
+    () => buildCustomerActivityRows(tickets, customers),
+    [tickets, customers]
+  );
 
   // Select rows and columns by report type
   const gridData = useMemo((): { rows: any[]; columns: GridColDef[] } => {
     switch (reportType) {
       case "summary":
-        return { rows: summaryRows, columns: getSummaryColumns() as unknown as GridColDef[] };
+        return {
+          rows: summaryRows,
+          columns: getSummaryColumns() as unknown as GridColDef[],
+        };
       case "customers-status":
-        return { rows: statusRows, columns: getCustomerStatusColumns() as unknown as GridColDef[] };
+        return {
+          rows: statusRows,
+          columns: getCustomerStatusColumns() as unknown as GridColDef[],
+        };
       case "customers-activity":
-        return { rows: activityRows, columns: getCustomerActivityColumns() as unknown as GridColDef[] };
+        return {
+          rows: activityRows,
+          columns: getCustomerActivityColumns() as unknown as GridColDef[],
+        };
       case "tickets":
       default:
-        return { rows: tickets, columns: getTicketColumns() as unknown as GridColDef[] };
+        return {
+          rows: tickets,
+          columns: getTicketColumns() as unknown as GridColDef[],
+        };
     }
   }, [reportType, summaryRows, statusRows, activityRows, tickets]);
 
   const handleGeneratePdf = () => {
     const companyName = "Ticket Management System";
-    generatePdf(reportType, { summaryRows, statusRows, activityRows, tickets }, companyName);
+    generatePdf(
+      reportType,
+      { summaryRows, statusRows, activityRows, tickets },
+      companyName
+    );
   };
 
   const rightActions = (
@@ -85,13 +111,21 @@ const ReportsManagement: React.FC = () => {
 
   return (
     <Box>
-      <AdminGridHeader title="Reports" rightActions={rightActions} />
+      <MyGridHeader
+        title="Reports"
+        rightActions={rightActions}
+        icon={AssessmentIcon}
+      />
+{/* 
       <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
-        {reportType === "summary" && "Aggregated counts of tickets per customer."}
-        {reportType === "customers-status" && "Open/in-progress/resolved/closed breakdown per customer with percentages."}
-        {reportType === "customers-activity" && "Created and closed tickets per customer over last 7 and 30 days."}
+        {reportType === "summary" &&
+          "Aggregated counts of tickets per customer."}
+        {reportType === "customers-status" &&
+          "Open/in-progress/resolved/closed breakdown per customer with percentages."}
+        {reportType === "customers-activity" &&
+          "Created and closed tickets per customer over last 7 and 30 days."}
         {reportType === "tickets" && "All tickets list with details."}
-      </Typography>
+      </Typography> */}
 
       <ReportsTable
         rows={gridData.rows}

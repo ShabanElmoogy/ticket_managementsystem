@@ -189,46 +189,69 @@ export const updateUser = async (req, res) => {
 
 // Delete user
 export const deleteUser = async (req, res) => {
-    try {
-      const { id } = req.params;
+try {
+const { id } = req.params;
+const force = req.query?.force === 'true';
 
-      // Check if user exists
-      const existingUser = await prisma.user.findUnique({
-        where: { id },
-        include: {
-          _count: {
-            select: {
-              assignedTickets: true,
-              createdTickets: true,
-              comments: true
-            }
-          }
-        }
-      });
+// Check if user exists
+const existingUser = await prisma.user.findUnique({
+where: { id },
+include: {
+_count: {
+select: {
+assignedTickets: true,
+createdTickets: true,
+comments: true
+}
+}
+}
+});
 
-      if (!existingUser) {
-        return res.status(404).json({ error: 'User not found' });
-      }
+if (!existingUser) {
+return res.status(404).json({ error: 'User not found' });
+}
 
-      // Prevent deletion if user has associated data
-      if (existingUser._count.assignedTickets > 0 || 
-          existingUser._count.createdTickets > 0 || 
-          existingUser._count.comments > 0) {
-        return res.status(400).json({ 
-          error: 'Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.' 
-        });
-      }
+// Prevent deletion if user has associated data and not forcing
+if (!force && (existingUser._count.assignedTickets > 0 || 
+existingUser._count.createdTickets > 0 || 
+existingUser._count.comments > 0)) {
+return res.status(400).json({ 
+error: 'Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.' 
+});
+}
 
-      // Delete user
-      await prisma.user.delete({
-        where: { id }
-      });
+if (force) {
+// Force delete: remove related data and unassign references before deleting user
+await prisma.$transaction(async (tx) => {
+// Delete comments authored by the user
+await tx.comment.deleteMany({ where: { userId: id } });
+// Delete activities authored by the user
+await tx.ticketActivity.deleteMany({ where: { userId: id } });
+// Unassign tickets assigned to the user
+await tx.ticket.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } });
+// Unassign tasks assigned to the user
+await tx.task.updateMany({ where: { assigneeId: id }, data: { assigneeId: null } });
+// Delete tickets created by the user (cascades will clean related labels, notifications, etc.)
+await tx.ticket.deleteMany({ where: { createdById: id } });
+// Clean up direct relations with cascade defined (also safe to explicitly delete)
+await tx.notification.deleteMany({ where: { userId: id } });
+await tx.boardPermission.deleteMany({ where: { userId: id } });
+// Finally delete the user
+await tx.user.delete({ where: { id } });
+});
+return res.json({ message: 'User and related data deleted successfully' });
+}
 
-      res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-      console.error('Delete user error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
+// Regular delete when there is no related data
+await prisma.user.delete({
+where: { id }
+});
+
+res.json({ message: 'User deleted successfully' });
+} catch (error) {
+console.error('Delete user error:', error);
+res.status(500).json({ error: 'Internal server error' });
+}
 };
 
 // Get all employees

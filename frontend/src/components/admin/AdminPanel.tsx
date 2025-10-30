@@ -19,6 +19,8 @@ import AdminDashboard from "./components/AdminDashboard";
 import ReportsManagement from "./components/ReportsManagement";
 import AdminTopBar from "./layout/AdminTopBar";
 import AdminSidebar from "./layout/AdminSidebar";
+import NotesIcon from "@mui/icons-material/Notes";
+import DocsBuilder from "./docs/DocsBuilder";
 
 const drawerWidth = 240;
 
@@ -46,6 +48,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
     { id: "tickets", label: "Tickets", icon: <TicketIcon /> },
     { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
     { id: "reports", label: "Reports", icon: <ReportsIcon /> },
+    { id: "docs", label: "Docs", icon: <NotesIcon /> },
   ];
 
   const renderContent = () => {
@@ -62,6 +65,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         return <TasksManagement />;
       case "reports":
         return <ReportsManagement />;
+      case "docs":
+        return <DocsBuilder />;
       default:
         return <AdminDashboard />;
     }
