@@ -23,7 +23,6 @@ CREATE TABLE `users` (
     `password` VARCHAR(191) NOT NULL,
     `phone` VARCHAR(191) NULL,
     `role` ENUM('ADMIN', 'EMPLOYEE') NOT NULL DEFAULT 'EMPLOYEE',
-    `whatsappNotifications` BOOLEAN NOT NULL DEFAULT true,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 

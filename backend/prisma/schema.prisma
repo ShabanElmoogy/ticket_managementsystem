@@ -39,7 +39,6 @@ model User {
   password  String
   phone     String?  // WhatsApp phone number
   role      Role     @default(EMPLOYEE)
-  whatsappNotifications Boolean @default(true) // Enable/disable WhatsApp notifications
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
