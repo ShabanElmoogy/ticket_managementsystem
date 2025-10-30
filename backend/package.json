@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "build": "prisma generate",
     "postbuild": "prisma db seed",
+
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -16,6 +17,7 @@
     "db:seed": "node prisma/seed.js",
     "db:reset": "prisma migrate reset",
     "db:test": "node test-db.js",
+    
     "setup": "node setup.js",
     "migrate:tickets": "node migrate-tickets-to-board.js",
     "quick-setup": "npm install && prisma generate && prisma db push && node prisma/seed.js"
