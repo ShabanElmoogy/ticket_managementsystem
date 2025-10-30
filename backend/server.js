@@ -125,6 +125,24 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
+// Friendly root landing for API-only service
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Ticket Management API',
+    status: 'OK',
+    health: '/api/health',
+    docs: 'Set service health check to /api/health; frontend served separately.'
+  });
+});
+
+// 404 handler for unknown routes (after all routes but before error handler)
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not Found' });
+  }
+  next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
