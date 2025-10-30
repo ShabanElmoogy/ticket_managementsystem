@@ -38,7 +38,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0';
 const USE_HTTPS = process.env.USE_HTTPS === 'true';
 const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ["https://localhost:5173", "http://localhost:5173"];
 
@@ -137,8 +137,9 @@ const startServer = async () => {
     await connectDB();
     server.listen(PORT, HOST, () => {
       const protocol = USE_HTTPS && fs.existsSync(path.join(__dirname, '.cert', 'key.pem')) ? 'https' : 'http';
-      console.log(`Server running on ${protocol}://${HOST}:${PORT}`);
-      console.log(`API Base URL: ${protocol}://${HOST}:${PORT}/api`);
+      const hostForLog = process.env.HOST || 'localhost';
+      console.log(`Server running on ${protocol}://${hostForLog}:${PORT}`);
+      console.log(`API Base URL: ${protocol}://${hostForLog}:${PORT}/api`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`CORS Origins: ${CORS_ORIGINS.join(', ')}`);
     });
