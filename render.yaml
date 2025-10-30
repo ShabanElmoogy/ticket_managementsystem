@@ -2,8 +2,9 @@ services:
   - type: web
     name: ticket-backend
     runtime: node
-    buildCommand: cd backend && npm install && npx prisma generate
-    startCommand: cd backend && npm start
+    rootDir: ./backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -19,8 +20,9 @@ services:
   - type: web
     name: ticket-frontend
     runtime: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    rootDir: ./frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
         value: https://ticket-backend.onrender.com
