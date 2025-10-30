@@ -160,6 +160,13 @@ const startServer = async () => {
       console.log(`API Base URL: ${protocol}://${hostForLog}:${PORT}/api`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`CORS Origins: ${CORS_ORIGINS.join(', ')}`);
+      // Single-line JSON startup message for deploy logs/health visibility
+      console.log(JSON.stringify({
+        name: 'Ticket Management API',
+        status: 'OK',
+        health: '/api/health',
+        docs: 'Set service health check to /api/health; frontend served separately.'
+      }));
     });
   } catch (error) {
     console.error("Failed to start server:", error);
