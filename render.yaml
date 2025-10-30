@@ -3,7 +3,7 @@ services:
     name: ticket-backend
     runtime: node
     buildCommand: npm run install:backend && npm run build:backend
-    startCommand: npm run start:backend
+    startCommand: cd backend && node server.js
 
     envVars:
       - key: NODE_ENV
