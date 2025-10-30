@@ -22,6 +22,7 @@
     "@mui/x-tree-view": "^8.14.0",
     "@types/qrcode.react": "^1.0.5",
     "axios": "^1.10.0",
+    "chat-app": "file:..",
     "date-fns": "^4.1.0",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
