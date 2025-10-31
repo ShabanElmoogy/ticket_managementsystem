@@ -21,7 +21,7 @@ interface TicketDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   ticket: Ticket | null;
-  onUpdateStatus: (ticketId: string, status: string) => void;
+  onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
   token: string;
 }
 
@@ -120,7 +120,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             </Typography>
             <Chip 
               label={ticket.status.replace('_', ' ')} 
-              color={getStatusColor(ticket.status) as any}
+              color={getStatusColor(ticket.status) as 'primary' | 'secondary' | 'default' | 'error' | 'info' | 'success' | 'warning'}
             />
           </Grid>
            <Grid size={{xs:12,sm:6}}>
@@ -129,7 +129,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             </Typography>
             <Chip 
               label={ticket.priority} 
-              color={getPriorityColor(ticket.priority) as any}
+              color={getPriorityColor(ticket.priority) as 'primary' | 'secondary' | 'default' | 'error' | 'info' | 'success' | 'warning'}
               variant="outlined"
             />
           </Grid>
@@ -170,7 +170,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
               Update Status
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
-              {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map((status) => (
+              {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((status) => (
                 <Button
                   key={status}
                   variant={ticket.status === status ? 'contained' : 'outlined'}
