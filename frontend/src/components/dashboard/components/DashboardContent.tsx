@@ -1,7 +1,7 @@
-import React from "react";
+import React, { type Dispatch, type SetStateAction } from "react";
 import { Box, Container } from "@mui/material";
 import type { DashboardStats } from "../../../services/api";
-import type { Ticket, User, Customer, Application, CreateTicketData } from "../../../services/api";
+import { type Ticket, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
 import StatsCards from "./StatsCards";
 import CreateTicketPost from "../../tickets/CreateTicketPost";
 import { MobileFilters, DesktopFilters } from "../filters";
@@ -11,13 +11,13 @@ import ActivityFeed from "./ActivityFeed";
 interface Props {
   isMobile: boolean;
   stats: DashboardStats;
-  statusFilter: string;
+  statusFilter: Ticket['status'] | "";
   priorityFilter: string;
   userFilter: string;
   customerFilter: string;
   applicationFilter: string;
   searchQuery: string;
-  setStatusFilter: (v: string) => void;
+  setStatusFilter: Dispatch<SetStateAction<Ticket['status'] | "">>;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
   setCustomerFilter: (v: string) => void;
@@ -34,7 +34,7 @@ interface Props {
   onCreateTicket: (data: CreateTicketData) => Promise<void> | void;
   onTicketClick: (t: Ticket) => void;
   onTakeTicket: (id: string) => Promise<void> | void;
-  onUpdateStatus: (id: string, status: string) => Promise<void> | void;
+  onUpdateStatus: (id: string, status: Ticket['status']) => Promise<void> | void;
   onAddComment: (id: string, content: string) => Promise<void> | void;
 }
 

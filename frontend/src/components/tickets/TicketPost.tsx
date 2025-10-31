@@ -35,7 +35,7 @@ import MyChip from "../common/MyChip";
 interface TicketPostProps {
   ticket: Ticket;
   onTakeTicket: (ticketId: string) => void;
-  onUpdateStatus: (ticketId: string, status: string) => void;
+  onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
 }
@@ -67,7 +67,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
     setAnchorEl(null);
   };
 
-  const handleStatusUpdate = (status: string) => {
+  const handleStatusUpdate = (status: Ticket['status']) => {
     onUpdateStatus(ticket.id, status);
     handleMenuClose();
   };

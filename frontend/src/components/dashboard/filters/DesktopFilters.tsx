@@ -1,15 +1,15 @@
 import React from "react";
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Button } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
-import type { User, Customer, Application } from "../../../services/api";
+import { type User, type Customer, type Application, type Ticket } from "../../../services/api";
 
 type Props = {
-  statusFilter: string;
+  statusFilter: Ticket['status'] | "";
   priorityFilter: string;
   userFilter: string;
   customerFilter: string;
   applicationFilter: string;
-  setStatusFilter: (v: string) => void;
+  setStatusFilter: (v: Ticket['status'] | "") => void;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
   setCustomerFilter: (v: string) => void;

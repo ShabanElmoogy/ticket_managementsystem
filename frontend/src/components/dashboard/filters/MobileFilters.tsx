@@ -15,16 +15,16 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
-import type { User, Customer, Application, Ticket } from '../../../services/api';
+import { type User, type Customer, type Application, type Ticket } from '../../../services/api';
 
 interface MobileFiltersProps {
-  statusFilter: string;
+  statusFilter: Ticket['status'] | "";
   priorityFilter: string;
   userFilter: string;
   customerFilter: string;
   applicationFilter: string;
   searchQuery: string;
-  setStatusFilter: (value: string) => void;
+  setStatusFilter: (value: Ticket['status'] | "") => void;
   setPriorityFilter: (value: string) => void;
   setUserFilter: (value: string) => void;
   setCustomerFilter: (value: string) => void;

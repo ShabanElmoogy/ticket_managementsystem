@@ -14,13 +14,13 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import type { Ticket } from '../../services/api';
+import { type Ticket } from '../../services/api';
 import TicketPost from './TicketPost';
 
 interface TicketFeedProps {
   tickets: Ticket[];
   onTakeTicket: (ticketId: string) => void;
-  onUpdateStatus: (ticketId: string, status: string) => void;
+  onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
 }
