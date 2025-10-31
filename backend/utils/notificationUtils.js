@@ -94,7 +94,13 @@ export const checkDueDateNotifications = async () => {
         }
       },
       include: {
-        assignedTo: true
+        assignedTo: true,
+        customer: {
+          select: { name: true }
+        },
+        application: {
+          select: { name: true }
+        }
       }
     });
 
@@ -113,27 +119,51 @@ export const checkDueDateNotifications = async () => {
         }
       },
       include: {
-        assignedTo: true
+        assignedTo: true,
+        customer: {
+          select: { name: true }
+        },
+        application: {
+          select: { name: true }
+        }
       }
     });
 
     // Create notifications for tickets due soon
-    const dueSoonNotifications = ticketsDueSoon.map(ticket => ({
-      userId: ticket.assignedToId,
-      ticketId: ticket.id,
-      type: 'TICKET_DUE_SOON',
-      title: 'Ticket Due Soon',
-      message: `Ticket "${ticket.title}" is due tomorrow`
-    }));
+    const dueSoonNotifications = ticketsDueSoon.map(ticket => {
+      let message = `Ticket "${ticket.title}" is due tomorrow`;
+      if (ticket.customer?.name || ticket.application?.name) {
+        const details = [];
+        if (ticket.customer?.name) details.push(`Customer: ${ticket.customer.name}`);
+        if (ticket.application?.name) details.push(`Application: ${ticket.application.name}`);
+        message += ` (${details.join(', ')})`;
+      }
+      return {
+        userId: ticket.assignedToId,
+        ticketId: ticket.id,
+        type: 'TICKET_DUE_SOON',
+        title: 'Ticket Due Soon',
+        message
+      };
+    });
 
     // Create notifications for overdue tickets
-    const overdueNotifications = overdueTickets.map(ticket => ({
-      userId: ticket.assignedToId,
-      ticketId: ticket.id,
-      type: 'TICKET_OVERDUE',
-      title: 'Ticket Overdue',
-      message: `Ticket "${ticket.title}" is overdue`
-    }));
+    const overdueNotifications = overdueTickets.map(ticket => {
+      let message = `Ticket "${ticket.title}" is overdue`;
+      if (ticket.customer?.name || ticket.application?.name) {
+        const details = [];
+        if (ticket.customer?.name) details.push(`Customer: ${ticket.customer.name}`);
+        if (ticket.application?.name) details.push(`Application: ${ticket.application.name}`);
+        message += ` (${details.join(', ')})`;
+      }
+      return {
+        userId: ticket.assignedToId,
+        ticketId: ticket.id,
+        type: 'TICKET_OVERDUE',
+        title: 'Ticket Overdue',
+        message
+      };
+    });
 
     if (dueSoonNotifications.length > 0) {
       await createBulkNotifications(dueSoonNotifications);

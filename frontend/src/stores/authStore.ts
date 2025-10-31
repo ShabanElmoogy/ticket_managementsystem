@@ -37,15 +37,18 @@ interface TokenPayload {
 interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (userData: User, authToken: string) => void;
+  login: (userData: User, authToken: string, refreshToken?: string) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   initializeAuth: () => void;
   updateUser: (userData: Partial<User>) => void;
   isTokenExpired: () => boolean;
   getTokenPayload: () => TokenPayload | null;
+  setToken: (token: string) => void;
+  setRefreshToken: (refreshToken: string) => void;
 }
 
 // ============================================================================
@@ -123,13 +126,14 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isLoading: true,
       isAuthenticated: false,
 
       /**
        * Login - Set user and token
        */
-      login: (userData: User, authToken: string) => {
+      login: (userData: User, authToken: string, refreshToken?: string) => {
         // Validate token before storing
         const payload = decodeToken(authToken);
         if (!payload) {
@@ -137,13 +141,17 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        // Store token in localStorage
+        // Store tokens in localStorage
         localStorage.setItem('token', authToken);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
 
         // Update store
         set({
           user: userData,
           token: authToken,
+          refreshToken: refreshToken || null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -158,9 +166,11 @@ export const useAuthStore = create<AuthState>()(
        */
       logout: () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         set({
           user: null,
           token: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
         });
@@ -168,6 +178,22 @@ export const useAuthStore = create<AuthState>()(
         if (import.meta.env.DEV) {
           console.log('🚪 User logged out');
         }
+      },
+
+      /**
+       * Set access token
+       */
+      setToken: (token: string) => {
+        localStorage.setItem('token', token);
+        set({ token });
+      },
+
+      /**
+       * Set refresh token
+       */
+      setRefreshToken: (refreshToken: string) => {
+        localStorage.setItem('refreshToken', refreshToken);
+        set({ refreshToken });
       },
 
       /**

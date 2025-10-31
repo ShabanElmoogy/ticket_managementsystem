@@ -88,9 +88,11 @@ export const getDelayedTickets = async (req, res) => {
         ]
       },
       include: {
-        customer: { select: { name: true } },
-        application: { select: { name: true } },
-        createdBy: { select: { name: true } }
+        customer: { select: { id: true, name: true, email: true } },
+        application: { select: { id: true, name: true, version: true } },
+        createdBy: { select: { id: true, name: true, email: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
+        labels: { include: { label: true } }
       },
       orderBy: [
         { priority: 'desc' },

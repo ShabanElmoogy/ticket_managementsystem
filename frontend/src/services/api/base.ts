@@ -84,9 +84,26 @@ http.interceptors.request.use(
 // Response Interceptor - Error Normalization & Logging
 // ============================================================================
 
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: ApiError) => void;
+}> = [];
+
+const processQueue = (error: ApiError | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 http.interceptors.response.use(
   (response) => {
-    // Log successful response in development
     if (import.meta.env.DEV) {
       const requestId = response.config.headers["X-Request-ID"];
       console.log(
@@ -95,10 +112,9 @@ http.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const requestId = error.config?.headers?.["X-Request-ID"];
 
-    // Log error in development
     if (import.meta.env.DEV) {
       console.error(
         `❌ [${requestId}] ${error.response?.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
@@ -106,11 +122,9 @@ http.interceptors.response.use(
       );
     }
 
-    // Normalize error response
     const status = error.response?.status;
     const data = error.response?.data as unknown;
 
-    // Extract error message
     let message = "An unexpected error occurred";
     if (typeof data === "object" && data && "error" in (data as Record<string, unknown>)) {
       message = String((data as Record<string, unknown>).error);
@@ -120,12 +134,91 @@ http.interceptors.response.use(
       message = error.message;
     }
 
-    // Determine if error is retryable
+    if (status === 401 && error.config && !error.config.url?.includes("/auth/refresh")) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+
+        try {
+          const refreshToken = localStorage.getItem("refreshToken");
+
+          if (!refreshToken) {
+            throw new Error("No refresh token available");
+          }
+
+          const response = await http.post<{ token: string }>("/auth/refresh", {
+            refreshToken,
+          });
+
+          const newToken = response.data.token;
+
+          localStorage.setItem("token", newToken);
+          (http.defaults.headers.common as Record<string, string>).Authorization = `Bearer ${newToken}`;
+
+          try {
+            const { useAuthStore } = await import("../../stores/authStore");
+            useAuthStore.getState().setToken(newToken);
+          } catch (e) {
+            console.error("Failed to update auth store:", e);
+          }
+
+          processQueue(null, newToken);
+
+          if (error.config) {
+            error.config.headers = error.config.headers ?? {};
+            (error.config.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
+            return http.request(error.config);
+          }
+        } catch (refreshError) {
+          const refreshErrorMessage =
+            refreshError instanceof Error ? refreshError.message : "Token refresh failed";
+
+          processQueue(
+            {
+              status: 401,
+              message: refreshErrorMessage,
+              isRetryable: false,
+            },
+            null
+          );
+
+          try {
+            const { useAuthStore } = await import("../../stores/authStore");
+            useAuthStore.getState().logout();
+          } catch (e) {
+            console.error("Failed to logout:", e);
+          }
+
+          return Promise.reject({
+            status: 401,
+            message: "Session expired. Please login again.",
+            isRetryable: false,
+          });
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              if (error.config) {
+                error.config.headers = error.config.headers ?? {};
+                (error.config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+                resolve(http.request(error.config));
+              }
+            },
+            reject: (error: ApiError) => {
+              reject(error);
+            },
+          });
+        });
+      }
+    }
+
     const isRetryable =
-      !error.response || // Network error
-      error.response.status === 408 || // Request timeout
-      error.response.status === 429 || // Too many requests
-      error.response.status >= 500; // Server error
+      !error.response ||
+      error.response.status === 408 ||
+      error.response.status === 429 ||
+      (error.response.status >= 500 && error.response.status !== 501);
 
     const normalized: ApiError = {
       status,

@@ -38,6 +38,18 @@ export const createNotificationFromSocketData = (
       title = "New Comment";
       message = `${data.ticket?.title} - Comment by ${data.commentBy}`;
       break;
+    case "TICKET_DUE_SOON":
+      title = "Ticket Due Soon";
+      message = data.message || `${data.ticket?.title} is due tomorrow`;
+      break;
+    case "TICKET_OVERDUE":
+      title = "Ticket Overdue";
+      message = data.message || `${data.ticket?.title} is overdue`;
+      break;
+    case "STATUS_CHANGED":
+      title = "Ticket Status Changed";
+      message = data.message || `${data.ticket?.title} status changed`;
+      break;
     default:
       title = "New Notification";
       message = "You have a new notification";

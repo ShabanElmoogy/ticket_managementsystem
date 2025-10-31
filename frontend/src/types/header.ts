@@ -13,7 +13,11 @@ export interface Notification {
     | "TICKET_CREATED"
     | "TICKET_UPDATED"
     | "TICKET_ASSIGNED"
-    | "COMMENT_ADDED";
+    | "COMMENT_ADDED"
+    | "TICKET_DUE_SOON"
+    | "TICKET_OVERDUE"
+    | "STATUS_CHANGED"
+    | "MENTION";
   title: string;
   message: string;
   timestamp: string;

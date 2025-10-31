@@ -17,6 +17,8 @@ import {
   Update as UpdateIcon,
   Clear as ClearIcon,
   Notifications as NotificationsIcon,
+  Schedule as ScheduleIcon,
+  Error as ErrorIcon,
 } from "@mui/icons-material";
 import { type Notification } from "../../../types/header";
 
@@ -43,6 +45,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return <AssignmentIcon sx={{ color: "#3b82f6" }} />;
       case "COMMENT_ADDED":
         return <CommentIcon sx={{ color: "#8b5cf6" }} />;
+      case "TICKET_DUE_SOON":
+        return <ScheduleIcon sx={{ color: "#f59e0b" }} />;
+      case "TICKET_OVERDUE":
+        return <ErrorIcon sx={{ color: "#ef4444" }} />;
+      case "STATUS_CHANGED":
+        return <UpdateIcon sx={{ color: "#06b6d4" }} />;
       default:
         return <NotificationsIcon />;
     }
@@ -58,6 +66,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return "#3b82f6";
       case "COMMENT_ADDED":
         return "#8b5cf6";
+      case "TICKET_DUE_SOON":
+        return "#f59e0b";
+      case "TICKET_OVERDUE":
+        return "#ef4444";
+      case "STATUS_CHANGED":
+        return "#06b6d4";
       default:
         return "#6b7280";
     }

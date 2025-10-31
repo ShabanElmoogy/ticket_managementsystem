@@ -16,6 +16,7 @@ import {
   FormControlLabel,
   Switch,
   Divider,
+  type ChipProps,
 } from '@mui/material';
 import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import { useAuthStore } from '../../../stores/authStore';
@@ -97,7 +98,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): ChipProps['color'] => {
     switch (status) {
       case 'OPEN': return 'primary';
       case 'IN_PROGRESS': return 'warning';
@@ -106,7 +107,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): ChipProps['color'] => {
     switch (priority) {
       case 'URGENT': return 'error';
       case 'HIGH': return 'error';
@@ -152,46 +153,65 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
           {openTickets.map((ticket) => (
             <ListItem
               key={ticket.id}
-              button
+              component="button"
               onClick={() => handleTicketClick(ticket)}
               sx={{
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 1,
                 mb: 1,
+                cursor: 'pointer',
+                textAlign: 'left',
+                backgroundColor: 'background.paper',
+                transition: 'all 0.2s ease-in-out',
                 '&:hover': {
                   backgroundColor: 'action.hover',
+                  boxShadow: 1,
                 }
               }}
             >
               <ListItemText
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                       {ticket.title}
                     </Typography>
                   </Box>
                 }
                 secondary={
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip
-                      label={ticket.status.replace('_', ' ')}
-                      color={getStatusColor(ticket.status) as any}
-                      size="small"
-                    />
-                    <Chip
-                      label={ticket.priority}
-                      color={getPriorityColor(ticket.priority) as any}
-                      variant="outlined"
-                      size="small"
-                    />
-                    {ticket.dueDate && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Chip
-                        label={`Due: ${new Date(ticket.dueDate).toLocaleDateString()}`}
+                        label={ticket.status.replace('_', ' ')}
+                        color={getStatusColor(ticket.status)}
                         size="small"
-                        variant="outlined"
                       />
-                    )}
+                      <Chip
+                        label={ticket.priority}
+                        color={getPriorityColor(ticket.priority)}
+                        variant="outlined"
+                        size="small"
+                      />
+                      {ticket.dueDate && (
+                        <Chip
+                          label={`Due: ${new Date(ticket.dueDate).toLocaleDateString()}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
+                      {ticket.customer && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                          <strong>Customer:</strong> {ticket.customer.name}
+                        </Typography>
+                      )}
+                      {ticket.application && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                          <strong>Application:</strong> {ticket.application.name}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                 }
               />

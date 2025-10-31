@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../config/database.js';
-import { generateAccessToken } from '../utils/tokenService.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/tokenService.js';
 
 // Register new user
 export const register = async (req, res) => {
@@ -82,5 +82,47 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Refresh access token
+export const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken: refreshTokenFromBody } = req.body;
+
+    if (!refreshTokenFromBody) {
+      return res.status(401).json({ error: 'Refresh token required' });
+    }
+
+    // Verify refresh token
+    const payload = verifyRefreshToken(refreshTokenFromBody);
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true
+      }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Generate new access token
+    const newAccessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    res.json({ token: newAccessToken, user });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    const statusCode = error.message.includes('expired') ? 401 : 401;
+    res.status(statusCode).json({ error: error.message || 'Invalid refresh token' });
   }
 };
