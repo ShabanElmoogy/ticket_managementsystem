@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -9,7 +9,6 @@ import {
   ListItemText,
   Avatar,
   Chip,
-  Divider,
   IconButton,
   Collapse,
   Badge,
@@ -17,6 +16,8 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
+  ListItemButton,
+  Skeleton,
 } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
@@ -64,6 +65,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [clickingActivity, setClickingActivity] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<
+    | "ALL"
+    | "TICKET_CREATED"
+    | "TICKET_UPDATED"
+    | "TICKET_ASSIGNED"
+    | "COMMENT_ADDED"
+  >("ALL");
 
   // Load initial activities
   useEffect(() => {
@@ -141,17 +149,33 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
   };
 
   const getActivityColor = (type: string) => {
+    // Adjust accent colors for light/dark mode for better contrast
+    const light = {
+      CREATED: "#10b981",
+      UPDATED: "#f59e0b",
+      ASSIGNED: "#3b82f6",
+      COMMENT: "#8b5cf6",
+      MUTED: "#6b7280",
+    } as const;
+    const dark = {
+      CREATED: "#34d399",
+      UPDATED: "#fbbf24",
+      ASSIGNED: "#60a5fa",
+      COMMENT: "#a78bfa",
+      MUTED: "#9ca3af",
+    } as const;
+    const palette = theme.palette.mode === "dark" ? dark : light;
     switch (type) {
       case "TICKET_CREATED":
-        return "#10b981";
+        return palette.CREATED;
       case "TICKET_UPDATED":
-        return "#f59e0b";
+        return palette.UPDATED;
       case "TICKET_ASSIGNED":
-        return "#3b82f6";
+        return palette.ASSIGNED;
       case "COMMENT_ADDED":
-        return "#8b5cf6";
+        return palette.COMMENT;
       default:
-        return "#6b7280";
+        return palette.MUTED;
     }
   };
 
@@ -279,6 +303,11 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
     }
   };
 
+  const filteredActivities = useMemo(() => {
+    if (typeFilter === "ALL") return activities;
+    return activities.filter((a) => a.type === typeFilter);
+  }, [activities, typeFilter]);
+
   return (
     <Paper
       elevation={2}
@@ -317,15 +346,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                 animation: unreadCount > 0 ? "pulse 2s infinite" : "none",
               },
               "@keyframes pulse": {
-                "0%": {
-                  transform: "scale(1)",
-                },
-                "50%": {
-                  transform: "scale(1.1)",
-                },
-                "100%": {
-                  transform: "scale(1)",
-                },
+                "0%": { transform: "scale(1)" },
+                "50%": { transform: "scale(1.1)" },
+                "100%": { transform: "scale(1)" },
               },
             }}
           >
@@ -333,23 +356,11 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
           </Badge>
           <Typography
             variant={isMobile ? "subtitle1" : "h6"}
-            sx={{
-              fontWeight: 600,
-              fontSize: { xs: "1rem", lg: "1.25rem" },
-            }}
+            sx={{ fontWeight: 600, fontSize: { xs: "1rem", lg: "1.25rem" } }}
           >
             {isMobile ? "Activity" : "Activity Feed"}
             {unreadCount > 0 && (
-              <Typography
-                component="span"
-                variant="caption"
-                sx={{
-                  ml: 1,
-                  color: "rgba(255,255,255,0.8)",
-                  fontWeight: 400,
-                  fontSize: { xs: "0.7rem", lg: "0.75rem" },
-                }}
-              >
+              <Typography component="span" variant="caption" sx={{ ml: 1, color: "rgba(255,255,255,0.8)", fontWeight: 400, fontSize: { xs: "0.7rem", lg: "0.75rem" } }}>
                 ({unreadCount} new)
               </Typography>
             )}
@@ -374,27 +385,44 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
         </Box>
       </Box>
 
-      {/* Activity List */}
+      {/* Filters */}
       <Collapse in={expanded}>
-        <Box sx={{ maxHeight: { xs: "300px", lg: "60vh" }, overflow: "auto" }}>
+        <Box sx={{ px: 2, pt: 1.5, display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {(["ALL", "TICKET_CREATED", "TICKET_UPDATED", "TICKET_ASSIGNED", "COMMENT_ADDED"] as const).map((t) => (
+            <Chip
+              key={t}
+              size="small"
+              label={
+                t === "ALL"
+                  ? "All"
+                  : t.replace("TICKET_", "").replace("_", " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+              }
+              variant={typeFilter === t ? "filled" : "outlined"}
+              onClick={() => setTypeFilter(t)}
+              sx={{ borderRadius: 2 }}
+            />
+          ))}
+        </Box>
+
+        {/* Activity List */}
+        <Box sx={{ maxHeight: { xs: "300px", lg: "60vh" }, overflow: "auto", mt: 1 }}>
           {loading ? (
-            <Box
-              sx={{
-                p: 3,
-                textAlign: "center",
-                color: "text.secondary",
-              }}
-            >
-              <Typography variant="body2">Loading activities...</Typography>
-            </Box>
-          ) : activities.length === 0 ? (
-            <Box
-              sx={{
-                p: 3,
-                textAlign: "center",
-                color: "text.secondary",
-              }}
-            >
+            <List sx={{ p: 0 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <ListItem key={i} sx={{ px: 2, py: 1.5 }}>
+                  <Box sx={{ width: 3, bgcolor: "action.hover", borderRadius: 1, mr: 1 }} />
+                  <ListItemAvatar>
+                    <Skeleton variant="circular" width={36} height={36} />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={<Skeleton width="70%" />}
+                    secondary={<Skeleton width="40%" />}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : filteredActivities.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
               <NotificationsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
               <Typography variant="body2">No recent activity</Typography>
               <Typography variant="caption" color="text.disabled">
@@ -403,96 +431,60 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
             </Box>
           ) : (
             <List sx={{ p: 0 }}>
-              {activities.map((activity, index) => {
+              {filteredActivities.map((activity, index) => {
                 const message = getActivityMessage(activity);
-                const isLast = index === activities.length - 1;
-
+                const isLast = index === filteredActivities.length - 1;
                 const isClicking = clickingActivity === activity.id;
                 const hasTicket = activity.data.ticket?.id;
 
                 return (
                   <React.Fragment key={activity.id}>
                     <Tooltip
-                      title={
-                        hasTicket
-                          ? "Click to view ticket details"
-                          : "No ticket associated"
-                      }
+                      title={hasTicket ? "Click to view ticket details" : "No ticket associated"}
                       placement="left"
                     >
-                      <ListItem
-                        component={hasTicket ? "button" : "div"}
-                        onClick={
-                          hasTicket
-                            ? () => handleActivityClick(activity)
-                            : undefined
-                        }
-                        disabled={isClicking}
-                        sx={{
-                          py: 1.5,
-                          px: 2,
-                          backgroundColor: activity.read
-                            ? "transparent"
-                            : "action.hover",
-                          cursor: hasTicket ? "pointer" : "default",
-                          opacity: isClicking ? 0.7 : 1,
-                          "&:hover": {
-                            backgroundColor: hasTicket
-                              ? "action.selected"
-                              : "transparent",
-                          },
-                          borderLeft: activity.read ? "none" : "4px solid",
-                          borderLeftColor: activity.read
-                            ? "transparent"
-                            : getActivityColor(activity.type),
-                          position: "relative",
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            sx={{
-                              backgroundColor: getActivityColor(activity.type),
-                              width: 36,
-                              height: 36,
-                            }}
-                          >
-                            {getActivityIcon(activity.type)}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 500, mb: 0.5 }}
-                            >
-                              {message.primary}
-                            </Typography>
-                          }
-                          // Replace this part in your ListItemText secondary prop:
-
-                          secondary={
-                            <>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                component="span"
-                                display="block"
-                              >
-                                {message.secondary}
+                      <ListItem disablePadding sx={{
+                        '&:not(:last-child)': {
+                          // subtle separator using divider color, but not a full border
+                          borderBottom: 0,
+                          mb: 0.25,
+                        },
+                      }}>
+                        <Box sx={{ width: 3, bgcolor: getActivityColor(activity.type), borderRadius: 1, ml: 2, mr: 1, opacity: theme.palette.mode === 'dark' ? 0.9 : 1 }} />
+                        <ListItemButton
+                          onClick={hasTicket ? () => handleActivityClick(activity) : undefined}
+                          disabled={isClicking}
+                          sx={{
+                            py: 1.25,
+                            pr: 2,
+                            pl: 0,
+                            cursor: hasTicket ? "pointer" : "default",
+                            opacity: isClicking ? 0.7 : 1,
+                            borderRadius: 1,
+                            transition: 'background-color 0.2s ease',
+                            '&:hover': {
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                          }}
+                        >
+                          <ListItemAvatar>
+                            <Avatar sx={{ backgroundColor: getActivityColor(activity.type), width: 36, height: 36, color: theme.palette.getContrastText(getActivityColor(activity.type)) }}>
+                              {getActivityIcon(activity.type)}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                                {message.primary}
                               </Typography>
-                              <span
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  marginTop: "4px",
-                                }}
-                              >
-                                <Typography
-                                  variant="caption"
-                                  color="text.disabled"
-                                  component="span"
-                                >
+                            }
+                            secondary={
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  {message.secondary}
+                                </Typography>
+                                <Typography variant="caption" color="text.disabled">•</Typography>
+                                <Typography variant="caption" color="text.disabled">
                                   {formatTime(activity.timestamp)}
                                 </Typography>
                                 {activity.data.ticket?.priority && (
@@ -503,10 +495,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                                     sx={{
                                       height: 16,
                                       fontSize: "0.6rem",
-                                      backgroundColor: getPriorityColor(
-                                        activity.data.ticket.priority
-                                      ),
-                                      color: "white",
+                                      backgroundColor: getPriorityColor(activity.data.ticket.priority),
+                                      color: theme.palette.getContrastText(getPriorityColor(activity.data.ticket.priority)),
                                       fontWeight: 600,
                                       display: "inline-flex",
                                     }}
@@ -515,42 +505,31 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                                 {activity.data.ticket?.status && (
                                   <Chip
                                     component="span"
-                                    label={activity.data.ticket.status.replace(
-                                      "_",
-                                      " "
-                                    )}
+                                    label={activity.data.ticket.status.replace("_", " ")}
                                     size="small"
                                     sx={{
                                       height: 16,
                                       fontSize: "0.6rem",
-                                      backgroundColor: getStatusColor(
-                                        activity.data.ticket.status
-                                      ),
-                                      color: "white",
+                                      backgroundColor: getStatusColor(activity.data.ticket.status),
+                                      color: theme.palette.getContrastText(getStatusColor(activity.data.ticket.status)),
                                       fontWeight: 600,
                                       display: "inline-flex",
                                     }}
                                   />
                                 )}
-                              </span>
-                            </>
-                          }
-                        />
-                        {isClicking && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: "50%",
-                              right: 16,
-                              transform: "translateY(-50%)",
-                            }}
-                          >
-                            <CircularProgress size={20} />
-                          </Box>
-                        )}
+                              </Box>
+                            }
+                          />
+                          {isClicking && (
+                            <Box sx={{ ml: 2 }}>
+                              <CircularProgress size={20} />
+                            </Box>
+                          )}
+                        </ListItemButton>
                       </ListItem>
                     </Tooltip>
-                    {!isLast && <Divider variant="inset" component="li" />}
+                    {/* Remove heavy inset Divider; rely on spacing for separation */}
+                    {!isLast && <Box sx={{ mx: 2, height: 6 }} />}
                   </React.Fragment>
                 );
               })}

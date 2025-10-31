@@ -9,10 +9,10 @@ import type {
 } from "@mui/x-data-grid";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
-export interface AdminDataGridProps
+export interface AdminDataGridProps<T extends GridValidRowModel = GridValidRowModel>
   extends Omit<DataGridProps, "rows" | "columns"> {
-  rows: any[];
-  columns: GridColDef[];
+  rows: T[];
+  columns: GridColDef<T>[];
   height?: number; // container height
   initialPageSize?: number;
 }
@@ -20,7 +20,7 @@ export interface AdminDataGridProps
 /**
  * Consistent DataGrid wrapper used across Admin pages
  */
-const AdminDataGrid: React.FC<AdminDataGridProps> = ({
+const AdminDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
   rows,
   columns,
   loading,
@@ -29,13 +29,14 @@ const AdminDataGrid: React.FC<AdminDataGridProps> = ({
   pageSizeOptions = [8, 16, 24],
   sx,
   ...rest
-}) => {
+}: AdminDataGridProps<T>) => {
+
   const processedColumns = React.useMemo(() => {
-    const hasFlex = columns.some((c: any) => c && typeof c.flex === "number" && c.flex > 0);
+    const hasFlex = columns.some((c) => c && typeof c.flex === "number" && c.flex > 0);
     if (hasFlex) return columns;
-    const firstContentIdx = columns.findIndex((c: any) => c && c.field !== "actions" && c.type !== "actions");
+    const firstContentIdx = columns.findIndex((c) => c && c.field !== "actions" && c.type !== "actions");
     if (firstContentIdx === -1) return columns;
-    return columns.map((c: any, i: number) => {
+    return columns.map((c, i: number) => {
       if (i === firstContentIdx) {
         // Ensure one content column flexes to avoid right-side filler space
         return { ...c, flex: 1 };
@@ -87,7 +88,7 @@ export type ActionColor =
   | "success"
   | "warning";
 
-export interface RowAction<R = any> {
+export interface RowAction<R extends GridValidRowModel = GridValidRowModel> {
   icon: React.ReactElement;
   title: string;
   onClick: (row: R) => void;
@@ -95,7 +96,7 @@ export interface RowAction<R = any> {
   disabled?: boolean;
 }
 
-export interface ActionsCellProps<R = any> {
+export interface ActionsCellProps<R extends GridValidRowModel = GridValidRowModel> {
   row: R;
   onEdit?: (row: R) => void;
   onDelete?: (row: R) => void;
@@ -146,6 +147,7 @@ export function ActionsCell<R extends GridValidRowModel = GridValidRowModel>({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildActionsColumn<R extends GridValidRowModel = GridValidRowModel>(opts: {
   headerName?: string;
   width?: number;
@@ -162,7 +164,7 @@ export function buildActionsColumn<R extends GridValidRowModel = GridValidRowMod
     headerAlign: "center",
     sortable: false,
     filterable: false,
-    renderCell: (params: GridRenderCellParams<any, R>) => (
+    renderCell: (params: GridRenderCellParams<R>) => (
       <ActionsCell<R>
         row={params.row}
         onEdit={onEdit}
