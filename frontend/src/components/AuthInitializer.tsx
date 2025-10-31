@@ -23,10 +23,13 @@ export const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) =>
 
   // Initialize auth from localStorage on mount
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔄 AuthInitializer mounted, initializing auth from localStorage...');
-    }
-    initializeAuth();
+    const init = async () => {
+      if (import.meta.env.DEV) {
+        console.log('🔄 AuthInitializer mounted, initializing auth from localStorage...');
+      }
+      await initializeAuth();
+    };
+    init();
   }, [initializeAuth]);
 
   // Sync token to API client whenever it changes

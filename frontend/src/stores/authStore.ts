@@ -43,7 +43,7 @@ interface AuthState {
   login: (userData: User, authToken: string, refreshToken?: string) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
-  initializeAuth: () => void;
+  initializeAuth: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   isTokenExpired: () => boolean;
   getTokenPayload: () => TokenPayload | null;
@@ -237,9 +237,10 @@ export const useAuthStore = create<AuthState>()(
       /**
        * Initialize authentication from stored token
        */
-      initializeAuth: () => {
+      initializeAuth: async () => {
         try {
           const token = localStorage.getItem('token');
+          const refreshToken = localStorage.getItem('refreshToken');
 
           if (!token) {
             set({ isAuthenticated: false, isLoading: false });
@@ -251,20 +252,73 @@ export const useAuthStore = create<AuthState>()(
           if (!payload) {
             // Invalid token, clear it
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
             set({ isAuthenticated: false, isLoading: false });
             return;
           }
 
           // Check if token is expired
           if (isTokenExpired(token)) {
-            // Token expired, clear it
-            localStorage.removeItem('token');
-            set({ isAuthenticated: false, isLoading: false });
+            // Token expired, try to refresh if refresh token exists
+            if (refreshToken) {
+              try {
+                if (import.meta.env.DEV) {
+                  console.log('⏰ Token expired, attempting refresh...');
+                }
 
-            if (import.meta.env.DEV) {
-              console.warn('⏰ Token expired during initialization');
+                // Import authApi dynamically to avoid circular dependency
+                const { authApi } = await import('../services/api/auth');
+                const response = await authApi.post('/auth/refresh', { refreshToken });
+
+                const newToken = response.token;
+                const newRefreshToken = response.refreshToken;
+
+                // Update localStorage
+                localStorage.setItem('token', newToken);
+                if (newRefreshToken) {
+                  localStorage.setItem('refreshToken', newRefreshToken);
+                }
+
+                // Decode new token
+                const newPayload = decodeToken(newToken);
+                if (!newPayload) {
+                  throw new Error('Invalid refreshed token');
+                }
+
+                // Update store
+                const expiresIn = getTokenExpiresIn(newToken);
+                set({
+                  user: response.user,
+                  token: newToken,
+                  refreshToken: newRefreshToken || refreshToken,
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+
+                if (import.meta.env.DEV) {
+                  console.log(
+                    `✅ Auth initialized with refresh. Token expires in ${Math.round(expiresIn / 60)} minutes`
+                  );
+                }
+                return;
+              } catch (refreshError) {
+                console.error('Refresh failed during initialization:', refreshError);
+                // Refresh failed, clear tokens
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                set({ isAuthenticated: false, isLoading: false });
+                return;
+              }
+            } else {
+              // No refresh token, clear token
+              localStorage.removeItem('token');
+              set({ isAuthenticated: false, isLoading: false });
+
+              if (import.meta.env.DEV) {
+                console.warn('⏰ Token expired and no refresh token available');
+              }
+              return;
             }
-            return;
           }
 
           // Token is valid, restore user session
@@ -273,10 +327,11 @@ export const useAuthStore = create<AuthState>()(
             user: {
               id: payload.userId,
               email: payload.email,
-              name: payload.name || payload.email,
+              name: payload.email, // Name not in token, use email as fallback
               role: payload.role,
             },
             token,
+            refreshToken: refreshToken || null,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -289,6 +344,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Error initializing auth:', error);
           localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
           set({ isAuthenticated: false, isLoading: false });
         }
       },
