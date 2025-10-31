@@ -133,51 +133,61 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
     };
   }, [user]);
 
-  const getActivityIcon = (type: string) => {
+  const getTypePalette = (type: string) => {
+    const mode = theme.palette.mode;
+    const accents = {
+      light: {
+        CREATED: { accent: "#10b981", iconInline: "#0f766e" },
+        UPDATED: { accent: "#f59e0b", iconInline: "#b45309" },
+        ASSIGNED: { accent: "#3b82f6", iconInline: "#1d4ed8" },
+        COMMENT: { accent: "#8b5cf6", iconInline: "#6d28d9" },
+        MUTED: { accent: "#6b7280", iconInline: "#4b5563" },
+      },
+      dark: {
+        CREATED: { accent: "#34d399", iconInline: "#34d399" },
+        UPDATED: { accent: "#fbbf24", iconInline: "#fbbf24" },
+        ASSIGNED: { accent: "#60a5fa", iconInline: "#60a5fa" },
+        COMMENT: { accent: "#a78bfa", iconInline: "#a78bfa" },
+        MUTED: { accent: "#9ca3af", iconInline: "#9ca3af" },
+      },
+    } as const;
+
+    const map = accents[mode === "dark" ? "dark" : "light"];
+    const key =
+      type === "TICKET_CREATED"
+        ? "CREATED"
+        : type === "TICKET_UPDATED"
+        ? "UPDATED"
+        : type === "TICKET_ASSIGNED"
+        ? "ASSIGNED"
+        : type === "COMMENT_ADDED"
+        ? "COMMENT"
+        : "MUTED";
+
+    const accent = map[key].accent;
+    const iconOnAccent = theme.palette.getContrastText(accent);
+    const iconInline = map[key].iconInline;
+    return { accent, iconOnAccent, iconInline };
+  };
+
+  const getActivityIcon = (type: string, inline = false) => {
+    const palette = getTypePalette(type);
+    const sx = { color: inline ? palette.iconInline : palette.iconOnAccent } as const;
     switch (type) {
       case "TICKET_CREATED":
-        return <TicketIcon sx={{ color: "#10b981" }} />;
+        return <TicketIcon sx={sx} />;
       case "TICKET_UPDATED":
-        return <UpdateIcon sx={{ color: "#f59e0b" }} />;
+        return <UpdateIcon sx={sx} />;
       case "TICKET_ASSIGNED":
-        return <PersonIcon sx={{ color: "#3b82f6" }} />;
+        return <PersonIcon sx={sx} />;
       case "COMMENT_ADDED":
-        return <CommentIcon sx={{ color: "#8b5cf6" }} />;
+        return <CommentIcon sx={sx} />;
       default:
-        return <NotificationsIcon />;
+        return <NotificationsIcon sx={sx} />;
     }
   };
 
-  const getActivityColor = (type: string) => {
-    // Adjust accent colors for light/dark mode for better contrast
-    const light = {
-      CREATED: "#10b981",
-      UPDATED: "#f59e0b",
-      ASSIGNED: "#3b82f6",
-      COMMENT: "#8b5cf6",
-      MUTED: "#6b7280",
-    } as const;
-    const dark = {
-      CREATED: "#34d399",
-      UPDATED: "#fbbf24",
-      ASSIGNED: "#60a5fa",
-      COMMENT: "#a78bfa",
-      MUTED: "#9ca3af",
-    } as const;
-    const palette = theme.palette.mode === "dark" ? dark : light;
-    switch (type) {
-      case "TICKET_CREATED":
-        return palette.CREATED;
-      case "TICKET_UPDATED":
-        return palette.UPDATED;
-      case "TICKET_ASSIGNED":
-        return palette.ASSIGNED;
-      case "COMMENT_ADDED":
-        return palette.COMMENT;
-      default:
-        return palette.MUTED;
-    }
-  };
+  const getActivityColor = (type: string) => getTypePalette(type).accent;
 
   const getActivityMessage = (activity: ActivityItem) => {
     const { type, data } = activity;
@@ -450,7 +460,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                           mb: 0.25,
                         },
                       }}>
-                        <Box sx={{ width: 3, bgcolor: getActivityColor(activity.type), borderRadius: 1, ml: 2, mr: 1, opacity: theme.palette.mode === 'dark' ? 0.9 : 1 }} />
+                        <Box sx={{ width: 3, bgcolor: getActivityColor(activity.type), borderRadius: 1, ml: 2, mr: 1, opacity: theme.palette.mode === 'dark' ? 0.95 : 1 }} />
                         <ListItemButton
                           onClick={hasTicket ? () => handleActivityClick(activity) : undefined}
                           disabled={isClicking}
@@ -468,7 +478,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                           }}
                         >
                           <ListItemAvatar>
-                            <Avatar sx={{ backgroundColor: getActivityColor(activity.type), width: 36, height: 36, color: theme.palette.getContrastText(getActivityColor(activity.type)) }}>
+                            <Avatar sx={{ backgroundColor: getActivityColor(activity.type), width: 36, height: 36, color: getTypePalette(activity.type).iconOnAccent }}>
                               {getActivityIcon(activity.type)}
                             </Avatar>
                           </ListItemAvatar>
