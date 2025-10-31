@@ -21,6 +21,7 @@ const DesktopMenu: React.FC<DesktopMenuProps> = ({
       anchorEl={anchorEl}
       open={open}
       onClose={onClose}
+      disableScrollLock
       PaperProps={{
         sx: {
           mt: 1,

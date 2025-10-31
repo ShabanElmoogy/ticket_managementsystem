@@ -47,6 +47,7 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
       anchor="right"
       open={open}
       onClose={onClose}
+      disableScrollLock
       PaperProps={{
         sx: {
           width: 280,

@@ -51,6 +51,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({
       open={open}
       anchorEl={anchorEl}
       onClose={onClose}
+      disableScrollLock
       anchorOrigin={{
         vertical: "bottom",
         horizontal: "right",
