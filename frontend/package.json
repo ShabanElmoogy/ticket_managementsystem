@@ -32,7 +32,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.65.0",
     "recharts": "^3.0.2",
-    "resolver": "^0.1.12",
+    "resolver": "^0.1.11",
     "socket.io-client": "^4.8.1",
     "vite-plugin-pwa": "^1.0.1",
     "zod": "^4.1.12",
