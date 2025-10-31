@@ -21,7 +21,7 @@ type Props = {
   detailsDialogOpen: boolean;
   selectedTicket: Ticket | null;
   onCloseDetailsDialog: () => void;
-  onUpdateStatus: (id: string, status: string) => void | Promise<void>;
+  onUpdateStatus: (id: string, status: Ticket['status']) => void | Promise<void>;
   token: string;
 
   // Mobile search overlay
