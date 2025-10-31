@@ -145,20 +145,31 @@ http.interceptors.response.use(
             throw new Error("No refresh token available");
           }
 
-          const response = await http.post<{ token: string }>("/auth/refresh", {
+          const response = await http.post<{ token: string; refreshToken?: string }>("/auth/refresh", {
             refreshToken,
           });
 
           const newToken = response.data.token;
+          const newRefreshToken = response.data.refreshToken;
 
           localStorage.setItem("token", newToken);
+          if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+          }
           (http.defaults.headers.common as Record<string, string>).Authorization = `Bearer ${newToken}`;
 
           try {
             const { useAuthStore } = await import("../../stores/authStore");
             useAuthStore.getState().setToken(newToken);
+            if (newRefreshToken) {
+              useAuthStore.getState().setRefreshToken(newRefreshToken);
+            }
           } catch (e) {
             console.error("Failed to update auth store:", e);
+          }
+
+          if (import.meta.env.DEV) {
+            console.log("✅ Token refreshed successfully");
           }
 
           processQueue(null, newToken);

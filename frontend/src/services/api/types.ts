@@ -171,6 +171,7 @@ export interface LoginData {
 export interface LoginResponse {
   user: User;
   token: string;
+  refreshToken: string;
 }
 
 export interface ActivityItem {

@@ -1,3 +1,0 @@
--- This migration is being marked as resolved
--- The reminder settings columns have been added to the init migration instead
--- No changes needed

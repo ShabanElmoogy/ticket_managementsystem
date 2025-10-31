@@ -1,3 +1,0 @@
--- This migration is no longer needed
--- The reminder settings columns have been added to the init migration
--- No changes needed

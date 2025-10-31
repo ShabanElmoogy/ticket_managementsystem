@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
 
 /**
  * Token Service - Centralized JWT token management
@@ -48,9 +49,9 @@ export const generateAccessToken = (payload) => {
 };
 
 /**
- * Generate refresh token
+ * Generate refresh token - Simple random string (64 chars)
  * @param {Object} payload - Token payload (userId, email, role, etc.)
- * @returns {string} Signed JWT token
+ * @returns {string} Random 64-character token
  */
 export const generateRefreshToken = (payload) => {
   if (!payload || typeof payload !== 'object') {
@@ -58,12 +59,9 @@ export const generateRefreshToken = (payload) => {
   }
 
   try {
-    return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
-      algorithm: TOKEN_CONFIG.algorithm,
-      expiresIn: TOKEN_CONFIG.refreshTokenExpiry,
-      issuer: 'ticket-management-system',
-      subject: String(payload.userId),
-    });
+    // Generate a simple 64-character random token
+    const randomToken = randomBytes(32).toString('hex');
+    return randomToken;
   } catch (error) {
     throw new Error(`Failed to generate refresh token: ${error.message}`);
   }

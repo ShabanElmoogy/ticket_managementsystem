@@ -54,7 +54,7 @@ const LoginForm: React.FC = () => {
 
     try {
       const response = await authApi.login({ email, password });
-      login(response.user, response.token);
+      login(response.user, response.token, response.refreshToken);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
@@ -70,7 +70,7 @@ const LoginForm: React.FC = () => {
 
     try {
       const response = await authApi.login({ email: demoEmail, password: demoPassword });
-      login(response.user, response.token);
+      login(response.user, response.token, response.refreshToken);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
