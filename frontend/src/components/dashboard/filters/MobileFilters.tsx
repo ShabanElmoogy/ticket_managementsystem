@@ -15,7 +15,7 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
-import type { User, Customer, Application } from '../../services/api';
+import type { User, Customer, Application, Ticket } from '../../../services/api';
 
 interface MobileFiltersProps {
   statusFilter: string;
@@ -33,7 +33,7 @@ interface MobileFiltersProps {
   allUsers: User[];
   customers: Customer[];
   applications: Application[];
-  tickets: any[];
+  tickets: Ticket[];
   userRole: string;
   loading: boolean;
   onRefresh: () => void;

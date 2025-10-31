@@ -20,6 +20,15 @@ import MobileDrawer from './header/MobileDrawer';
 import NotificationPopover from './header/NotificationPopover';
 import PWAInstallButton from '../pwa/PWAInstallButton';
 
+interface NotificationType {
+  id: string;
+  data?: {
+    ticket?: {
+      id: string;
+    };
+  };
+}
+
 const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenWhatsApp, onOpenWhatsAppUsers, onTicketClick }) => {
   const { user, logout, token } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
@@ -78,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
     handleNotificationClose();
   };
 
-  const handleNotificationItemClick = async (notification: any) => {
+  const handleNotificationItemClick = async (notification: NotificationType) => {
     if (!token || !onTicketClick || !notification.data?.ticket?.id) return;
 
     try {
@@ -87,8 +96,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
       
       const fullTicket = await apiService.getTicket(token, notification.data.ticket.id);
       onTicketClick(fullTicket);
-    } catch (error) {
-      console.error('Error fetching ticket details:', error);
+    } catch (_error) {
+      console.error('Error fetching ticket details:', _error);
       handleNotificationClose();
     }
   };

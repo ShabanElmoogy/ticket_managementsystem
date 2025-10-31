@@ -28,8 +28,8 @@ import {
   Update as UpdateIcon,
   Clear as ClearIcon,
 } from "@mui/icons-material";
-import { useAuthStore } from "../../stores/authStore";
-import { apiService } from "../../services/api";
+import { useAuthStore } from "../../../stores/authStore";
+import { apiService, type Ticket } from "../../../services/api";
 import { io, Socket } from "socket.io-client";
 
 interface ActivityItem {
@@ -39,13 +39,19 @@ interface ActivityItem {
     | "TICKET_UPDATED"
     | "TICKET_ASSIGNED"
     | "COMMENT_ADDED";
-  data: any;
+  data: {
+    ticket?: { id: string; title: string; priority?: string; status?: string };
+    createdBy?: string;
+    updatedBy?: string;
+    assignedTo?: string;
+    commentBy?: string;
+  };
   timestamp: string;
   read?: boolean;
 }
 
 interface ActivityFeedProps {
-  onTicketClick: (ticket: any) => void;
+  onTicketClick: (ticket: Ticket) => void;
 }
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
@@ -108,7 +114,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
         );
         audio.volume = 0.3;
         audio.play().catch(() => {}); // Ignore errors if audio fails
-      } catch (error) {
+      } catch {
         // Ignore audio errors
       }
     });

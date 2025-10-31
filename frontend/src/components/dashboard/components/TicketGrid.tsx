@@ -18,7 +18,7 @@ import {
   Schedule as ScheduleIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
-import type { Ticket } from '../../services/api';
+import type { Ticket } from '../../../services/api';
 
 interface TicketGridProps {
   tickets: Ticket[];
@@ -134,7 +134,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
                   <Box display="flex" gap={1} flexDirection="column">
                     <Chip 
                       label={ticket.status.replace('_', ' ')} 
-                      color={getStatusColor(ticket.status) as any}
+                      color={getStatusColor(ticket.status) as 'primary' | 'warning' | 'success' | 'default'}
                       size="small"
                       sx={{
                         fontWeight: 600,
@@ -146,7 +146,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
                     />
                     <Chip 
                       label={ticket.priority} 
-                      color={getPriorityColor(ticket.priority) as any}
+                      color={getPriorityColor(ticket.priority) as 'success' | 'warning' | 'error' | 'default'}
                       size="small"
                       variant="outlined"
                       sx={{
