@@ -14,7 +14,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { apiService, type Ticket, type Comment } from '../../services/api';
+import { ticketsApi, type Ticket, type Comment } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 
 interface TicketDetailsDialogProps {
@@ -52,7 +52,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 
     setLoading(true);
     try {
-      const data = await apiService.getTicket(token, ticket.id);
+      const data = await ticketsApi.getTicket(ticket.id);
       setComments(data.comments || []);
     } catch (error) {
       console.error('Error fetching ticket details:', error);
@@ -66,7 +66,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 
     setAddingComment(true);
     try {
-      await apiService.addComment(token, ticket.id, newComment);
+      await ticketsApi.addComment(ticket.id, newComment);
       setNewComment('');
       await fetchTicketDetails();
       setVisibleCommentsCount(3); // Reset to show first 3 comments including the new one

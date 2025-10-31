@@ -30,7 +30,7 @@ import {
   Clear as ClearIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../../stores/authStore";
-import { apiService, type Ticket } from "../../../services/api";
+import { dashboardApi, ticketsApi, type Ticket } from "../../../services/api";
 import { io, Socket } from "socket.io-client";
 
 interface ActivityItem {
@@ -80,9 +80,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
 
       try {
         setLoading(true);
-        const initialActivities = await apiService.getActivities(token, 20);
+        const initialActivities = await dashboardApi.getActivities(20);
         setActivities(
-          initialActivities.map((activity) => ({ ...activity, read: true }))
+          initialActivities.map((activity: ActivityItem) => ({ ...activity, read: true }))
         );
       } catch (error) {
         console.error("Error loading activities:", error);
@@ -241,7 +241,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
       setTimeout(() => {
         setUnreadCount(0);
         setActivities((prev) =>
-          prev.map((activity) => ({ ...activity, read: true }))
+          prev.map((activity: ActivityItem) => ({ ...activity, read: true }))
         );
       }, 500); // Small delay to show the expansion animation first
     }
@@ -260,7 +260,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
 
       // Mark this activity as read
       setActivities((prev) =>
-        prev.map((item) =>
+        prev.map((item: ActivityItem) =>
           item.id === activity.id ? { ...item, read: true } : item
         )
       );
@@ -271,10 +271,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
       }
 
       // Fetch full ticket details and open dialog
-      const fullTicket = await apiService.getTicket(
-        token,
-        activity.data.ticket.id
-      );
+      const fullTicket = await ticketsApi.getTicket(activity.data.ticket.id);
       onTicketClick(fullTicket);
     } catch (error) {
       console.error("Error fetching ticket details:", error);
@@ -315,7 +312,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
 
   const filteredActivities = useMemo(() => {
     if (typeFilter === "ALL") return activities;
-    return activities.filter((a) => a.type === typeFilter);
+    return activities.filter((a: ActivityItem) => a.type === typeFilter);
   }, [activities, typeFilter]);
 
   return (
@@ -441,7 +438,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
             </Box>
           ) : (
             <List sx={{ p: 0 }}>
-              {filteredActivities.map((activity, index) => {
+              {filteredActivities.map((activity: ActivityItem, index: number) => {
                 const message = getActivityMessage(activity);
                 const isLast = index === filteredActivities.length - 1;
                 const isClicking = clickingActivity === activity.id;
@@ -488,6 +485,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                                 {message.primary}
                               </Typography>
                             }
+                            secondaryTypographyProps={{ component: "div" }}
                             secondary={
                               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
                                 <Typography variant="caption" color="text.secondary">

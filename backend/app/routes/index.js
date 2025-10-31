@@ -18,6 +18,7 @@ import labelRoutes from '../../routes/labelRoutes.js';
 import notificationRoutes from '../../routes/notificationRoutes.js';
 import whatsappRoutes from '../../routes/whatsappRoutes.js';
 import docRoutes from '../../routes/docRoutes.js';
+import reminderRoutes from '../../routes/reminderRoutes.js';
 
 export function registerRoutes(app) {
   // API routes
@@ -34,6 +35,7 @@ export function registerRoutes(app) {
   app.use('/api/whatsapp', whatsappRoutes);
   app.use('/api/docsbuilder', docRoutes);
   app.use('/api', docRoutes);
+  app.use('/api/reminders', reminderRoutes);
 
   // Health check
   app.get('/api/health', (req, res) => {

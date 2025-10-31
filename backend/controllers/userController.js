@@ -12,6 +12,8 @@ export const getAllUsers = async (req, res) => {
           role: true,
           phone: true,
           whatsappNotifications: true,
+          reminderEnabled: true,
+          reminderInterval: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -46,6 +48,8 @@ export const getUserById = async (req, res) => {
           role: true,
           phone: true,
           whatsappNotifications: true,
+          reminderEnabled: true,
+          reminderInterval: true,
           createdAt: true,
           updatedAt: true,
           _count: {
@@ -108,6 +112,8 @@ export const createUser = async (req, res) => {
           role: true,
           phone: true,
           whatsappNotifications: true,
+          reminderEnabled: true,
+          reminderInterval: true,
           createdAt: true,
           updatedAt: true
         }
@@ -120,11 +126,117 @@ export const createUser = async (req, res) => {
     }
 };
 
+// Get current user's profile
+export const getCurrentProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        whatsappNotifications: true,
+        reminderEnabled: true,
+        reminderInterval: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Get current profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update own profile
+export const updateOwnProfile = async (req, res) => {
+  try {
+    console.log('Update profile request:', {
+      user: req.user,
+      body: req.body,
+      userKeys: req.user ? Object.keys(req.user) : 'no user',
+    });
+    
+    const userId = req.user?.userId || req.user?.id;
+    console.log('Extracted userId:', userId, 'from req.user:', req.user);
+    
+    if (!userId) {
+      console.log('❌ No user ID found. req.user:', req.user);
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    console.log('✅ Using userId:', userId);
+    const { name, email, phone, reminderEnabled, reminderInterval } = req.body;
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findUnique({ where: { email } });
+      if (emailExists) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+    }
+
+    // Prepare update data
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (reminderEnabled !== undefined) updateData.reminderEnabled = reminderEnabled;
+    if (reminderInterval !== undefined) updateData.reminderInterval = reminderInterval;
+
+    console.log('Update data:', updateData);
+
+    // Update user
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        whatsappNotifications: true,
+        reminderEnabled: true,
+        reminderInterval: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+
+    console.log('Updated user:', user);
+    res.json(user);
+  } catch (error) {
+    console.error('Update own profile error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+};
+
 // Update user
 export const updateUser = async (req, res) => {
     try {
       const { id } = req.params;
-      const { email, name, role, password, phone, whatsappNotifications } = req.body;
+      const { email, name, role, password, phone, whatsappNotifications, reminderEnabled, reminderInterval } = req.body;
 
       // Check if user exists
       const existingUser = await prisma.user.findUnique({
@@ -153,6 +265,8 @@ export const updateUser = async (req, res) => {
       if (role) updateData.role = role;
       if (phone !== undefined) updateData.phone = phone;
       if (whatsappNotifications !== undefined) updateData.whatsappNotifications = whatsappNotifications;
+      if (reminderEnabled !== undefined) updateData.reminderEnabled = reminderEnabled;
+      if (reminderInterval !== undefined) updateData.reminderInterval = reminderInterval;
       if (password) {
         updateData.password = await bcrypt.hash(password, 10);
       }
@@ -168,6 +282,8 @@ export const updateUser = async (req, res) => {
           role: true,
           phone: true,
           whatsappNotifications: true,
+          reminderEnabled: true,
+          reminderInterval: true,
           createdAt: true,
           updatedAt: true,
           _count: {

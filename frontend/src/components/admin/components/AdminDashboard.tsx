@@ -15,7 +15,7 @@ import {
   TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../../stores/authStore";
-import { apiService } from "../../../services/api";
+import { customersApi, applicationsApi, ticketsApi } from "../../../services/api";
 
 interface StatCardProps {
   title: string;
@@ -93,9 +93,9 @@ const AdminDashboard: React.FC = () => {
       setError(null);
 
       const [customers, applications, tickets] = await Promise.all([
-        apiService.getCustomers(token),
-        apiService.getApplications(token),
-        apiService.getTickets(token, {}),
+        customersApi.getCustomers(),
+        applicationsApi.getApplications(),
+        ticketsApi.getTickets({}),
       ]);
 
       const activeCustomers = customers.filter((c) => c.isActive).length;

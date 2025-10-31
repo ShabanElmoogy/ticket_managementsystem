@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "../../../../stores/authStore";
-import { apiService, type Application, type CreateApplicationData } from "../../../../services/api";
+import { applicationsApi, type Application, type CreateApplicationData } from "../../../../services/api";
 import type { DeleteDialogState, SnackbarState } from "../types/types";
 
 
@@ -55,7 +55,7 @@ export function useApplicationsManagement(): ApplicationsControllerReturn {
     if (!token) return;
     try {
       setLoading(true);
-      const applicationsData = await apiService.getApplications(token);
+      const applicationsData = await applicationsApi.getApplications();
       setApplications(applicationsData);
     } catch (error) {
       showSnackbar("Error fetching data", "error");
@@ -92,10 +92,10 @@ export function useApplicationsManagement(): ApplicationsControllerReturn {
     if (!token) return;
     try {
       if (editingApplication) {
-        await apiService.updateApplication(token, editingApplication.id, values);
+        await applicationsApi.updateApplication(editingApplication.id, values);
         showSnackbar("Application updated successfully", "success");
       } else {
-        await apiService.createApplication(token, values);
+        await applicationsApi.createApplication(values);
         showSnackbar("Application created successfully", "success");
       }
       handleCloseDialog();
@@ -114,7 +114,7 @@ export function useApplicationsManagement(): ApplicationsControllerReturn {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await apiService.deleteApplication(token, deleteDialog.application.id);
+      await applicationsApi.deleteApplication(deleteDialog.application.id);
       showSnackbar("Application deleted successfully", "success");
       setDeleteDialog({ open: false, application: null, loading: false });
       fetchData();

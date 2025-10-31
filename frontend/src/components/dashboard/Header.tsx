@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AppBar, Toolbar, Box, useTheme, useMediaQuery } from '@mui/material';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { apiService } from '../../services/api';
+import { ticketsApi } from '../../services/api';
 import { type HeaderProps } from '../../types/header';
 import { useNotifications } from '../../hooks/useNotifications';
 import { createMenuItems } from '../../config/menuItems';
@@ -19,6 +19,7 @@ import DesktopMenu from './header/DesktopMenu';
 import MobileDrawer from './header/MobileDrawer';
 import NotificationPopover from './header/NotificationPopover';
 import PWAInstallButton from '../pwa/PWAInstallButton';
+import { UserProfile } from '../profile';
 
 interface NotificationType {
   id: string;
@@ -39,6 +40,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Notifications hook
   const {
@@ -94,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
       markNotificationAsRead(notification.id);
       handleNotificationClose();
       
-      const fullTicket = await apiService.getTicket(token, notification.data.ticket.id);
+      const fullTicket = await ticketsApi.getTicket(notification.data.ticket.id);
       onTicketClick(fullTicket);
     } catch (_error) {
       console.error('Error fetching ticket details:', _error);
@@ -103,9 +105,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
   };
 
   const handleUserInfoClick = () => {
-    if (user?.role === 'ADMIN' && onOpenAdminPanel) {
-      onOpenAdminPanel();
-    }
+    setProfileOpen(true);
   };
 
   // Create menu items
@@ -116,6 +116,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
     onOpenKanban,
     onOpenWhatsApp,
     onOpenWhatsAppUsers,
+    onOpenProfile: () => setProfileOpen(true),
     onToggleTheme: toggleTheme,
     onLogout: logout,
     onClose: handleClose,
@@ -126,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
 
   return (
     <AppBar 
-      position="static" 
+      position="fixed" 
       elevation={0}
       sx={{
         background: mode === 'light' 
@@ -215,6 +216,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
           />
         </Box>
       </Toolbar>
+      
+      {/* User Profile Dialog */}
+      <UserProfile
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
     </AppBar>
   );
 };

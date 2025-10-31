@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "../../../../stores/authStore";
-import { apiService, type Customer, type Application, type CreateCustomerData } from "../../../../services/api";
+import { customersApi, applicationsApi, type Customer, type Application, type CreateCustomerData } from "../../../../services/api";
 
 export type SnackbarState = {
   open: boolean;
@@ -70,8 +70,8 @@ export function useCustomersManagement(): CustomersControllerReturn {
     try {
       setLoading(true);
       const [customersData, applicationsData] = await Promise.all([
-        apiService.getCustomers(token),
-        apiService.getApplications(token),
+        customersApi.getCustomers(),
+        applicationsApi.getApplications(),
       ]);
       setCustomers(customersData);
       setApplications(applicationsData);
@@ -113,10 +113,10 @@ export function useCustomersManagement(): CustomersControllerReturn {
     if (!token) return;
     try {
       if (editingCustomer) {
-        await apiService.updateCustomer(token, editingCustomer.id, values);
+        await customersApi.updateCustomer(editingCustomer.id, values);
         showSnackbar("Customer updated successfully", "success");
       } else {
-        await apiService.createCustomer(token, values);
+        await customersApi.createCustomer(values);
         showSnackbar("Customer created successfully", "success");
       }
       handleCloseDialog();
@@ -135,7 +135,7 @@ export function useCustomersManagement(): CustomersControllerReturn {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await apiService.deleteCustomer(token, deleteDialog.customer.id);
+      await customersApi.deleteCustomer(deleteDialog.customer.id);
       showSnackbar("Customer deleted successfully", "success");
       setDeleteDialog({ open: false, customer: null, loading: false });
       fetchData();

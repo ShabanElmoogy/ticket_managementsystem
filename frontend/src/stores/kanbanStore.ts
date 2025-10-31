@@ -9,7 +9,8 @@ import type {
   TicketStatus,
   TaskStatus 
 } from '../types/kanban';
-import { kanbanApi } from '../services/kanbanApi';
+import { kanbanApi } from '../services/api/kanban';
+import { useAuthStore } from './authStore';
 
 interface KanbanState {
   // State
@@ -66,9 +67,11 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Board actions
       fetchBoards: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          const boards = await kanbanApi.getAllBoards();
+          const boards = await kanbanApi.getAllBoards(token);
           set({ boards, loading: false });
         } catch (error) {
           set({ 
@@ -79,9 +82,11 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       fetchBoard: async (boardId: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          const board = await kanbanApi.getBoardById(boardId);
+          const board = await kanbanApi.getBoardById(token, boardId);
           set({ currentBoard: board, loading: false });
         } catch (error) {
           set({ 
@@ -92,9 +97,11 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       createBoard: async (boardData: Partial<KanbanBoard>) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          const newBoard = await kanbanApi.createBoard(boardData);
+          const newBoard = await kanbanApi.createBoard(token, boardData);
           set(state => ({ 
             boards: [...state.boards, newBoard], 
             loading: false 
@@ -108,9 +115,11 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       updateBoard: async (boardId: string, boardData: Partial<KanbanBoard>) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          const updatedBoard = await kanbanApi.updateBoard(boardId, boardData);
+          const updatedBoard = await kanbanApi.updateBoard(token, boardId, boardData);
           set(state => ({
             boards: state.boards.map(board => 
               board.id === boardId ? updatedBoard : board
@@ -127,9 +136,11 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       deleteBoard: async (boardId: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          await kanbanApi.deleteBoard(boardId);
+          await kanbanApi.deleteBoard(token, boardId);
           set(state => ({
             boards: state.boards.filter(board => board.id !== boardId),
             currentBoard: state.currentBoard?.id === boardId ? null : state.currentBoard,
@@ -145,8 +156,10 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Ticket movement
       moveTicket: async (ticketId: string, newStatus: TicketStatus, newPosition: number, boardId?: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const updatedTicket = await kanbanApi.moveTicket(ticketId, {
+          const updatedTicket = await kanbanApi.moveTicket(token, ticketId, {
             newStatus,
             newPosition,
             boardId
@@ -176,9 +189,11 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Task actions
       createTask: async (taskData: Partial<KanbanTask>) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         set({ loading: true, error: null });
         try {
-          const newTask = await kanbanApi.createTask(taskData);
+          const newTask = await kanbanApi.createTask(token, taskData);
           
           // Add the new task to the current board
           set(state => {
@@ -201,8 +216,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       moveTask: async (taskId: string, newStatus: TaskStatus, newPosition: number, columnId?: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const updatedTask = await kanbanApi.moveTask(taskId, {
+          const updatedTask = await kanbanApi.moveTask(token, taskId, {
             newStatus,
             newPosition,
             columnId
@@ -232,8 +249,10 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Label actions
       fetchLabels: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const labels = await kanbanApi.getAllLabels();
+          const labels = await kanbanApi.getAllLabels(token);
           set({ labels });
         } catch (error) {
           set({ 
@@ -243,8 +262,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       createLabel: async (labelData: Partial<Label>) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const newLabel = await kanbanApi.createLabel(labelData);
+          const newLabel = await kanbanApi.createLabel(token, labelData);
           set(state => ({ 
             labels: [...state.labels, newLabel]
           }));
@@ -256,8 +277,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       updateLabel: async (labelId: string, labelData: Partial<Label>) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const updatedLabel = await kanbanApi.updateLabel(labelId, labelData);
+          const updatedLabel = await kanbanApi.updateLabel(token, labelId, labelData);
           set(state => ({
             labels: state.labels.map(label => 
               label.id === labelId ? updatedLabel : label
@@ -271,8 +294,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       deleteLabel: async (labelId: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          await kanbanApi.deleteLabel(labelId);
+          await kanbanApi.deleteLabel(token, labelId);
           set(state => ({
             labels: state.labels.filter(label => label.id !== labelId)
           }));
@@ -285,8 +310,10 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Notification actions
       fetchNotifications: async (unreadOnly = false) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const notifications = await kanbanApi.getNotifications({ unreadOnly });
+          const notifications = await kanbanApi.getNotifications(token, { unreadOnly });
           set({ notifications });
         } catch (error) {
           set({ 
@@ -296,8 +323,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       markNotificationAsRead: async (notificationId: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          await kanbanApi.markNotificationAsRead(notificationId);
+          await kanbanApi.markNotificationAsRead(token, notificationId);
           set(state => ({
             notifications: state.notifications.map(notification =>
               notification.id === notificationId 
@@ -314,8 +343,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       markAllNotificationsAsRead: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          await kanbanApi.markAllNotificationsAsRead();
+          await kanbanApi.markAllNotificationsAsRead(token);
           set(state => ({
             notifications: state.notifications.map(notification => ({
               ...notification,
@@ -331,8 +362,10 @@ export const useKanbanStore = create<KanbanState>()(
       },
 
       fetchNotificationCount: async () => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const { unreadCount } = await kanbanApi.getNotificationCount();
+          const { unreadCount } = await kanbanApi.getNotificationCount(token);
           set({ unreadNotificationCount: unreadCount });
         } catch (error) {
           console.error('Failed to fetch notification count:', error);
@@ -341,8 +374,10 @@ export const useKanbanStore = create<KanbanState>()(
 
       // Analytics
       fetchBoardAnalytics: async (boardId: string, startDate?: string, endDate?: string) => {
+        const { token } = useAuthStore.getState();
+        if (!token) return;
         try {
-          const analytics = await kanbanApi.getBoardAnalytics(boardId, { startDate, endDate });
+          const analytics = await kanbanApi.getBoardAnalytics(token, boardId, { startDate, endDate });
           set({ analytics });
         } catch (error) {
           set({ 

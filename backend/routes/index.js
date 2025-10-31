@@ -7,6 +7,7 @@ import applicationRoutes from './applicationRoutes.js';
 import kanbanRoutes from './kanbanRoutes.js';
 import labelRoutes from './labelRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
+import reminderRoutes from './reminderRoutes.js';
 
 export {
   authRoutes,
@@ -17,5 +18,6 @@ export {
   applicationRoutes,
   kanbanRoutes,
   labelRoutes,
-  notificationRoutes
+  notificationRoutes,
+  reminderRoutes
 };

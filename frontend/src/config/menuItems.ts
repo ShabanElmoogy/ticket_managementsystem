@@ -20,6 +20,7 @@ interface CreateMenuItemsProps {
   onOpenKanban?: () => void;
   onOpenWhatsApp?: () => void;
   onOpenWhatsAppUsers?: () => void;
+  onOpenProfile?: () => void;
   onToggleTheme: () => void;
   onLogout: () => void;
   onClose: () => void;
@@ -33,6 +34,7 @@ export const createMenuItems = ({
   onOpenKanban,
   onOpenWhatsApp,
   onOpenWhatsAppUsers,
+  onOpenProfile,
   onToggleTheme,
   onLogout,
   onClose,
@@ -43,6 +45,7 @@ export const createMenuItems = ({
       label: "Profile",
       icon: React.createElement(PersonIcon),
       onClick: () => {
+        if (onOpenProfile) onOpenProfile();
         onClose();
         onMobileMenuClose();
       },

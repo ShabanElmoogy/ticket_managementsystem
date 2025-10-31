@@ -21,7 +21,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { Priority } from '../../types/kanban';
-import { ticketApi } from '../../services/ticketApi';
+import { ticketsApi, usersApi, customersApi, applicationsApi } from '../../services/api';
+import { useAuthStore } from '../../stores/authStore';
 
 interface CreateTicketDialogProps {
   open: boolean;
@@ -53,6 +54,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   boardId
 }) => {
   const { labels, fetchLabels, fetchBoard } = useKanbanStore();
+  const { token } = useAuthStore();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -82,8 +84,9 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   }, [open, fetchLabels]);
 
   const fetchUsers = async () => {
+    if (!token) return;
     try {
-      const response = await ticketApi.getUsers();
+      const response = await usersApi.getUsers(token);
       setUsers(response);
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -91,8 +94,9 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   const fetchCustomers = async () => {
+    if (!token) return;
     try {
-      const response = await ticketApi.getCustomers();
+      const response = await customersApi.getCustomers(token);
       setCustomers(response);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
@@ -100,8 +104,9 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   const fetchApplications = async () => {
+    if (!token) return;
     try {
-      const response = await ticketApi.getApplications();
+      const response = await applicationsApi.getApplications(token);
       setApplications(response);
     } catch (error) {
       console.error('Failed to fetch applications:', error);
@@ -131,7 +136,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         labels: formData.selectedLabels
       };
 
-      await ticketApi.createTicket(ticketData);
+      await ticketsApi.createTicket(token!, ticketData);
       
       // Refresh the board to show the new ticket
       await fetchBoard(boardId);

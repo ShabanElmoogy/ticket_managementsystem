@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { apiService } from '../../services/api';
+import { authApi } from '../../services/api';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -53,7 +53,7 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      const response = await apiService.login({ email, password });
+      const response = await authApi.login({ email, password });
       login(response.user, response.token);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -69,7 +69,7 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      const response = await apiService.login({ email: demoEmail, password: demoPassword });
+      const response = await authApi.login({ email: demoEmail, password: demoPassword });
       login(response.user, response.token);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');

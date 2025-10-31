@@ -7,6 +7,7 @@ import CreateTicketPost from "../../tickets/CreateTicketPost";
 import { MobileFilters, DesktopFilters } from "../filters";
 import TicketFeed from "../../tickets/TicketFeed";
 import ActivityFeed from "./ActivityFeed";
+import ReminderSettings from "./ReminderSettings";
 
 interface Props {
   isMobile: boolean;
@@ -151,6 +152,8 @@ const DashboardContent: React.FC<Props> = ({
                   onRefresh={onRefresh}
                 />
               )}
+
+              {userRole === "EMPLOYEE" && <ReminderSettings />}
 
               <TicketFeed
                 tickets={tickets}

@@ -12,8 +12,15 @@ export function registerCoreMiddleware(app, notificationEmitter) {
   app.use(cors({
     origin: CORS_ORIGINS,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Request-ID',
+      'X-Requested-With',
+    ],
+    exposedHeaders: ['X-Request-ID'],
+    maxAge: 86400, // 24 hours
   }));
   app.use(express.json());
 

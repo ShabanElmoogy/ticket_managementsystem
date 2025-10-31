@@ -29,7 +29,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
-import { apiService } from "../../services/api";
+import { ticketsApi } from "../../services/api";
 import MyChip from "../common/MyChip";
 
 interface TicketPostProps {
@@ -77,7 +77,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
 
     setLoadingComments(true);
     try {
-      const ticketDetails = await apiService.getTicket(token, ticket.id);
+      const ticketDetails = await ticketsApi.getTicket(ticket.id);
       // Sort comments from newest to oldest
       const sortedComments = (ticketDetails.comments || []).sort(
         (a, b) =>

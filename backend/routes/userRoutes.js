@@ -10,6 +10,8 @@ router.get('/stats', authenticateToken, requireAdmin, userController.getUserStat
 router.get('/employees', authenticateToken, userController.getEmployees);
 router.get('/:id', authenticateToken, requireAdmin, userController.getUserById);
 router.post('/', authenticateToken, requireAdmin, userController.createUser);
+router.get('/profile', authenticateToken, userController.getCurrentProfile);
+router.put('/profile', authenticateToken, userController.updateOwnProfile);
 router.put('/:id', authenticateToken, requireAdmin, userController.updateUser);
 router.delete('/:id', authenticateToken, requireAdmin, userController.deleteUser);
 

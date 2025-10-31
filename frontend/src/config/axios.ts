@@ -1,3 +1,20 @@
+/**
+ * Global Axios Configuration
+ * 
+ * NOTE: This file is deprecated in favor of the centralized API service
+ * located at src/services/api/base.ts
+ * 
+ * The base.ts service provides:
+ * - Centralized HTTP client configuration
+ * - Automatic token injection
+ * - Comprehensive error handling
+ * - Request/response logging
+ * - Retry logic
+ * 
+ * This file is kept for backward compatibility but should not be used
+ * for new code. Use the api service from src/services/api instead.
+ */
+
 import axios from 'axios';
 
 // Global axios defaults

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "../../../../stores/authStore";
-import { apiService, type User, type CreateUserData, type UpdateUserData, type UserStats } from "../../../../services/api";
+import { usersApi, type User, type CreateUserData, type UpdateUserData, type UserStats } from "../../../../services/api";
 import type { UserFormValues } from "../types/types";
 
 export type SnackbarState = {
@@ -74,8 +74,8 @@ export function useUsersManagement(): UsersControllerReturn {
     try {
       setLoading(true);
       const [usersData, statsData] = await Promise.all([
-        apiService.getUsers(token),
-        apiService.getUserStats(token),
+        usersApi.getUsers(),
+        usersApi.getUserStats(),
       ]);
       setUsers(usersData);
       setStats(statsData);
@@ -127,7 +127,7 @@ export function useUsersManagement(): UsersControllerReturn {
         if (values.password && values.password.trim() !== "") {
           updateData.password = values.password;
         }
-        await apiService.updateUser(token, editingUser.id, updateData);
+        await usersApi.updateUser(editingUser.id, updateData);
         showSnackbar("User updated successfully", "success");
       } else {
         const createData: CreateUserData = {
@@ -138,7 +138,7 @@ export function useUsersManagement(): UsersControllerReturn {
           phone: values.phone?.trim() || undefined,
           whatsappNotifications: values.whatsappNotifications,
         };
-        await apiService.createUser(token, createData);
+        await usersApi.createUser(createData);
         showSnackbar("User created successfully", "success");
       }
       handleCloseDialog();
@@ -157,7 +157,7 @@ export function useUsersManagement(): UsersControllerReturn {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await apiService.deleteUser(token, deleteDialog.user.id);
+      await usersApi.deleteUser(deleteDialog.user.id);
       showSnackbar("User deleted successfully", "success");
       setDeleteDialog({ open: false, user: null, loading: false, forceDialogOpen: false });
       fetchData();
@@ -183,7 +183,7 @@ export function useUsersManagement(): UsersControllerReturn {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await apiService.deleteUser(token, deleteDialog.user.id, { force: true });
+      await usersApi.deleteUser(deleteDialog.user.id, { force: true });
       showSnackbar("User and related data deleted successfully", "success");
       setDeleteDialog({ open: false, user: null, loading: false, forceDialogOpen: false });
       fetchData();

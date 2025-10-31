@@ -24,6 +24,8 @@ CREATE TABLE `users` (
     `phone` VARCHAR(191) NULL,
     `role` ENUM('ADMIN', 'EMPLOYEE') NOT NULL DEFAULT 'EMPLOYEE',
     `whatsappNotifications` BOOLEAN NOT NULL DEFAULT true,
+    `reminderEnabled` BOOLEAN NOT NULL DEFAULT true,
+    `reminderInterval` INT NOT NULL DEFAULT 60,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 

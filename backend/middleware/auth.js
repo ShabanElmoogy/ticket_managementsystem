@@ -1,38 +1,48 @@
-import jwt from 'jsonwebtoken';
+import { extractBearerToken, verifyAccessToken } from '../utils/tokenService.js';
 
-// JWT middleware
+/**
+ * Authenticate token middleware
+ * Extracts and verifies JWT from Authorization header
+ */
 export const authenticateToken = (req, res, next) => {
-  console.log('=== AUTH MIDDLEWARE START ===');
-  console.log('Request URL:', req.url);
-  console.log('Request method:', req.method);
-  
-  const authHeader = req.headers['authorization'];
-  console.log('Auth header:', authHeader);
-  
-  const token = authHeader && authHeader.split(' ')[1];
-  console.log('Extracted token:', token ? 'Token present' : 'No token');
+  try {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    const token = extractBearerToken(authHeader);
 
-  if (!token) {
-    console.log('No token provided, returning 401');
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-  
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.log('Token verification failed:', err.message);
-      return res.status(403).json({ error: 'Invalid token' });
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required' });
     }
-    console.log('Token verified successfully, user:', user);
-    req.user = user;
+
+    const payload = verifyAccessToken(token);
+    
+    // Debug logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('✅ Token verified. Payload:', {
+        userId: payload.userId,
+        email: payload.email,
+        role: payload.role,
+        hasUserId: !!payload.userId,
+      });
+    }
+    
+    req.user = payload;
     next();
-  });
+  } catch (error) {
+    const statusCode = error.message.includes('expired') ? 401 : 401;
+    const message = error.message.includes('expired')
+      ? 'Token expired'
+      : 'Invalid token';
+
+    console.error('Token verification error:', error.message);
+    return res.status(statusCode).json({ error: message });
+  }
 };
 
-// Admin middleware
+/**
+ * Require admin role middleware
+ */
 export const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'ADMIN') {
+  if (!req.user || req.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();

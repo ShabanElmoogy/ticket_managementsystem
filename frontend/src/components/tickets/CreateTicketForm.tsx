@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { DialogContent, DialogActions, Button, Box, TextField, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
-import { apiService, type User, type CreateTicketData, type Customer, type Application } from "../../services/api";
+import { customersApi, applicationsApi, type User, type CreateTicketData, type Customer, type Application } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import TitleField from "./createTicketForm/TitleField";
 import DescriptionField from "./createTicketForm/DescriptionField";
@@ -62,8 +62,8 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
       if (!token || !open) return;
       try {
         const [customersRes, applicationsRes] = await Promise.all([
-          apiService.getCustomers(token),
-          apiService.getApplications(token),
+          customersApi.getCustomers(),
+          applicationsApi.getApplications(),
         ]);
         setCustomers(customersRes);
         setApplications(applicationsRes);

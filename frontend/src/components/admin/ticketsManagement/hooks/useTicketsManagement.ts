@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "../../../../stores/authStore";
-import { apiService, type Ticket, type User, type CreateTicketData } from "../../../../services/api";
+import { ticketsApi, usersApi, type Ticket, type User, type CreateTicketData } from "../../../../services/api";
 
 export type SnackbarState = {
   open: boolean;
@@ -58,12 +58,12 @@ export function useTicketsManagement(): TicketsControllerReturn {
     try {
       setLoading(true);
       const [ticketsData, usersData] = await Promise.all([
-        apiService.getTickets(token, {}),
-        apiService.getUsers(token),
+        ticketsApi.getTickets(),
+        usersApi.getUsers(),
       ]);
       setTickets(ticketsData);
       setUsers(usersData);
-    } catch (error) {
+    } catch {
       showSnackbar("Error fetching data", "error");
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ export function useTicketsManagement(): TicketsControllerReturn {
   const handleCreateSubmit = useCallback(async (data: CreateTicketData) => {
     if (!token) return;
     try {
-      await apiService.createTicket(token, data);
+      await ticketsApi.createTicket(data);
       showSnackbar("Ticket created successfully", "success");
       handleCloseDialog();
       fetchData();
@@ -105,7 +105,7 @@ export function useTicketsManagement(): TicketsControllerReturn {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await apiService.deleteTicket(token, deleteDialog.ticket.id);
+      await ticketsApi.deleteTicket(deleteDialog.ticket.id);
       showSnackbar("Ticket deleted successfully", "success");
       setDeleteDialog({ open: false, ticket: null, loading: false });
       fetchData();

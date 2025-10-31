@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { useAuthStore } from "../../../stores/authStore";
-import { apiService, type Ticket, type Customer } from "../../../services/api";
+import { ticketsApi, customersApi, type Ticket, type Customer } from "../../../services/api";
 
 import ReportsToolbar from "../reportsManagement/ReportsToolbar";
 import ReportsTable from "../reportsManagement/components/ReportsTable";
@@ -34,8 +34,8 @@ const ReportsManagement: React.FC = () => {
     setLoading(true);
     try {
       const [ticketsData, customersData] = await Promise.all([
-        apiService.getTickets(token, {}),
-        apiService.getCustomers(token),
+        ticketsApi.getTickets({}),
+        customersApi.getCustomers(),
       ]);
       setTickets(ticketsData);
       setCustomers(customersData);

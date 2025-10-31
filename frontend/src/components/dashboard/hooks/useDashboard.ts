@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../../../stores/authStore";
-import { apiService, type Ticket, type DashboardStats, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
-import { kanbanApi } from "../../../services/kanbanApi";
+import { ticketsApi, usersApi, customersApi, applicationsApi, kanbanApi, type Ticket, type DashboardStats, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
 import type { KanbanBoard } from "../../../types/kanban";
 
 export type SnackbarState = {
@@ -58,6 +57,7 @@ export const useDashboard = () => {
   };
 
   const getOrCreateDefaultBoard = async (): Promise<KanbanBoard | null> => {
+    if (!token) return null;
     try {
       const boards = await kanbanApi.getAllBoards();
       let defaultBoard = boards.find((b) => b.isDefault) || boards[0];
@@ -76,11 +76,11 @@ export const useDashboard = () => {
     try {
       setLoading(true);
       const [ticketsData, employeesData, usersData, customersData, applicationsData, defaultBoardData] = await Promise.all([
-        apiService.getTickets(token, {}),
-        user?.role === "ADMIN" ? apiService.getEmployees(token) : Promise.resolve([]),
-        user?.role === "ADMIN" ? apiService.getUsers(token) : Promise.resolve([]),
-        user?.role === "ADMIN" ? apiService.getCustomers(token) : Promise.resolve([]),
-        user?.role === "ADMIN" ? apiService.getApplications(token) : Promise.resolve([]),
+        ticketsApi.getTickets({}),
+        user?.role === "ADMIN" ? usersApi.getEmployees() : Promise.resolve([]),
+        user?.role === "ADMIN" ? usersApi.getUsers() : Promise.resolve([]),
+        user?.role === "ADMIN" ? customersApi.getCustomers() : Promise.resolve([]),
+        user?.role === "ADMIN" ? applicationsApi.getApplications() : Promise.resolve([]),
         getOrCreateDefaultBoard(),
       ]);
       const initialStats = calculateFilteredStats(ticketsData);
@@ -101,7 +101,7 @@ export const useDashboard = () => {
   const fetchTickets = useCallback(async () => {
     if (!token) return;
     try {
-      let ticketsData = await apiService.getTickets(token, { status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter });
+      let ticketsData = await ticketsApi.getTickets({ status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter });
       if (userFilter) {
         ticketsData = ticketsData.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
       }
@@ -136,9 +136,9 @@ export const useDashboard = () => {
     try {
       setLoading(true);
       const [ticketsData, employeesData, usersData] = await Promise.all([
-        apiService.getTickets(token, { status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter }),
-        user?.role === "ADMIN" ? apiService.getEmployees(token) : Promise.resolve([]),
-        user?.role === "ADMIN" ? apiService.getUsers(token) : Promise.resolve([]),
+        ticketsApi.getTickets({ status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter }),
+        user?.role === "ADMIN" ? usersApi.getEmployees() : Promise.resolve([]),
+        user?.role === "ADMIN" ? usersApi.getUsers() : Promise.resolve([]),
       ]);
       let filtered = ticketsData;
       if (userFilter) filtered = filtered.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
@@ -194,7 +194,7 @@ export const useDashboard = () => {
     if (!token) return;
     try {
       const ticketWithBoard = { ...ticketData, boardId: defaultBoard?.id };
-      await apiService.createTicket(token, ticketWithBoard);
+      await ticketsApi.createTicket(ticketWithBoard);
       showSnackbar("Ticket posted successfully! 🎉", "success");
       fetchData();
     } catch (_error) {
@@ -205,7 +205,7 @@ export const useDashboard = () => {
   const handleAddComment = async (ticketId: string, content: string) => {
     if (!token) return;
     try {
-      await apiService.addComment(token, ticketId, content);
+      await ticketsApi.addComment(ticketId, content);
       showSnackbar("Comment added successfully", "success");
       fetchData();
     } catch (_error) {
@@ -216,7 +216,7 @@ export const useDashboard = () => {
   const handleTakeTicket = async (ticketId: string) => {
     if (!token) return;
     try {
-      await apiService.takeTicket(token, ticketId);
+      await ticketsApi.takeTicket(ticketId);
       showSnackbar("Ticket assigned successfully", "success");
       fetchData();
     } catch (_error) {
@@ -227,7 +227,7 @@ export const useDashboard = () => {
   const handleUpdateTicketStatus = async (ticketId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
     if (!token) return;
     try {
-      await apiService.updateTicket(token, ticketId, { status });
+      await ticketsApi.updateTicket(ticketId, { status });
       showSnackbar("Ticket updated successfully", "success");
       fetchData();
     } catch (_error) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, Toolbar } from "@mui/material";
 import Header from "./Header";
 import { LoadingSpinner } from "./ui";
 import { ViewRenderer } from "./components";
@@ -21,6 +21,7 @@ const Dashboard: React.FC = () => {
         onOpenKanban={() => setCurrentView('kanban')}
         onTicketClick={handleTicketClick}
       />
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64, md: 70 } }} />
       <ViewRenderer
         currentView={currentView}
         setCurrentView={setCurrentView}

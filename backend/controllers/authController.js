@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database.js';
+import { generateAccessToken } from '../utils/tokenService.js';
 
 // Register new user
 export const register = async (req, res) => {
@@ -36,12 +36,12 @@ export const register = async (req, res) => {
       }
     });
 
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // Generate access token
+    const token = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
 
     res.status(201).json({ user, token });
   } catch (error) {
@@ -70,12 +70,12 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    // Generate access token
+    const token = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
 
     const { password: _, ...userWithoutPassword } = user;
     res.json({ user: userWithoutPassword, token });

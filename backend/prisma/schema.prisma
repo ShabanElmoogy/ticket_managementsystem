@@ -40,6 +40,8 @@ model User {
   phone     String?  // WhatsApp phone number
   role      Role     @default(EMPLOYEE)
   whatsappNotifications Boolean @default(true) // Enable/disable WhatsApp notifications
+  reminderEnabled Boolean @default(true) // Enable/disable ticket reminders
+  reminderInterval Int @default(60) // Reminder interval in minutes
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
