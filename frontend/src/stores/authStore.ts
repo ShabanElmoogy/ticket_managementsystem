@@ -266,12 +266,13 @@ export const useAuthStore = create<AuthState>()(
                   console.log('⏰ Token expired, attempting refresh...');
                 }
 
-                // Import authApi dynamically to avoid circular dependency
-                const { authApi } = await import('../services/api/auth');
-                const response = await authApi.post('/auth/refresh', { refreshToken });
+                // Use axios directly to avoid circular dependency and protected method issues
+                const axios = (await import('axios')).default;
+                const response = await axios.post('http://localhost:3001/api/auth/refresh', { refreshToken });
+                const responseData = response.data as any;
 
-                const newToken = response.token;
-                const newRefreshToken = response.refreshToken;
+                const newToken = responseData.token;
+                const newRefreshToken = responseData.refreshToken;
 
                 // Update localStorage
                 localStorage.setItem('token', newToken);
@@ -288,7 +289,7 @@ export const useAuthStore = create<AuthState>()(
                 // Update store
                 const expiresIn = getTokenExpiresIn(newToken);
                 set({
-                  user: response.user,
+                  user: responseData.user,
                   token: newToken,
                   refreshToken: newRefreshToken || refreshToken,
                   isAuthenticated: true,

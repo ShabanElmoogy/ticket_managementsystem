@@ -71,12 +71,12 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          const boards = await kanbanApi.getAllBoards(token);
+          const boards = await kanbanApi.getAllBoards();
           set({ boards, loading: false });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch boards', 
-            loading: false 
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch boards',
+            loading: false
           });
         }
       },
@@ -86,12 +86,12 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          const board = await kanbanApi.getBoardById(token, boardId);
+          const board = await kanbanApi.getBoardById(boardId);
           set({ currentBoard: board, loading: false });
         } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch board', 
-            loading: false 
+          set({
+            error: error instanceof Error ? error.message : 'Failed to fetch board',
+            loading: false
           });
         }
       },
@@ -101,7 +101,7 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          const newBoard = await kanbanApi.createBoard(token, boardData);
+          const newBoard = await kanbanApi.createBoard(boardData);
           set(state => ({ 
             boards: [...state.boards, newBoard], 
             loading: false 
@@ -119,7 +119,7 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          const updatedBoard = await kanbanApi.updateBoard(token, boardId, boardData);
+          const updatedBoard = await kanbanApi.updateBoard(boardId, boardData);
           set(state => ({
             boards: state.boards.map(board => 
               board.id === boardId ? updatedBoard : board
@@ -140,7 +140,7 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          await kanbanApi.deleteBoard(token, boardId);
+          await kanbanApi.deleteBoard(boardId);
           set(state => ({
             boards: state.boards.filter(board => board.id !== boardId),
             currentBoard: state.currentBoard?.id === boardId ? null : state.currentBoard,
@@ -159,7 +159,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const updatedTicket = await kanbanApi.moveTicket(token, ticketId, {
+          const updatedTicket = await kanbanApi.moveTicket(ticketId, {
             newStatus,
             newPosition,
             boardId
@@ -193,7 +193,7 @@ export const useKanbanStore = create<KanbanState>()(
         if (!token) return;
         set({ loading: true, error: null });
         try {
-          const newTask = await kanbanApi.createTask(token, taskData);
+          const newTask = await kanbanApi.createTask(taskData);
           
           // Add the new task to the current board
           set(state => {
@@ -219,7 +219,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const updatedTask = await kanbanApi.moveTask(token, taskId, {
+          const updatedTask = await kanbanApi.moveTask(taskId, {
             newStatus,
             newPosition,
             columnId
@@ -252,7 +252,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const labels = await kanbanApi.getAllLabels(token);
+          const labels = await kanbanApi.getAllLabels();
           set({ labels });
         } catch (error) {
           set({ 
@@ -265,7 +265,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const newLabel = await kanbanApi.createLabel(token, labelData);
+          const newLabel = await kanbanApi.createLabel(labelData);
           set(state => ({ 
             labels: [...state.labels, newLabel]
           }));
@@ -280,7 +280,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const updatedLabel = await kanbanApi.updateLabel(token, labelId, labelData);
+          const updatedLabel = await kanbanApi.updateLabel(labelId, labelData);
           set(state => ({
             labels: state.labels.map(label => 
               label.id === labelId ? updatedLabel : label
@@ -297,7 +297,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          await kanbanApi.deleteLabel(token, labelId);
+          await kanbanApi.deleteLabel(labelId);
           set(state => ({
             labels: state.labels.filter(label => label.id !== labelId)
           }));
@@ -313,7 +313,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const notifications = await kanbanApi.getNotifications(token, { unreadOnly });
+          const notifications = await kanbanApi.getNotifications({ unreadOnly });
           set({ notifications });
         } catch (error) {
           set({ 
@@ -326,7 +326,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          await kanbanApi.markNotificationAsRead(token, notificationId);
+          await kanbanApi.markNotificationAsRead(notificationId);
           set(state => ({
             notifications: state.notifications.map(notification =>
               notification.id === notificationId 
@@ -346,7 +346,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          await kanbanApi.markAllNotificationsAsRead(token);
+          await kanbanApi.markAllNotificationsAsRead();
           set(state => ({
             notifications: state.notifications.map(notification => ({
               ...notification,
@@ -365,7 +365,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const { unreadCount } = await kanbanApi.getNotificationCount(token);
+          const { unreadCount } = await kanbanApi.getNotificationCount();
           set({ unreadNotificationCount: unreadCount });
         } catch (error) {
           console.error('Failed to fetch notification count:', error);
@@ -377,7 +377,7 @@ export const useKanbanStore = create<KanbanState>()(
         const { token } = useAuthStore.getState();
         if (!token) return;
         try {
-          const analytics = await kanbanApi.getBoardAnalytics(token, boardId, { startDate, endDate });
+          const analytics = await kanbanApi.getBoardAnalytics(boardId, { startDate, endDate });
           set({ analytics });
         } catch (error) {
           set({ 

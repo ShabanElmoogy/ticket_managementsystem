@@ -19,12 +19,13 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../../stores/authStore';
-import { profileApi, type ReminderSettings } from '../../../services/api';
+import { profileApi } from '../../../services/api';
+import type { ReminderSettings as ReminderSettingsType } from '../../../services/api';
 
 const ReminderSettings: React.FC = () => {
   const { user, token } = useAuthStore();
-  const [settings, setSettings] = useState<ReminderSettings>({ reminderEnabled: true, reminderInterval: 60 });
-  const [tempSettings, setTempSettings] = useState<ReminderSettings>({ reminderEnabled: true, reminderInterval: 60 });
+  const [settings, setSettings] = useState<ReminderSettingsType>({ reminderEnabled: true, reminderInterval: 60 });
+  const [tempSettings, setTempSettings] = useState<ReminderSettingsType>({ reminderEnabled: true, reminderInterval: 60 });
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);

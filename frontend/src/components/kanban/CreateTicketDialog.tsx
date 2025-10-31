@@ -22,7 +22,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { Priority } from '../../types/kanban';
 import { ticketsApi, usersApi, customersApi, applicationsApi } from '../../services/api';
-import { useAuthStore } from '../../stores/authStore';
 
 interface CreateTicketDialogProps {
   open: boolean;
@@ -54,7 +53,6 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   boardId
 }) => {
   const { labels, fetchLabels, fetchBoard } = useKanbanStore();
-  const { token } = useAuthStore();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -84,9 +82,8 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   }, [open, fetchLabels]);
 
   const fetchUsers = async () => {
-    if (!token) return;
     try {
-      const response = await usersApi.getUsers(token);
+      const response = await usersApi.getUsers();
       setUsers(response);
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -94,9 +91,8 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   const fetchCustomers = async () => {
-    if (!token) return;
     try {
-      const response = await customersApi.getCustomers(token);
+      const response = await customersApi.getCustomers();
       setCustomers(response);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
@@ -104,9 +100,8 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   const fetchApplications = async () => {
-    if (!token) return;
     try {
-      const response = await applicationsApi.getApplications(token);
+      const response = await applicationsApi.getApplications();
       setApplications(response);
     } catch (error) {
       console.error('Failed to fetch applications:', error);
@@ -136,7 +131,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         labels: formData.selectedLabels
       };
 
-      await ticketsApi.createTicket(token!, ticketData);
+      await ticketsApi.createTicket(ticketData);
       
       // Refresh the board to show the new ticket
       await fetchBoard(boardId);
