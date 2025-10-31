@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import Header from "./Header";
 import { LoadingSpinner } from "./ui";
 import { ViewRenderer } from "./components";
+import TicketReminder from "./components/TicketReminder";
 import { useDashboard } from "./hooks";
 
 const Dashboard: React.FC = () => {
@@ -25,6 +26,7 @@ const Dashboard: React.FC = () => {
         setCurrentView={setCurrentView}
         dashboardProps={dashboardProps}
       />
+      <TicketReminder onTicketClick={handleTicketClick} />
     </Box>
   );
 };
