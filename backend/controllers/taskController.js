@@ -1,43 +1,49 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { db } from '../config/database.js';
+import { tasks, users, kanbanBoards, kanbanColumns } from '../drizzle/schema.js';
+import { eq, desc, asc, and } from 'drizzle-orm';
 
 // Get all tasks for a board
 export const getTasks = async (req, res) => {
   try {
     const { boardId } = req.query;
     
-    const tasks = await prisma.task.findMany({
-      where: boardId ? { boardId } : {},
-      include: {
+    const tasksData = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        boardId: tasks.boardId,
+        columnId: tasks.columnId,
+        assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
         assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          id: users.id,
+          name: users.name,
+          email: users.email
         },
         board: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
+          id: kanbanBoards.id,
+          name: kanbanBoards.name,
+          type: kanbanBoards.type
         },
         column: {
-          select: {
-            id: true,
-            name: true,
-            color: true
-          }
+          id: kanbanColumns.id,
+          name: kanbanColumns.name,
+          color: kanbanColumns.color
         }
-      },
-      orderBy: [
-        { position: 'asc' },
-        { createdAt: 'desc' }
-      ]
-    });
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
+      .where(boardId ? eq(tasks.boardId, boardId) : undefined)
+      .orderBy(asc(tasks.position), desc(tasks.createdAt));
 
-    res.json(tasks);
+    res.json(tasksData);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });
@@ -49,38 +55,47 @@ export const getTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const task = await prisma.task.findUnique({
-      where: { id },
-      include: {
+    const task = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        boardId: tasks.boardId,
+        columnId: tasks.columnId,
+        assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
         assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          id: users.id,
+          name: users.name,
+          email: users.email
         },
         board: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
+          id: kanbanBoards.id,
+          name: kanbanBoards.name,
+          type: kanbanBoards.type
         },
         column: {
-          select: {
-            id: true,
-            name: true,
-            color: true
-          }
+          id: kanbanColumns.id,
+          name: kanbanColumns.name,
+          color: kanbanColumns.color
         }
-      }
-    });
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    if (!task) {
+    if (!task.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    res.json(task);
+    res.json(task[0]);
   } catch (error) {
     console.error('Error fetching task:', error);
     res.status(500).json({ error: 'Failed to fetch task' });
@@ -97,40 +112,44 @@ export const createTask = async (req, res) => {
     }
 
     // Verify board exists and is of type TASKS
-    const board = await prisma.kanbanBoard.findUnique({
-      where: { id: boardId }
-    });
+    const board = await db
+      .select()
+      .from(kanbanBoards)
+      .where(eq(kanbanBoards.id, boardId))
+      .limit(1);
 
-    if (!board) {
+    if (!board.length) {
       return res.status(404).json({ error: 'Board not found' });
     }
 
-    if (board.type !== 'TASKS') {
+    if (board[0].type !== 'TASKS') {
       return res.status(400).json({ error: 'Board must be of type TASKS' });
     }
 
     // Verify column exists and belongs to the board
-    const column = await prisma.kanbanColumn.findFirst({
-      where: {
-        id: columnId,
-        boardId: boardId
-      }
-    });
+    const column = await db
+      .select()
+      .from(kanbanColumns)
+      .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.boardId, boardId)))
+      .limit(1);
 
-    if (!column) {
+    if (!column.length) {
       return res.status(404).json({ error: 'Column not found or does not belong to this board' });
     }
 
     // Get the next position for this column
-    const lastTask = await prisma.task.findFirst({
-      where: { columnId },
-      orderBy: { position: 'desc' }
-    });
+    const lastTask = await db
+      .select({ position: tasks.position })
+      .from(tasks)
+      .where(eq(tasks.columnId, columnId))
+      .orderBy(desc(tasks.position))
+      .limit(1);
 
-    const position = lastTask ? lastTask.position + 1 : 0;
+    const position = lastTask.length ? lastTask[0].position + 1 : 0;
 
-    const task = await prisma.task.create({
-      data: {
+    const [newTask] = await db
+      .insert(tasks)
+      .values({
         title,
         description: description || '',
         boardId,
@@ -139,31 +158,44 @@ export const createTask = async (req, res) => {
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'TODO',
         position
-      },
-      include: {
+      })
+      .returning();
+
+    const task = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        boardId: tasks.boardId,
+        columnId: tasks.columnId,
+        assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
         assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          id: users.id,
+          name: users.name,
+          email: users.email
         },
         board: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
+          id: kanbanBoards.id,
+          name: kanbanBoards.name,
+          type: kanbanBoards.type
         },
         column: {
-          select: {
-            id: true,
-            name: true,
-            color: true
-          }
+          id: kanbanColumns.id,
+          name: kanbanColumns.name,
+          color: kanbanColumns.color
         }
-      }
-    });
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
+      .where(eq(tasks.id, newTask.id))
+      .limit(1);
 
     res.status(201).json(task);
   } catch (error) {
@@ -178,11 +210,13 @@ export const updateTask = async (req, res) => {
     const { id } = req.params;
     const { title, description, assigneeId, dueDate, status, columnId, position } = req.body;
 
-    const existingTask = await prisma.task.findUnique({
-      where: { id }
-    });
+    const existingTask = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    if (!existingTask) {
+    if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
@@ -195,35 +229,48 @@ export const updateTask = async (req, res) => {
     if (columnId !== undefined) updateData.columnId = columnId;
     if (position !== undefined) updateData.position = position;
 
-    const task = await prisma.task.update({
-      where: { id },
-      data: updateData,
-      include: {
+    await db
+      .update(tasks)
+      .set(updateData)
+      .where(eq(tasks.id, id));
+
+    const task = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        boardId: tasks.boardId,
+        columnId: tasks.columnId,
+        assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
         assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          id: users.id,
+          name: users.name,
+          email: users.email
         },
         board: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
+          id: kanbanBoards.id,
+          name: kanbanBoards.name,
+          type: kanbanBoards.type
         },
         column: {
-          select: {
-            id: true,
-            name: true,
-            color: true
-          }
+          id: kanbanColumns.id,
+          name: kanbanColumns.name,
+          color: kanbanColumns.color
         }
-      }
-    });
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    res.json(task);
+    res.json(task[0]);
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(500).json({ error: 'Failed to update task' });
@@ -235,17 +282,19 @@ export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingTask = await prisma.task.findUnique({
-      where: { id }
-    });
+    const existingTask = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    if (!existingTask) {
+    if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    await prisma.task.delete({
-      where: { id }
-    });
+    await db
+      .delete(tasks)
+      .where(eq(tasks.id, id));
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
@@ -260,48 +309,63 @@ export const moveTask = async (req, res) => {
     const { id } = req.params;
     const { columnId, position, status } = req.body;
 
-    const task = await prisma.task.findUnique({
-      where: { id }
-    });
+    const task = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    if (!task) {
+    if (!task.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
     // Update task position and column
-    const updatedTask = await prisma.task.update({
-      where: { id },
-      data: {
+    await db
+      .update(tasks)
+      .set({
         columnId,
         position,
-        status: status || task.status
-      },
-      include: {
+        status: status || task[0].status
+      })
+      .where(eq(tasks.id, id));
+
+    const updatedTask = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        boardId: tasks.boardId,
+        columnId: tasks.columnId,
+        assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        position: tasks.position,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
         assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+          id: users.id,
+          name: users.name,
+          email: users.email
         },
         board: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
+          id: kanbanBoards.id,
+          name: kanbanBoards.name,
+          type: kanbanBoards.type
         },
         column: {
-          select: {
-            id: true,
-            name: true,
-            color: true
-          }
+          id: kanbanColumns.id,
+          name: kanbanColumns.name,
+          color: kanbanColumns.color
         }
-      }
-    });
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
+      .where(eq(tasks.id, id))
+      .limit(1);
 
-    res.json(updatedTask);
+    res.json(updatedTask[0]);
   } catch (error) {
     console.error('Error moving task:', error);
     res.status(500).json({ error: 'Failed to move task' });

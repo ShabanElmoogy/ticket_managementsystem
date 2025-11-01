@@ -1,26 +1,55 @@
-import { prisma } from '../config/database.js';
+import { db } from '../config/database.js';
+import { customers, customerApplications, applications, tickets, users } from '../drizzle/schema.js';
+import { eq, count, and } from 'drizzle-orm';
 
 // Get all customers
 export const getAllCustomers = async (req, res) => {
   try {
-    const customers = await prisma.customer.findMany({
-      include: {
-        applications: {
-          include: {
-            application: true
+    const customerList = await db.select({
+      id: customers.id,
+      name: customers.name,
+      email: customers.email,
+      phone: customers.phone,
+      address: customers.address,
+      description: customers.description,
+      isActive: customers.isActive,
+      createdAt: customers.createdAt,
+      updatedAt: customers.updatedAt
+    }).from(customers).orderBy(customers.createdAt);
+
+    // For each customer, get their applications and ticket count
+    const customersWithDetails = await Promise.all(
+      customerList.map(async (customer) => {
+        // Get applications
+        const customerApps = await db.select({
+          id: customerApplications.id,
+          assignedAt: customerApplications.assignedAt,
+          application: {
+            id: applications.id,
+            name: applications.name,
+            version: applications.version
           }
-        },
-        _count: {
-          select: {
-            tickets: true
+        })
+        .from(customerApplications)
+        .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+        .where(eq(customerApplications.customerId, customer.id));
+
+        // Get ticket count
+        const [ticketCount] = await db.select({ count: count() })
+          .from(tickets)
+          .where(eq(tickets.customerId, customer.id));
+
+        return {
+          ...customer,
+          applications: customerApps,
+          _count: {
+            tickets: ticketCount.count
           }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    res.json(customers);
+        };
+      })
+    );
+
+    res.json(customersWithDetails);
   } catch (error) {
     console.error('Get customers error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -31,40 +60,57 @@ export const getAllCustomers = async (req, res) => {
 export const getCustomerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const customer = await prisma.customer.findUnique({
-      where: { id },
-      include: {
-        applications: {
-          include: {
-            application: true
-          }
-        },
-        tickets: {
-          include: {
-            assignedTo: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            createdBy: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
 
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    res.json(customer);
+    // Get applications
+    const customerApps = await db.select({
+      id: customerApplications.id,
+      assignedAt: customerApplications.assignedAt,
+      application: {
+        id: applications.id,
+        name: applications.name,
+        version: applications.version
+      }
+    })
+    .from(customerApplications)
+    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+    .where(eq(customerApplications.customerId, id));
+
+    // Get tickets with assigned and created users
+    const customerTickets = await db.select({
+      id: tickets.id,
+      title: tickets.title,
+      description: tickets.description,
+      status: tickets.status,
+      priority: tickets.priority,
+      dueDate: tickets.dueDate,
+      createdAt: tickets.createdAt,
+      assignedTo: {
+        id: users.id,
+        name: users.name,
+        email: users.email
+      },
+      createdBy: {
+        id: users.id,
+        name: users.name,
+        email: users.email
+      }
+    })
+    .from(tickets)
+    .leftJoin(users, eq(tickets.assignedToId, users.id))
+    .where(eq(tickets.customerId, id));
+
+    const customerWithDetails = {
+      ...customer,
+      applications: customerApps,
+      tickets: customerTickets
+    };
+
+    res.json(customerWithDetails);
   } catch (error) {
     console.error('Get customer error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -82,43 +128,53 @@ export const createCustomer = async (req, res) => {
     }
 
     // Check if email already exists
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { email }
-    });
+    const [existingCustomer] = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
 
     if (existingCustomer) {
       return res.status(400).json({ error: 'Customer with this email already exists' });
     }
 
-    // Create customer with applications
-    const customer = await prisma.customer.create({
-      data: {
-        name,
-        email,
-        phone,
-        address,
-        description,
-        applications: {
-          create: applicationIds.map(appId => ({
-            applicationId: appId
-          }))
-        }
-      },
-      include: {
-        applications: {
-          include: {
-            application: true
-          }
-        }
-      }
-    });
+    // Create customer
+    const [customer] = await db.insert(customers).values({
+      name,
+      email,
+      phone,
+      address,
+      description
+    }).returning();
 
-    res.status(201).json(customer);
+    // Create customer-application relationships
+    if (applicationIds.length > 0) {
+      await db.insert(customerApplications).values(
+        applicationIds.map(appId => ({
+          customerId: customer.id,
+          applicationId: appId
+        }))
+      );
+    }
+
+    // Get customer with applications for response
+    const customerApps = await db.select({
+      id: customerApplications.id,
+      assignedAt: customerApplications.assignedAt,
+      application: {
+        id: applications.id,
+        name: applications.name,
+        version: applications.version
+      }
+    })
+    .from(customerApplications)
+    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+    .where(eq(customerApplications.customerId, customer.id));
+
+    const customerWithApps = {
+      ...customer,
+      applications: customerApps
+    };
+
+    res.status(201).json(customerWithApps);
   } catch (error) {
     console.error('Create customer error:', error);
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Customer with this email already exists' });
-    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -130,9 +186,7 @@ export const updateCustomer = async (req, res) => {
     const { name, email, phone, address, description, isActive, applicationIds } = req.body;
 
     // Check if customer exists
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { id }
-    });
+    const [existingCustomer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
 
     if (!existingCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
@@ -140,57 +194,63 @@ export const updateCustomer = async (req, res) => {
 
     // Check if email is being changed and if it already exists
     if (email && email !== existingCustomer.email) {
-      const emailExists = await prisma.customer.findUnique({
-        where: { email }
-      });
+      const [emailExists] = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
 
       if (emailExists) {
         return res.status(400).json({ error: 'Customer with this email already exists' });
       }
     }
 
+    // Prepare update data
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (description !== undefined) updateData.description = description;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
     // Update customer
-    const updateData = {
-      ...(name && { name }),
-      ...(email && { email }),
-      ...(phone !== undefined && { phone }),
-      ...(address !== undefined && { address }),
-      ...(description !== undefined && { description }),
-      ...(isActive !== undefined && { isActive })
-    };
+    const [customer] = await db.update(customers).set(updateData).where(eq(customers.id, id)).returning();
 
     // Handle application updates if provided
     if (applicationIds !== undefined) {
-      // Remove existing applications and add new ones
-      await prisma.customerApplication.deleteMany({
-        where: { customerId: id }
-      });
+      // Remove existing applications
+      await db.delete(customerApplications).where(eq(customerApplications.customerId, id));
 
-      updateData.applications = {
-        create: applicationIds.map(appId => ({
-          applicationId: appId
-        }))
-      };
+      // Add new applications
+      if (applicationIds.length > 0) {
+        await db.insert(customerApplications).values(
+          applicationIds.map(appId => ({
+            customerId: id,
+            applicationId: appId
+          }))
+        );
+      }
     }
 
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: updateData,
-      include: {
-        applications: {
-          include: {
-            application: true
-          }
-        }
+    // Get updated customer with applications
+    const customerApps = await db.select({
+      id: customerApplications.id,
+      assignedAt: customerApplications.assignedAt,
+      application: {
+        id: applications.id,
+        name: applications.name,
+        version: applications.version
       }
-    });
+    })
+    .from(customerApplications)
+    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+    .where(eq(customerApplications.customerId, id));
 
-    res.json(customer);
+    const customerWithApps = {
+      ...customer,
+      applications: customerApps
+    };
+
+    res.json(customerWithApps);
   } catch (error) {
     console.error('Update customer error:', error);
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Customer with this email already exists' });
-    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -201,31 +261,22 @@ export const deleteCustomer = async (req, res) => {
     const { id } = req.params;
 
     // Check if customer exists
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: {
-            tickets: true
-          }
-        }
-      }
-    });
+    const [existingCustomer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
 
     if (!existingCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
     // Check if customer has tickets
-    if (existingCustomer._count.tickets > 0) {
-      return res.status(400).json({ 
-        error: 'Cannot delete customer with existing tickets. Please reassign or delete tickets first.' 
+    const [ticketCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.customerId, id));
+
+    if (ticketCount.count > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete customer with existing tickets. Please reassign or delete tickets first.'
       });
     }
 
-    await prisma.customer.delete({
-      where: { id }
-    });
+    await db.delete(customers).where(eq(customers.id, id));
 
     res.json({ message: 'Customer deleted successfully' });
   } catch (error) {

@@ -1,23 +1,21 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '../config/database.js';
+import { notifications, tickets, users, customers, applications } from '../drizzle/schema.js';
+import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 
 export const createNotification = async ({ userId, ticketId, type, title, message }) => {
   try {
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        ticketId,
-        type,
-        title,
-        message
-      }
+    await db.insert(notifications).values({
+      userId,
+      ticketId,
+      type,
+      title,
+      message
     });
 
     // Here you could add real-time notification via WebSocket
     // io.to(userId).emit('notification', notification);
 
-    return notification;
+    return { success: true };
   } catch (error) {
     console.error('Error creating notification:', error);
     throw error;
@@ -26,10 +24,11 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
 
 export const markNotificationAsRead = async (notificationId) => {
   try {
-    return await prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true }
-    });
+    await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+    
+    return { success: true };
   } catch (error) {
     console.error('Error marking notification as read:', error);
     throw error;
@@ -38,32 +37,39 @@ export const markNotificationAsRead = async (notificationId) => {
 
 export const getUserNotifications = async (userId, { limit = 50, unreadOnly = false } = {}) => {
   try {
-    const where = { userId };
+    const conditions = [eq(notifications.userId, userId)];
     if (unreadOnly) {
-      where.isRead = false;
+      conditions.push(eq(notifications.isRead, false));
     }
 
-    return await prisma.notification.findMany({
-      where,
-      include: {
+    return await db
+      .select({
+        id: notifications.id,
+        title: notifications.title,
+        message: notifications.message,
+        type: notifications.type,
+        isRead: notifications.isRead,
+        createdAt: notifications.createdAt,
         ticket: {
-          select: { id: true, title: true }
+          id: tickets.id,
+          title: tickets.title
         }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit
-    });
+      })
+      .from(notifications)
+      .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit);
   } catch (error) {
     console.error('Error fetching user notifications:', error);
     throw error;
   }
 };
 
-export const createBulkNotifications = async (notifications) => {
+export const createBulkNotifications = async (notificationData) => {
   try {
-    return await prisma.notification.createMany({
-      data: notifications
-    });
+    await db.insert(notifications).values(notificationData);
+    return { success: true };
   } catch (error) {
     console.error('Error creating bulk notifications:', error);
     throw error;
@@ -80,54 +86,54 @@ export const checkDueDateNotifications = async () => {
     nextDay.setDate(nextDay.getDate() + 1);
 
     // Find tickets due tomorrow
-    const ticketsDueSoon = await prisma.ticket.findMany({
-      where: {
-        dueDate: {
-          gte: tomorrow,
-          lt: nextDay
-        },
-        status: {
-          not: 'CLOSED'
-        },
-        assignedToId: {
-          not: null
-        }
-      },
-      include: {
-        assignedTo: true,
+    const ticketsDueSoon = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        assignedToId: tickets.assignedToId,
         customer: {
-          select: { name: true }
+          name: customers.name
         },
         application: {
-          select: { name: true }
+          name: applications.name
         }
-      }
-    });
+      })
+      .from(tickets)
+      .leftJoin(customers, eq(tickets.customerId, customers.id))
+      .leftJoin(applications, eq(tickets.applicationId, applications.id))
+      .where(
+        and(
+          gte(tickets.dueDate, tomorrow),
+          lt(tickets.dueDate, nextDay),
+          not(eq(tickets.status, 'CLOSED')),
+          isNotNull(tickets.assignedToId)
+        )
+      );
 
     // Find overdue tickets
     const now = new Date();
-    const overdueTickets = await prisma.ticket.findMany({
-      where: {
-        dueDate: {
-          lt: now
-        },
-        status: {
-          not: 'CLOSED'
-        },
-        assignedToId: {
-          not: null
-        }
-      },
-      include: {
-        assignedTo: true,
+    const overdueTickets = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        assignedToId: tickets.assignedToId,
         customer: {
-          select: { name: true }
+          name: customers.name
         },
         application: {
-          select: { name: true }
+          name: applications.name
         }
-      }
-    });
+      })
+      .from(tickets)
+      .leftJoin(customers, eq(tickets.customerId, customers.id))
+      .leftJoin(applications, eq(tickets.applicationId, applications.id))
+      .where(
+        and(
+          lt(tickets.dueDate, now),
+          not(eq(tickets.status, 'CLOSED')),
+          isNotNull(tickets.assignedToId)
+        )
+      );
 
     // Create notifications for tickets due soon
     const dueSoonNotifications = ticketsDueSoon.map(ticket => {

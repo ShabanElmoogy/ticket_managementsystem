@@ -1,22 +1,40 @@
-import { prisma } from '../config/database.js';
+import { db } from '../config/database.js';
+import { tickets, comments, users } from '../drizzle/schema.js';
+import { eq, and, count, desc } from 'drizzle-orm';
 
 // Get dashboard statistics
 export const getStats = async (req, res) => {
   try {
-    const where = req.user.role === 'ADMIN' ? {} : { assignedToId: req.user.userId };
+    const isAdmin = req.user.role === 'ADMIN';
+    
+    const totalTicketsQuery = isAdmin 
+      ? db.select({ count: count() }).from(tickets)
+      : db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, req.user.userId));
+    
+    const openTicketsQuery = isAdmin
+      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'OPEN'))
+      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'OPEN')));
+    
+    const inProgressTicketsQuery = isAdmin
+      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'IN_PROGRESS'))
+      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'IN_PROGRESS')));
+    
+    const resolvedTicketsQuery = isAdmin
+      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'RESOLVED'))
+      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'RESOLVED')));
 
     const [totalTickets, openTickets, inProgressTickets, resolvedTickets] = await Promise.all([
-      prisma.ticket.count({ where }),
-      prisma.ticket.count({ where: { ...where, status: 'OPEN' } }),
-      prisma.ticket.count({ where: { ...where, status: 'IN_PROGRESS' } }),
-      prisma.ticket.count({ where: { ...where, status: 'RESOLVED' } })
+      totalTicketsQuery,
+      openTicketsQuery,
+      inProgressTicketsQuery,
+      resolvedTicketsQuery
     ]);
 
     res.json({
-      totalTickets,
-      openTickets,
-      inProgressTickets,
-      resolvedTickets
+      totalTickets: totalTickets[0].count,
+      openTickets: openTickets[0].count,
+      inProgressTickets: inProgressTickets[0].count,
+      resolvedTickets: resolvedTickets[0].count
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -29,42 +47,67 @@ export const getActivities = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
     
-    // Get recent tickets (created, updated)
-    const recentTickets = await prisma.ticket.findMany({
-      take: limit,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        },
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        }
-      }
-    });
+    // Get recent tickets with user data
+    const recentTickets = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        priority: tickets.priority,
+        status: tickets.status,
+        createdAt: tickets.createdAt,
+        updatedAt: tickets.updatedAt,
+        assignedToId: tickets.assignedToId,
+        createdById: tickets.createdById
+      })
+      .from(tickets)
+      .orderBy(desc(tickets.updatedAt))
+      .limit(limit);
 
-    // Get recent comments
-    const recentComments = await prisma.comment.findMany({
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true }
-        },
-        ticket: {
-          select: { id: true, title: true, priority: true, status: true }
-        }
-      }
-    });
+    // Get user data for tickets
+    const userIds = [...new Set([
+      ...recentTickets.map(t => t.assignedToId).filter(Boolean),
+      ...recentTickets.map(t => t.createdById).filter(Boolean)
+    ])];
+    
+    const ticketUsers = userIds.length > 0 ? await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email
+      })
+      .from(users)
+      .where(eq(users.id, userIds[0])) // Simplified for single user lookup
+      : [];
+
+    // Get recent comments with user and ticket data
+    const recentComments = await db
+      .select({
+        id: comments.id,
+        content: comments.content,
+        createdAt: comments.createdAt,
+        userId: comments.userId,
+        ticketId: comments.ticketId,
+        userName: users.name,
+        userEmail: users.email,
+        ticketTitle: tickets.title,
+        ticketPriority: tickets.priority,
+        ticketStatus: tickets.status
+      })
+      .from(comments)
+      .innerJoin(users, eq(users.id, comments.userId))
+      .innerJoin(tickets, eq(tickets.id, comments.ticketId))
+      .orderBy(desc(comments.createdAt))
+      .limit(limit);
 
     // Combine and format activities
     const activities = [];
 
     // Add ticket activities
     recentTickets.forEach(ticket => {
-      // Check if ticket was recently created (within last hour of update)
       const timeDiff = new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime();
       const isNewTicket = timeDiff < 60000; // 1 minute threshold
+      const createdByUser = ticketUsers.find(u => u.id === ticket.createdById);
+      const assignedToUser = ticketUsers.find(u => u.id === ticket.assignedToId);
 
       if (isNewTicket) {
         activities.push({
@@ -77,11 +120,11 @@ export const getActivities = async (req, res) => {
               priority: ticket.priority,
               status: ticket.status
             },
-            createdBy: ticket.createdBy.name
+            createdBy: createdByUser?.name || 'Unknown'
           },
           timestamp: ticket.createdAt
         });
-      } else if (ticket.assignedTo) {
+      } else if (assignedToUser) {
         activities.push({
           id: `ticket-assigned-${ticket.id}-${ticket.updatedAt}`,
           type: 'TICKET_ASSIGNED',
@@ -92,7 +135,7 @@ export const getActivities = async (req, res) => {
               priority: ticket.priority,
               status: ticket.status
             },
-            assignedTo: ticket.assignedTo.name
+            assignedTo: assignedToUser.name
           },
           timestamp: ticket.updatedAt
         });
@@ -107,7 +150,7 @@ export const getActivities = async (req, res) => {
               priority: ticket.priority,
               status: ticket.status
             },
-            updatedBy: ticket.createdBy.name // This could be improved with actual updater tracking
+            updatedBy: createdByUser?.name || 'Unknown'
           },
           timestamp: ticket.updatedAt
         });
@@ -124,8 +167,13 @@ export const getActivities = async (req, res) => {
             id: comment.id,
             content: comment.content.substring(0, 100) + (comment.content.length > 100 ? '...' : '')
           },
-          ticket: comment.ticket,
-          commentBy: comment.user.name
+          ticket: {
+            id: comment.ticketId,
+            title: comment.ticketTitle,
+            priority: comment.ticketPriority,
+            status: comment.ticketStatus
+          },
+          commentBy: comment.userName
         },
         timestamp: comment.createdAt
       });

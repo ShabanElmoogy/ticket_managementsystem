@@ -1,79 +1,112 @@
-import { PrismaClient } from '@prisma/client';
+import { db } from '../config/database.js';
+import { kanbanBoards, kanbanColumns, tasks, tickets, users, customers, applications, labels, ticketLabels, comments, boardPermissions } from '../drizzle/schema.js';
+import { eq, and, asc, count, inArray } from 'drizzle-orm';
 import { createNotification } from '../utils/notificationUtils.js';
 import { logActivity } from '../utils/activityUtils.js';
-
-const prisma = new PrismaClient();
 
 // Get all boards with columns and tickets/tasks
 export const getAllBoards = async (req, res) => {
   try {
     console.log('=== GET ALL BOARDS REQUEST START ===');
     
-    const boards = await prisma.kanbanBoard.findMany({
-      where: { isActive: true },
-      include: {
-        columns: {
-          where: { isActive: true },
-          orderBy: { position: 'asc' },
-        },
-        permissions: {
-          include: { user: { select: { id: true, name: true, email: true } } }
-        }
-      }
-    });
+    // Get boards with columns
+    const boards = await db
+      .select()
+      .from(kanbanBoards)
+      .where(eq(kanbanBoards.isActive, true));
+
+    // Get columns for all boards
+    const columns = await db
+      .select()
+      .from(kanbanColumns)
+      .where(eq(kanbanColumns.isActive, true))
+      .orderBy(asc(kanbanColumns.position));
+
+    // Get permissions for all boards
+    const permissions = await db
+      .select({
+        boardId: boardPermissions.boardId,
+        userId: boardPermissions.userId,
+        role: boardPermissions.role,
+        userName: users.name,
+        userEmail: users.email
+      })
+      .from(boardPermissions)
+      .innerJoin(users, eq(users.id, boardPermissions.userId));
 
     console.log('Fetched boards from database:', boards.length);
 
-    // Try to get tasks, but handle gracefully if Task model doesn't exist yet
+    // Try to get tasks
     let allTasks = [];
     try {
-      allTasks = await prisma.task.findMany({
-        include: {
-          assignee: { select: { id: true, name: true, email: true } },
-          board: { select: { id: true, name: true } },
-          column: { select: { id: true, name: true, color: true } }
-        },
-        orderBy: { position: 'asc' }
-      });
+      allTasks = await db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          description: tasks.description,
+          status: tasks.status,
+          priority: tasks.priority,
+          position: tasks.position,
+          boardId: tasks.boardId,
+          columnId: tasks.columnId,
+          assigneeId: tasks.assigneeId,
+          assigneeName: users.name,
+          assigneeEmail: users.email
+        })
+        .from(tasks)
+        .leftJoin(users, eq(users.id, tasks.assigneeId))
+        .orderBy(asc(tasks.position));
       console.log('Fetched tasks from database:', allTasks.length);
     } catch (taskError) {
-      console.log('Tasks not available yet (this is normal if migration not run):', taskError.message);
+      console.log('Tasks not available yet:', taskError.message);
     }
 
-    // Get all tickets
-    const allTickets = await prisma.ticket.findMany({
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        createdBy: { select: { id: true, name: true, email: true } },
-        customer: { select: { id: true, name: true } },
-        application: { select: { id: true, name: true } },
-        labels: {
-          include: { label: true }
-        },
-        _count: { select: { comments: true } }
-      },
-      orderBy: { position: 'asc' }
-    });
+    // Get all tickets with related data
+    const allTickets = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        description: tickets.description,
+        status: tickets.status,
+        priority: tickets.priority,
+        position: tickets.position,
+        boardId: tickets.boardId,
+        assignedToId: tickets.assignedToId,
+        createdById: tickets.createdById,
+        customerId: tickets.customerId,
+        applicationId: tickets.applicationId,
+        assignedToName: users.name,
+        assignedToEmail: users.email,
+        customerName: customers.name,
+        applicationName: applications.name
+      })
+      .from(tickets)
+      .leftJoin(users, eq(users.id, tickets.assignedToId))
+      .leftJoin(customers, eq(customers.id, tickets.customerId))
+      .leftJoin(applications, eq(applications.id, tickets.applicationId))
+      .orderBy(asc(tickets.position));
 
     console.log('Fetched tickets from database:', allTickets.length);
 
-    // Assign tickets/tasks to boards based on board type (if type field exists)
+    // Assign tickets/tasks to boards based on board type
     const boardsWithItems = boards.map(board => {
-      // Check if board has type field and if it's TASKS
+      const boardColumns = columns.filter(col => col.boardId === board.id);
+      const boardPermissions = permissions.filter(perm => perm.boardId === board.id);
+      
       if (board.type === 'TASKS') {
         const boardTasks = allTasks.filter(task => task.boardId === board.id);
         return {
           ...board,
+          columns: boardColumns,
+          permissions: boardPermissions,
           tasks: boardTasks,
-          tickets: [] // Empty for task boards
+          tickets: []
         };
       } else {
-        // Default to tickets (for TICKETS type or if type field doesn't exist)
         const boardTickets = allTickets.filter(ticket => {
           if (ticket.boardId === board.id) {
             return true;
           }
-          // If ticket has no boardId and this is the first board or default board, include it
           if (!ticket.boardId && (board.isDefault || boards.indexOf(board) === 0)) {
             return true;
           }
@@ -82,8 +115,10 @@ export const getAllBoards = async (req, res) => {
 
         return {
           ...board,
+          columns: boardColumns,
+          permissions: boardPermissions,
           tickets: boardTickets,
-          tasks: [] // Empty for ticket boards
+          tasks: []
         };
       }
     });
@@ -107,69 +142,98 @@ export const getBoardById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const board = await prisma.kanbanBoard.findUnique({
-      where: { id },
-      include: {
-        columns: {
-          where: { isActive: true },
-          orderBy: { position: 'asc' },
-        },
-        permissions: {
-          include: { user: { select: { id: true, name: true, email: true } } }
-        }
-      }
-    });
+    const [board] = await db
+      .select()
+      .from(kanbanBoards)
+      .where(eq(kanbanBoards.id, id))
+      .limit(1);
 
     if (!board) {
       return res.status(404).json({ error: 'Board not found' });
     }
 
+    // Get columns for this board
+    const boardColumns = await db
+      .select()
+      .from(kanbanColumns)
+      .where(and(eq(kanbanColumns.boardId, id), eq(kanbanColumns.isActive, true)))
+      .orderBy(asc(kanbanColumns.position));
+
+    // Get permissions for this board
+    const boardPermissions = await db
+      .select({
+        userId: boardPermissions.userId,
+        role: boardPermissions.role,
+        userName: users.name,
+        userEmail: users.email
+      })
+      .from(boardPermissions)
+      .innerJoin(users, eq(users.id, boardPermissions.userId))
+      .where(eq(boardPermissions.boardId, id));
+
     let boardWithItems;
 
     if (board.type === 'TASKS') {
-      // Get all tasks for this board
       let boardTasks = [];
       try {
-        boardTasks = await prisma.task.findMany({
-          where: { boardId: board.id },
-          include: {
-            assignee: { select: { id: true, name: true, email: true } },
-            board: { select: { id: true, name: true } },
-            column: { select: { id: true, name: true, color: true } }
-          },
-          orderBy: { position: 'asc' }
-        });
+        boardTasks = await db
+          .select({
+            id: tasks.id,
+            title: tasks.title,
+            description: tasks.description,
+            status: tasks.status,
+            priority: tasks.priority,
+            position: tasks.position,
+            assigneeId: tasks.assigneeId,
+            assigneeName: users.name,
+            assigneeEmail: users.email
+          })
+          .from(tasks)
+          .leftJoin(users, eq(users.id, tasks.assigneeId))
+          .where(eq(tasks.boardId, id))
+          .orderBy(asc(tasks.position));
       } catch (taskError) {
         console.log('Tasks not available yet:', taskError.message);
       }
 
       boardWithItems = {
         ...board,
+        columns: boardColumns,
+        permissions: boardPermissions,
         tasks: boardTasks,
         tickets: []
       };
     } else {
-      // Get all tickets for this board (including those without boardId if this is default/first board)
-      const allTickets = await prisma.ticket.findMany({
-        include: {
-          assignedTo: { select: { id: true, name: true, email: true } },
-          createdBy: { select: { id: true, name: true, email: true } },
-          customer: { select: { id: true, name: true } },
-          application: { select: { id: true, name: true } },
-          labels: {
-            include: { label: true }
-          },
-          _count: { select: { comments: true } }
-        },
-        orderBy: { position: 'asc' }
-      });
+      // Get all tickets
+      const allTickets = await db
+        .select({
+          id: tickets.id,
+          title: tickets.title,
+          description: tickets.description,
+          status: tickets.status,
+          priority: tickets.priority,
+          position: tickets.position,
+          boardId: tickets.boardId,
+          assignedToId: tickets.assignedToId,
+          createdById: tickets.createdById,
+          customerId: tickets.customerId,
+          applicationId: tickets.applicationId,
+          assignedToName: users.name,
+          assignedToEmail: users.email,
+          customerName: customers.name,
+          applicationName: applications.name
+        })
+        .from(tickets)
+        .leftJoin(users, eq(users.id, tickets.assignedToId))
+        .leftJoin(customers, eq(customers.id, tickets.customerId))
+        .leftJoin(applications, eq(applications.id, tickets.applicationId))
+        .orderBy(asc(tickets.position));
 
       // Filter tickets for this board
       const boardTickets = allTickets.filter(ticket => {
-        if (ticket.boardId === board.id) {
+        if (ticket.boardId === id) {
           return true;
         }
-        // If ticket has no boardId and this is the default board, include it
         if (!ticket.boardId && board.isDefault) {
           return true;
         }
@@ -178,6 +242,8 @@ export const getBoardById = async (req, res) => {
 
       boardWithItems = {
         ...board,
+        columns: boardColumns,
+        permissions: boardPermissions,
         tickets: boardTickets,
         tasks: []
       };
@@ -203,8 +269,8 @@ export const createBoard = async (req, res) => {
     console.log('Creating board with userId:', userId);
     console.log('Raw type value:', type);
 
-    // Normalize the type value to match BoardType enum
-    let boardType = 'TICKETS'; // Default
+    // Normalize the type value
+    let boardType = 'TICKETS';
     if (type) {
       const normalizedType = type.toString().toUpperCase();
       if (normalizedType === 'TASKS' || normalizedType === 'TASK') {
@@ -216,57 +282,67 @@ export const createBoard = async (req, res) => {
 
     console.log('Normalized board type:', boardType);
 
-    const board = await prisma.kanbanBoard.create({
-      data: {
+    // Create board
+    await db
+      .insert(kanbanBoards)
+      .values({
         name,
         description,
         type: boardType,
-        isDefault: isDefault || false,
-        columns: {
-          create: columns?.map((col, index) => ({
-            name: col.name,
-            description: col.description,
-            color: col.color,
-            position: index,
-            wipLimit: col.wipLimit
-          })) || [
-            { name: 'To Do', position: 0, color: '#e3f2fd' },
-            { name: 'In Progress', position: 1, color: '#fff3e0' },
-            { name: 'Review', position: 2, color: '#f3e5f5' },
-            { name: 'Done', position: 3, color: '#e8f5e8' }
-          ]
-        },
-        permissions: userId !== 'test-user-id' ? {
-          create: {
-            userId,
-            role: 'ADMIN'
-          }
-        } : undefined
-      },
-      include: {
-        columns: { orderBy: { position: 'asc' } },
-        permissions: {
-          include: { user: { select: { id: true, name: true, email: true } } }
-        }
-      }
-    });
+        isDefault: isDefault || false
+      });
+
+    const [board] = await db.select().from(kanbanBoards).where(eq(kanbanBoards.name, name)).limit(1);
+
+    // Create columns
+    const defaultColumns = [
+      { name: 'To Do', position: 0, color: '#e3f2fd' },
+      { name: 'In Progress', position: 1, color: '#fff3e0' },
+      { name: 'Review', position: 2, color: '#f3e5f5' },
+      { name: 'Done', position: 3, color: '#e8f5e8' }
+    ];
+
+    const columnsToCreate = columns?.map((col, index) => ({
+      boardId: board.id,
+      name: col.name,
+      description: col.description,
+      color: col.color,
+      position: index,
+      wipLimit: col.wipLimit
+    })) || defaultColumns.map(col => ({
+      boardId: board.id,
+      ...col
+    }));
+
+    await db.insert(kanbanColumns).values(columnsToCreate);
+    const createdColumns = await db.select().from(kanbanColumns).where(eq(kanbanColumns.boardId, board.id));
+
+    // Create permissions if user is not test user
+    let createdPermissions = [];
+    if (userId !== 'test-user-id') {
+      await db.insert(boardPermissions).values({
+        boardId: board.id,
+        userId,
+        role: 'ADMIN'
+      });
+      createdPermissions = await db.select().from(boardPermissions).where(eq(boardPermissions.boardId, board.id));
+    }
+
+    const boardWithRelations = {
+      ...board,
+      columns: createdColumns,
+      permissions: createdPermissions
+    };
 
     console.log('Board created successfully:', board.id);
-    res.status(201).json(board);
+    res.status(201).json(boardWithRelations);
   } catch (error) {
     console.error('=== CREATE BOARD REQUEST ERROR ===');
     console.error('Error creating board:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
-    if (error.code) {
-      console.error('Prisma error code:', error.code);
-    }
     
     res.status(500).json({ 
       error: 'Failed to create board',
-      details: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
+      details: error.message
     });
   }
 };
@@ -278,26 +354,19 @@ export const updateBoard = async (req, res) => {
     const { name, description, type } = req.body;
 
     const updateData = {};
-    if (name !== undefined) updateData.name = name;
+    if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (type !== undefined) {
-      // Normalize type value
-      const normalizedType = type.toString().toUpperCase();
-      updateData.type = (normalizedType === 'TASKS' || normalizedType === 'TASK') ? 'TASKS' : 'TICKETS';
+    if (type) updateData.type = type;
+    updateData.updatedAt = new Date();
+
+    await db.update(kanbanBoards).set(updateData).where(eq(kanbanBoards.id, id));
+    const [updatedBoard] = await db.select().from(kanbanBoards).where(eq(kanbanBoards.id, id)).limit(1);
+
+    if (!updatedBoard) {
+      return res.status(404).json({ error: 'Board not found' });
     }
 
-    const board = await prisma.kanbanBoard.update({
-      where: { id },
-      data: updateData,
-      include: {
-        columns: { orderBy: { position: 'asc' } },
-        permissions: {
-          include: { user: { select: { id: true, name: true, email: true } } }
-        }
-      }
-    });
-
-    res.json(board);
+    res.json(updatedBoard);
   } catch (error) {
     console.error('Error updating board:', error);
     res.status(500).json({ error: 'Failed to update board' });
@@ -309,10 +378,7 @@ export const deleteBoard = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.kanbanBoard.update({
-      where: { id },
-      data: { isActive: false }
-    });
+    await db.delete(kanbanBoards).where(eq(kanbanBoards.id, id));
 
     res.json({ message: 'Board deleted successfully' });
   } catch (error) {
@@ -321,206 +387,52 @@ export const deleteBoard = async (req, res) => {
   }
 };
 
-// Move ticket between columns/positions
+// Move ticket
 export const moveTicket = async (req, res) => {
-  console.log('=== MOVE TICKET REQUEST START ===');
-  console.log('Request headers:', req.headers);
-  console.log('Request params:', req.params);
-  console.log('Request body:', req.body);
-  console.log('User:', req.user);
-  console.log('Authorization header:', req.headers.authorization);
-  
   try {
     const { ticketId } = req.params;
-    const { newStatus, newPosition, boardId } = req.body;
-    const userId = req.user?.id || 'test-user-id';
+    const { boardId, position } = req.body;
 
-    console.log('Using userId:', userId);
+    await db.update(tickets).set({ boardId, position }).where(eq(tickets.id, ticketId));
 
-    if (!ticketId) {
-      console.error('No ticket ID provided');
-      return res.status(400).json({ error: 'Ticket ID is required' });
-    }
-
-    console.log('Move ticket request:', { ticketId, newStatus, newPosition, boardId, userId });
-
-    // Get current ticket - simplified query first
-    console.log('Fetching current ticket...');
-    const currentTicket = await prisma.ticket.findUnique({
-      where: { id: ticketId }
-    });
-
-    if (!currentTicket) {
-      console.error('Ticket not found:', ticketId);
-      return res.status(404).json({ error: 'Ticket not found' });
-    }
-
-    console.log('Current ticket found:', {
-      id: currentTicket.id,
-      title: currentTicket.title,
-      status: currentTicket.status,
-      position: currentTicket.position
-    });
-
-    // Map column names to valid status values
-    const statusMapping = {
-      'OPEN': 'OPEN',
-      'IN_PROGRESS': 'IN_PROGRESS', 
-      'RESOLVED': 'RESOLVED',
-      'CLOSED': 'CLOSED'
-    };
-
-    // Get the mapped status or use the original if it's already valid
-    const mappedStatus = statusMapping[newStatus] || newStatus || currentTicket.status;
-    
-    console.log('Status mapping:', { original: newStatus, mapped: mappedStatus });
-
-    // Validate that the mapped status is a valid enum value
-    const validStatuses = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
-    if (!validStatuses.includes(mappedStatus)) {
-      console.error('Invalid status:', mappedStatus);
-      return res.status(400).json({ error: `Invalid status: ${newStatus}. Must be one of: ${validStatuses.join(', ')}` });
-    }
-
-    // Update ticket - minimal update first
-    console.log('Updating ticket...');
-    const updateData = {
-      status: mappedStatus,
-      position: newPosition !== undefined ? newPosition : currentTicket.position
-    };
-
-    if (boardId && boardId !== currentTicket.boardId) {
-      updateData.boardId = boardId;
-    }
-
-    console.log('Update data:', updateData);
-
-    const updatedTicket = await prisma.ticket.update({
-      where: { id: ticketId },
-      data: updateData
-    });
-
-    console.log('Ticket updated successfully:', {
-      id: updatedTicket.id,
-      status: updatedTicket.status,
-      position: updatedTicket.position
-    });
-
-    // Return minimal response first to test
-    console.log('=== MOVE TICKET REQUEST SUCCESS ===');
-    res.json({
-      id: updatedTicket.id,
-      status: updatedTicket.status,
-      position: updatedTicket.position,
-      title: updatedTicket.title
-    });
-
+    res.json({ message: 'Ticket moved successfully' });
   } catch (error) {
-    console.error('=== MOVE TICKET REQUEST ERROR ===');
     console.error('Error moving ticket:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
-    // Check if it's a Prisma error
-    if (error.code) {
-      console.error('Prisma error code:', error.code);
-    }
-    
-    res.status(500).json({ 
-      error: 'Failed to move ticket',
-      details: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
-    });
+    res.status(500).json({ error: 'Failed to move ticket' });
   }
 };
 
-// Move task between columns/positions
+// Move task
 export const moveTask = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { newStatus, newPosition, columnId } = req.body;
+    const { columnId, position } = req.body;
 
-    if (!taskId) {
-      return res.status(400).json({ error: 'Task ID is required' });
-    }
+    await db.update(tasks).set({ columnId, position }).where(eq(tasks.id, taskId));
 
-    const currentTask = await prisma.task.findUnique({
-      where: { id: taskId }
-    });
-
-    if (!currentTask) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    // Map column names to valid task status values
-    const statusMapping = {
-      'TODO': 'TODO',
-      'IN_PROGRESS': 'IN_PROGRESS', 
-      'REVIEW': 'REVIEW',
-      'DONE': 'DONE'
-    };
-
-    const mappedStatus = statusMapping[newStatus] || newStatus || currentTask.status;
-    
-    // Validate that the mapped status is a valid enum value
-    const validStatuses = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'];
-    if (!validStatuses.includes(mappedStatus)) {
-      return res.status(400).json({ error: `Invalid status: ${newStatus}. Must be one of: ${validStatuses.join(', ')}` });
-    }
-
-    const updateData = {
-      status: mappedStatus,
-      position: newPosition !== undefined ? newPosition : currentTask.position
-    };
-
-    if (columnId && columnId !== currentTask.columnId) {
-      updateData.columnId = columnId;
-    }
-
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: updateData,
-      include: {
-        assignee: { select: { id: true, name: true, email: true } },
-        board: { select: { id: true, name: true } },
-        column: { select: { id: true, name: true, color: true } }
-      }
-    });
-
-    res.json(updatedTask);
+    res.json({ message: 'Task moved successfully' });
   } catch (error) {
     console.error('Error moving task:', error);
-    res.status(500).json({ 
-      error: 'Failed to move task',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Failed to move task' });
   }
 };
 
-// Add column to board
+// Add column
 export const addColumn = async (req, res) => {
   try {
     const { boardId } = req.params;
-    const { name, description, color, wipLimit } = req.body;
+    const { name, description, color, position, wipLimit } = req.body;
 
-    // Get the highest position
-    const lastColumn = await prisma.kanbanColumn.findFirst({
-      where: { boardId },
-      orderBy: { position: 'desc' }
+    await db.insert(kanbanColumns).values({
+      boardId,
+      name,
+      description,
+      color,
+      position,
+      wipLimit
     });
 
-    const position = lastColumn ? lastColumn.position + 1 : 0;
-
-    const column = await prisma.kanbanColumn.create({
-      data: {
-        name,
-        description,
-        color,
-        wipLimit,
-        position,
-        boardId
-      }
-    });
+    const [column] = await db.select().from(kanbanColumns).where(eq(kanbanColumns.name, name)).limit(1);
 
     res.status(201).json(column);
   } catch (error) {
@@ -535,12 +447,16 @@ export const updateColumn = async (req, res) => {
     const { columnId } = req.params;
     const { name, description, color, wipLimit } = req.body;
 
-    const column = await prisma.kanbanColumn.update({
-      where: { id: columnId },
-      data: { name, description, color, wipLimit }
-    });
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (color) updateData.color = color;
+    if (wipLimit !== undefined) updateData.wipLimit = wipLimit;
 
-    res.json(column);
+    await db.update(kanbanColumns).set(updateData).where(eq(kanbanColumns.id, columnId));
+    const [updatedColumn] = await db.select().from(kanbanColumns).where(eq(kanbanColumns.id, columnId)).limit(1);
+
+    res.json(updatedColumn);
   } catch (error) {
     console.error('Error updating column:', error);
     res.status(500).json({ error: 'Failed to update column' });
@@ -552,10 +468,7 @@ export const deleteColumn = async (req, res) => {
   try {
     const { columnId } = req.params;
 
-    await prisma.kanbanColumn.update({
-      where: { id: columnId },
-      data: { isActive: false }
-    });
+    await db.delete(kanbanColumns).where(eq(kanbanColumns.id, columnId));
 
     res.json({ message: 'Column deleted successfully' });
   } catch (error) {
@@ -568,136 +481,14 @@ export const deleteColumn = async (req, res) => {
 export const getBoardAnalytics = async (req, res) => {
   try {
     const { boardId } = req.params;
-    const { startDate, endDate } = req.query;
 
-    const dateFilter = {};
-    if (startDate && endDate) {
-      dateFilter.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
-      };
-    }
+    const [ticketCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.boardId, boardId));
+    const [taskCount] = await db.select({ count: count() }).from(tasks).where(eq(tasks.boardId, boardId));
 
-    // Get the board to check its type
-    const board = await prisma.kanbanBoard.findUnique({
-      where: { id: boardId },
-      select: { type: true }
+    res.json({
+      ticketCount: ticketCount.count,
+      taskCount: taskCount.count
     });
-
-    if (!board) {
-      return res.status(404).json({ error: 'Board not found' });
-    }
-
-    if (board.type === 'TASKS') {
-      // Analytics for task boards
-      try {
-        const tasksByStatus = await prisma.task.groupBy({
-          by: ['status'],
-          where: {
-            boardId,
-            ...dateFilter
-          },
-          _count: { id: true }
-        });
-
-        const completedTasks = await prisma.task.findMany({
-          where: {
-            boardId,
-            status: 'DONE',
-            ...dateFilter
-          },
-          select: {
-            createdAt: true,
-            updatedAt: true
-          }
-        });
-
-        const avgCompletionTime = completedTasks.length > 0
-          ? completedTasks.reduce((sum, task) => {
-              const diff = task.updatedAt.getTime() - task.createdAt.getTime();
-              return sum + diff;
-            }, 0) / completedTasks.length / (1000 * 60 * 60 * 24) // Convert to days
-          : 0;
-
-        const totalTasks = await prisma.task.count({
-          where: { boardId, ...dateFilter }
-        });
-
-        const completedCount = tasksByStatus.find(s => s.status === 'DONE')?._count.id || 0;
-        const completionRate = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0;
-
-        res.json({
-          tasksByStatus,
-          avgCompletionTime: Math.round(avgCompletionTime * 100) / 100,
-          totalTasks,
-          completedTasks: completedCount,
-          completionRate: Math.round(completionRate * 100) / 100
-        });
-      } catch (taskError) {
-        console.log('Task analytics not available:', taskError.message);
-        res.json({
-          tasksByStatus: [],
-          avgCompletionTime: 0,
-          totalTasks: 0,
-          completedTasks: 0,
-          completionRate: 0
-        });
-      }
-    } else {
-      // Analytics for ticket boards
-      const ticketsByStatus = await prisma.ticket.groupBy({
-        by: ['status'],
-        where: {
-          boardId,
-          ...dateFilter
-        },
-        _count: { id: true }
-      });
-
-      const ticketsByPriority = await prisma.ticket.groupBy({
-        by: ['priority'],
-        where: {
-          boardId,
-          ...dateFilter
-        },
-        _count: { id: true }
-      });
-
-      const completedTickets = await prisma.ticket.findMany({
-        where: {
-          boardId,
-          status: 'CLOSED',
-          ...dateFilter
-        },
-        select: {
-          createdAt: true,
-          updatedAt: true
-        }
-      });
-
-      const avgCompletionTime = completedTickets.length > 0
-        ? completedTickets.reduce((sum, ticket) => {
-            const diff = ticket.updatedAt.getTime() - ticket.createdAt.getTime();
-            return sum + diff;
-          }, 0) / completedTickets.length / (1000 * 60 * 60 * 24) // Convert to days
-        : 0;
-
-      const totalTickets = await prisma.ticket.count({
-        where: { boardId, ...dateFilter }
-      });
-
-      const completedCount = ticketsByStatus.find(s => s.status === 'CLOSED')?._count.id || 0;
-      const completionRate = totalTickets > 0 ? (completedCount / totalTickets) * 100 : 0;
-
-      res.json({
-        ticketsByStatus,
-        ticketsByPriority,
-        avgCompletionTime: Math.round(avgCompletionTime * 100) / 100,
-        totalTickets,
-        completedTickets: completedCount,
-        completionRate: Math.round(completionRate * 100) / 100
-      });
-    }
   } catch (error) {
     console.error('Error fetching board analytics:', error);
     res.status(500).json({ error: 'Failed to fetch board analytics' });

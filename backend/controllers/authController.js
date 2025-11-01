@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../config/database.js';
+import { db } from '../config/database.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/tokenService.js';
+import { users, refreshTokens } from '../drizzle/schema.js';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Helper: Store refresh token in database
@@ -12,12 +13,10 @@ const storeRefreshToken = async (token, userId) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    await prisma.refreshToken.create({
-      data: {
-        token,
-        userId,
-        expiresAt
-      }
+    await db.insert(refreshTokens).values({
+      token,
+      userId,
+      expiresAt
     });
   } catch (error) {
     console.error('Error storing refresh token:', error);
@@ -30,10 +29,7 @@ const storeRefreshToken = async (token, userId) => {
  */
 const revokeRefreshToken = async (token) => {
   try {
-    await prisma.refreshToken.updateMany({
-      where: { token },
-      data: { revokedAt: new Date() }
-    });
+    await db.update(refreshTokens).set({ revokedAt: new Date() }).where(eq(refreshTokens.token, token));
   } catch (error) {
     console.error('Error revoking refresh token:', error);
     throw error;
@@ -45,9 +41,7 @@ const revokeRefreshToken = async (token) => {
  */
 const validateRefreshTokenInDb = async (token) => {
   try {
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { token }
-    });
+    const [storedToken] = await db.select().from(refreshTokens).where(eq(refreshTokens.token, token)).limit(1);
 
     if (!storedToken) {
       throw new Error('Refresh token not found in database');
@@ -79,9 +73,7 @@ export const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
@@ -91,20 +83,17 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-        role
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true
-      }
+    const [user] = await db.insert(users).values({
+      email,
+      name,
+      password: hashedPassword,
+      role
+    }).returning({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      createdAt: users.createdAt
     });
 
     // Generate tokens
@@ -114,19 +103,19 @@ export const register = async (req, res) => {
       role: user.role
     });
 
-    const refreshToken = generateRefreshToken({
+    const refreshTokenValue = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role
     });
 
     // Store refresh token in database
-    await storeRefreshToken(refreshToken, user.id);
+    await storeRefreshToken(refreshTokenValue, user.id);
 
-    res.status(201).json({ 
-      user, 
+    res.status(201).json({
+      user,
       token: accessToken,
-      refreshToken 
+      refreshToken: refreshTokenValue
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -145,9 +134,7 @@ export const login = async (req, res) => {
     }
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -166,22 +153,22 @@ export const login = async (req, res) => {
       role: user.role
     });
 
-    const refreshToken = generateRefreshToken({
+    const refreshTokenValue = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role
     });
 
     // Store refresh token in database
-    await storeRefreshToken(refreshToken, user.id);
+    await storeRefreshToken(refreshTokenValue, user.id);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
-    
-    res.json({ 
-      user: userWithoutPassword, 
+
+    res.json({
+      user: userWithoutPassword,
       token: accessToken,
-      refreshToken 
+      refreshToken: refreshTokenValue
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -207,15 +194,12 @@ export const refreshToken = async (req, res) => {
     }
 
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { id: storedToken.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true
-      }
-    });
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role
+    }).from(users).where(eq(users.id, storedToken.userId)).limit(1);
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -241,10 +225,10 @@ export const refreshToken = async (req, res) => {
     // Store new refresh token
     await storeRefreshToken(newRefreshToken, user.id);
 
-    res.json({ 
-      token: newAccessToken, 
+    res.json({
+      token: newAccessToken,
       refreshToken: newRefreshToken,
-      user 
+      user
     });
   } catch (error) {
     console.error('Refresh token error:', error);

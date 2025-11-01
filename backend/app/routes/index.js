@@ -16,7 +16,6 @@ import applicationRoutes from '../../routes/applicationRoutes.js';
 import kanbanRoutes from '../../routes/kanbanRoutes.js';
 import labelRoutes from '../../routes/labelRoutes.js';
 import notificationRoutes from '../../routes/notificationRoutes.js';
-import whatsappRoutes from '../../routes/whatsappRoutes.js';
 import docRoutes from '../../routes/docRoutes.js';
 import reminderRoutes from '../../routes/reminderRoutes.js';
 
@@ -32,7 +31,6 @@ export function registerRoutes(app) {
   app.use('/api/kanban', kanbanRoutes);
   app.use('/api/labels', labelRoutes);
   app.use('/api/notifications', notificationRoutes);
-  app.use('/api/whatsapp', whatsappRoutes);
   app.use('/api/docsbuilder', docRoutes);
   app.use('/api', docRoutes);
   app.use('/api/reminders', reminderRoutes);

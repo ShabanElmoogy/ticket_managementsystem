@@ -1,34 +1,58 @@
-import { prisma } from '../config/database.js';
+import { db } from '../config/database.js';
 import bcrypt from 'bcryptjs';
+import { users, tickets, comments, ticketActivities, tasks, notifications, boardPermissions } from '../drizzle/schema.js';
+import { eq, count, sql, and, inArray, desc, or } from 'drizzle-orm';
 
 // Get all users (admin only)
 export const getAllUsers = async (req, res) => {
     try {
-      const users = await prisma.user.findMany({
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          phone: true,
-          whatsappNotifications: true,
-          reminderEnabled: true,
-          reminderInterval: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              assignedTickets: true,
-              createdTickets: true,
-              comments: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
+      const usersData = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          phone: users.phone,
+          whatsappNotifications: users.whatsappNotifications,
+          reminderEnabled: users.reminderEnabled,
+          reminderInterval: users.reminderInterval,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt));
+
+      // Get counts for each user
+      const userIds = usersData.map(u => u.id);
+      const assignedCounts = userIds.length > 0 ? await db
+        .select({ userId: tickets.assignedToId, count: count() })
+        .from(tickets)
+        .where(inArray(tickets.assignedToId, userIds))
+        .groupBy(tickets.assignedToId) : [];
+      
+      const createdCounts = userIds.length > 0 ? await db
+        .select({ userId: tickets.createdById, count: count() })
+        .from(tickets)
+        .where(inArray(tickets.createdById, userIds))
+        .groupBy(tickets.createdById) : [];
+      
+      const commentCounts = userIds.length > 0 ? await db
+        .select({ userId: comments.userId, count: count() })
+        .from(comments)
+        .where(inArray(comments.userId, userIds))
+        .groupBy(comments.userId) : [];
+
+      // Combine data
+      const usersWithCounts = usersData.map(user => ({
+        ...user,
+        _count: {
+          assignedTickets: assignedCounts.find(c => c.userId === user.id)?.count || 0,
+          createdTickets: createdCounts.find(c => c.userId === user.id)?.count || 0,
+          comments: commentCounts.find(c => c.userId === user.id)?.count || 0
         }
-      });
-      res.json(users);
+      }));
+
+      res.json(usersWithCounts);
     } catch (error) {
       console.error('Get users error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -39,34 +63,53 @@ export const getAllUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
     try {
       const { id } = req.params;
-      const user = await prisma.user.findUnique({
-        where: { id },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          phone: true,
-          whatsappNotifications: true,
-          reminderEnabled: true,
-          reminderInterval: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              assignedTickets: true,
-              createdTickets: true,
-              comments: true
-            }
-          }
-        }
-      });
+      const user = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          phone: users.phone,
+          whatsappNotifications: users.whatsappNotifications,
+          reminderEnabled: users.reminderEnabled,
+          reminderInterval: users.reminderInterval,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
 
-      if (!user) {
+      if (!user.length) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      res.json(user);
+      // Get counts
+      const [assignedCount] = await db
+        .select({ count: count() })
+        .from(tickets)
+        .where(eq(tickets.assignedToId, id));
+      
+      const [createdCount] = await db
+        .select({ count: count() })
+        .from(tickets)
+        .where(eq(tickets.createdById, id));
+      
+      const [commentCount] = await db
+        .select({ count: count() })
+        .from(comments)
+        .where(eq(comments.userId, id));
+
+      const userWithCounts = {
+        ...user[0],
+        _count: {
+          assignedTickets: assignedCount.count,
+          createdTickets: createdCount.count,
+          comments: commentCount.count
+        }
+      };
+
+      res.json(userWithCounts);
     } catch (error) {
       console.error('Get user by ID error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -84,11 +127,13 @@ export const createUser = async (req, res) => {
       }
 
       // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
 
-      if (existingUser) {
+      if (existingUser.length) {
         return res.status(400).json({ error: 'User with this email already exists' });
       }
 
@@ -96,28 +141,28 @@ export const createUser = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create user
-      const user = await prisma.user.create({
-        data: {
+      const [user] = await db
+        .insert(users)
+        .values({
           email,
           name,
           password: hashedPassword,
           role,
           phone,
           whatsappNotifications
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          phone: true,
-          whatsappNotifications: true,
-          reminderEnabled: true,
-          reminderInterval: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      });
+        })
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          phone: users.phone,
+          whatsappNotifications: users.whatsappNotifications,
+          reminderEnabled: users.reminderEnabled,
+          reminderInterval: users.reminderInterval,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        });
 
       res.status(201).json(user);
     } catch (error) {
@@ -134,27 +179,28 @@ export const getCurrentProfile = async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        phone: true,
-        whatsappNotifications: true,
-        reminderEnabled: true,
-        reminderInterval: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    });
+    const user = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        phone: users.phone,
+        whatsappNotifications: users.whatsappNotifications,
+        reminderEnabled: users.reminderEnabled,
+        reminderInterval: users.reminderInterval,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
 
-    if (!user) {
+    if (!user.length) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(user);
+    res.json(user[0]);
   } catch (error) {
     console.error('Get current profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -182,15 +228,15 @@ export const updateOwnProfile = async (req, res) => {
     const { name, email, phone, reminderEnabled, reminderInterval } = req.body;
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
-    if (!existingUser) {
+    const existingUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!existingUser.length) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Check if email is being changed and if it's already taken
-    if (email && email !== existingUser.email) {
-      const emailExists = await prisma.user.findUnique({ where: { email } });
-      if (emailExists) {
+    if (email && email !== existingUser[0].email) {
+      const emailExists = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (emailExists.length) {
         return res.status(400).json({ error: 'Email already in use' });
       }
     }
@@ -206,22 +252,22 @@ export const updateOwnProfile = async (req, res) => {
     console.log('Update data:', updateData);
 
     // Update user
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        phone: true,
-        whatsappNotifications: true,
-        reminderEnabled: true,
-        reminderInterval: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    });
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        phone: users.phone,
+        whatsappNotifications: users.whatsappNotifications,
+        reminderEnabled: users.reminderEnabled,
+        reminderInterval: users.reminderInterval,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      });
 
     console.log('Updated user:', user);
     res.json(user);
@@ -239,21 +285,25 @@ export const updateUser = async (req, res) => {
       const { email, name, role, password, phone, whatsappNotifications, reminderEnabled, reminderInterval } = req.body;
 
       // Check if user exists
-      const existingUser = await prisma.user.findUnique({
-        where: { id }
-      });
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
 
-      if (!existingUser) {
+      if (!existingUser.length) {
         return res.status(404).json({ error: 'User not found' });
       }
 
       // Check if email is being changed and if it's already taken
-      if (email && email !== existingUser.email) {
-        const emailExists = await prisma.user.findUnique({
-          where: { email }
-        });
+      if (email && email !== existingUser[0].email) {
+        const emailExists = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
 
-        if (emailExists) {
+        if (emailExists.length) {
           return res.status(400).json({ error: 'Email already in use' });
         }
       }
@@ -272,29 +322,47 @@ export const updateUser = async (req, res) => {
       }
 
       // Update user
-      const user = await prisma.user.update({
-        where: { id },
-        data: updateData,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          phone: true,
-          whatsappNotifications: true,
-          reminderEnabled: true,
-          reminderInterval: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: {
-            select: {
-              assignedTickets: true,
-              createdTickets: true,
-              comments: true
-            }
-          }
+      const [updatedUser] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, id))
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          phone: users.phone,
+          whatsappNotifications: users.whatsappNotifications,
+          reminderEnabled: users.reminderEnabled,
+          reminderInterval: users.reminderInterval,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        });
+
+      // Get counts
+      const [assignedCount] = await db
+        .select({ count: count() })
+        .from(tickets)
+        .where(eq(tickets.assignedToId, id));
+      
+      const [createdCount] = await db
+        .select({ count: count() })
+        .from(tickets)
+        .where(eq(tickets.createdById, id));
+      
+      const [commentCount] = await db
+        .select({ count: count() })
+        .from(comments)
+        .where(eq(comments.userId, id));
+
+      const user = {
+        ...updatedUser,
+        _count: {
+          assignedTickets: assignedCount.count,
+          createdTickets: createdCount.count,
+          comments: commentCount.count
         }
-      });
+      };
 
       res.json(user);
     } catch (error) {
@@ -310,27 +378,19 @@ const { id } = req.params;
 const force = req.query?.force === 'true';
 
 // Check if user exists
-const existingUser = await prisma.user.findUnique({
-where: { id },
-include: {
-_count: {
-select: {
-assignedTickets: true,
-createdTickets: true,
-comments: true
-}
-}
-}
-});
+const existingUser = await db.select().from(users).where(eq(users.id, id)).limit(1);
 
-if (!existingUser) {
+if (!existingUser.length) {
 return res.status(404).json({ error: 'User not found' });
 }
 
+// Get counts
+const [assignedCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, id));
+const [createdCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.createdById, id));
+const [commentCount] = await db.select({ count: count() }).from(comments).where(eq(comments.userId, id));
+
 // Prevent deletion if user has associated data and not forcing
-if (!force && (existingUser._count.assignedTickets > 0 || 
-existingUser._count.createdTickets > 0 || 
-existingUser._count.comments > 0)) {
+if (!force && (assignedCount.count > 0 || createdCount.count > 0 || commentCount.count > 0)) {
 return res.status(400).json({ 
 error: 'Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.' 
 });
@@ -338,30 +398,28 @@ error: 'Cannot delete user with associated tickets or comments. Please reassign 
 
 if (force) {
 // Force delete: remove related data and unassign references before deleting user
-await prisma.$transaction(async (tx) => {
+await db.transaction(async (tx) => {
 // Delete comments authored by the user
-await tx.comment.deleteMany({ where: { userId: id } });
+await tx.delete(comments).where(eq(comments.userId, id));
 // Delete activities authored by the user
-await tx.ticketActivity.deleteMany({ where: { userId: id } });
+await tx.delete(ticketActivities).where(eq(ticketActivities.userId, id));
 // Unassign tickets assigned to the user
-await tx.ticket.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } });
+await tx.update(tickets).set({ assignedToId: null }).where(eq(tickets.assignedToId, id));
 // Unassign tasks assigned to the user
-await tx.task.updateMany({ where: { assigneeId: id }, data: { assigneeId: null } });
-// Delete tickets created by the user (cascades will clean related labels, notifications, etc.)
-await tx.ticket.deleteMany({ where: { createdById: id } });
-// Clean up direct relations with cascade defined (also safe to explicitly delete)
-await tx.notification.deleteMany({ where: { userId: id } });
-await tx.boardPermission.deleteMany({ where: { userId: id } });
+await tx.update(tasks).set({ assigneeId: null }).where(eq(tasks.assigneeId, id));
+// Delete tickets created by the user
+await tx.delete(tickets).where(eq(tickets.createdById, id));
+// Clean up direct relations
+await tx.delete(notifications).where(eq(notifications.userId, id));
+await tx.delete(boardPermissions).where(eq(boardPermissions.userId, id));
 // Finally delete the user
-await tx.user.delete({ where: { id } });
+await tx.delete(users).where(eq(users.id, id));
 });
 return res.json({ message: 'User and related data deleted successfully' });
 }
 
 // Regular delete when there is no related data
-await prisma.user.delete({
-where: { id }
-});
+await db.delete(users).where(eq(users.id, id));
 
 res.json({ message: 'User deleted successfully' });
 } catch (error) {
@@ -373,14 +431,14 @@ res.status(500).json({ error: 'Internal server error' });
 // Get all employees
 export const getEmployees = async (req, res) => {
     try {
-      const employees = await prisma.user.findMany({
-        where: { role: 'EMPLOYEE' },
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      });
+      const employees = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email
+        })
+        .from(users)
+        .where(eq(users.role, 'EMPLOYEE'));
       res.json(employees);
     } catch (error) {
       console.error('Get employees error:', error);
@@ -391,31 +449,29 @@ export const getEmployees = async (req, res) => {
 // Get user statistics
 export const getUserStats = async (req, res) => {
     try {
-      const stats = await prisma.user.groupBy({
-        by: ['role'],
-        _count: {
-          id: true
-        }
-      });
+      const stats = await db
+        .select({
+          role: users.role,
+          count: count()
+        })
+        .from(users)
+        .groupBy(users.role);
 
-      const totalUsers = await prisma.user.count();
-      const activeUsers = await prisma.user.count({
-        where: {
-          assignedTickets: {
-            some: {
-              status: {
-                in: ['OPEN', 'IN_PROGRESS']
-              }
-            }
-          }
-        }
-      });
+      const [totalUsersResult] = await db.select({ count: count() }).from(users);
+      const totalUsers = totalUsersResult.count;
+      
+      const activeUsersResult = await db
+        .select({ userId: tickets.assignedToId })
+        .from(tickets)
+        .where(or(eq(tickets.status, 'OPEN'), eq(tickets.status, 'IN_PROGRESS')))
+        .groupBy(tickets.assignedToId);
+      const activeUsers = activeUsersResult.length;
 
       res.json({
         total: totalUsers,
         active: activeUsers,
         byRole: stats.reduce((acc, stat) => {
-          acc[stat.role] = stat._count.id;
+          acc[stat.role] = stat.count;
           return acc;
         }, {})
       });

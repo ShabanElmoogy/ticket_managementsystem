@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { db } from '../config/database.js';
+import { notifications } from '../drizzle/schema.js';
+import { eq, and, count } from 'drizzle-orm';
 import { getUserNotifications, markNotificationAsRead } from '../utils/notificationUtils.js';
-
-const prisma = new PrismaClient();
 
 // Get user notifications
 export const getNotifications = async (req, res) => {
@@ -28,11 +28,13 @@ export const markAsRead = async (req, res) => {
     const userId = req.user.id;
 
     // Verify notification belongs to user
-    const notification = await prisma.notification.findFirst({
-      where: { id, userId }
-    });
+    const notification = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .limit(1);
 
-    if (!notification) {
+    if (!notification.length) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
@@ -49,10 +51,10 @@ export const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    await prisma.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true }
-    });
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -66,11 +68,12 @@ export const getNotificationCount = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const unreadCount = await prisma.notification.count({
-      where: { userId, isRead: false }
-    });
+    const [result] = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
 
-    res.json({ unreadCount });
+    res.json({ unreadCount: result.count });
   } catch (error) {
     console.error('Error fetching notification count:', error);
     res.status(500).json({ error: 'Failed to fetch notification count' });
@@ -84,17 +87,19 @@ export const deleteNotification = async (req, res) => {
     const userId = req.user.id;
 
     // Verify notification belongs to user
-    const notification = await prisma.notification.findFirst({
-      where: { id, userId }
-    });
+    const notification = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .limit(1);
 
-    if (!notification) {
+    if (!notification.length) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    await prisma.notification.delete({
-      where: { id }
-    });
+    await db
+      .delete(notifications)
+      .where(eq(notifications.id, id));
 
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {

@@ -11,7 +11,7 @@ import { setupSocket } from "./sockets/io.js";
 import { registerCoreMiddleware } from "./middleware/index.js";
 import { registerRoutes } from "./routes/index.js";
 import { registerErrorHandlers } from "./errors/index.js";
-import { connectDB, disconnectDB } from "../config/database.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +42,6 @@ export async function startServer() {
 
   // Start
   try {
-    await connectDB();
     server.listen(PORT, HOST, () => {
       const protocol = detectProtocol();
       const hostForLog = process.env.HOST || "localhost";
@@ -55,7 +54,6 @@ export async function startServer() {
   // Graceful shutdown
   process.on("SIGINT", async () => {
     console.log("Shutting down server...");
-    await disconnectDB();
     process.exit(0);
   });
 }

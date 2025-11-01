@@ -1,22 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
-export const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
+const client = postgres(process.env.DATABASE_URL);
 
-// Test database connection
-export const connectDB = async () => {
-  try {
-    await prisma.$connect();
-    console.log('Database connected successfully');
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    process.exit(1);
-  }
-};
-
-// Graceful shutdown
-export const disconnectDB = async () => {
-  await prisma.$disconnect();
-  console.log('Database disconnected');
-};
+export const db = drizzle(client);
