@@ -1,4 +1,4 @@
-import { db } from '../config/database.js';
+import { db } from "../src/config/database.js";
 import { labels, kanbanBoards, kanbanColumns, users, boardPermissions } from './schema.js';
 import { eq, and } from 'drizzle-orm';
 

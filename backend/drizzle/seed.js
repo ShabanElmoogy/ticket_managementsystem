@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { db } from "../config/database.js";
+import { db } from "../src/config/database.js";
 import bcrypt from "bcryptjs";
-import { users, tickets, comments } from "./schema.js";
+import { users, tickets, comments } from "../src/modules/schema.js";
 import { eq } from "drizzle-orm";
 
 async function main() {

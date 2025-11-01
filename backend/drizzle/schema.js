@@ -1,12 +1,12 @@
-import { pgTable, varchar, text, integer, boolean, timestamp, real, pgEnum, index, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, integer, boolean, timestamp, real, pgEnum, index, uniqueIndex, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 // Enums
-export const roleEnum = pgEnum('role', ['ADMIN', 'EMPLOYEE']);
+export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'EMPLOYEE']);
 export const ticketStatusEnum = pgEnum('ticket_status', ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']);
-export const priorityEnum = pgEnum('priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
-export const activityTypeEnum = pgEnum('activity_type', ['CREATED', 'UPDATED', 'STATUS_CHANGED', 'ASSIGNED', 'UNASSIGNED', 'MOVED', 'COMMENTED', 'LABEL_ADDED', 'LABEL_REMOVED', 'DUE_DATE_CHANGED', 'PRIORITY_CHANGED']);
-export const boardPermissionRoleEnum = pgEnum('board_permission_role', ['VIEWER', 'EDITOR', 'ADMIN']);
+export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
+export const activityActionEnum = pgEnum('activity_action', ['CREATED', 'UPDATED', 'ASSIGNED', 'COMMENTED', 'STATUS_CHANGED', 'PRIORITY_CHANGED']);
+export const permissionRoleEnum = pgEnum('permission_role', ['ADMIN', 'MEMBER', 'VIEWER']);
 export const boardTypeEnum = pgEnum('board_type', ['TICKETS', 'TASKS']);
 export const taskStatusEnum = pgEnum('task_status', ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']);
 export const notificationTypeEnum = pgEnum('notification_type', ['TICKET_ASSIGNED', 'TICKET_UPDATED', 'TICKET_COMMENTED', 'TICKET_DUE_SOON', 'TICKET_OVERDUE', 'MENTION', 'STATUS_CHANGED']);
@@ -14,14 +14,14 @@ export const docNodeTypeEnum = pgEnum('doc_node_type', ['FOLDER', 'DOC']);
 
 // Tables
 export const users = pgTable('users', {
-  id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 191 }).unique().notNull(),
   name: varchar('name', { length: 191 }).notNull(),
   password: varchar('password', { length: 191 }).notNull(),
   phone: varchar('phone', { length: 191 }),
-  role: roleEnum('role').default('EMPLOYEE').notNull(),
-  whatsappNotifications: boolean('whatsapp_notifications').default(true).notNull(),
-  reminderEnabled: boolean('reminder_enabled').default(true).notNull(),
+  role: userRoleEnum('role').default('EMPLOYEE').notNull(),
+  whatsappNotifications: boolean('whatsapp_notifications').default(true),
+  reminderEnabled: boolean('reminder_enabled').default(true),
   reminderInterval: integer('reminder_interval').default(60).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -45,13 +45,12 @@ export const refreshTokens = pgTable('refresh_tokens', {
 }));
 
 export const customers = pgTable('customers', {
-  id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 191 }).notNull(),
   email: varchar('email', { length: 191 }).unique().notNull(),
   phone: varchar('phone', { length: 191 }),
   address: text('address'),
-  description: text('description'),
-  isActive: boolean('is_active').default(true).notNull(),
+  company: text('company'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -59,11 +58,10 @@ export const customers = pgTable('customers', {
 }));
 
 export const applications = pgTable('applications', {
-  id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 191 }).notNull(),
   description: text('description'),
   version: varchar('version', { length: 191 }),
-  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -108,7 +106,7 @@ export const tickets = pgTable('tickets', {
   title: varchar('title', { length: 191 }).notNull(),
   description: text('description').notNull(),
   status: ticketStatusEnum('status').default('OPEN').notNull(),
-  priority: priorityEnum('priority').default('MEDIUM').notNull(),
+  priority: ticketPriorityEnum('priority').default('MEDIUM').notNull(),
   dueDate: timestamp('due_date'),
   estimatedHours: real('estimated_hours'),
   actualHours: real('actual_hours'),
@@ -165,7 +163,7 @@ export const ticketLabels = pgTable('ticket_labels', {
 
 export const ticketActivities = pgTable('ticket_activities', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
-  action: activityTypeEnum('action').notNull(),
+  action: activityActionEnum('action').notNull(),
   description: text('description').notNull(),
   oldValue: text('old_value'),
   newValue: text('new_value'),
@@ -178,7 +176,7 @@ export const boardPermissions = pgTable('board_permissions', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: varchar('user_id', { length: 191 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   boardId: varchar('board_id', { length: 191 }).notNull().references(() => kanbanBoards.id, { onDelete: 'cascade' }),
-  role: boardPermissionRoleEnum('role').notNull(),
+  role: permissionRoleEnum('role').notNull(),
 }, (table) => ({
   userBoardIdx: uniqueIndex('board_permissions_user_id_board_id_idx').on(table.userId, table.boardId),
 }));

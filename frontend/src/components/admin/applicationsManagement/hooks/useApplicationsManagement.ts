@@ -86,6 +86,7 @@ export function useApplicationsManagement(): ApplicationsControllerReturn {
   const handleCloseDialog = useCallback(() => {
     setDialogOpen(false);
     setEditingApplication(null);
+    setFormData(DEFAULT_FORM_VALUES);
   }, []);
 
   const handleSubmit = useCallback(async (values: CreateApplicationData) => {

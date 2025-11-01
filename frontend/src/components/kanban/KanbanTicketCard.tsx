@@ -150,7 +150,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
           </Typography>
 
           {/* Labels */}
-          {ticket.labels.length > 0 && (
+          {ticket.labels && ticket.labels.length > 0 && (
             <Box display="flex" flexWrap="wrap" gap={0.5} mb={1}>
               {ticket.labels.slice(0, 3).map((ticketLabel) => (
                 <Chip
@@ -236,7 +236,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
               )}
 
               {/* Comments count */}
-              {ticket._count.comments > 0 && (
+              {ticket._count && ticket._count.comments > 0 && (
                 <Box display="flex" alignItems="center" gap={0.25}>
                   <CommentIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
                   <Typography variant="caption" color="text.secondary">

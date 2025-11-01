@@ -32,7 +32,7 @@ import {
 import type { KanbanBoard } from "../../../types/kanban";
 
 interface BoardControlsProps {
-  boards: any[];
+  boards: KanbanBoard[];
   selectedBoardId: string;
   currentBoard: KanbanBoard;
   hasActiveFilters: boolean;
@@ -153,7 +153,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
                     Select Board
                   </InputLabel>
                   <Select
-                    value={selectedBoardId}
+                    value={selectedBoardId || ""}
                     label="Select Board"
                     onChange={(e) => onBoardChange(e.target.value)}
                     sx={{
@@ -540,7 +540,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
             Select Board
           </InputLabel>
           <Select
-            value={selectedBoardId}
+            value={selectedBoardId || ""}
             label="Select Board"
             onChange={(e) => onBoardChange(e.target.value)}
             sx={{

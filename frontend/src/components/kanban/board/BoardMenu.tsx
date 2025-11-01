@@ -53,6 +53,95 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
     onClose();
   };
 
+  const menuItems = [
+    <MenuItem key="refresh" onClick={() => handleMenuItemClick(onRefresh)}>
+      <ListItemIcon>
+        <RefreshIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText>Refresh Board</ListItemText>
+    </MenuItem>,
+
+    <Divider key="divider1" />,
+
+    <MenuItem key="settings" onClick={() => handleMenuItemClick(onSettings)}>
+      <ListItemIcon>
+        <SettingsIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText>Board Settings</ListItemText>
+    </MenuItem>,
+
+    <MenuItem key="analytics" onClick={() => handleMenuItemClick(onAnalytics)}>
+      <ListItemIcon>
+        <AnalyticsIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText>Analytics</ListItemText>
+    </MenuItem>,
+  ];
+
+  if (canEdit) {
+    menuItems.push(<Divider key="divider2" />);
+
+    if (onEdit) {
+      menuItems.push(
+        <MenuItem key="edit" onClick={() => handleMenuItemClick(onEdit)}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit Board</ListItemText>
+        </MenuItem>
+      );
+    }
+
+    if (onShare) {
+      menuItems.push(
+        <MenuItem key="share" onClick={() => handleMenuItemClick(onShare)}>
+          <ListItemIcon>
+            <ShareIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Share Board</ListItemText>
+        </MenuItem>
+      );
+    }
+
+    if (onExport) {
+      menuItems.push(
+        <MenuItem key="export" onClick={() => handleMenuItemClick(onExport)}>
+          <ListItemIcon>
+            <DownloadIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Export Board</ListItemText>
+        </MenuItem>
+      );
+    }
+
+    if (onArchive) {
+      menuItems.push(
+        <MenuItem key="archive" onClick={() => handleMenuItemClick(onArchive)}>
+          <ListItemIcon>
+            <ArchiveIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Archive Board</ListItemText>
+        </MenuItem>
+      );
+    }
+
+    if (canDelete && onDelete) {
+      menuItems.push(<Divider key="divider3" />);
+      menuItems.push(
+        <MenuItem
+          key="delete"
+          onClick={() => handleMenuItemClick(onDelete)}
+          sx={{ color: 'error.main' }}
+        >
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText>Delete Board</ListItemText>
+        </MenuItem>
+      );
+    }
+  }
+
   return (
     <Menu
       anchorEl={anchorEl}
@@ -64,85 +153,7 @@ const BoardMenu: React.FC<BoardMenuProps> = ({
         },
       }}
     >
-      <MenuItem onClick={() => handleMenuItemClick(onRefresh)}>
-        <ListItemIcon>
-          <RefreshIcon fontSize="small" />
-        </ListItemIcon>
-        <ListItemText>Refresh Board</ListItemText>
-      </MenuItem>
-
-      <Divider />
-
-      <MenuItem onClick={() => handleMenuItemClick(onSettings)}>
-        <ListItemIcon>
-          <SettingsIcon fontSize="small" />
-        </ListItemIcon>
-        <ListItemText>Board Settings</ListItemText>
-      </MenuItem>
-
-      <MenuItem onClick={() => handleMenuItemClick(onAnalytics)}>
-        <ListItemIcon>
-          <AnalyticsIcon fontSize="small" />
-        </ListItemIcon>
-        <ListItemText>Analytics</ListItemText>
-      </MenuItem>
-
-      {canEdit && (
-        <>
-          <Divider />
-          
-          {onEdit && (
-            <MenuItem onClick={() => handleMenuItemClick(onEdit)}>
-              <ListItemIcon>
-                <EditIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Edit Board</ListItemText>
-            </MenuItem>
-          )}
-
-          {onShare && (
-            <MenuItem onClick={() => handleMenuItemClick(onShare)}>
-              <ListItemIcon>
-                <ShareIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Share Board</ListItemText>
-            </MenuItem>
-          )}
-
-          {onExport && (
-            <MenuItem onClick={() => handleMenuItemClick(onExport)}>
-              <ListItemIcon>
-                <DownloadIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Export Board</ListItemText>
-            </MenuItem>
-          )}
-
-          {onArchive && (
-            <MenuItem onClick={() => handleMenuItemClick(onArchive)}>
-              <ListItemIcon>
-                <ArchiveIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Archive Board</ListItemText>
-            </MenuItem>
-          )}
-
-          {canDelete && onDelete && (
-            <>
-              <Divider />
-              <MenuItem 
-                onClick={() => handleMenuItemClick(onDelete)}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" color="error" />
-                </ListItemIcon>
-                <ListItemText>Delete Board</ListItemText>
-              </MenuItem>
-            </>
-          )}
-        </>
-      )}
+      {menuItems}
     </Menu>
   );
 };

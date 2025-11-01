@@ -1,10 +1,8 @@
 {
-  "id": "39dc050d-23a4-4536-8be1-7c70616d1a8f",
-  "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "applications": {
+    "public.applications": {
       "name": "applications",
       "schema": "",
       "columns": {
@@ -57,9 +55,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "board_permissions": {
+    "public.board_permissions": {
       "name": "board_permissions",
       "schema": "",
       "columns": {
@@ -90,46 +91,62 @@
       },
       "indexes": {
         "board_permissions_user_id_board_id_idx": {
-          "name": "board_permissions_user_id_board_id_idx",
           "columns": [
-            "user_id",
-            "board_id"
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "board_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": true
+          "with": {},
+          "name": "board_permissions_user_id_board_id_idx",
+          "isUnique": true,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "board_permissions_user_id_users_id_fk": {
           "name": "board_permissions_user_id_users_id_fk",
           "tableFrom": "board_permissions",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "board_permissions_board_id_kanban_boards_id_fk": {
           "name": "board_permissions_board_id_kanban_boards_id_fk",
           "tableFrom": "board_permissions",
-          "tableTo": "kanban_boards",
           "columnsFrom": [
             "board_id"
           ],
+          "tableTo": "kanban_boards",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "comments": {
+    "public.comments": {
       "name": "comments",
       "schema": "",
       "columns": {
@@ -170,34 +187,37 @@
         "comments_ticket_id_tickets_id_fk": {
           "name": "comments_ticket_id_tickets_id_fk",
           "tableFrom": "comments",
-          "tableTo": "tickets",
           "columnsFrom": [
             "ticket_id"
           ],
+          "tableTo": "tickets",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "comments_user_id_users_id_fk": {
           "name": "comments_user_id_users_id_fk",
           "tableFrom": "comments",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "customer_applications": {
+    "public.customer_applications": {
       "name": "customer_applications",
       "schema": "",
       "columns": {
@@ -229,46 +249,62 @@
       },
       "indexes": {
         "customer_applications_customer_id_application_id_idx": {
-          "name": "customer_applications_customer_id_application_id_idx",
           "columns": [
-            "customer_id",
-            "application_id"
+            {
+              "expression": "customer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "application_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": true
+          "with": {},
+          "name": "customer_applications_customer_id_application_id_idx",
+          "isUnique": true,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "customer_applications_customer_id_customers_id_fk": {
           "name": "customer_applications_customer_id_customers_id_fk",
           "tableFrom": "customer_applications",
-          "tableTo": "customers",
           "columnsFrom": [
             "customer_id"
           ],
+          "tableTo": "customers",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "customer_applications_application_id_applications_id_fk": {
           "name": "customer_applications_application_id_applications_id_fk",
           "tableFrom": "customer_applications",
-          "tableTo": "applications",
           "columnsFrom": [
             "application_id"
           ],
+          "tableTo": "applications",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "customers": {
+    "public.customers": {
       "name": "customers",
       "schema": "",
       "columns": {
@@ -332,11 +368,19 @@
       },
       "indexes": {
         "customers_email_idx": {
-          "name": "customers_email_idx",
           "columns": [
-            "email"
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "customers_email_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -344,14 +388,17 @@
       "uniqueConstraints": {
         "customers_email_unique": {
           "name": "customers_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "doc_nodes": {
+    "public.doc_nodes": {
       "name": "doc_nodes",
       "schema": "",
       "columns": {
@@ -409,46 +456,62 @@
       },
       "indexes": {
         "doc_nodes_parent_id_position_idx": {
-          "name": "doc_nodes_parent_id_position_idx",
           "columns": [
-            "parent_id",
-            "position"
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "doc_nodes_parent_id_position_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "doc_nodes_parent_id_doc_nodes_id_fk": {
           "name": "doc_nodes_parent_id_doc_nodes_id_fk",
           "tableFrom": "doc_nodes",
-          "tableTo": "doc_nodes",
           "columnsFrom": [
             "parent_id"
           ],
+          "tableTo": "doc_nodes",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "doc_nodes_doc_id_docs_id_fk": {
           "name": "doc_nodes_doc_id_docs_id_fk",
           "tableFrom": "doc_nodes",
-          "tableTo": "docs",
           "columnsFrom": [
             "doc_id"
           ],
+          "tableTo": "docs",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "docs": {
+    "public.docs": {
       "name": "docs",
       "schema": "",
       "columns": {
@@ -488,9 +551,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "kanban_boards": {
+    "public.kanban_boards": {
       "name": "kanban_boards",
       "schema": "",
       "columns": {
@@ -551,9 +617,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "kanban_columns": {
+    "public.kanban_columns": {
       "name": "kanban_columns",
       "schema": "",
       "columns": {
@@ -623,33 +692,49 @@
       },
       "indexes": {
         "kanban_columns_board_id_position_idx": {
-          "name": "kanban_columns_board_id_position_idx",
           "columns": [
-            "board_id",
-            "position"
+            {
+              "expression": "board_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": true
+          "with": {},
+          "name": "kanban_columns_board_id_position_idx",
+          "isUnique": true,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "kanban_columns_board_id_kanban_boards_id_fk": {
           "name": "kanban_columns_board_id_kanban_boards_id_fk",
           "tableFrom": "kanban_columns",
-          "tableTo": "kanban_boards",
           "columnsFrom": [
             "board_id"
           ],
+          "tableTo": "kanban_boards",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "labels": {
+    "public.labels": {
       "name": "labels",
       "schema": "",
       "columns": {
@@ -694,11 +779,19 @@
       },
       "indexes": {
         "labels_name_idx": {
-          "name": "labels_name_idx",
           "columns": [
-            "name"
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "labels_name_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -706,14 +799,17 @@
       "uniqueConstraints": {
         "labels_name_unique": {
           "name": "labels_name_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "notifications": {
+    "public.notifications": {
       "name": "notifications",
       "schema": "",
       "columns": {
@@ -773,34 +869,37 @@
         "notifications_user_id_users_id_fk": {
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "notifications_ticket_id_tickets_id_fk": {
           "name": "notifications_ticket_id_tickets_id_fk",
           "tableFrom": "notifications",
-          "tableTo": "tickets",
           "columnsFrom": [
             "ticket_id"
           ],
+          "tableTo": "tickets",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "refresh_tokens": {
+    "public.refresh_tokens": {
       "name": "refresh_tokens",
       "schema": "",
       "columns": {
@@ -851,53 +950,88 @@
       },
       "indexes": {
         "refresh_tokens_token_idx": {
-          "name": "refresh_tokens_token_idx",
           "columns": [
-            "token"
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": true
+          "with": {},
+          "name": "refresh_tokens_token_idx",
+          "isUnique": true,
+          "method": "btree",
+          "concurrently": false
         },
         "refresh_tokens_user_id_idx": {
-          "name": "refresh_tokens_user_id_idx",
           "columns": [
-            "user_id"
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "refresh_tokens_user_id_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         },
         "refresh_tokens_expires_at_idx": {
-          "name": "refresh_tokens_expires_at_idx",
           "columns": [
-            "expires_at"
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "refresh_tokens_expires_at_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         },
         "refresh_tokens_revoked_at_idx": {
-          "name": "refresh_tokens_revoked_at_idx",
           "columns": [
-            "revoked_at"
+            {
+              "expression": "revoked_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "refresh_tokens_revoked_at_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "refresh_tokens_user_id_users_id_fk": {
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "tasks": {
+    "public.tasks": {
       "name": "tasks",
       "schema": "",
       "columns": {
@@ -977,47 +1111,50 @@
         "tasks_assignee_id_users_id_fk": {
           "name": "tasks_assignee_id_users_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "users",
           "columnsFrom": [
             "assignee_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tasks_board_id_kanban_boards_id_fk": {
           "name": "tasks_board_id_kanban_boards_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "kanban_boards",
           "columnsFrom": [
             "board_id"
           ],
+          "tableTo": "kanban_boards",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tasks_column_id_kanban_columns_id_fk": {
           "name": "tasks_column_id_kanban_columns_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "kanban_columns",
           "columnsFrom": [
             "column_id"
           ],
+          "tableTo": "kanban_columns",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "ticket_activities": {
+    "public.ticket_activities": {
       "name": "ticket_activities",
       "schema": "",
       "columns": {
@@ -1076,34 +1213,37 @@
         "ticket_activities_ticket_id_tickets_id_fk": {
           "name": "ticket_activities_ticket_id_tickets_id_fk",
           "tableFrom": "ticket_activities",
-          "tableTo": "tickets",
           "columnsFrom": [
             "ticket_id"
           ],
+          "tableTo": "tickets",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "ticket_activities_user_id_users_id_fk": {
           "name": "ticket_activities_user_id_users_id_fk",
           "tableFrom": "ticket_activities",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "ticket_labels": {
+    "public.ticket_labels": {
       "name": "ticket_labels",
       "schema": "",
       "columns": {
@@ -1128,46 +1268,62 @@
       },
       "indexes": {
         "ticket_labels_ticket_id_label_id_idx": {
-          "name": "ticket_labels_ticket_id_label_id_idx",
           "columns": [
-            "ticket_id",
-            "label_id"
+            {
+              "expression": "ticket_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "label_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": true
+          "with": {},
+          "name": "ticket_labels_ticket_id_label_id_idx",
+          "isUnique": true,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "ticket_labels_ticket_id_tickets_id_fk": {
           "name": "ticket_labels_ticket_id_tickets_id_fk",
           "tableFrom": "ticket_labels",
-          "tableTo": "tickets",
           "columnsFrom": [
             "ticket_id"
           ],
+          "tableTo": "tickets",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "ticket_labels_label_id_labels_id_fk": {
           "name": "ticket_labels_label_id_labels_id_fk",
           "tableFrom": "ticket_labels",
-          "tableTo": "labels",
           "columnsFrom": [
             "label_id"
           ],
+          "tableTo": "labels",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "tickets": {
+    "public.tickets": {
       "name": "tickets",
       "schema": "",
       "columns": {
@@ -1278,73 +1434,76 @@
         "tickets_assigned_to_id_users_id_fk": {
           "name": "tickets_assigned_to_id_users_id_fk",
           "tableFrom": "tickets",
-          "tableTo": "users",
           "columnsFrom": [
             "assigned_to_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tickets_created_by_id_users_id_fk": {
           "name": "tickets_created_by_id_users_id_fk",
           "tableFrom": "tickets",
-          "tableTo": "users",
           "columnsFrom": [
             "created_by_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tickets_customer_id_customers_id_fk": {
           "name": "tickets_customer_id_customers_id_fk",
           "tableFrom": "tickets",
-          "tableTo": "customers",
           "columnsFrom": [
             "customer_id"
           ],
+          "tableTo": "customers",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tickets_application_id_applications_id_fk": {
           "name": "tickets_application_id_applications_id_fk",
           "tableFrom": "tickets",
-          "tableTo": "applications",
           "columnsFrom": [
             "application_id"
           ],
+          "tableTo": "applications",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tickets_board_id_kanban_boards_id_fk": {
           "name": "tickets_board_id_kanban_boards_id_fk",
           "tableFrom": "tickets",
-          "tableTo": "kanban_boards",
           "columnsFrom": [
             "board_id"
           ],
+          "tableTo": "kanban_boards",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "users": {
+    "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
@@ -1423,11 +1582,19 @@
       },
       "indexes": {
         "users_email_idx": {
-          "name": "users_email_idx",
           "columns": [
-            "email"
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "users_email_idx",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -1435,104 +1602,122 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     }
   },
   "enums": {
-    "activity_type": {
+    "public.activity_type": {
       "name": "activity_type",
-      "values": {
-        "CREATED": "CREATED",
-        "UPDATED": "UPDATED",
-        "STATUS_CHANGED": "STATUS_CHANGED",
-        "ASSIGNED": "ASSIGNED",
-        "UNASSIGNED": "UNASSIGNED",
-        "MOVED": "MOVED",
-        "COMMENTED": "COMMENTED",
-        "LABEL_ADDED": "LABEL_ADDED",
-        "LABEL_REMOVED": "LABEL_REMOVED",
-        "DUE_DATE_CHANGED": "DUE_DATE_CHANGED",
-        "PRIORITY_CHANGED": "PRIORITY_CHANGED"
-      }
+      "schema": "public",
+      "values": [
+        "CREATED",
+        "UPDATED",
+        "STATUS_CHANGED",
+        "ASSIGNED",
+        "UNASSIGNED",
+        "MOVED",
+        "COMMENTED",
+        "LABEL_ADDED",
+        "LABEL_REMOVED",
+        "DUE_DATE_CHANGED",
+        "PRIORITY_CHANGED"
+      ]
     },
-    "board_permission_role": {
+    "public.board_permission_role": {
       "name": "board_permission_role",
-      "values": {
-        "VIEWER": "VIEWER",
-        "EDITOR": "EDITOR",
-        "ADMIN": "ADMIN"
-      }
+      "schema": "public",
+      "values": [
+        "VIEWER",
+        "EDITOR",
+        "ADMIN"
+      ]
     },
-    "board_type": {
+    "public.board_type": {
       "name": "board_type",
-      "values": {
-        "TICKETS": "TICKETS",
-        "TASKS": "TASKS"
-      }
+      "schema": "public",
+      "values": [
+        "TICKETS",
+        "TASKS"
+      ]
     },
-    "doc_node_type": {
+    "public.doc_node_type": {
       "name": "doc_node_type",
-      "values": {
-        "FOLDER": "FOLDER",
-        "DOC": "DOC"
-      }
+      "schema": "public",
+      "values": [
+        "FOLDER",
+        "DOC"
+      ]
     },
-    "notification_type": {
+    "public.notification_type": {
       "name": "notification_type",
-      "values": {
-        "TICKET_ASSIGNED": "TICKET_ASSIGNED",
-        "TICKET_UPDATED": "TICKET_UPDATED",
-        "TICKET_COMMENTED": "TICKET_COMMENTED",
-        "TICKET_DUE_SOON": "TICKET_DUE_SOON",
-        "TICKET_OVERDUE": "TICKET_OVERDUE",
-        "MENTION": "MENTION",
-        "STATUS_CHANGED": "STATUS_CHANGED"
-      }
+      "schema": "public",
+      "values": [
+        "TICKET_ASSIGNED",
+        "TICKET_UPDATED",
+        "TICKET_COMMENTED",
+        "TICKET_DUE_SOON",
+        "TICKET_OVERDUE",
+        "MENTION",
+        "STATUS_CHANGED"
+      ]
     },
-    "priority": {
+    "public.priority": {
       "name": "priority",
-      "values": {
-        "LOW": "LOW",
-        "MEDIUM": "MEDIUM",
-        "HIGH": "HIGH",
-        "URGENT": "URGENT"
-      }
+      "schema": "public",
+      "values": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "URGENT"
+      ]
     },
-    "role": {
+    "public.role": {
       "name": "role",
-      "values": {
-        "ADMIN": "ADMIN",
-        "EMPLOYEE": "EMPLOYEE"
-      }
+      "schema": "public",
+      "values": [
+        "ADMIN",
+        "EMPLOYEE"
+      ]
     },
-    "task_status": {
+    "public.task_status": {
       "name": "task_status",
-      "values": {
-        "TODO": "TODO",
-        "IN_PROGRESS": "IN_PROGRESS",
-        "REVIEW": "REVIEW",
-        "DONE": "DONE"
-      }
+      "schema": "public",
+      "values": [
+        "TODO",
+        "IN_PROGRESS",
+        "REVIEW",
+        "DONE"
+      ]
     },
-    "ticket_status": {
+    "public.ticket_status": {
       "name": "ticket_status",
-      "values": {
-        "OPEN": "OPEN",
-        "IN_PROGRESS": "IN_PROGRESS",
-        "RESOLVED": "RESOLVED",
-        "CLOSED": "CLOSED"
-      }
+      "schema": "public",
+      "values": [
+        "OPEN",
+        "IN_PROGRESS",
+        "RESOLVED",
+        "CLOSED"
+      ]
     }
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "39dc050d-23a4-4536-8be1-7c70616d1a8f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "sequences": {},
+  "policies": {},
+  "views": {},
+  "roles": {}
 }

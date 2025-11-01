@@ -65,12 +65,12 @@ http.interceptors.request.use(
     (config.headers as Record<string, string>)["X-Request-ID"] = requestId;
 
     // Log request in development
-    if (import.meta.env.DEV) {
-      console.log(
-        `📤 [${requestId}] ${config.method?.toUpperCase()} ${config.url}`,
-        config.data ? { data: config.data } : ""
-      );
-    }
+    // if (import.meta.env.DEV) {
+    //   console.log(
+    //     `📤 [${requestId}] ${config.method?.toUpperCase()} ${config.url}`,
+    //     config.data ? { data: config.data } : ""
+    //   );
+    // }
 
     return config;
   },
@@ -104,12 +104,12 @@ const processQueue = (error: ApiError | null, token: string | null = null) => {
 
 http.interceptors.response.use(
   (response) => {
-    if (import.meta.env.DEV) {
-      const requestId = response.config.headers["X-Request-ID"];
-      console.log(
-        `📥 [${requestId}] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`
-      );
-    }
+    // if (import.meta.env.DEV) {
+    //   const requestId = response.config.headers["X-Request-ID"];
+    //   console.log(
+    //     `📥 [${requestId}] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`
+    //   );
+    // }
     return response;
   },
   async (error: AxiosError) => {
