@@ -9,7 +9,15 @@ export function registerErrorHandlers(app) {
 
   // Error handling middleware
   app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+    console.error('Error occurred:', {
+      message: err.message,
+      stack: err.stack,
+      url: req.url,
+      method: req.method
+    });
+    res.status(500).json({ 
+      error: 'Something went wrong!',
+      ...(process.env.NODE_ENV === 'development' && { details: err.message })
+    });
   });
 }

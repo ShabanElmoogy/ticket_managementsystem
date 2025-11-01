@@ -5,16 +5,17 @@ import { listDocs, getDoc, createDoc, updateDoc, deleteDoc, listTree, createFold
 const router = express.Router();
 
 router.get('/', authenticateToken, listDocs);
-router.get('/:id', authenticateToken, getDoc);
-router.post('/', authenticateToken, createDoc);
-router.put('/:id', authenticateToken, updateDoc);
-router.delete('/:id', authenticateToken, deleteDoc);
-
+router.get('/tree', authenticateToken, listTree);
 router.get('/tree/list', authenticateToken, listTree);
 router.post('/tree/folder', authenticateToken, createFolder);
 router.post('/tree/doc', authenticateToken, createDocNode);
 router.put('/tree/:id/rename', authenticateToken, renameNode);
 router.put('/tree/:id/move', authenticateToken, moveNode);
 router.delete('/tree/:id', authenticateToken, deleteNode);
+
+router.get('/:id', authenticateToken, getDoc);
+router.post('/', authenticateToken, createDoc);
+router.put('/:id', authenticateToken, updateDoc);
+router.delete('/:id', authenticateToken, deleteDoc);
 
 export default router;

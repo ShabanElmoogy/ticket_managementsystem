@@ -10,7 +10,7 @@ import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
 import AlignHorizontalCenterIcon from '@mui/icons-material/AlignHorizontalCenter';
 import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
-import { BlockSettings } from '../types/types';
+import type { BlockSettings } from '../types';
 
 // Block settings toolbar
 const BlockSettingsBar: React.FC<{

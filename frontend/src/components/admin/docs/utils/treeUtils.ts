@@ -1,4 +1,4 @@
-import { TreeNode, FolderNode, DocRefNode, ServerDocNode } from '../types/types';
+import type { TreeNode, FolderNode, DocRefNode, ServerDocNode } from '../types';
 
 // Build nested tree from flat list
 export function buildTree(nodes: ServerDocNode[]): TreeNode[] {

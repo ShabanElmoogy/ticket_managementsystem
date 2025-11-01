@@ -7,7 +7,18 @@ import Boom from '@hapi/boom';
 export const listDocs = async (req, res, next) => {
   try {
     const docsData = await db.select().from(docs).orderBy(desc(docs.updatedAt));
-    res.json(docsData);
+    const parsedDocs = docsData.map(doc => {
+      let blocks = doc.blocks;
+      if (typeof blocks === 'string') {
+        try {
+          blocks = JSON.parse(blocks);
+        } catch (e) {
+          blocks = [];
+        }
+      }
+      return { ...doc, blocks };
+    });
+    res.json(parsedDocs);
   } catch (err) { next(err); }
 };
 
@@ -16,15 +27,28 @@ export const getDoc = async (req, res, next) => {
     const { id } = req.params;
     const [doc] = await db.select().from(docs).where(eq(docs.id, id)).limit(1);
     if (!doc) return next(Boom.notFound('Doc not found'));
-    res.json(doc);
+    // Parse blocks JSON string to array
+    const parsedDoc = {
+      ...doc,
+      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
+    };
+    res.json(parsedDoc);
   } catch (err) { next(err); }
 };
 
 export const createDoc = async (req, res, next) => {
   try {
     const { title, blocks } = req.body;
-    const [doc] = await db.insert(docs).values({ title, blocks: blocks ?? [] }).returning();
-    res.status(201).json(doc);
+    const [doc] = await db.insert(docs).values({ 
+      title, 
+      blocks: JSON.stringify(blocks || []) 
+    }).returning();
+    // Parse blocks back to array for response
+    const parsedDoc = {
+      ...doc,
+      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
+    };
+    res.status(201).json(parsedDoc);
   } catch (err) { next(err); }
 };
 
@@ -38,12 +62,25 @@ export const updateDoc = async (req, res, next) => {
     
     let doc;
     if (existingDoc) {
-      [doc] = await db.update(docs).set({ title, blocks }).where(eq(docs.id, id)).returning();
+      [doc] = await db.update(docs).set({ 
+        title, 
+        blocks: JSON.stringify(blocks || []) 
+      }).where(eq(docs.id, id)).returning();
     } else {
-      [doc] = await db.insert(docs).values({ id, title: title || 'Untitled', blocks: blocks ?? [] }).returning();
+      [doc] = await db.insert(docs).values({ 
+        id, 
+        title: title || 'Untitled', 
+        blocks: JSON.stringify(blocks || []) 
+      }).returning();
     }
     
-    res.json(doc);
+    // Parse blocks back to array for response
+    const parsedDoc = {
+      ...doc,
+      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
+    };
+    
+    res.json(parsedDoc);
   } catch (err) { next(err); }
 };
 
@@ -58,7 +95,8 @@ export const deleteDoc = async (req, res, next) => {
 // Tree nodes CRUD
 export const listTree = async (req, res, next) => {
   try {
-    const nodes = await db.select().from(docNodes).orderBy(asc(docNodes.parentId), asc(docNodes.position));
+    // Return flat array of nodes - frontend will build the tree structure
+    const nodes = await db.select().from(docNodes).orderBy(asc(docNodes.position));
     res.json(nodes);
   } catch (err) { next(err); }
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, TextField } from '@mui/material';
 import BlockSettingsBar from '../BlockSettingsBar';
-import { HeadingBlock, BlockSettings } from '../../types/types';
+import type { HeadingBlock, BlockSettings } from '../../types';
 
 const HeadingBlockEditor: React.FC<{
   block: HeadingBlock;

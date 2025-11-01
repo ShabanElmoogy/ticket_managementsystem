@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, TextField } from '@mui/material';
 import BlockSettingsBar from '../BlockSettingsBar';
-import { ImageBlock, BlockSettings } from '../../types/types';
+import type { ImageBlock, BlockSettings } from '../../types';
 
 const ImageBlockEditor: React.FC<{
   block: ImageBlock;

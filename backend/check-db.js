@@ -1,0 +1,14 @@
+import { db } from './src/config/database.js';
+import { docs } from './drizzle/schema.js';
+
+async function checkDocs() {
+  try {
+    const result = await db.select().from(docs).limit(1);
+    console.log('Docs data:', JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error('Error:', error);
+  }
+  process.exit(0);
+}
+
+checkDocs();

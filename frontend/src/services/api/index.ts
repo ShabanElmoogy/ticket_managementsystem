@@ -14,3 +14,4 @@ export { applicationsApi } from "./applications";
 export { dashboardApi } from "./dashboard";
 export { profileApi } from "./profile";
 export { kanbanApi } from "./kanban";
+export { docsApi } from "./docs";

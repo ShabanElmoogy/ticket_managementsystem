@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, TextField } from '@mui/material';
 import BlockSettingsBar from '../BlockSettingsBar';
-import { VideoBlock, BlockSettings } from '../../types/types';
+import type { VideoBlock, BlockSettings } from '../../types';
 
 const VideoBlockEditor: React.FC<{
   block: VideoBlock;

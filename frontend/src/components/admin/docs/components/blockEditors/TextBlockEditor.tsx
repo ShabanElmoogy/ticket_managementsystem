@@ -12,7 +12,7 @@ import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import BlockSettingsBar from '../BlockSettingsBar';
-import { TextBlock, BlockSettings } from '../../types/types';
+import type { TextBlock, BlockSettings } from '../../types';
 
 const TextToolbar: React.FC = () => {
   const exec = (cmd: string, val?: string) => {

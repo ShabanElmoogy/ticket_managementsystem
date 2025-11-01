@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, integer, timestamp, pgEnum, index } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, integer, timestamp, pgEnum, index, json } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const docNodeTypeEnum = pgEnum('doc_node_type', ['FOLDER', 'DOC']);
@@ -6,7 +6,7 @@ export const docNodeTypeEnum = pgEnum('doc_node_type', ['FOLDER', 'DOC']);
 export const docs = pgTable('docs', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: varchar('title', { length: 191 }).notNull(),
-  blocks: text('blocks').notNull(),
+  blocks: json('blocks').notNull().$default(() => []),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -12,7 +12,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import BlockSettingsBar from '../BlockSettingsBar';
-import { BulletedListBlock, BlockSettings } from '../../types/types';
+import type { BulletedListBlock, BlockSettings } from '../../types';
 
 const BulletedListEditor: React.FC<{
   block: BulletedListBlock;
