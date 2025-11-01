@@ -1,6 +1,6 @@
 import { db } from '../config/database.js';
 import { tickets, users, customers, applications, ticketLabels, labels, comments, ticketActivities } from '../drizzle/schema.js';
-import { eq, and, or, desc, asc, count, inArray, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, asc, count, inArray, isNull, lt } from 'drizzle-orm';
 import { logActivity } from '../utils/activityUtils.js';
 import { createNotification } from '../utils/notificationUtils.js';
 
@@ -251,6 +251,61 @@ export const takeTicket = async (req, res) => {
     res.json(updatedTicket);
   } catch (error) {
     console.error('Take ticket error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get delayed tickets for current user
+export const getDelayedTickets = async (req, res) => {
+  try {
+    const now = new Date();
+    
+    const delayedTickets = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        description: tickets.description,
+        status: tickets.status,
+        priority: tickets.priority,
+        dueDate: tickets.dueDate,
+        createdAt: tickets.createdAt,
+        updatedAt: tickets.updatedAt,
+        assignedToId: tickets.assignedToId,
+        customerId: tickets.customerId,
+        applicationId: tickets.applicationId
+      })
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.assignedToId, req.user.userId),
+          or(
+            and(isNull(tickets.dueDate), eq(tickets.status, 'OPEN')),
+            lt(tickets.dueDate, now)
+          ),
+          or(eq(tickets.status, 'OPEN'), eq(tickets.status, 'IN_PROGRESS'))
+        )
+      )
+      .orderBy(asc(tickets.dueDate));
+
+    // Get related data separately to avoid alias conflicts
+    const customerIds = delayedTickets.filter(t => t.customerId).map(t => t.customerId);
+    const applicationIds = delayedTickets.filter(t => t.applicationId).map(t => t.applicationId);
+    
+    const [customersData, applicationsData] = await Promise.all([
+      customerIds.length > 0 ? db.select({ id: customers.id, name: customers.name }).from(customers).where(inArray(customers.id, customerIds)) : [],
+      applicationIds.length > 0 ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds)) : []
+    ]);
+
+    // Combine data
+    const result = delayedTickets.map(ticket => ({
+      ...ticket,
+      customer: customersData.find(c => c.id === ticket.customerId) || null,
+      application: applicationsData.find(a => a.id === ticket.applicationId) || null
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get delayed tickets error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

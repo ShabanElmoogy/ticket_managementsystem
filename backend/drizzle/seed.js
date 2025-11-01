@@ -102,7 +102,13 @@ async function main() {
     }
   }
 
-  // Create sample tickets
+  // Create sample tickets with due dates for testing reminders
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   await db.insert(tickets).values([
     {
       title: "Email server not responding",
@@ -111,6 +117,8 @@ async function main() {
       priority: "HIGH",
       status: "OPEN",
       createdById: admin.id,
+      assignedToId: employee1.id,
+      dueDate: yesterday, // Overdue ticket
     },
     {
       title: "Website loading slowly",
@@ -120,6 +128,7 @@ async function main() {
       status: "IN_PROGRESS",
       createdById: admin.id,
       assignedToId: employee1.id,
+      dueDate: yesterday, // Overdue ticket
     },
     {
       title: "Database backup failed",
@@ -128,6 +137,8 @@ async function main() {
       priority: "URGENT",
       status: "OPEN",
       createdById: admin.id,
+      assignedToId: employee2.id,
+      dueDate: tomorrow, // Future due date
     },
     {
       title: "User account locked",

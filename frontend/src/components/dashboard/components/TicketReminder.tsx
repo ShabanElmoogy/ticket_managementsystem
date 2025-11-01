@@ -53,11 +53,16 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
 
   // Set up reminder interval
   useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) return;
+    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) {
+      console.log('TicketReminder: Skipping - token:', !!token, 'role:', user?.role, 'enabled:', settings.reminderEnabled);
+      return;
+    }
 
     const fetchDelayedTickets = async () => {
       try {
+        console.log('TicketReminder: Fetching delayed tickets...');
         const delayedTickets = await ticketsApi.getDelayedTickets();
+        console.log('TicketReminder: Found delayed tickets:', delayedTickets.length, delayedTickets);
         
         if (delayedTickets.length > 0) {
           setOpenTickets(delayedTickets);
@@ -117,8 +122,32 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
     }
   };
 
+  // Debug: Force show dialog (remove this in production)
+  const forceShow = () => {
+    setOpenTickets([{
+      id: 'test',
+      title: 'Test Delayed Ticket',
+      status: 'OPEN',
+      priority: 'HIGH',
+      dueDate: new Date().toISOString(),
+      customer: { name: 'Test Customer' },
+      application: { name: 'Test App' }
+    } as any]);
+    setOpen(true);
+  };
+
   return (
     <>
+      {/* Debug Button - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <button 
+          onClick={forceShow}
+          style={{ position: 'fixed', top: 10, right: 10, zIndex: 9999, background: 'red', color: 'white' }}
+        >
+          Test Reminder
+        </button>
+      )}
+      
       {/* Main Reminder Dialog */}
       <Dialog
         open={open && openTickets.length > 0}

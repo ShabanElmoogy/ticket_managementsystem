@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Ticket Routes
 router.get('/', authenticateToken, ticketController.getAllTickets);
+router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
 router.get('/:id', authenticateToken, ticketController.getTicketById);
 router.post('/', authenticateToken, requireAdmin, ticketController.createTicket);
 router.put('/:id', authenticateToken, ticketController.updateTicket);

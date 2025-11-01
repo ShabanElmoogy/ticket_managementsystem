@@ -11,6 +11,7 @@ import { setupSocket } from "./sockets/io.js";
 import { registerCoreMiddleware } from "./middleware/index.js";
 import { registerRoutes } from "./routes/index.js";
 import { registerErrorHandlers } from "./errors/index.js";
+import { startNotificationScheduler } from "../utils/scheduler.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,9 @@ export async function startServer() {
 
   // Errors
   registerErrorHandlers(app);
+
+  // Start notification scheduler
+  startNotificationScheduler();
 
   // Start
   try {
