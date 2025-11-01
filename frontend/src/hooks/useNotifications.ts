@@ -22,7 +22,8 @@ export const useNotifications = ({ user, token }: UseNotificationsProps) => {
   useEffect(() => {
     if (!user || !token) return;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 
+      (import.meta.env.PROD ? window.location.origin : "http://localhost:3001");
     const newSocket = io(socketUrl);
     setSocket(newSocket);
 
