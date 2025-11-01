@@ -7,7 +7,7 @@
   "scripts": {
     "start": "npm list express > /dev/null 2>&1 || npm install && node server.js",
     "dev": "nodemon server.js",
-    "build": "drizzle-kit generate && node drizzle/migrate.js && node drizzle/seed.js",
+    "build": "drizzle-kit generate && node drizzle/migrate.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "node drizzle/migrate.js",
