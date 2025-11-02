@@ -8,6 +8,7 @@ import {
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
   ViewColumn as KanbanIcon,
+  Description as DocumentIcon,
   } from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
 
@@ -16,6 +17,7 @@ interface CreateMenuItemsProps {
   mode: "light" | "dark";
   onOpenAdminPanel?: () => void;
   onOpenKanban?: () => void;
+  onOpenDocuments?: () => void;
   onOpenProfile?: () => void;
   onToggleTheme: () => void;
   onLogout: () => void;
@@ -28,6 +30,7 @@ export const createMenuItems = ({
   mode,
   onOpenAdminPanel,
   onOpenKanban,
+  onOpenDocuments,
   onOpenProfile,
   onToggleTheme,
   onLogout,
@@ -61,6 +64,19 @@ export const createMenuItems = ({
         onMobileMenuClose();
       },
     },
+    ...(user?.role === "EMPLOYEE" && onOpenDocuments
+      ? [
+          {
+            label: "Documents",
+            icon: React.createElement(DocumentIcon),
+            onClick: () => {
+              onOpenDocuments();
+              onClose();
+              onMobileMenuClose();
+            },
+          },
+        ]
+      : []),
         ...(user?.role === "ADMIN" && onOpenAdminPanel
       ? [
           {

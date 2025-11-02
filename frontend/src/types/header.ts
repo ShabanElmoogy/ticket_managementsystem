@@ -2,6 +2,7 @@
 export interface HeaderProps {
   onOpenAdminPanel?: () => void;
   onOpenKanban?: () => void;
+  onOpenDocuments?: () => void;
   onTicketClick?: (ticket: any) => void;
 }
 

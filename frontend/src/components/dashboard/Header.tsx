@@ -30,7 +30,7 @@ interface NotificationType {
   };
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onTicketClick }) => {
+const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenDocuments, onTicketClick }) => {
   const { user, logout, token } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const theme = useTheme();
@@ -114,6 +114,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onTicke
     mode,
     onOpenAdminPanel,
     onOpenKanban,
+    onOpenDocuments,
     onOpenProfile: () => setProfileOpen(true),
     onToggleTheme: toggleTheme,
     onLogout: logout,
