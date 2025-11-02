@@ -14,7 +14,6 @@ import { registerRoutes } from "./routes/index.js";
 import { registerErrorHandlers } from "./errors/index.js";
 import { startNotificationScheduler } from "./utils/scheduler.js";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
