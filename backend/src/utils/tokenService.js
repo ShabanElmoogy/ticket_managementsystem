@@ -17,14 +17,21 @@ const TOKEN_CONFIG = {
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
 };
 
-// Secrets
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_REFRESH_SECRET || process.env.JWT_SECRET;
+// Secrets - will be validated when first used
+let ACCESS_TOKEN_SECRET;
+let REFRESH_TOKEN_SECRET;
 
-// Validate secrets on module load
-if (!ACCESS_TOKEN_SECRET) {
-  throw new Error('FATAL: JWT_SECRET or ACCESS_TOKEN_SECRET must be set in environment variables');
-}
+// Initialize secrets (called after dotenv is loaded)
+const initializeSecrets = () => {
+  if (!ACCESS_TOKEN_SECRET) {
+    ACCESS_TOKEN_SECRET = process.env.JWT_SECRET;
+    REFRESH_TOKEN_SECRET = process.env.JWT_SECRET;
+    
+    if (!ACCESS_TOKEN_SECRET) {
+      throw new Error('FATAL: JWT_SECRET must be set in environment variables');
+    }
+  }
+};
 
 /**
  * Generate access token
@@ -32,6 +39,8 @@ if (!ACCESS_TOKEN_SECRET) {
  * @returns {string} Signed JWT token
  */
 export const generateAccessToken = (payload) => {
+  initializeSecrets();
+  
   if (!payload || typeof payload !== 'object') {
     throw new Error('Payload must be a non-empty object');
   }
@@ -86,6 +95,8 @@ export const generateTokenPair = (payload) => {
  * @throws {Error} If token is invalid or expired
  */
 export const verifyAccessToken = (token) => {
+  initializeSecrets();
+  
   if (!token || typeof token !== 'string') {
     throw new Error('Token must be a non-empty string');
   }
@@ -112,6 +123,8 @@ export const verifyAccessToken = (token) => {
  * @throws {Error} If token is invalid or expired
  */
 export const verifyRefreshToken = (token) => {
+  initializeSecrets();
+  
   if (!token || typeof token !== 'string') {
     throw new Error('Token must be a non-empty string');
   }
