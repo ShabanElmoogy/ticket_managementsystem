@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { BlockType, BlockSettings, DocBlock, Doc, TreeNode, FolderNode, DocRefNode, HeadingBlock, TextBlock, DividerBlock, ImageBlock, VideoBlock, BulletedListBlock } from '../types';
+import type { BlockType, BlockSettings, DocBlock, Doc, TreeNode, FolderNode, DocRefNode, HeadingBlock, TextBlock, DividerBlock, ImageBlock, VideoBlock, BulletedListBlock, CodeBlock } from '../types';
 import { newId } from '../types';
 import { saveDocServer, loadDocsServer, loadTreeServer, createFolderServer, createDocServer, createDocNodeServer, renameNodeServer, deleteNodeServer } from '../utils/serverUtils';
 import { buildTree, findNode, insertChild, mapTree, removeNode, collectDocIds } from '../utils/treeUtils';
@@ -64,6 +64,9 @@ export const useDocsBuilder = () => {
         break;
       case 'bulletedList':
         block = { ...(base as BulletedListBlock), type: 'bulletedList', title: '', items: [''] };
+        break;
+      case 'code':
+        block = { ...(base as CodeBlock), type: 'code', language: 'javascript', code: '' };
         break;
       default:
         block = base;

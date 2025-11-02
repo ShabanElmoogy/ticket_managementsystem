@@ -24,6 +24,7 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import ImageIcon from '@mui/icons-material/Image';
 import MovieIcon from '@mui/icons-material/Movie';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import CodeIcon from '@mui/icons-material/Code';
 import NotesIcon from '@mui/icons-material/Notes';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -40,13 +41,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyGridHeader from '../../common/MyGridHeader';
 
 // Types and constants
-import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock } from './types';
+import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock } from './types';
 import { findNode } from './utils/treeUtils';
 
 // Sidebar palette item definition
 const palette: { type: BlockType; label: string; description: string; icon: React.ReactNode }[] = [
   { type: 'heading', label: 'Heading', description: 'Large section heading', icon: <TitleIcon /> },
   { type: 'text', label: 'Text', description: 'Rich text paragraph', icon: <TextFieldsIcon /> },
+  { type: 'code', label: 'Code', description: 'Code snippet with syntax highlighting', icon: <CodeIcon /> },
   { type: 'divider', label: 'Divider', description: 'Horizontal separator', icon: <HorizontalRuleIcon /> },
   { type: 'image', label: 'Image', description: 'Image by URL', icon: <ImageIcon /> },
   { type: 'bulletedList', label: 'Bulleted List', description: 'List of bullet points', icon: <FormatListBulletedIcon /> },
@@ -56,7 +58,7 @@ const palette: { type: BlockType; label: string; description: string; icon: Reac
 // Components
 import BlockContainer from './components/BlockContainer';
 import BlockSettingsBar from './components/BlockSettingsBar';
-import { HeadingBlockEditor, TextBlockEditor, BulletedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor } from './components/blockEditors';
+import { HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor } from './components/blockEditors';
 
 // Hook
 import { useDocsBuilder } from './hooks/useDocsBuilder';
@@ -209,6 +211,24 @@ const DocsBuilder: React.FC = () => {
                   <Typography component="div" sx={{ whiteSpace: 'pre-wrap', textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}
                     dangerouslySetInnerHTML={{ __html: (block as TextBlock).html }}
                   />
+                )}
+                {block.type === 'code' && (
+                  <Box sx={{ textAlign: block.settings?.align || 'left' }}>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
+                      {(block as CodeBlock).language}
+                    </Typography>
+                    <Box sx={{
+                      backgroundColor: theme.palette.grey[100],
+                      borderRadius: 1,
+                      p: 2,
+                      fontFamily: 'monospace',
+                      whiteSpace: 'pre-wrap',
+                      overflow: 'auto',
+                      color: block.settings?.color || 'inherit'
+                    }}>
+                      {(block as CodeBlock).code}
+                    </Box>
+                  </Box>
                 )}
                 {block.type === 'bulletedList' && (
                   <Box sx={{ textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}>
@@ -393,6 +413,17 @@ const DocsBuilder: React.FC = () => {
                     <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
                       <TextBlockEditor
                         block={block as TextBlock}
+                        onChange={(p) => updateBlock(block.id, p)}
+                        settings={block.settings || {}}
+                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
+                      />
+                    </BlockContainer>
+                  );
+                case 'code':
+                  return (
+                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
+                      <CodeBlockEditor
+                        block={block as CodeBlock}
                         onChange={(p) => updateBlock(block.id, p)}
                         settings={block.settings || {}}
                         onSettingsChange={(p) => updateBlockSettings(block.id, p)}

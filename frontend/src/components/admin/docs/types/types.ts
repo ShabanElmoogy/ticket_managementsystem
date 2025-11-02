@@ -1,4 +1,4 @@
-export type BlockType = 'heading' | 'text' | 'divider' | 'image' | 'video' | 'bulletedList';
+export type BlockType = 'heading' | 'text' | 'divider' | 'image' | 'video' | 'bulletedList' | 'code';
 
 export interface BlockSettings {
   align?: 'left' | 'center' | 'right';
@@ -45,7 +45,13 @@ export interface BulletedListBlock extends DocBlockBase {
   items: string[];
 }
 
-export type DocBlock = HeadingBlock | TextBlock | DividerBlock | ImageBlock | VideoBlock | BulletedListBlock;
+export interface CodeBlock extends DocBlockBase {
+  type: 'code';
+  language: string;
+  code: string;
+}
+
+export type DocBlock = HeadingBlock | TextBlock | DividerBlock | ImageBlock | VideoBlock | BulletedListBlock | CodeBlock;
 
 export interface Doc {
   id: string;
