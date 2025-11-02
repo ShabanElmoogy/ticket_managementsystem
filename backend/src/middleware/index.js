@@ -2,8 +2,9 @@ import cors from 'cors';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { CORS_ORIGINS } from '../config/env.js';
 import socketMiddleware from './socketMiddleware.js';
+
+const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : [];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

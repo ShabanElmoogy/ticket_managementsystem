@@ -3,7 +3,8 @@ import { createServer as createHttpsServer } from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { USE_HTTPS } from './env.js';
+
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +14,7 @@ export function createHttpOrHttpsServer(app) {
   if (USE_HTTPS) {
     try {
       const keyPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
-      const certPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
+      const certPath = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
 
       if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
         const httpsOptions = {
@@ -21,13 +22,13 @@ export function createHttpOrHttpsServer(app) {
           cert: fs.readFileSync(certPath),
         };
         server = createHttpsServer(httpsOptions, app);
-        console.log('HTTPS server enabled');
+        console.log('HTTPS server enabled with certificates from .cert directory');
       } else {
-        console.log('HTTPS certificates not found, falling back to HTTP');
+        console.warn('HTTPS certificates not found in .cert directory, falling back to HTTP');
         server = createServer(app);
       }
     } catch (error) {
-      console.log('Error loading HTTPS certificates, falling back to HTTP:', error.message);
+      console.error('Error loading HTTPS certificates, falling back to HTTP:', error.message);
       server = createServer(app);
     }
   } else {
@@ -36,7 +37,11 @@ export function createHttpOrHttpsServer(app) {
   return server;
 }
 
+/**
+ * Detects the protocol (http or https) based on USE_HTTPS and certificate availability.
+ * @returns {string} 'https' if HTTPS is enabled and certificates exist, otherwise 'http'.
+ */
 export function detectProtocol() {
-  const certPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
+  const certPath = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
   return USE_HTTPS && fs.existsSync(certPath) ? 'https' : 'http';
 }

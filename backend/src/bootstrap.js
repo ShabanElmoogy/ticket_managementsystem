@@ -1,8 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-
-import { PORT, HOST, CORS_ORIGINS } from "./config/env.js";
 import {
   createHttpOrHttpsServer,
   detectProtocol,
@@ -16,6 +17,9 @@ import { startNotificationScheduler } from "./utils/scheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || 'localhost';
 
 export async function startServer() {
   const app = express();
@@ -48,7 +52,7 @@ export async function startServer() {
   try {
     server.listen(PORT, HOST, () => {
       const protocol = detectProtocol();
-      const hostForLog = process.env.HOST || "localhost";
+      console.log(`Server running on ${protocol}://${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
