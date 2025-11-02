@@ -14,26 +14,38 @@ import {
   IconButton,
   TextField,
   InputAdornment,
+  Collapse,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  Folder as FolderIcon,
+  FolderOpen as FolderOpenIcon,
+  Description as DescriptionIcon,
+  ExpandLess,
+  ExpandMore,
 } from "@mui/icons-material";
 import MyGridHeader from "../../common/MyGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import { useDocsBuilder } from "./hooks/useDocsBuilder";
+import type { Doc, DocBlock, TreeNode } from "./types";
 
 interface DocsGalleryProps {
   onEditDoc?: (docId: string) => void;
 }
 
 const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
-  const { docs, deleteDoc, setCurrentDocId } = useDocsBuilder();
+  const { docs, deleteDoc, setCurrentDocId, tree, expanded, toggleExpand } = useDocsBuilder();
   const [searchTerm, setSearchTerm] = useState("");
-  const [previewDoc, setPreviewDoc] = useState<any>(null);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: any }>(
+  const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>(
     { open: false, doc: null }
   );
 
@@ -41,7 +53,62 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handlePreview = (doc: any) => {
+  const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
+    const isExpanded = expanded[node.id];
+    const paddingLeft = level * 24;
+
+    if (node.type === 'folder') {
+      return (
+        <Box key={node.id}>
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => toggleExpand(node.id)} sx={{ pl: paddingLeft / 8 }}>
+              <ListItemIcon>
+                {isExpanded ? <FolderOpenIcon /> : <FolderIcon />}
+              </ListItemIcon>
+              <ListItemText primary={node.title} />
+              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            </ListItemButton>
+          </ListItem>
+          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {node.children.map((child) => renderTreeNode(child, level + 1))}
+            </List>
+          </Collapse>
+        </Box>
+      );
+    } else {
+      // Doc node
+      const doc = docs.find((d) => d.id === node.docId);
+      if (!doc) return null;
+
+      return (
+        <ListItem key={node.id} disablePadding>
+          <ListItemButton sx={{ pl: paddingLeft / 8 }} onClick={() => handlePreview(doc)}>
+            <ListItemIcon>
+              <DescriptionIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={doc.title}
+              secondary={`Updated: ${new Date(doc.updatedAt).toLocaleDateString()}`}
+            />
+          </ListItemButton>
+          <Box sx={{ display: 'flex', gap: 1, mr: 1 }}>
+            <IconButton size="small" onClick={() => handlePreview(doc)}>
+              <VisibilityIcon />
+            </IconButton>
+            <IconButton size="small" onClick={() => handleEdit(doc.id)}>
+              <EditIcon />
+            </IconButton>
+            <IconButton size="small" color="error" onClick={() => handleDelete(doc)}>
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </ListItem>
+      );
+    }
+  };
+
+  const handlePreview = (doc: Doc) => {
     setPreviewDoc(doc);
   };
 
@@ -53,7 +120,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     }
   };
 
-  const handleDelete = (doc: any) => {
+  const handleDelete = (doc: Doc) => {
     setDeleteDialog({ open: true, doc });
   };
 
@@ -64,7 +131,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     }
   };
 
-  const renderPreview = (blocks: any[]) => {
+  const renderPreview = (blocks: DocBlock[]) => {
     if (!blocks || blocks.length === 0)
       return <Typography>No content</Typography>;
 
@@ -127,60 +194,78 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         />
       </Box>
 
-      <Grid container spacing={2}>
-        {filteredDocs.map((doc) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.id}>
-            <Card
-              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-            >
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Typography variant="h6" gutterBottom>
-                  {doc.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                </Typography>
-                <Box sx={{ mt: 1, maxHeight: 120, overflow: "hidden" }}>
-                  {renderPreview(doc.blocks)}
-                </Box>
-              </CardContent>
-              <CardActions>
-                <Button
-                  size="small"
-                  startIcon={<VisibilityIcon />}
-                  onClick={() => handlePreview(doc)}
-                >
-                  Preview
-                </Button>
-                <Button
-                  size="small"
-                  startIcon={<EditIcon />}
-                  onClick={() => handleEdit(doc.id)}
-                >
-                  Edit
-                </Button>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleDelete(doc)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ display: 'flex', gap: 4 }}>
+        {/* Tree View */}
+        <Box sx={{ flex: 1, maxWidth: 400 }}>
+          <Typography variant="h6" gutterBottom>
+            Document Tree
+          </Typography>
+          <List>
+            {tree.map((node) => renderTreeNode(node))}
+          </List>
+        </Box>
 
-      {filteredDocs.length === 0 && (
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ textAlign: "center", mt: 4 }}
-        >
-          No documents found.
-        </Typography>
-      )}
+        {/* Gallery View */}
+        <Box sx={{ flex: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Document Gallery
+          </Typography>
+          <Grid container spacing={2}>
+            {filteredDocs.map((doc) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.id}>
+                <Card
+                  sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6" gutterBottom>
+                      {doc.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                    </Typography>
+                    <Box sx={{ mt: 1, maxHeight: 120, overflow: "hidden" }}>
+                      {renderPreview(doc.blocks)}
+                    </Box>
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => handlePreview(doc)}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEdit(doc.id)}
+                    >
+                      Edit
+                    </Button>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(doc)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {filteredDocs.length === 0 && (
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ textAlign: "center", mt: 4 }}
+            >
+              No documents found.
+            </Typography>
+          )}
+        </Box>
+      </Box>
 
       {/* Preview Dialog */}
       <Dialog
@@ -191,7 +276,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
       >
         <DialogTitle>{previewDoc?.title}</DialogTitle>
         <DialogContent sx={{ maxHeight: "70vh", overflow: "auto" }}>
-          {previewDoc?.blocks?.map((block: any) => (
+          {previewDoc?.blocks?.map((block: DocBlock) => (
             <Box key={block.id} sx={{ mb: 2 }}>
               {block.type === "heading" && (
                 <Typography variant="h5" sx={{ fontWeight: 700, mt: 2, mb: 1 }}>
@@ -344,8 +429,10 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
           <Button
             variant="contained"
             onClick={() => {
-              handleEdit(previewDoc.id);
-              setPreviewDoc(null);
+              if (previewDoc) {
+                handleEdit(previewDoc.id);
+                setPreviewDoc(null);
+              }
             }}
           >
             Edit
