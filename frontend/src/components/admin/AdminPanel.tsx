@@ -20,7 +20,7 @@ import ReportsManagement from "./components/ReportsManagement";
 import AdminTopBar from "./layout/AdminTopBar";
 import AdminSidebar from "./layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
-import DocsBuilder from "./docs/DocsBuilder";
+import DocsManagement from "./docs/DocsManagement";
 
 const drawerWidth = 240;
 
@@ -66,7 +66,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
       case "reports":
         return <ReportsManagement />;
       case "docs":
-        return <DocsBuilder />;
+        return <DocsManagement />;
       default:
         return <AdminDashboard />;
     }

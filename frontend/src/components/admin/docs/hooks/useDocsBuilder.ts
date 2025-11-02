@@ -213,6 +213,18 @@ export const useDocsBuilder = () => {
     }
   };
 
+  const deleteDoc = async (docId: string) => {
+    // Find the node that references this doc
+    const nodeToDelete = tree.flatMap(n => n.type === 'folder' ? [n, ...n.children] : [n]).find(n => n.type === 'doc' && n.docId === docId);
+    if (nodeToDelete) {
+      await deleteNodeAndDocs(nodeToDelete.id);
+    } else {
+      // If no node, just remove from docs (shouldn't happen)
+      setDocs((prev) => prev.filter((d) => d.id !== docId));
+      if (currentDocId === docId) setCurrentDocId(null);
+    }
+  };
+
   const resetCurrent = () => {
     if (!currentDoc) return;
     setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? { ...d, blocks: [], updatedAt: new Date().toISOString() } : d)));
@@ -239,6 +251,7 @@ export const useDocsBuilder = () => {
     addDocUnder,
     renameNode,
     deleteNodeAndDocs,
+    deleteDoc,
     toggleExpand,
     saveCurrentDoc,
     resetCurrent,

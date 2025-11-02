@@ -65,8 +65,13 @@ import { HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEdito
 // Hook
 import { useDocsBuilder } from './hooks/useDocsBuilder';
 
+interface DocsBuilderProps {
+  onBackToGallery?: () => void;
+  editingDocId?: string | null;
+}
+
 // Main builder component
-const DocsBuilder: React.FC = () => {
+const DocsBuilder: React.FC<DocsBuilderProps> = ({ onBackToGallery, editingDocId }) => {
   const theme = useTheme();
   const {
     docs,
@@ -93,6 +98,13 @@ const DocsBuilder: React.FC = () => {
     saveCurrentDoc,
     resetCurrent,
   } = useDocsBuilder();
+
+  // Set the editing doc when editingDocId prop changes
+  React.useEffect(() => {
+    if (editingDocId) {
+      setCurrentDocId(editingDocId);
+    }
+  }, [editingDocId, setCurrentDocId]);
 
   const renderTree = (nodes: TreeNode[], depth = 0): React.ReactNode => {
     return nodes.map((node) => {
