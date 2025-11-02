@@ -18,6 +18,8 @@ import {
   Stack,
   Collapse,
 } from '@mui/material';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import TitleIcon from '@mui/icons-material/Title';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
@@ -217,17 +219,19 @@ const DocsBuilder: React.FC = () => {
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
                       {(block as CodeBlock).language}
                     </Typography>
-                    <Box sx={{
-                      backgroundColor: theme.palette.grey[100],
-                      borderRadius: 1,
-                      p: 2,
-                      fontFamily: 'monospace',
-                      whiteSpace: 'pre-wrap',
-                      overflow: 'auto',
-                      color: block.settings?.color || 'inherit'
-                    }}>
+                    <SyntaxHighlighter
+                      language={(block as CodeBlock).language}
+                      style={vscDarkPlus}
+                      customStyle={{
+                        margin: 0,
+                        borderRadius: 8,
+                        padding: theme.spacing(2),
+                        fontSize: '0.875rem',
+                        textAlign: block.settings?.align || 'left',
+                      }}
+                    >
                       {(block as CodeBlock).code}
-                    </Box>
+                    </SyntaxHighlighter>
                   </Box>
                 )}
                 {block.type === 'bulletedList' && (
