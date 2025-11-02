@@ -20,6 +20,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -31,6 +33,8 @@ import {
   Description as DescriptionIcon,
   ExpandLess,
   ExpandMore,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
 } from "@mui/icons-material";
 import MyGridHeader from "../../common/MyGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
@@ -48,10 +52,31 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>(
     { open: false, doc: null }
   );
+  const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   const filteredDocs = docs.filter((doc) =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getDocsInFolder = (folderId: string | null): Doc[] => {
+    if (!folderId) return docs;
+
+    const findDocsInNode = (node: TreeNode): string[] => {
+      if (node.type === 'doc') {
+        return [node.docId];
+      } else if (node.type === 'folder') {
+        return node.children.flatMap(findDocsInNode);
+      }
+      return [];
+    };
+
+    const targetNode = tree.find(n => n.id === folderId);
+    if (!targetNode) return docs;
+
+    const docIds = findDocsInNode(targetNode);
+    return docs.filter(doc => docIds.includes(doc.id));
+  };
 
   const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
     const isExpanded = expanded[node.id];
@@ -61,19 +86,31 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
       return (
         <Box key={node.id}>
           <ListItem disablePadding>
-            <ListItemButton onClick={() => toggleExpand(node.id)} sx={{ pl: paddingLeft / 8 }}>
+            <ListItemButton
+              onClick={() => {
+                if (viewMode === 'tree') {
+                  toggleExpand(node.id);
+                } else {
+                  setSelectedFolderId(node.id);
+                  setViewMode('cards');
+                }
+              }}
+              sx={{ pl: paddingLeft / 8 }}
+            >
               <ListItemIcon>
                 {isExpanded ? <FolderOpenIcon /> : <FolderIcon />}
               </ListItemIcon>
               <ListItemText primary={node.title} />
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              {viewMode === 'tree' && (isExpanded ? <ExpandLess /> : <ExpandMore />)}
             </ListItemButton>
           </ListItem>
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              {node.children.map((child) => renderTreeNode(child, level + 1))}
-            </List>
-          </Collapse>
+          {viewMode === 'tree' && (
+            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {node.children.map((child) => renderTreeNode(child, level + 1))}
+              </List>
+            </Collapse>
+          )}
         </Box>
       );
     } else {
@@ -173,11 +210,39 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     });
   };
 
+  const displayedDocs = viewMode === 'cards' && selectedFolderId
+    ? getDocsInFolder(selectedFolderId).filter((doc) =>
+        doc.title.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : filteredDocs;
+
   return (
     <Box>
       <MyGridHeader title="Document Gallery" icon={VisibilityIcon} />
 
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(_, newView) => {
+            if (newView) {
+              setViewMode(newView);
+              if (newView === 'tree') {
+                setSelectedFolderId(null);
+              }
+            }
+          }}
+        >
+          <ToggleButton value="tree">
+            <ViewListIcon sx={{ mr: 1 }} />
+            Tree View
+          </ToggleButton>
+          <ToggleButton value="cards">
+            <ViewModuleIcon sx={{ mr: 1 }} />
+            Card View
+          </ToggleButton>
+        </ToggleButtonGroup>
+
         <TextField
           fullWidth
           variant="outlined"
@@ -194,9 +259,8 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         />
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 4 }}>
-        {/* Tree View */}
-        <Box sx={{ flex: 1, maxWidth: 400 }}>
+      {viewMode === 'tree' ? (
+        <Box sx={{ maxWidth: 600 }}>
           <Typography variant="h6" gutterBottom>
             Document Tree
           </Typography>
@@ -204,14 +268,28 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
             {tree.map((node) => renderTreeNode(node))}
           </List>
         </Box>
+      ) : (
+        <Box>
+          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">
+              {selectedFolderId
+                ? `Documents in ${tree.find(n => n.id === selectedFolderId)?.title || 'Folder'}`
+                : 'All Documents'
+              }
+            </Typography>
+            {selectedFolderId && (
+              <Button
+                size="small"
+                onClick={() => setSelectedFolderId(null)}
+                sx={{ ml: 'auto' }}
+              >
+                Show All
+              </Button>
+            )}
+          </Box>
 
-        {/* Gallery View */}
-        <Box sx={{ flex: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Document Gallery
-          </Typography>
           <Grid container spacing={2}>
-            {filteredDocs.map((doc) => (
+            {displayedDocs.map((doc) => (
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.id}>
                 <Card
                   sx={{ height: "100%", display: "flex", flexDirection: "column" }}
@@ -255,17 +333,17 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
             ))}
           </Grid>
 
-          {filteredDocs.length === 0 && (
+          {displayedDocs.length === 0 && (
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ textAlign: "center", mt: 4 }}
             >
-              No documents found.
+              {selectedFolderId ? 'No documents in this folder.' : 'No documents found.'}
             </Typography>
           )}
         </Box>
-      </Box>
+      )}
 
       {/* Preview Dialog */}
       <Dialog
