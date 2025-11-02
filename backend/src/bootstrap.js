@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : process.env.HOST || 'localhost';
 
 export async function startServer() {
   const app = express();
