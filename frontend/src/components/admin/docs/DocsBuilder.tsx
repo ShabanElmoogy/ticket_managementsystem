@@ -71,7 +71,7 @@ interface DocsBuilderProps {
 }
 
 // Main builder component
-const DocsBuilder: React.FC<DocsBuilderProps> = ({ onBackToGallery, editingDocId }) => {
+const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
   const theme = useTheme();
   const {
     docs,
