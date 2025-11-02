@@ -4,12 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const USE_HTTPS = process.env.USE_HTTPS === 'true';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function createHttpOrHttpsServer(app) {
+  const USE_HTTPS = process.env.USE_HTTPS === 'true';
   let server;
   if (USE_HTTPS) {
     try {
@@ -42,6 +41,8 @@ export function createHttpOrHttpsServer(app) {
  * @returns {string} 'https' if HTTPS is enabled and certificates exist, otherwise 'http'.
  */
 export function detectProtocol() {
+  const USE_HTTPS = process.env.USE_HTTPS === 'true';
+  const keyPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
   const certPath = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
-  return USE_HTTPS && fs.existsSync(certPath) ? 'https' : 'http';
+  return USE_HTTPS && fs.existsSync(keyPath) && fs.existsSync(certPath) ? 'https' : 'http';
 }
