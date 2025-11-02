@@ -8,9 +8,7 @@ import {
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
   ViewColumn as KanbanIcon,
-  WhatsApp as WhatsAppIcon,
-  People as PeopleIcon,
-} from "@mui/icons-material";
+  } from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
 
 interface CreateMenuItemsProps {
@@ -18,8 +16,6 @@ interface CreateMenuItemsProps {
   mode: "light" | "dark";
   onOpenAdminPanel?: () => void;
   onOpenKanban?: () => void;
-  onOpenWhatsApp?: () => void;
-  onOpenWhatsAppUsers?: () => void;
   onOpenProfile?: () => void;
   onToggleTheme: () => void;
   onLogout: () => void;
@@ -32,8 +28,6 @@ export const createMenuItems = ({
   mode,
   onOpenAdminPanel,
   onOpenKanban,
-  onOpenWhatsApp,
-  onOpenWhatsAppUsers,
   onOpenProfile,
   onToggleTheme,
   onLogout,
@@ -67,25 +61,7 @@ export const createMenuItems = ({
         onMobileMenuClose();
       },
     },
-    {
-      label: "WhatsApp Test",
-      icon: React.createElement(WhatsAppIcon),
-      onClick: () => {
-        if (onOpenWhatsApp) onOpenWhatsApp();
-        onClose();
-        onMobileMenuClose();
-      },
-    },
-    {
-      label: "WhatsApp Users",
-      icon: React.createElement(PeopleIcon),
-      onClick: () => {
-        if (onOpenWhatsAppUsers) onOpenWhatsAppUsers();
-        onClose();
-        onMobileMenuClose();
-      },
-    },
-    ...(user?.role === "ADMIN" && onOpenAdminPanel
+        ...(user?.role === "ADMIN" && onOpenAdminPanel
       ? [
           {
             label: "Admin Panel",
