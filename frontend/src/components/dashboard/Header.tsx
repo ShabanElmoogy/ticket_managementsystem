@@ -30,7 +30,7 @@ interface NotificationType {
   };
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenWhatsApp, onOpenWhatsAppUsers, onTicketClick }) => {
+const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onTicketClick }) => {
   const { user, logout, token } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const theme = useTheme();
@@ -114,8 +114,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenW
     mode,
     onOpenAdminPanel,
     onOpenKanban,
-    onOpenWhatsApp,
-    onOpenWhatsAppUsers,
     onOpenProfile: () => setProfileOpen(true),
     onToggleTheme: toggleTheme,
     onLogout: logout,
