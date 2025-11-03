@@ -64,7 +64,7 @@ export const createMenuItems = ({
         onMobileMenuClose();
       },
     },
-    ...(user?.role === "EMPLOYEE" && onOpenDocuments
+    ...(onOpenDocuments
       ? [
           {
             label: "Documents",

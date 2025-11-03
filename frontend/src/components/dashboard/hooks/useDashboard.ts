@@ -11,7 +11,7 @@ export type SnackbarState = {
   severity: "success" | "error" | "warning" | "info";
 };
 
-export type ViewType = "dashboard" | "kanban" | "admin";
+export type ViewType = "dashboard" | "kanban" | "admin" | "documents";
 
 export type UseDashboardReturn = ReturnType<typeof useDashboard>;
 

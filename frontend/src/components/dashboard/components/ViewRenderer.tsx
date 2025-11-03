@@ -1,6 +1,7 @@
 import React from 'react';
 import AdminPanel from '../../admin/AdminPanel';
 import KanbanPage from '../../kanban/KanbanPage';
+import DocsGallery from '../../admin/docs/DocsGallery';
 import ErrorBoundary from '../../common/ErrorBoundary';
 import DashboardContent from './DashboardContent';
 import DashboardOverlays from './DashboardOverlays';
@@ -91,6 +92,12 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
       );
     case 'admin':
       return <AdminPanel onBackToDashboard={() => setCurrentView('dashboard')} />;
+    case 'documents':
+      return (
+        <ErrorBoundary>
+          <DocsGallery />
+        </ErrorBoundary>
+      );
     case 'dashboard':
     default:
       return renderDashboardContent();

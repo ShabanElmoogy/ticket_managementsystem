@@ -39,14 +39,19 @@ import {
 import MyGridHeader from "../../common/MyGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import { useDocsBuilder } from "./hooks/useDocsBuilder";
+import { useAuthStore } from "../../../stores/authStore";
 import type { Doc, DocBlock, TreeNode } from "./types";
 
 interface DocsGalleryProps {
   onEditDoc?: (docId: string) => void;
+  viewOnly?: boolean;
 }
 
-const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
+const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }) => {
   const { docs, deleteDoc, setCurrentDocId, tree, expanded, toggleExpand } = useDocsBuilder();
+  const user = useAuthStore((state) => state.user);
+  const isEmployee = user?.role === 'EMPLOYEE';
+  const effectiveViewOnly = viewOnly || isEmployee;
   const [searchTerm, setSearchTerm] = useState("");
   const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>(
@@ -158,12 +163,16 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
             <IconButton size="small" onClick={() => handlePreview(doc)}>
               <VisibilityIcon />
             </IconButton>
-            <IconButton size="small" onClick={() => handleEdit(doc.id)}>
-              <EditIcon />
-            </IconButton>
-            <IconButton size="small" color="error" onClick={() => handleDelete(doc)}>
-              <DeleteIcon />
-            </IconButton>
+            {!effectiveViewOnly && (
+              <>
+                <IconButton size="small" onClick={() => handleEdit(doc.id)}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton size="small" color="error" onClick={() => handleDelete(doc)}>
+                  <DeleteIcon />
+                </IconButton>
+              </>
+            )}
           </Box>
         </ListItem>
       );
@@ -245,7 +254,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
   );
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <MyGridHeader
         title="Document Gallery"
         icon={VisibilityIcon}
@@ -274,7 +283,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         }
       />
 
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
           variant="outlined"
@@ -464,23 +473,25 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
                     </Box>
                   ))}
                 </Box>
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={() => handleEdit(selectedDocInTree.id)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDelete(selectedDocInTree)}
-                  >
-                    Delete
-                  </Button>
-                </Box>
+                {!effectiveViewOnly && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEdit(selectedDocInTree.id)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDelete(selectedDocInTree)}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                )}
               </Box>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -493,7 +504,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         </Box>
       ) : (
         <Box>
-          <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6">
               {currentPath.length > 0
                 ? `Documents in ${getCurrentNode()?.title || 'Folder'}`
@@ -511,7 +522,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
             )}
           </Box>
 
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             {displayedItems.map((item) => {
               if ('blocks' in item) {
                 // It's a Doc
@@ -540,20 +551,24 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
                         >
                           Preview
                         </Button>
-                        <Button
-                          size="small"
-                          startIcon={<EditIcon />}
-                          onClick={() => handleEdit(doc.id)}
-                        >
-                          Edit
-                        </Button>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(doc)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        {!effectiveViewOnly && (
+                          <>
+                            <Button
+                              size="small"
+                              startIcon={<EditIcon />}
+                              onClick={() => handleEdit(doc.id)}
+                            >
+                              Edit
+                            </Button>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDelete(doc)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </>
+                        )}
                       </CardActions>
                     </Card>
                   </Grid>
@@ -589,7 +604,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
             <Typography
               variant="body1"
               color="text.secondary"
-              sx={{ textAlign: "center", mt: 4 }}
+              sx={{ textAlign: "center", mt: 6, py: 4 }}
             >
               {currentPath.length > 0 ? 'No items in this folder.' : 'No documents found.'}
             </Typography>
@@ -759,17 +774,19 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setPreviewDoc(null)}>Close</Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                if (previewDoc) {
-                  handleEdit(previewDoc.id);
-                  setPreviewDoc(null);
-                }
-              }}
-            >
-              Edit
-            </Button>
+            {!effectiveViewOnly && (
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (previewDoc) {
+                    handleEdit(previewDoc.id);
+                    setPreviewDoc(null);
+                  }
+                }}
+              >
+                Edit
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       )}

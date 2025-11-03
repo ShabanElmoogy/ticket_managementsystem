@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
       <Header
         onOpenAdminPanel={() => setCurrentView('admin')}
         onOpenKanban={() => setCurrentView('kanban')}
+        onOpenDocuments={() => setCurrentView('documents')}
         onTicketClick={handleTicketClick}
       />
       <Toolbar sx={{ minHeight: { xs: 56, sm: 64, md: 70 } }} />
