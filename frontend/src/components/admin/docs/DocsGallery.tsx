@@ -53,30 +53,54 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     { open: false, doc: null }
   );
   const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [selectedDocInTree, setSelectedDocInTree] = useState<Doc | null>(null);
 
   const filteredDocs = docs.filter((doc) =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getDocsInFolder = (folderId: string | null): Doc[] => {
-    if (!folderId) return docs;
-
-    const findDocsInNode = (node: TreeNode): string[] => {
-      if (node.type === 'doc') {
-        return [node.docId];
-      } else if (node.type === 'folder') {
-        return node.children.flatMap(findDocsInNode);
+  const getCurrentNode = (): TreeNode | null => {
+    if (currentPath.length === 0) return null; // root
+    let current = tree.find(n => n.id === currentPath[0]);
+    for (let i = 1; i < currentPath.length; i++) {
+      if (current && current.type === 'folder') {
+        current = current.children.find(c => c.id === currentPath[i]);
+      } else {
+        return null;
       }
-      return [];
-    };
+    }
+    return current || null;
+  };
 
-    const targetNode = tree.find(n => n.id === folderId);
-    if (!targetNode) return docs;
-
-    const docIds = findDocsInNode(targetNode);
-    return docs.filter(doc => docIds.includes(doc.id));
+  const getItemsInCurrentPath = (): (TreeNode | Doc)[] => {
+    if (currentPath.length === 0) {
+      // Root: show all top-level folders and docs not in folders
+      const topLevelFolders = tree.filter(n => n.type === 'folder');
+      const docsNotInFolders = docs.filter(doc => {
+        // Check if doc is not in any folder
+        const isInFolder = tree.some(node => {
+          const findDoc = (n: TreeNode): boolean => {
+            if (n.type === 'doc' && n.docId === doc.id) return true;
+            if (n.type === 'folder') return n.children.some(findDoc);
+            return false;
+          };
+          return findDoc(node);
+        });
+        return !isInFolder;
+      });
+      return [...topLevelFolders, ...docsNotInFolders];
+    } else {
+      const currentNode = getCurrentNode();
+      if (!currentNode || currentNode.type !== 'folder') return [];
+      return currentNode.children.map(child => {
+        if (child.type === 'doc') {
+          const doc = docs.find(d => d.id === child.docId);
+          return doc || child;
+        }
+        return child;
+      }).filter(Boolean);
+    }
   };
 
   const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
@@ -92,8 +116,8 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
                 if (viewMode === 'tree') {
                   toggleExpand(node.id);
                 } else {
-                  setSelectedFolderId(node.id);
-                  setViewMode('cards');
+                  // Navigate into folder
+                  setCurrentPath([...currentPath, node.id]);
                 }
               }}
               sx={{ pl: paddingLeft / 8 }}
@@ -215,39 +239,42 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
     });
   };
 
-  const displayedDocs = viewMode === 'cards' && selectedFolderId
-    ? getDocsInFolder(selectedFolderId).filter((doc) =>
-        doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : filteredDocs;
+  const displayedItems = getItemsInCurrentPath();
+  const displayedDocs = displayedItems.filter((item): item is Doc => 'blocks' in item).filter((doc) =>
+    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Box>
-      <MyGridHeader title="Document Gallery" icon={VisibilityIcon} />
-
-      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, newView) => {
-            if (newView) {
-              setViewMode(newView);
-              if (newView === 'tree') {
-                setSelectedFolderId(null);
+      <MyGridHeader
+        title="Document Gallery"
+        icon={VisibilityIcon}
+        rightActions={
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newView) => {
+              if (newView) {
+                setViewMode(newView);
+                if (newView === 'tree') {
+                  setCurrentPath([]);
+                }
               }
-            }
-          }}
-        >
-          <ToggleButton value="tree">
-            <ViewListIcon sx={{ mr: 1 }} />
-            Tree View
-          </ToggleButton>
-          <ToggleButton value="cards">
-            <ViewModuleIcon sx={{ mr: 1 }} />
-            Card View
-          </ToggleButton>
-        </ToggleButtonGroup>
+            }}
+          >
+            <ToggleButton value="tree">
+              <ViewListIcon sx={{ mr: 1 }} />
+              Tree View
+            </ToggleButton>
+            <ToggleButton value="cards">
+              <ViewModuleIcon sx={{ mr: 1 }} />
+              Card View
+            </ToggleButton>
+          </ToggleButtonGroup>
+        }
+      />
 
+      <Box sx={{ mb: 2 }}>
         <TextField
           fullWidth
           variant="outlined"
@@ -277,9 +304,9 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
           </Box>
 
           {/* Content Panel */}
-          <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, overflow: 'auto' }}>
+          <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3, overflow: 'auto' }}>
             {selectedDocInTree ? (
-              <Box>
+              <Box sx={{ p: 2 }}>
                 <Typography variant="h5" gutterBottom>
                   {selectedDocInTree.title}
                 </Typography>
@@ -388,6 +415,8 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
                             borderRadius: 1,
                             overflow: "hidden",
                             bgcolor: "#000",
+                            maxWidth: 1130,
+                            mx: "auto",
                           }}
                         >
                           <Box sx={{ position: "absolute", inset: 0 }}>
@@ -466,15 +495,15 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         <Box>
           <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6">
-              {selectedFolderId
-                ? `Documents in ${tree.find(n => n.id === selectedFolderId)?.title || 'Folder'}`
+              {currentPath.length > 0
+                ? `Documents in ${getCurrentNode()?.title || 'Folder'}`
                 : 'All Documents'
               }
             </Typography>
-            {selectedFolderId && (
+            {currentPath.length > 0 && (
               <Button
                 size="small"
-                onClick={() => setSelectedFolderId(null)}
+                onClick={() => setCurrentPath([])}
                 sx={{ ml: 'auto' }}
               >
                 Show All
@@ -483,57 +512,86 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
           </Box>
 
           <Grid container spacing={2}>
-            {displayedDocs.map((doc) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.id}>
-                <Card
-                  sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-                >
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {doc.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                    </Typography>
-                    <Box sx={{ mt: 1, maxHeight: 120, overflow: "hidden" }}>
-                      {renderPreview(doc.blocks)}
-                    </Box>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      startIcon={<VisibilityIcon />}
-                      onClick={() => handlePreview(doc)}
+            {displayedItems.map((item) => {
+              if ('blocks' in item) {
+                // It's a Doc
+                const doc = item;
+                return (
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.id}>
+                    <Card
+                      sx={{ height: "100%", display: "flex", flexDirection: "column" }}
                     >
-                      Preview
-                    </Button>
-                    <Button
-                      size="small"
-                      startIcon={<EditIcon />}
-                      onClick={() => handleEdit(doc.id)}
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                          {doc.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                        </Typography>
+                        <Box sx={{ mt: 1, maxHeight: 120, overflow: "hidden" }}>
+                          {renderPreview(doc.blocks)}
+                        </Box>
+                      </CardContent>
+                      <CardActions>
+                        <Button
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => handlePreview(doc)}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<EditIcon />}
+                          onClick={() => handleEdit(doc.id)}
+                        >
+                          Edit
+                        </Button>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(doc)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                );
+              } else {
+                // It's a TreeNode (folder)
+                const folder = item;
+                return (
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={folder.id}>
+                    <Card
+                      sx={{ height: "100%", display: "flex", flexDirection: "column", cursor: "pointer" }}
+                      onClick={() => setCurrentPath([...currentPath, folder.id])}
                     >
-                      Edit
-                    </Button>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(doc)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <FolderIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                          <Typography variant="h6">
+                            {folder.title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Folder
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              }
+            })}
           </Grid>
 
-          {displayedDocs.length === 0 && (
+          {displayedItems.length === 0 && (
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ textAlign: "center", mt: 4 }}
             >
-              {selectedFolderId ? 'No documents in this folder.' : 'No documents found.'}
+              {currentPath.length > 0 ? 'No items in this folder.' : 'No documents found.'}
             </Typography>
           )}
         </Box>
@@ -650,6 +708,8 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
                       borderRadius: 1,
                       overflow: "hidden",
                       bgcolor: "#000",
+                      maxWidth: 400,
+                      mx: "auto",
                     }}
                   >
                     <Box sx={{ position: "absolute", inset: 0 }}>
