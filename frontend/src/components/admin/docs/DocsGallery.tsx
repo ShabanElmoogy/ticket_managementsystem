@@ -54,6 +54,7 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
   );
   const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedDocInTree, setSelectedDocInTree] = useState<Doc | null>(null);
 
   const filteredDocs = docs.filter((doc) =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -146,7 +147,11 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
   };
 
   const handlePreview = (doc: Doc) => {
-    setPreviewDoc(doc);
+    if (viewMode === 'tree') {
+      setSelectedDocInTree(doc);
+    } else {
+      setPreviewDoc(doc);
+    }
   };
 
   const handleEdit = (docId: string) => {
@@ -260,13 +265,202 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
       </Box>
 
       {viewMode === 'tree' ? (
-        <Box sx={{ maxWidth: 600 }}>
-          <Typography variant="h6" gutterBottom>
-            Document Tree
-          </Typography>
-          <List>
-            {tree.map((node) => renderTreeNode(node))}
-          </List>
+        <Box sx={{ display: 'flex', gap: 2, height: '70vh' }}>
+          {/* Tree Panel */}
+          <Box sx={{ width: 320, flexShrink: 0 }}>
+            <Typography variant="h6" gutterBottom>
+              Document Tree
+            </Typography>
+            <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+              {tree.map((node) => renderTreeNode(node))}
+            </List>
+          </Box>
+
+          {/* Content Panel */}
+          <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, overflow: 'auto' }}>
+            {selectedDocInTree ? (
+              <Box>
+                <Typography variant="h5" gutterBottom>
+                  {selectedDocInTree.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Updated: {new Date(selectedDocInTree.updatedAt).toLocaleDateString()}
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  {selectedDocInTree.blocks?.map((block: DocBlock) => (
+                    <Box key={block.id} sx={{ mb: 2 }}>
+                      {block.type === "heading" && (
+                        <Typography variant="h5" sx={{ fontWeight: 700, mt: 2, mb: 1 }}>
+                          {block.text}
+                        </Typography>
+                      )}
+                      {block.type === "text" && (
+                        <Typography
+                          component="div"
+                          sx={{ whiteSpace: "pre-wrap", mb: 1 }}
+                          dangerouslySetInnerHTML={{ __html: block.html }}
+                        />
+                      )}
+                      {block.type === "code" && (
+                        <Box
+                          sx={{
+                            mb: 1,
+                            p: 1,
+                            bgcolor: "#f5f5f5",
+                            borderRadius: 1,
+                            overflow: "auto",
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, color: "text.secondary" }}
+                          >
+                            {block.language}
+                          </Typography>
+                          <pre
+                            style={{
+                              margin: 0,
+                              fontFamily: "monospace",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {block.code}
+                          </pre>
+                        </Box>
+                      )}
+                      {block.type === "bulletedList" && (
+                        <Box sx={{ mb: 1 }}>
+                          {block.title && (
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 600, mb: 0.5 }}
+                            >
+                              {block.title}
+                            </Typography>
+                          )}
+                          <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem" }}>
+                            {block.items
+                              .filter((item: string) => item)
+                              .map((item: string, idx: number) => (
+                                <li key={idx}>
+                                  <Typography variant="body2">{item}</Typography>
+                                </li>
+                              ))}
+                          </ul>
+                        </Box>
+                      )}
+                      {block.type === "divider" && (
+                        <Box
+                          sx={{
+                            my: 1,
+                            borderBottom: `${
+                              block.settings?.dividerThickness || 1
+                            }px solid ${block.settings?.dividerColor || "#e0e0e0"}`,
+                          }}
+                        />
+                      )}
+                      {block.type === "image" && block.url && (
+                        <Box
+                          sx={{ mb: 1, textAlign: block.settings?.align || "center" }}
+                        >
+                          <img
+                            src={block.url}
+                            alt={block.caption || "image"}
+                            style={{ maxWidth: "100%", borderRadius: 4 }}
+                          />
+                          {block.caption && (
+                            <Typography
+                              variant="caption"
+                              display="block"
+                              sx={{ mt: 0.5 }}
+                            >
+                              {block.caption}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                      {block.type === "video" && block.url && (
+                        <Box
+                          sx={{
+                            mb: 1,
+                            position: "relative",
+                            pt: "56.25%",
+                            borderRadius: 1,
+                            overflow: "hidden",
+                            bgcolor: "#000",
+                          }}
+                        >
+                          <Box sx={{ position: "absolute", inset: 0 }}>
+                            {/youtu\.be|youtube\.com/.test(block.url) ? (
+                              <iframe
+                                title={block.caption || "video"}
+                                src={(() => {
+                                  try {
+                                    const url = new URL(block.url);
+                                    const v = url.searchParams.get("v");
+                                    if (v) return `https://www.youtube.com/embed/${v}`;
+                                    const pathId = url.pathname
+                                      .split("/")
+                                      .filter((p: string) => p)[0];
+                                    return `https://www.youtube.com/embed/${pathId}`;
+                                  } catch {
+                                    return block.url;
+                                  }
+                                })()}
+                                width="100%"
+                                height="100%"
+                                frameBorder={0}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            ) : (
+                              <video
+                                src={block.url}
+                                controls
+                                style={{ width: "100%", height: "100%" }}
+                              />
+                            )}
+                          </Box>
+                          {block.caption && (
+                            <Typography
+                              variant="caption"
+                              display="block"
+                              sx={{ mt: 0.5 }}
+                            >
+                              {block.caption}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => handleEdit(selectedDocInTree.id)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDelete(selectedDocInTree)}
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Typography variant="body1" color="text.secondary">
+                  Select a document from the tree to view its content
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
       ) : (
         <Box>
@@ -345,178 +539,180 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc }) => {
         </Box>
       )}
 
-      {/* Preview Dialog */}
-      <Dialog
-        open={!!previewDoc}
-        onClose={() => setPreviewDoc(null)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>{previewDoc?.title}</DialogTitle>
-        <DialogContent sx={{ maxHeight: "70vh", overflow: "auto" }}>
-          {previewDoc?.blocks?.map((block: DocBlock) => (
-            <Box key={block.id} sx={{ mb: 2 }}>
-              {block.type === "heading" && (
-                <Typography variant="h5" sx={{ fontWeight: 700, mt: 2, mb: 1 }}>
-                  {block.text}
-                </Typography>
-              )}
-              {block.type === "text" && (
-                <Typography
-                  component="div"
-                  sx={{ whiteSpace: "pre-wrap", mb: 1 }}
-                  dangerouslySetInnerHTML={{ __html: block.html }}
-                />
-              )}
-              {block.type === "code" && (
-                <Box
-                  sx={{
-                    mb: 1,
-                    p: 1,
-                    bgcolor: "#f5f5f5",
-                    borderRadius: 1,
-                    overflow: "auto",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{ fontWeight: 600, color: "text.secondary" }}
-                  >
-                    {block.language}
+      {/* Preview Dialog - Only for card view */}
+      {viewMode === 'cards' && (
+        <Dialog
+          open={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>{previewDoc?.title}</DialogTitle>
+          <DialogContent sx={{ maxHeight: "70vh", overflow: "auto" }}>
+            {previewDoc?.blocks?.map((block: DocBlock) => (
+              <Box key={block.id} sx={{ mb: 2 }}>
+                {block.type === "heading" && (
+                  <Typography variant="h5" sx={{ fontWeight: 700, mt: 2, mb: 1 }}>
+                    {block.text}
                   </Typography>
-                  <pre
-                    style={{
-                      margin: 0,
-                      fontFamily: "monospace",
-                      fontSize: "0.85rem",
+                )}
+                {block.type === "text" && (
+                  <Typography
+                    component="div"
+                    sx={{ whiteSpace: "pre-wrap", mb: 1 }}
+                    dangerouslySetInnerHTML={{ __html: block.html }}
+                  />
+                )}
+                {block.type === "code" && (
+                  <Box
+                    sx={{
+                      mb: 1,
+                      p: 1,
+                      bgcolor: "#f5f5f5",
+                      borderRadius: 1,
+                      overflow: "auto",
                     }}
                   >
-                    {block.code}
-                  </pre>
-                </Box>
-              )}
-              {block.type === "bulletedList" && (
-                <Box sx={{ mb: 1 }}>
-                  {block.title && (
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 600, mb: 0.5 }}
-                    >
-                      {block.title}
-                    </Typography>
-                  )}
-                  <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem" }}>
-                    {block.items
-                      .filter((item: string) => item)
-                      .map((item: string, idx: number) => (
-                        <li key={idx}>
-                          <Typography variant="body2">{item}</Typography>
-                        </li>
-                      ))}
-                  </ul>
-                </Box>
-              )}
-              {block.type === "divider" && (
-                <Box
-                  sx={{
-                    my: 1,
-                    borderBottom: `${
-                      block.settings?.dividerThickness || 1
-                    }px solid ${block.settings?.dividerColor || "#e0e0e0"}`,
-                  }}
-                />
-              )}
-              {block.type === "image" && block.url && (
-                <Box
-                  sx={{ mb: 1, textAlign: block.settings?.align || "center" }}
-                >
-                  <img
-                    src={block.url}
-                    alt={block.caption || "image"}
-                    style={{ maxWidth: "100%", borderRadius: 4 }}
-                  />
-                  {block.caption && (
                     <Typography
                       variant="caption"
-                      display="block"
-                      sx={{ mt: 0.5 }}
+                      sx={{ fontWeight: 600, color: "text.secondary" }}
                     >
-                      {block.caption}
+                      {block.language}
                     </Typography>
-                  )}
-                </Box>
-              )}
-              {block.type === "video" && block.url && (
-                <Box
-                  sx={{
-                    mb: 1,
-                    position: "relative",
-                    pt: "56.25%",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                    bgcolor: "#000",
-                  }}
-                >
-                  <Box sx={{ position: "absolute", inset: 0 }}>
-                    {/youtu\.be|youtube\.com/.test(block.url) ? (
-                      <iframe
-                        title={block.caption || "video"}
-                        src={(() => {
-                          try {
-                            const url = new URL(block.url);
-                            const v = url.searchParams.get("v");
-                            if (v) return `https://www.youtube.com/embed/${v}`;
-                            const pathId = url.pathname
-                              .split("/")
-                              .filter((p: string) => p)[0];
-                            return `https://www.youtube.com/embed/${pathId}`;
-                          } catch {
-                            return block.url;
-                          }
-                        })()}
-                        width="100%"
-                        height="100%"
-                        frameBorder={0}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video
-                        src={block.url}
-                        controls
-                        style={{ width: "100%", height: "100%" }}
-                      />
+                    <pre
+                      style={{
+                        margin: 0,
+                        fontFamily: "monospace",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      {block.code}
+                    </pre>
+                  </Box>
+                )}
+                {block.type === "bulletedList" && (
+                  <Box sx={{ mb: 1 }}>
+                    {block.title && (
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 600, mb: 0.5 }}
+                      >
+                        {block.title}
+                      </Typography>
+                    )}
+                    <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem" }}>
+                      {block.items
+                        .filter((item: string) => item)
+                        .map((item: string, idx: number) => (
+                          <li key={idx}>
+                            <Typography variant="body2">{item}</Typography>
+                          </li>
+                        ))}
+                    </ul>
+                  </Box>
+                )}
+                {block.type === "divider" && (
+                  <Box
+                    sx={{
+                      my: 1,
+                      borderBottom: `${
+                        block.settings?.dividerThickness || 1
+                      }px solid ${block.settings?.dividerColor || "#e0e0e0"}`,
+                    }}
+                  />
+                )}
+                {block.type === "image" && block.url && (
+                  <Box
+                    sx={{ mb: 1, textAlign: block.settings?.align || "center" }}
+                  >
+                    <img
+                      src={block.url}
+                      alt={block.caption || "image"}
+                      style={{ maxWidth: "100%", borderRadius: 4 }}
+                    />
+                    {block.caption && (
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{ mt: 0.5 }}
+                      >
+                        {block.caption}
+                      </Typography>
                     )}
                   </Box>
-                  {block.caption && (
-                    <Typography
-                      variant="caption"
-                      display="block"
-                      sx={{ mt: 0.5 }}
-                    >
-                      {block.caption}
-                    </Typography>
-                  )}
-                </Box>
-              )}
-            </Box>
-          ))}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPreviewDoc(null)}>Close</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              if (previewDoc) {
-                handleEdit(previewDoc.id);
-                setPreviewDoc(null);
-              }
-            }}
-          >
-            Edit
-          </Button>
-        </DialogActions>
-      </Dialog>
+                )}
+                {block.type === "video" && block.url && (
+                  <Box
+                    sx={{
+                      mb: 1,
+                      position: "relative",
+                      pt: "56.25%",
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      bgcolor: "#000",
+                    }}
+                  >
+                    <Box sx={{ position: "absolute", inset: 0 }}>
+                      {/youtu\.be|youtube\.com/.test(block.url) ? (
+                        <iframe
+                          title={block.caption || "video"}
+                          src={(() => {
+                            try {
+                              const url = new URL(block.url);
+                              const v = url.searchParams.get("v");
+                              if (v) return `https://www.youtube.com/embed/${v}`;
+                              const pathId = url.pathname
+                                .split("/")
+                                .filter((p: string) => p)[0];
+                              return `https://www.youtube.com/embed/${pathId}`;
+                            } catch {
+                              return block.url;
+                            }
+                          })()}
+                          width="100%"
+                          height="100%"
+                          frameBorder={0}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video
+                          src={block.url}
+                          controls
+                          style={{ width: "100%", height: "100%" }}
+                        />
+                      )}
+                    </Box>
+                    {block.caption && (
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{ mt: 0.5 }}
+                      >
+                        {block.caption}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPreviewDoc(null)}>Close</Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (previewDoc) {
+                  handleEdit(previewDoc.id);
+                  setPreviewDoc(null);
+                }
+              }}
+            >
+              Edit
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <DeleteConfirmDialog
         open={deleteDialog.open}
