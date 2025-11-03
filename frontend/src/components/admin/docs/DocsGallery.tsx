@@ -23,11 +23,11 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
   Folder as FolderIcon,
   FolderOpen as FolderOpenIcon,
   Description as DescriptionIcon,
@@ -39,7 +39,7 @@ import {
 import MyGridHeader from "../../common/MyGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
 import { useDocsBuilder } from "./hooks/useDocsBuilder";
-import { useAuthStore } from "../../../stores/authStore";
+import { useTheme } from "@mui/material/styles";
 import type { Doc, DocBlock, TreeNode } from "./types";
 
 interface DocsGalleryProps {
@@ -47,11 +47,9 @@ interface DocsGalleryProps {
   viewOnly?: boolean;
 }
 
-const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }) => {
-  const { docs, deleteDoc, setCurrentDocId, tree, expanded, toggleExpand } = useDocsBuilder();
-  const user = useAuthStore((state) => state.user);
-  const isEmployee = user?.role === 'EMPLOYEE';
-  const effectiveViewOnly = viewOnly || isEmployee;
+const DocsGallery: React.FC<DocsGalleryProps> = () => {
+  const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsBuilder();
+  const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>(
@@ -60,10 +58,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
   const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [selectedDocInTree, setSelectedDocInTree] = useState<Doc | null>(null);
-
-  const filteredDocs = docs.filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getCurrentNode = (): TreeNode | null => {
     if (currentPath.length === 0) return null; // root
@@ -163,16 +157,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
             <IconButton size="small" onClick={() => handlePreview(doc)}>
               <VisibilityIcon />
             </IconButton>
-            {!effectiveViewOnly && (
-              <>
-                <IconButton size="small" onClick={() => handleEdit(doc.id)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton size="small" color="error" onClick={() => handleDelete(doc)}>
-                  <DeleteIcon />
-                </IconButton>
-              </>
-            )}
           </Box>
         </ListItem>
       );
@@ -185,18 +169,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
     } else {
       setPreviewDoc(doc);
     }
-  };
-
-  const handleEdit = (docId: string) => {
-    setCurrentDocId(docId);
-    // Call parent callback if provided, otherwise set current doc
-    if (onEditDoc) {
-      onEditDoc(docId);
-    }
-  };
-
-  const handleDelete = (doc: Doc) => {
-    setDeleteDialog({ open: true, doc });
   };
 
   const confirmDelete = async () => {
@@ -249,9 +221,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
   };
 
   const displayedItems = getItemsInCurrentPath();
-  const displayedDocs = displayedItems.filter((item): item is Doc => 'blocks' in item).filter((doc) =>
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <Box sx={{ p: 3 }}>
@@ -338,30 +307,25 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
                         />
                       )}
                       {block.type === "code" && (
-                        <Box
-                          sx={{
-                            mb: 1,
-                            p: 1,
-                            bgcolor: "#f5f5f5",
-                            borderRadius: 1,
-                            overflow: "auto",
-                          }}
-                        >
-                          <Typography
-                            variant="caption"
-                            sx={{ fontWeight: 600, color: "text.secondary" }}
-                          >
-                            {block.language}
-                          </Typography>
-                          <pre
-                            style={{
+                        <Box sx={{ textAlign: block.settings?.align || 'left' }}>
+                          {block.language && (
+                            <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
+                              {block.language}
+                            </Typography>
+                          )}
+                          <SyntaxHighlighter
+                            language={block.language}
+                            style={vscDarkPlus}
+                            customStyle={{
                               margin: 0,
-                              fontFamily: "monospace",
-                              fontSize: "0.85rem",
+                              borderRadius: 8,
+                              padding: theme.spacing(2),
+                              fontSize: '0.875rem',
+                              textAlign: block.settings?.align || 'left',
                             }}
                           >
                             {block.code}
-                          </pre>
+                          </SyntaxHighlighter>
                         </Box>
                       )}
                       {block.type === "bulletedList" && (
@@ -473,25 +437,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
                     </Box>
                   ))}
                 </Box>
-                {!effectiveViewOnly && (
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={() => handleEdit(selectedDocInTree.id)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => handleDelete(selectedDocInTree)}
-                    >
-                      Delete
-                    </Button>
-                  </Box>
-                )}
               </Box>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -551,24 +496,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
                         >
                           Preview
                         </Button>
-                        {!effectiveViewOnly && (
-                          <>
-                            <Button
-                              size="small"
-                              startIcon={<EditIcon />}
-                              onClick={() => handleEdit(doc.id)}
-                            >
-                              Edit
-                            </Button>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDelete(doc)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </>
-                        )}
                       </CardActions>
                     </Card>
                   </Grid>
@@ -637,30 +564,25 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
                   />
                 )}
                 {block.type === "code" && (
-                  <Box
-                    sx={{
-                      mb: 1,
-                      p: 1,
-                      bgcolor: "#f5f5f5",
-                      borderRadius: 1,
-                      overflow: "auto",
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{ fontWeight: 600, color: "text.secondary" }}
-                    >
-                      {block.language}
-                    </Typography>
-                    <pre
-                      style={{
+                  <Box sx={{ textAlign: block.settings?.align || 'left' }}>
+                    {block.language && (
+                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
+                        {block.language}
+                      </Typography>
+                    )}
+                    <SyntaxHighlighter
+                      language={block.language}
+                      style={vscDarkPlus}
+                      customStyle={{
                         margin: 0,
-                        fontFamily: "monospace",
-                        fontSize: "0.85rem",
+                        borderRadius: 8,
+                        padding: theme.spacing(2),
+                        fontSize: '0.875rem',
+                        textAlign: block.settings?.align || 'left',
                       }}
                     >
                       {block.code}
-                    </pre>
+                    </SyntaxHighlighter>
                   </Box>
                 )}
                 {block.type === "bulletedList" && (
@@ -774,19 +696,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc, viewOnly = false }
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setPreviewDoc(null)}>Close</Button>
-            {!effectiveViewOnly && (
-              <Button
-                variant="contained"
-                onClick={() => {
-                  if (previewDoc) {
-                    handleEdit(previewDoc.id);
-                    setPreviewDoc(null);
-                  }
-                }}
-              >
-                Edit
-              </Button>
-            )}
           </DialogActions>
         </Dialog>
       )}
