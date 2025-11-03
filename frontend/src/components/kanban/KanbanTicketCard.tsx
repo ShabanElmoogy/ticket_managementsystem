@@ -53,11 +53,11 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
 
   const getPriorityColor = (priority: Priority) => {
     switch (priority) {
-      case 'URGENT': return '#f44336';
-      case 'HIGH': return '#ff9800';
-      case 'MEDIUM': return '#2196f3';
-      case 'LOW': return '#4caf50';
-      default: return '#9e9e9e';
+      case 'URGENT': return '#ef4444';
+      case 'HIGH': return '#f59e0b';
+      case 'MEDIUM': return '#3b82f6';
+      case 'LOW': return '#10b981';
+      default: return '#6b7280';
     }
   };
 
@@ -68,17 +68,17 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
 
   const getDueDateStatus = () => {
     if (!ticket.dueDate) return null;
-    
+
     const dueDate = new Date(ticket.dueDate);
     const now = new Date();
     const tomorrow = addDays(now, 1);
-    
+
     if (isBefore(dueDate, now)) {
-      return { status: 'overdue', color: '#f44336' };
+      return { status: 'overdue', color: '#ef4444' };
     } else if (isBefore(dueDate, tomorrow)) {
-      return { status: 'due-soon', color: '#ff9800' };
+      return { status: 'due-soon', color: '#f59e0b' };
     }
-    return { status: 'normal', color: '#4caf50' };
+    return { status: 'normal', color: '#10b981' };
   };
 
   const getProgressPercentage = () => {
@@ -198,7 +198,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
                       borderRadius: 2,
                       backgroundColor: 'rgba(0,0,0,0.1)',
                       '& .MuiLinearProgress-bar': {
-                        backgroundColor: progressPercentage > 100 ? '#f44336' : '#4caf50'
+                        backgroundColor: progressPercentage > 100 ? '#ef4444' : '#10b981'
                       }
                     }}
                   />

@@ -37,23 +37,22 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
     }
   };
 
-  const getColumnColor = () => {
-    if (column?.color) return column.color;
-    
-    // Default colors for statuses
-    switch (status) {
-      case 'OPEN': return '#e3f2fd';
-      case 'IN_PROGRESS': return '#fff3e0';
-      case 'RESOLVED': return '#f3e5f5';
-      case 'CLOSED': return '#e8f5e8';
-      default: return '#f5f5f5';
-    }
-  };
 
   const isWipLimitExceeded = column?.wipLimit && tickets.length > column.wipLimit;
 
+  const getColumnClassName = () => {
+    switch (status) {
+      case 'OPEN': return 'kanban-column kanban-column-open';
+      case 'IN_PROGRESS': return 'kanban-column kanban-column-in-progress';
+      case 'RESOLVED': return 'kanban-column kanban-column-resolved';
+      case 'CLOSED': return 'kanban-column kanban-column-closed';
+      default: return 'kanban-column';
+    }
+  };
+
   return (
     <Paper
+      className={getColumnClassName()}
       sx={{
         minWidth: 300,
         maxWidth: 300,
@@ -61,8 +60,15 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         maxHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: getColumnColor(),
-        border: isWipLimitExceeded ? '2px solid #f44336' : 'none'
+        border: isWipLimitExceeded ? '2px solid #f44336' : 'none',
+        borderRadius: 2,
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? '0px 8px 25px rgba(0, 0, 0, 0.4)'
+            : '0px 8px 25px rgba(0, 0, 0, 0.1)',
+        }
       }}
     >
       {/* Column Header */}

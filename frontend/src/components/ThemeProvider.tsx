@@ -133,18 +133,60 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
       MuiCard: {
         styleOverrides: {
           root: () => ({
-            boxShadow: mode === 'dark' 
-              ? '0px 4px 6px rgba(0, 0, 0, 0.3)' 
+            boxShadow: mode === 'dark'
+              ? '0px 4px 6px rgba(0, 0, 0, 0.3)'
               : '0px 4px 6px rgba(0, 0, 0, 0.05)',
-            border: mode === 'dark' 
-              ? '1px solid #334155' 
+            border: mode === 'dark'
+              ? '1px solid #334155'
               : '1px solid #e2e8f0',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              boxShadow: mode === 'dark' 
-                ? '0px 10px 15px rgba(0, 0, 0, 0.4)' 
+              boxShadow: mode === 'dark'
+                ? '0px 10px 15px rgba(0, 0, 0, 0.4)'
                 : '0px 10px 15px rgba(0, 0, 0, 0.1)',
               transform: 'translateY(-2px)',
+            },
+          }),
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: () => ({
+            backgroundImage: 'none',
+            backgroundColor: mode === 'dark' ? '#1e293b' : '#ffffff',
+            // Enhanced Kanban column backgrounds
+            '&.kanban-column': {
+              backgroundColor: mode === 'dark'
+                ? 'rgba(30, 41, 59, 0.8)'
+                : 'rgba(248, 250, 252, 0.8)',
+              backdropFilter: 'blur(8px)',
+              border: mode === 'dark'
+                ? '1px solid rgba(51, 65, 85, 0.3)'
+                : '1px solid rgba(226, 232, 240, 0.3)',
+            },
+            '&.kanban-column-open': {
+              backgroundColor: mode === 'dark'
+                ? 'rgba(59, 130, 246, 0.08)'
+                : 'rgba(219, 234, 254, 0.6)',
+              borderLeft: `4px solid ${mode === 'dark' ? '#3b82f6' : '#2563eb'}`,
+            },
+            '&.kanban-column-in-progress': {
+              backgroundColor: mode === 'dark'
+                ? 'rgba(245, 158, 11, 0.08)'
+                : 'rgba(255, 237, 213, 0.6)',
+              borderLeft: `4px solid ${mode === 'dark' ? '#f59e0b' : '#d97706'}`,
+            },
+            '&.kanban-column-resolved': {
+              backgroundColor: mode === 'dark'
+                ? 'rgba(16, 185, 129, 0.08)'
+                : 'rgba(209, 250, 229, 0.6)',
+              borderLeft: `4px solid ${mode === 'dark' ? '#10b981' : '#059669'}`,
+            },
+            '&.kanban-column-closed': {
+              backgroundColor: mode === 'dark'
+                ? 'rgba(107, 114, 128, 0.08)'
+                : 'rgba(243, 244, 246, 0.6)',
+              borderLeft: `4px solid ${mode === 'dark' ? '#6b7280' : '#4b5563'}`,
             },
           }),
         },
@@ -173,14 +215,6 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
             fontWeight: 500,
             borderRadius: 6,
           },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: () => ({
-            backgroundImage: 'none',
-            backgroundColor: mode === 'dark' ? '#1e293b' : '#ffffff',
-          }),
         },
       },
       MuiAppBar: {

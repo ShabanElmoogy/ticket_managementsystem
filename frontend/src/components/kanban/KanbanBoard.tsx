@@ -185,13 +185,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const getColumnColor = (status: TicketStatus) => {
     switch (status) {
       case "OPEN":
-        return theme.palette.info.main;
+        return theme.palette.mode === 'dark' ? '#3b82f6' : '#2563eb';
       case "IN_PROGRESS":
-        return theme.palette.warning.main;
+        return theme.palette.mode === 'dark' ? '#f59e0b' : '#d97706';
       case "RESOLVED":
-        return theme.palette.success.main;
+        return theme.palette.mode === 'dark' ? '#10b981' : '#059669';
       case "CLOSED":
-        return theme.palette.grey[500];
+        return theme.palette.mode === 'dark' ? '#6b7280' : '#4b5563';
       default:
         return theme.palette.primary.main;
     }
