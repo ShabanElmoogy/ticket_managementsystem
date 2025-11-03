@@ -485,47 +485,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
                                 {message.primary}
                               </Typography>
                             }
-                            secondaryTypographyProps={{ component: "div" }}
                             secondary={
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  {message.secondary}
-                                </Typography>
-                                <Typography variant="caption" color="text.disabled">•</Typography>
-                                <Typography variant="caption" color="text.disabled">
-                                  {formatTime(activity.timestamp)}
-                                </Typography>
-                                {activity.data.ticket?.priority && (
-                                  <Chip
-                                    component="span"
-                                    label={activity.data.ticket.priority}
-                                    size="small"
-                                    sx={{
-                                      height: 16,
-                                      fontSize: "0.6rem",
-                                      backgroundColor: getPriorityColor(activity.data.ticket.priority),
-                                      color: theme.palette.getContrastText(getPriorityColor(activity.data.ticket.priority)),
-                                      fontWeight: 600,
-                                      display: "inline-flex",
-                                    }}
-                                  />
-                                )}
-                                {activity.data.ticket?.status && (
-                                  <Chip
-                                    component="span"
-                                    label={activity.data.ticket.status.replace("_", " ")}
-                                    size="small"
-                                    sx={{
-                                      height: 16,
-                                      fontSize: "0.6rem",
-                                      backgroundColor: getStatusColor(activity.data.ticket.status),
-                                      color: theme.palette.getContrastText(getStatusColor(activity.data.ticket.status)),
-                                      fontWeight: 600,
-                                      display: "inline-flex",
-                                    }}
-                                  />
-                                )}
-                              </Box>
+                              `${message.secondary} • ${formatTime(activity.timestamp)}`
                             }
                           />
                           {isClicking && (

@@ -1,9 +1,9 @@
 import { Server } from 'socket.io';
 import { emitNotification } from '../utils/socketHelpers.js';
 
-const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : [];
-
 export function setupSocket(server) {
+  const CORS_ORIGINS = process.env.CORS_ORIGINS && process.env.CORS_ORIGINS.split(',').map(s => s.trim()) 
+
   const io = new Server(server, {
     cors: {
       origin: CORS_ORIGINS,

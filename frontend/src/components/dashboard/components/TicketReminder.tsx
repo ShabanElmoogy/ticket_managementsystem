@@ -200,12 +200,11 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
               }}
             >
               <ListItemText
+                disableTypography
                 primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {ticket.title}
-                    </Typography>
-                  </Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
+                    {ticket.title}
+                  </Typography>
                 }
                 secondary={
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

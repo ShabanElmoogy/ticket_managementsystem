@@ -25,9 +25,9 @@ import {
 } from '@mui/icons-material';
 import type { Ticket } from '../../services/api';
 
-const Transition = React.forwardRef(function Transition(
-  props: any,
-  ref: React.Ref<unknown>,
+const Transition = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof Slide>>(function Transition(
+  props,
+  ref,
 ) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
