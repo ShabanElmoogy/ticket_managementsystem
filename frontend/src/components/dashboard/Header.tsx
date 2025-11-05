@@ -18,7 +18,6 @@ import MenuButton from './header/MenuButton';
 import DesktopMenu from './header/DesktopMenu';
 import MobileDrawer from './header/MobileDrawer';
 import NotificationPopover from './header/NotificationPopover';
-import PWAInstallButton from '../pwa/PWAInstallButton';
 import { UserProfile } from '../profile';
 
 interface NotificationType {

@@ -280,36 +280,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "URGENT":
-        return "#ef4444";
-      case "HIGH":
-        return "#f97316";
-      case "MEDIUM":
-        return "#eab308";
-      case "LOW":
-        return "#22c55e";
-      default:
-        return "#6b7280";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return "#3b82f6";
-      case "IN_PROGRESS":
-        return "#f59e0b";
-      case "RESOLVED":
-        return "#10b981";
-      case "CLOSED":
-        return "#6b7280";
-      default:
-        return "#6b7280";
-    }
-  };
-
   const filteredActivities = useMemo(() => {
     if (typeFilter === "ALL") return activities;
     return activities.filter((a: ActivityItem) => a.type === typeFilter);
