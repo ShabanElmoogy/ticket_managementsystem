@@ -23,7 +23,7 @@ export const useNotifications = ({ user, token }: UseNotificationsProps) => {
     if (!user || !token) return;
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 
-      (import.meta.env.PROD ? "https://ticket-backend.onrender.com" : "http://localhost:3001");
+      (import.meta.env.PROD ? window.location.origin : "http://localhost:3001");
     const newSocket = io(socketUrl);
     setSocket(newSocket);
 
