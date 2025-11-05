@@ -201,7 +201,7 @@ export const createTicket = async (req, res) => {
         type: 'TICKET_ASSIGNED',
         title: 'New Ticket Assigned',
         message: `You have been assigned ticket: ${title}`
-      });
+      }, req);
     }
 
     res.status(201).json(fullTicket);

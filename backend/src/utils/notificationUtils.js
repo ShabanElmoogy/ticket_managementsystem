@@ -2,18 +2,27 @@ import { db } from '../config/database.js';
 import { notifications, tickets, users, customers, applications } from '../../drizzle/schema.js';
 import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 
-export const createNotification = async ({ userId, ticketId, type, title, message }) => {
+export const createNotification = async ({ userId, ticketId, type, title, message }, req = null) => {
   try {
-    await db.insert(notifications).values({
+    const [notification] = await db.insert(notifications).values({
       userId,
       ticketId,
       type,
       title,
       message
-    });
+    }).returning();
 
-    // Here you could add real-time notification via WebSocket
-    // io.to(userId).emit('notification', notification);
+    // Emit real-time notification via WebSocket
+    if (req?.emitNotification) {
+      req.emitNotification(userId, {
+        id: notification.id,
+        type,
+        title,
+        message,
+        ticketId,
+        createdAt: notification.createdAt
+      });
+    }
 
     return { success: true };
   } catch (error) {
