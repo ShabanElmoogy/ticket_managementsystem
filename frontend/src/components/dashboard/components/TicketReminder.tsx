@@ -122,32 +122,8 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
     }
   };
 
-  // Debug: Force show dialog (remove this in production)
-  const forceShow = () => {
-    setOpenTickets([{
-      id: 'test',
-      title: 'Test Delayed Ticket',
-      status: 'OPEN',
-      priority: 'HIGH',
-      dueDate: new Date().toISOString(),
-      customer: { name: 'Test Customer' },
-      application: { name: 'Test App' }
-    } as any]);
-    setOpen(true);
-  };
-
   return (
     <>
-      {/* Debug Button - Remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <button 
-          onClick={forceShow}
-          style={{ position: 'fixed', top: 10, right: 10, zIndex: 9999, background: 'red', color: 'white' }}
-        >
-          Test Reminder
-        </button>
-      )}
-      
       {/* Main Reminder Dialog */}
       <Dialog
         open={open && openTickets.length > 0}

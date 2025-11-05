@@ -162,14 +162,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
             isMobile={isMobile}
           />
 
-          {/* PWA Install Button */}
-          <PWAInstallButton
-            variant="icon"
-            size={isMobile ? 'small' : 'medium'}
-            color="inherit"
-            showTooltip={!isMobile}
-          />
-
           {/* Desktop Theme Toggle */}
           {!isMobile && (
             <ThemeToggleButton mode={mode} onToggle={toggleTheme} />
