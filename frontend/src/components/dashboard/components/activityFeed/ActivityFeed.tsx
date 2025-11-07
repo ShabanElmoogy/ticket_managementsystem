@@ -7,7 +7,13 @@ import {
   useTheme,
   useMediaQuery,
   Skeleton,
+  TextField,
+  InputAdornment,
+  Typography
 } from "@mui/material";
+import {
+  Search as SearchIcon,
+} from "@mui/icons-material";
 import { io } from "socket.io-client";
 import { useAuthStore } from "../../../../stores/authStore";
 import { dashboardApi, ticketsApi } from "../../../../services/api";
@@ -69,7 +75,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [clickingActivity, setClickingActivity] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
+   const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
+   const [searchQuery, setSearchQuery] = useState("");
 
   useActivitySocket(setActivities, setUnreadCount);
 
@@ -110,6 +117,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
     setUnreadCount(0);
   };
 
+  const handleMarkAsRead = (activityId: string) => {
+    setActivities((prev) =>
+      prev.map((activity) =>
+        activity.id === activityId ? { ...activity, read: true } : activity
+      )
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
   const handleActivityClick = async (activity: ActivityItemType) => {
     if (!token || !activity.data.ticket?.id || clickingActivity) return;
 
@@ -136,20 +152,42 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
   };
 
   const filteredActivities = useMemo(() => {
-    if (typeFilter === "ALL") return activities;
-    return activities.filter((a: ActivityItemType) => a.type === typeFilter);
-  }, [activities, typeFilter]);
+    let filtered = activities;
+
+    // Filter by type
+    if (typeFilter !== "ALL") {
+      filtered = filtered.filter((a: ActivityItemType) => a.type === typeFilter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((a: ActivityItemType) => {
+        const ticketTitle = a.data.ticket?.title?.toLowerCase() || "";
+        const message = `${a.data.createdBy || ""} ${a.data.updatedBy || ""} ${a.data.assignedTo || ""} ${a.data.commentBy || ""}`.toLowerCase();
+        return ticketTitle.includes(query) || message.includes(query);
+      });
+    }
+
+    return filtered;
+  }, [activities, typeFilter, searchQuery]);
 
   return (
     <Paper
-      elevation={2}
+      elevation={3}
       sx={{
         width: { xs: "100%", lg: 350 },
         height: "fit-content",
-        maxHeight: { xs: "50vh", lg: "70vh" },
+        maxHeight: { xs: "75vh", lg: "85vh" },
+        minHeight: { xs: "60vh", lg: "70vh" },
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        borderRadius: 3,
+        transition: "all 0.3s ease",
+        "&:hover": {
+          boxShadow: (theme) => theme.shadows[6],
+        },
       }}
     >
       <ActivityHeader
@@ -162,25 +200,82 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
       />
 
       <Collapse in={expanded}>
-        <Box sx={{ maxHeight: { xs: "40vh", lg: "60vh" }, overflow: "auto" }}>
-          {loading ? (
-            <Box sx={{ p: 2 }}>
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} variant="rectangular" height={60} sx={{ mb: 1 }} />
-              ))}
+        <Box sx={{ maxHeight: { xs: "55vh", lg: "70vh" }, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          {expanded && (
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search activities..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: "text.secondary" }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: (theme) => theme.palette.background.paper,
+                    "&:hover": {
+                      backgroundColor: (theme) => theme.palette.action.hover,
+                    },
+                    "&.Mui-focused": {
+                      backgroundColor: (theme) => theme.palette.background.paper,
+                    },
+                  },
+                }}
+              />
             </Box>
-          ) : (
-            <List sx={{ py: 0 }}>
-              {filteredActivities.map((activity) => (
-                <ActivityItem
-                  key={activity.id}
-                  activity={activity}
-                  onClick={handleActivityClick}
-                  isClicking={clickingActivity === activity.id}
-                />
-              ))}
-            </List>
           )}
+          <Box sx={{ flex: 1, overflow: "auto" }}>
+            {loading ? (
+              <Box sx={{ p: 2 }}>
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    variant="rectangular"
+                    height={80}
+                    sx={{
+                      mb: 1,
+                      borderRadius: 2,
+                      animation: "pulse 1.5s ease-in-out infinite",
+                    }}
+                  />
+                ))}
+              </Box>
+            ) : filteredActivities.length === 0 ? (
+              <Box
+                sx={{
+                  p: 4,
+                  textAlign: "center",
+                  color: "text.secondary",
+                }}
+              >
+                <SearchIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  {searchQuery ? "No matching activities" : "No activities yet"}
+                </Typography>
+                <Typography variant="body2">
+                  {searchQuery ? "Try adjusting your search or filters" : "Activities will appear here when tickets are updated"}
+                </Typography>
+              </Box>
+            ) : (
+              <List sx={{ py: 0 }}>
+                {filteredActivities.map((activity) => (
+                  <ActivityItem
+                    key={activity.id}
+                    activity={activity}
+                    onClick={handleActivityClick}
+                    isClicking={clickingActivity === activity.id}
+                    onMarkAsRead={handleMarkAsRead}
+                  />
+                ))}
+              </List>
+            )}
+          </Box>
         </Box>
       </Collapse>
     </Paper>

@@ -6,8 +6,20 @@ import {
   Avatar,
   ListItemButton,
   CircularProgress,
+  Chip,
+  Box,
+  Fade,
+  Tooltip,
+  IconButton,
+  Typography,
 } from "@mui/material";
-import { ActivityIcon } from "./ActivityIcon";
+import {
+  ActivityIcon
+} from "./ActivityIcon";
+import {
+  CheckCircle as ReadIcon,
+  RadioButtonUnchecked as UnreadIcon,
+} from "@mui/icons-material";
 import { useTheme } from "@mui/material";
 type ActivityItemType = {
   id: string;
@@ -90,49 +102,174 @@ interface ActivityItemProps {
   activity: ActivityItemType;
   onClick: (activity: ActivityItemType) => void;
   isClicking: boolean;
+  onMarkAsRead?: (activityId: string) => void;
 }
 
 export const ActivityItem: React.FC<ActivityItemProps> = ({
   activity,
   onClick,
   isClicking,
+  onMarkAsRead,
 }) => {
   const { getTypePalette, getActivityMessage, formatTime } = useActivityUtils();
   const palette = getTypePalette(activity.type);
   const message = getActivityMessage(activity);
 
+  const getPriorityColor = (priority?: string) => {
+    switch (priority?.toLowerCase()) {
+      case "high": return "error";
+      case "medium": return "warning";
+      case "low": return "success";
+      default: return "default";
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case "open": return "success";
+      case "in_progress": return "warning";
+      case "closed": return "error";
+      case "resolved": return "info";
+      default: return "default";
+    }
+  };
+
   return (
-    <ListItem disablePadding>
-      <ListItemButton
-        onClick={() => onClick(activity)}
-        disabled={!activity.data.ticket?.id || isClicking}
-        sx={{
-          opacity: activity.read ? 0.7 : 1,
-          "&:hover": { backgroundColor: "action.hover" },
-        }}
-      >
-        <ListItemAvatar>
-          <Avatar sx={{ bgcolor: palette.accent, width: 32, height: 32 }}>
-            {isClicking ? (
-              <CircularProgress size={16} sx={{ color: palette.iconOnAccent }} />
-            ) : (
-              <ActivityIcon type={activity.type} />
-            )}
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          primary={message.primary}
-          secondary={`${message.secondary} • ${formatTime(activity.timestamp)}`}
-          primaryTypographyProps={{
-            variant: "body2",
-            fontWeight: activity.read ? "normal" : "medium",
+    <Fade in timeout={300}>
+      <ListItem disablePadding>
+        <ListItemButton
+          onClick={() => onClick(activity)}
+          disabled={!activity.data.ticket?.id || isClicking}
+          sx={{
+            py: 1.5,
+            px: 2,
+            opacity: activity.read ? 0.7 : 1,
+            transition: "all 0.3s ease",
+            position: "relative",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              backgroundColor: activity.read ? "transparent" : palette.accent,
+              borderRadius: "0 4px 4px 0",
+              transition: "all 0.3s ease",
+            },
+            "&:hover": {
+              backgroundColor: "action.hover",
+              transform: "translateX(4px)",
+              boxShadow: (theme) => theme.shadows[1],
+              "&::before": {
+                width: 6,
+              },
+            },
           }}
-          secondaryTypographyProps={{
-            variant: "caption",
-            color: "text.secondary",
-          }}
-        />
-      </ListItemButton>
-    </ListItem>
+        >
+          <ListItemAvatar sx={{ minWidth: 48 }}>
+            <Avatar
+              sx={{
+                bgcolor: palette.accent,
+                width: 40,
+                height: 40,
+                transition: "all 0.3s ease",
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+            >
+              {isClicking ? (
+                <CircularProgress size={20} sx={{ color: palette.iconOnAccent }} />
+              ) : (
+                <ActivityIcon type={activity.type} />
+              )}
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText
+            primary={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: activity.read ? 500 : 600,
+                    fontSize: "0.875rem",
+                    lineHeight: 1.3,
+                    flex: 1,
+                  }}
+                >
+                  {message.primary}
+                </Typography>
+                {!activity.read && (
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: palette.accent,
+                      animation: "pulse 2s infinite",
+                      "@keyframes pulse": {
+                        "0%": { opacity: 1, transform: "scale(1)" },
+                        "50%": { opacity: 0.5, transform: "scale(1.2)" },
+                        "100%": { opacity: 1, transform: "scale(1)" },
+                      },
+                    }}
+                  />
+                )}
+              </Box>
+            }
+            secondary={
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.75rem" }}
+                >
+                  {message.secondary} • {formatTime(activity.timestamp)}
+                </Typography>
+                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                  {activity.data.ticket?.priority && (
+                    <Chip
+                      label={activity.data.ticket.priority}
+                      size="small"
+                      color={getPriorityColor(activity.data.ticket.priority) as any}
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: "0.65rem", fontWeight: 500 }}
+                    />
+                  )}
+                  {activity.data.ticket?.status && (
+                    <Chip
+                      label={activity.data.ticket.status.replace("_", " ")}
+                      size="small"
+                      color={getStatusColor(activity.data.ticket.status) as any}
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: "0.65rem", fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            }
+          />
+          {onMarkAsRead && !activity.read && (
+            <Tooltip title="Mark as read">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAsRead(activity.id);
+                }}
+                sx={{
+                  ml: 1,
+                  opacity: 0,
+                  transition: "opacity 0.3s ease",
+                  ".MuiListItemButton-root:hover &": { opacity: 1 },
+                  "&:hover": { color: palette.accent },
+                }}
+              >
+                <ReadIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </ListItemButton>
+      </ListItem>
+    </Fade>
   );
 };
