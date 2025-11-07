@@ -19,6 +19,7 @@ import {
 import {
   CheckCircle as ReadIcon,
   RadioButtonUnchecked as UnreadIcon,
+  RadioButtonChecked as UnreadCheckedIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";
 type ActivityItemType = {
@@ -103,6 +104,7 @@ interface ActivityItemProps {
   onClick: (activity: ActivityItemType) => void;
   isClicking: boolean;
   onMarkAsRead?: (activityId: string) => void;
+  onMarkAsUnread?: (activityId: string) => void;
 }
 
 export const ActivityItem: React.FC<ActivityItemProps> = ({
@@ -110,6 +112,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   onClick,
   isClicking,
   onMarkAsRead,
+  onMarkAsUnread,
 }) => {
   const { getTypePalette, getActivityMessage, formatTime } = useActivityUtils();
   const palette = getTypePalette(activity.type);
@@ -248,26 +251,54 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
               </Box>
             }
           />
-          {onMarkAsRead && !activity.read && (
-            <Tooltip title="Mark as read">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkAsRead(activity.id);
-                }}
-                sx={{
-                  ml: 1,
-                  opacity: 0,
-                  transition: "opacity 0.3s ease",
-                  ".MuiListItemButton-root:hover &": { opacity: 1 },
-                  "&:hover": { color: palette.accent },
-                }}
-              >
-                <ReadIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            {onMarkAsRead && !activity.read && (
+              <Tooltip title="Mark as read">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkAsRead(activity.id);
+                  }}
+                  sx={{
+                    opacity: 0,
+                    transition: "all 0.3s ease",
+                    ".MuiListItemButton-root:hover &": { opacity: 1 },
+                    "&:hover": {
+                      color: "success.main",
+                      backgroundColor: "success.main",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <ReadIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {onMarkAsUnread && activity.read && (
+              <Tooltip title="Mark as unread">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkAsUnread(activity.id);
+                  }}
+                  sx={{
+                    opacity: 0,
+                    transition: "all 0.3s ease",
+                    ".MuiListItemButton-root:hover &": { opacity: 1 },
+                    "&:hover": {
+                      color: "warning.main",
+                      backgroundColor: "warning.main",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                >
+                  <UnreadCheckedIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </ListItemButton>
       </ListItem>
     </Fade>

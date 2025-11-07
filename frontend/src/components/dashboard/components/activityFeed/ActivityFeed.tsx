@@ -140,6 +140,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
     setUnreadCount(activities.length);
   };
 
+  const handleMarkAsUnread = (activityId: string) => {
+    setActivities((prev) =>
+      prev.map((activity) =>
+        activity.id === activityId ? { ...activity, read: false } : activity
+      )
+    );
+    setUnreadCount((prev) => prev + 1);
+  };
+
   const handleActivityClick = async (activity: ActivityItemType) => {
     if (!token || !activity.data.ticket?.id || clickingActivity) return;
 
@@ -287,6 +296,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
                     onClick={handleActivityClick}
                     isClicking={clickingActivity === activity.id}
                     onMarkAsRead={handleMarkAsRead}
+                    onMarkAsUnread={handleMarkAsUnread}
                   />
                 ))}
               </List>
