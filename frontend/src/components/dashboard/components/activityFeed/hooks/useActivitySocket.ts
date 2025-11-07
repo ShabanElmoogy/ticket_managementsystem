@@ -13,24 +13,32 @@ export const useActivitySocket = (
   useEffect(() => {
     if (!user) return;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : "https://ticket-managementsystem-2.onrender.com");
+    console.log('Connecting to socket URL:', socketUrl);
+    
     const newSocket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       upgrade: true,
-      rememberUpgrade: true,
+      rememberUpgrade: false,
       timeout: 20000,
-      forceNew: true
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
     setSocket(newSocket);
 
-    newSocket.emit("join", user.id);
-
     newSocket.on('connect', () => {
       console.log('Socket connected:', newSocket.id);
+      newSocket.emit("join", user.id);
+      console.log('Emitted join event for user:', user.id);
     });
 
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
     });
 
     newSocket.on("notification", (notification: any) => {
