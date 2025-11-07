@@ -17,8 +17,8 @@ import {
 import { io } from "socket.io-client";
 import { useAuthStore } from "../../../../stores/authStore";
 import { dashboardApi, ticketsApi } from "../../../../services/api";
-import { ActivityHeader } from "./components/ActivityHeader";
-import { ActivityItem } from "./components/ActivityItem";
+import { ActivityHeader } from "./components/header";
+import { ActivityItem } from "./components/item";
 type ActivityItemType = {
   id: string;
   type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";

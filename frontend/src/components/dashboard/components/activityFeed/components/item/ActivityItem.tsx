@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import {
   ActivityIcon
-} from "./ActivityIcon";
+} from "../shared/ActivityIcon";
 import {
   CheckCircle as ReadIcon,
   RadioButtonUnchecked as UnreadIcon,
