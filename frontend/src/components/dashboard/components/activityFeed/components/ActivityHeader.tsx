@@ -15,6 +15,8 @@ import {
   ExpandLess as ExpandLessIcon,
   Clear as ClearIcon,
   FilterList as FilterIcon,
+  DoneAll as MarkAllReadIcon,
+  RadioButtonUnchecked as MarkAllUnreadIcon,
 } from "@mui/icons-material";
 
 interface ActivityHeaderProps {
@@ -24,6 +26,8 @@ interface ActivityHeaderProps {
   onToggleExpanded: () => void;
   onClearAll: () => void;
   onTypeFilterChange: (filter: string) => void;
+  onMarkAllRead?: () => void;
+  onMarkAllUnread?: () => void;
 }
 
 export const ActivityHeader: React.FC<ActivityHeaderProps> = ({
@@ -33,6 +37,8 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = ({
   onToggleExpanded,
   onClearAll,
   onTypeFilterChange,
+  onMarkAllRead,
+  onMarkAllUnread,
 }) => {
   return (
     <>
@@ -86,6 +92,48 @@ export const ActivityHeader: React.FC<ActivityHeaderProps> = ({
           </Box>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {onMarkAllRead && (
+            <Tooltip title="Mark all as read">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAllRead();
+                }}
+                sx={{
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "success.main",
+                    color: "success.contrastText",
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <MarkAllReadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {onMarkAllUnread && (
+            <Tooltip title="Mark all as unread">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAllUnread();
+                }}
+                sx={{
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "warning.main",
+                    color: "warning.contrastText",
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <MarkAllUnreadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Clear all activities">
             <IconButton
               size="small"

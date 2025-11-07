@@ -126,6 +126,20 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
     setUnreadCount((prev) => Math.max(0, prev - 1));
   };
 
+  const handleMarkAllRead = () => {
+    setActivities((prev) =>
+      prev.map((activity) => ({ ...activity, read: true }))
+    );
+    setUnreadCount(0);
+  };
+
+  const handleMarkAllUnread = () => {
+    setActivities((prev) =>
+      prev.map((activity) => ({ ...activity, read: false }))
+    );
+    setUnreadCount(activities.length);
+  };
+
   const handleActivityClick = async (activity: ActivityItemType) => {
     if (!token || !activity.data.ticket?.id || clickingActivity) return;
 
@@ -197,6 +211,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
         onToggleExpanded={handleToggleExpanded}
         onClearAll={handleClearAll}
         onTypeFilterChange={(filter) => setTypeFilter(filter as ActivityTypeFilter)}
+        onMarkAllRead={handleMarkAllRead}
+        onMarkAllUnread={handleMarkAllUnread}
       />
 
       <Collapse in={expanded}>
