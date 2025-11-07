@@ -268,7 +268,7 @@ export const useAuthStore = create<AuthState>()(
 
                 // Use axios directly to avoid circular dependency and protected method issues
                 const axios = (await import('axios')).default;
-                const apiUrl = import.meta.env.PROD ? '/api/auth/refresh' : 'http://localhost:3001/api/auth/refresh';
+                const apiUrl = import.meta.env.PROD ? '/api/auth/refresh' : 'https://localhost:3001/api/auth/refresh';
                 const response = await axios.post(apiUrl, { refreshToken });
                 const responseData = response.data as any;
 

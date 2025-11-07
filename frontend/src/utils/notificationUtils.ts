@@ -17,38 +17,40 @@ export const formatNotificationTime = (timestamp: string): string => {
 export const createNotificationFromSocketData = (
   socketNotification: any
 ): Notification => {
-  const { type, data } = socketNotification;
+  const { type, data } = socketNotification || {};
+  const safeData: any = data || {};
+  const safeTicket = safeData.ticket || {};
   let title = "";
   let message = "";
 
   switch (type) {
     case "TICKET_CREATED":
       title = "New Ticket Created";
-      message = `${data.ticket?.title} - Created by ${data.createdBy}`;
+      message = `${safeTicket.title || "Untitled ticket"} - Created by ${safeData.createdBy || "Someone"}`;
       break;
     case "TICKET_UPDATED":
       title = "Ticket Updated";
-      message = `${data.ticket?.title} - Updated by ${data.updatedBy}`;
+      message = `${safeTicket.title || "Untitled ticket"} - Updated by ${safeData.updatedBy || "Someone"}`;
       break;
     case "TICKET_ASSIGNED":
       title = "Ticket Assigned";
-      message = `${data.ticket?.title} - Assigned to ${data.assignedTo}`;
+      message = `${safeTicket.title || "Untitled ticket"} - Assigned to ${safeData.assignedTo || "a user"}`;
       break;
     case "COMMENT_ADDED":
       title = "New Comment";
-      message = `${data.ticket?.title} - Comment by ${data.commentBy}`;
+      message = `${safeTicket.title || "Untitled ticket"} - Comment by ${safeData.commentBy || "Someone"}`;
       break;
     case "TICKET_DUE_SOON":
       title = "Ticket Due Soon";
-      message = data.message || `${data.ticket?.title} is due tomorrow`;
+      message = safeData.message || `${safeTicket.title || "A ticket"} is due tomorrow`;
       break;
     case "TICKET_OVERDUE":
       title = "Ticket Overdue";
-      message = data.message || `${data.ticket?.title} is overdue`;
+      message = safeData.message || `${safeTicket.title || "A ticket"} is overdue`;
       break;
     case "STATUS_CHANGED":
       title = "Ticket Status Changed";
-      message = data.message || `${data.ticket?.title} status changed`;
+      message = safeData.message || `${safeTicket.title || "A ticket"} status changed`;
       break;
     default:
       title = "New Notification";
@@ -62,7 +64,7 @@ export const createNotificationFromSocketData = (
     message,
     timestamp: new Date().toISOString(),
     read: false,
-    data,
+    data: safeData,
   };
 };
 

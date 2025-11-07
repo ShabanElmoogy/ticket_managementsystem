@@ -1,4 +1,4 @@
-export { default as ActivityFeed } from './ActivityFeed';
+export { ActivityFeed } from './activityFeed';
 export { default as DashboardContent } from './DashboardContent';
 export { default as DashboardOverlays } from './DashboardOverlays';
 export { default as StatsCards } from './StatsCards';

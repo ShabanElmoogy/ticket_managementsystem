@@ -200,7 +200,8 @@ export const createTicket = async (req, res) => {
         ticketId: fullTicket.id,
         type: 'TICKET_ASSIGNED',
         title: 'New Ticket Assigned',
-        message: `You have been assigned ticket: ${title}`
+        message: `You have been assigned ticket: ${title}`,
+        assigneeName: assignedUser[0]?.name
       }, req);
     }
 

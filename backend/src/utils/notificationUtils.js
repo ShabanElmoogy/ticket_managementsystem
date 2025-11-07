@@ -12,6 +12,14 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
       message
     }).returning();
 
+    let ticketTitle = null;
+    if (ticketId) {
+      const ticketData = await db.select({ title: tickets.title }).from(tickets).where(eq(tickets.id, ticketId)).limit(1);
+      if (ticketData.length > 0) {
+        ticketTitle = ticketData[0].title;
+      }
+    }
+
     // Emit real-time notification via WebSocket
     if (req?.emitNotification) {
       req.emitNotification(userId, {
@@ -19,8 +27,10 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
         type,
         title,
         message,
-        ticketId,
-        createdAt: notification.createdAt
+        data: {
+          ticket: ticketId ? { id: ticketId, title: ticketTitle || "Untitled ticket" } : undefined,
+        },
+        timestamp: notification.createdAt, // Use timestamp for consistency with frontend ActivityItem
       });
     }
 

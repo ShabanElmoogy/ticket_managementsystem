@@ -6,7 +6,7 @@ import StatsCards from "./StatsCards";
 import CreateTicketPost from "../../tickets/CreateTicketPost";
 import { MobileFilters, DesktopFilters } from "../filters";
 import TicketFeed from "../../tickets/TicketFeed";
-import ActivityFeed from "./ActivityFeed";
+import { ActivityFeed } from "./activityFeed"
 import ReminderSettings from "./ReminderSettings";
 
 interface Props {
