@@ -1,8 +1,9 @@
 import { Server } from 'socket.io';
 import { emitNotification } from '../utils/socketHelpers.js';
+import "dotenv/config";
 
 export function setupSocket(server) {
-  const CORS_ORIGINS = process.env.CORS_ORIGINS && process.env.CORS_ORIGINS.split(',').map(s => s.trim()) 
+  const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : true;
 
   const io = new Server(server, {
     cors: {
