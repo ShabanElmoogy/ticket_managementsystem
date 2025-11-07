@@ -20,7 +20,8 @@ export function setupSocket(server) {
 
     socket.on('join', (userId) => {
       socket.join(`user_${userId}`);
-      console.log(`User ${userId} joined their room`);
+      console.log(`User ${userId} joined room user_${userId}`);
+      console.log(`Room user_${userId} now has ${io.sockets.adapter.rooms.get(`user_${userId}`)?.size || 0} members`);
     });
 
     socket.on('disconnect', () => {

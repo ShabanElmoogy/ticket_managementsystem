@@ -2,8 +2,10 @@ import { db } from '../config/database.js';
 import { notifications, tickets, users, customers, applications } from '../../drizzle/schema.js';
 import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 
-export const createNotification = async ({ userId, ticketId, type, title, message }, req = null) => {
+export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {
   try {
+    console.log('Creating notification:', { userId, ticketId, type, title, message, hasReq: !!req, hasEmitFn: !!req?.emitNotification });
+    
     const [notification] = await db.insert(notifications).values({
       userId,
       ticketId,
@@ -20,18 +22,24 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
       }
     }
 
+    const notificationData = {
+      id: notification.id,
+      type,
+      title,
+      message,
+      data: {
+        ticket: ticketId ? { id: ticketId, title: ticketTitle || "Untitled ticket" } : undefined,
+        assignedTo: assigneeName
+      },
+      timestamp: notification.createdAt,
+    };
+
     // Emit real-time notification via WebSocket
     if (req?.emitNotification) {
-      req.emitNotification(userId, {
-        id: notification.id,
-        type,
-        title,
-        message,
-        data: {
-          ticket: ticketId ? { id: ticketId, title: ticketTitle || "Untitled ticket" } : undefined,
-        },
-        timestamp: notification.createdAt, // Use timestamp for consistency with frontend ActivityItem
-      });
+      console.log('Emitting notification via req.emitNotification:', notificationData);
+      req.emitNotification(userId, notificationData);
+    } else {
+      console.log('No emitNotification function available in req');
     }
 
     return { success: true };
