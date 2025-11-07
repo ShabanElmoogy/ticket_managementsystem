@@ -14,12 +14,27 @@ export const useActivitySocket = (
     if (!user) return;
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
-    const newSocket = io(socketUrl);
+    const newSocket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      timeout: 20000,
+      forceNew: true
+    });
     setSocket(newSocket);
 
     newSocket.emit("join", user.id);
 
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
     newSocket.on("notification", (notification: any) => {
+      console.log('Received notification:', notification);
       const activityItem: ActivityItem = {
         id: notification.id || Date.now().toString(),
         type: notification.type || "TICKET_ASSIGNED",

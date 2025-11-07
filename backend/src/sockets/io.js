@@ -4,13 +4,15 @@ import "dotenv/config";
 
 export function setupSocket(server) {
   const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : true;
-
+  console.log("CORS_ORIGINS", CORS_ORIGINS);
   const io = new Server(server, {
     cors: {
       origin: CORS_ORIGINS,
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
     },
+    allowEIO3: true,
   });
 
   io.on('connection', (socket) => {

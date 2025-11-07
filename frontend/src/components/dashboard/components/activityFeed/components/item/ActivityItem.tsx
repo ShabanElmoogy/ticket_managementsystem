@@ -220,13 +220,16 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
             }
             secondary={
               <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontSize: "0.75rem" }}
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: "0.75rem",
+                    color: "text.secondary",
+                    lineHeight: 1.4
+                  }}
                 >
                   {message.secondary} • {formatTime(activity.timestamp)}
-                </Typography>
+                </Box>
                 <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                   {activity.data.ticket?.priority && (
                     <Chip
