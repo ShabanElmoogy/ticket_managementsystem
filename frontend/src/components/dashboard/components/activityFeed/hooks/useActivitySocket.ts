@@ -13,7 +13,7 @@ export const useActivitySocket = (
   useEffect(() => {
     if (!user) return;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : window.location.origin);
     const newSocket = io(socketUrl);
     setSocket(newSocket);
 
