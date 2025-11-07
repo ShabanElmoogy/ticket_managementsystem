@@ -1,5 +1,5 @@
 import { useTheme } from "@mui/material";
-import { ActivityItem } from "../types";
+import type { ActivityItem } from "./types";
 
 export const useActivityUtils = () => {
   const theme = useTheme();

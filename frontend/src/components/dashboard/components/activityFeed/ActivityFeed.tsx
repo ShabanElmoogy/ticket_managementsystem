@@ -4,8 +4,6 @@ import {
   Paper,
   List,
   Collapse,
-  useTheme,
-  useMediaQuery,
   Skeleton,
   TextField,
   InputAdornment,
@@ -46,6 +44,7 @@ const useActivitySocket = (
   const { user } = useAuthStore();
   useEffect(() => {
     if (!user) return;
+
     const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001");
     socket.emit("join", user.id);
     socket.on("notification", (notification: any) => {
@@ -62,14 +61,15 @@ const useActivitySocket = (
       setActivities(prev => [activityItem, ...prev.slice(0, 19)]);
       setUnreadCount(prev => prev + 1);
     });
-    return () => socket.disconnect();
+
+    return () => {
+      socket.disconnect();
+    };
   }, [user, setActivities, setUnreadCount]);
 };
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
   const { token } = useAuthStore();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [activities, setActivities] = useState<ActivityItemType[]>([]);
   const [expanded, setExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);

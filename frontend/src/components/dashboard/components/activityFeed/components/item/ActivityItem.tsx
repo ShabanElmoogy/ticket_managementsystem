@@ -18,7 +18,6 @@ import {
 } from "../shared/ActivityIcon";
 import {
   CheckCircle as ReadIcon,
-  RadioButtonUnchecked as UnreadIcon,
   RadioButtonChecked as UnreadCheckedIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";

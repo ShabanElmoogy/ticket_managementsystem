@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../../../../../stores/authStore";
-import { ActivityItem } from "../types";
+import type { ActivityItem } from "../components/shared/types";
 
 export const useActivitySocket = (
   setActivities: React.Dispatch<React.SetStateAction<ActivityItem[]>>,

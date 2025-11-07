@@ -1,8 +1,6 @@
 import React from "react";
 import {
   Badge,
-  Box,
-  Typography,
 } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
