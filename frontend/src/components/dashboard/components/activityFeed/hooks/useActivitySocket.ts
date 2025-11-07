@@ -1,47 +1,37 @@
-import { useState, useEffect } from "react";
-import { io, Socket } from "socket.io-client";
+import { useEffect } from "react";
+import { Socket } from "socket.io-client";
 import { useAuthStore } from "../../../../../stores/authStore";
 import type { ActivityItem } from "../components/shared/types";
+import { getSocket, disconnectSocket } from "../../../../../services/socketService";
+
+interface SocketNotification {
+  id?: string;
+  type?: ActivityItem['type'];
+  data?: {
+    ticket?: {
+      id: string;
+      title: string;
+    };
+    assigneeName?: string;
+  };
+  ticketId?: string;
+  title?: string;
+  createdAt?: string;
+  timestamp?: string;
+}
 
 export const useActivitySocket = (
   setActivities: React.Dispatch<React.SetStateAction<ActivityItem[]>>,
   setUnreadCount: React.Dispatch<React.SetStateAction<number>>
 ) => {
   const { user } = useAuthStore();
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : "https://ticket-managementsystem-2.onrender.com");
-    console.log('Connecting to socket URL:', socketUrl);
-    
-    const newSocket = io(socketUrl, {
-      transports: ['polling', 'websocket'],
-      upgrade: true,
-      rememberUpgrade: false,
-      timeout: 20000,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    });
-    setSocket(newSocket);
+    const socket: Socket = getSocket(user.id);
 
-    newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
-      newSocket.emit("join", user.id);
-      console.log('Emitted join event for user:', user.id);
-    });
-
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
-    });
-
-    newSocket.on("notification", (notification: any) => {
+    const handleNotification = (notification: SocketNotification) => {
       console.log('Received notification:', notification);
       const activityItem: ActivityItem = {
         id: notification.id || Date.now().toString(),
@@ -67,13 +57,18 @@ export const useActivitySocket = (
         );
         audio.volume = 0.3;
         audio.play().catch(() => {});
-      } catch {}
-    });
+      } catch (error) {
+        console.error("Error playing notification sound:", error);
+      }
+    };
+
+    socket.on("notification", handleNotification);
 
     return () => {
-      newSocket.disconnect();
+      socket.off("notification", handleNotification);
+      disconnectSocket();
     };
   }, [user, setActivities, setUnreadCount]);
 
-  return socket;
+  return getSocket(user?.id || "");
 };
