@@ -6,28 +6,19 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { ticketsApi } from '../../services/api';
 import { type HeaderProps } from '../../types/header';
-import { useNotifications } from '../../hooks/useNotifications';
 import { createMenuItems } from '../../config/menuItems';
-import { formatNotificationTime } from '../../utils/notificationUtils';
 
 // Component imports
 import HeaderLogo from './header/HeaderLogo';
 import UserAvatar from './header/UserAvatar';
-import NotificationBell from './header/NotificationBell';
+
 import ThemeToggleButton from './header/ThemeToggleButton';
 import MenuButton from './header/MenuButton';
 import DesktopMenu from './header/DesktopMenu';
 import MobileDrawer from './header/MobileDrawer';
-import NotificationPopover from './header/NotificationPopover';
 
-interface NotificationType {
-  id: string;
-  data?: {
-    ticket?: {
-      id: string;
-    };
-  };
-}
+
+
 
 const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
   const { user, logout, token } = useAuthStore();
@@ -39,18 +30,9 @@ const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
   // Menu states
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Notifications hook
-  const {
-    notifications,
-    unreadCount,
-    loading: notificationLoading,
-    markAllAsRead,
-    clearAllNotifications,
-    removeNotification,
-    markNotificationAsRead,
-  } = useNotifications({ user, token });
+
+
 
   // Menu handlers
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -69,39 +51,9 @@ const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
     setMobileMenuOpen(false);
   };
 
-  // Notification handlers
-  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationAnchorEl(event.currentTarget);
-    if (unreadCount > 0) {
-      setTimeout(() => {
-        markAllAsRead();
-      }, 500);
-    }
-  };
 
-  const handleNotificationClose = () => {
-    setNotificationAnchorEl(null);
-  };
 
-  const handleClearAllNotifications = () => {
-    clearAllNotifications();
-    handleNotificationClose();
-  };
 
-  const handleNotificationItemClick = async (notification: NotificationType) => {
-    if (!token || !onTicketClick || !notification.data?.ticket?.id) return;
-
-    try {
-      markNotificationAsRead(notification.id);
-      handleNotificationClose();
-      
-      const fullTicket = await ticketsApi.getTicket(notification.data.ticket.id);
-      onTicketClick(fullTicket);
-    } catch (_error) {
-      console.error('Error fetching ticket details:', _error);
-      handleNotificationClose();
-    }
-  };
 
   const handleUserInfoClick = () => {
     navigate('/profile');
@@ -163,13 +115,7 @@ const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
             isMobile={isMobile}
           />
 
-          {/* Notification Bell */}
-          <NotificationBell
-            unreadCount={unreadCount}
-            onClick={handleNotificationClick}
-            mode={mode}
-            isMobile={isMobile}
-          />
+
 
           {/* Desktop Theme Toggle */}
           {!isMobile && (
@@ -200,20 +146,7 @@ const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
             menuItems={mobileMenuItems}
           />
 
-          {/* Notification Popover */}
-          <NotificationPopover
-            open={Boolean(notificationAnchorEl)}
-            anchorEl={notificationAnchorEl}
-            onClose={handleNotificationClose}
-            notifications={notifications}
-            unreadCount={unreadCount}
-            loading={notificationLoading}
-            onClearAll={handleClearAllNotifications}
-            onMarkAllAsRead={markAllAsRead}
-            onRemoveNotification={removeNotification}
-            onNotificationItemClick={handleNotificationItemClick}
-            formatTime={formatNotificationTime}
-          />
+
         </Box>
       </Toolbar>
       

@@ -48,16 +48,21 @@ const useActivitySocket = (
     const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001");
     socket.emit("join", user.id);
     socket.on("notification", (notification: any) => {
+      console.log('Activity feed received notification:', notification);
       const activityItem: ActivityItemType = {
         id: notification.id || Date.now().toString(),
         type: notification.type || "TICKET_ASSIGNED",
         data: {
           ticket: notification.data?.ticket,
-          assignedTo: notification.data?.assigneeName || user?.name
+          createdBy: notification.data?.createdBy,
+          updatedBy: notification.data?.updatedBy,
+          assignedTo: notification.data?.assignedTo || notification.data?.assigneeName || user?.name,
+          commentBy: notification.data?.commentBy
         },
         timestamp: notification.timestamp || new Date().toISOString(),
         read: false
       };
+      console.log('Adding activity item:', activityItem);
       setActivities(prev => [activityItem, ...prev.slice(0, 19)]);
       setUnreadCount(prev => prev + 1);
     });

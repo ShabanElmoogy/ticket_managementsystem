@@ -103,7 +103,12 @@ export const useDashboard = () => {
     try {
       let ticketsData = await ticketsApi.getTickets({ status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter });
       if (userFilter) {
-        ticketsData = ticketsData.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
+        if (userFilter === 'NEW_TICKETS') {
+          // Show unassigned tickets or tickets assigned to other users
+          ticketsData = ticketsData.filter((t) => !t.assignedTo || t.assignedTo.id !== user?.id);
+        } else {
+          ticketsData = ticketsData.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
+        }
       }
       if (customerFilter) {
         ticketsData = ticketsData.filter((t) => t.customer?.id === customerFilter);
@@ -141,7 +146,13 @@ export const useDashboard = () => {
         user?.role === "ADMIN" ? usersApi.getUsers() : Promise.resolve([]),
       ]);
       let filtered = ticketsData;
-      if (userFilter) filtered = filtered.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
+      if (userFilter) {
+        if (userFilter === 'NEW_TICKETS') {
+          filtered = filtered.filter((t) => !t.assignedTo || t.assignedTo.id !== user?.id);
+        } else {
+          filtered = filtered.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
+        }
+      }
       if (customerFilter) filtered = filtered.filter((t) => t.customer?.id === customerFilter);
       if (applicationFilter) filtered = filtered.filter((t) => t.application?.id === applicationFilter);
       setStats(calculateFilteredStats(filtered));

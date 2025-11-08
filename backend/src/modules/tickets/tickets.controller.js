@@ -193,18 +193,19 @@ export const createTicket = async (req, res) => {
       description: `Created ticket: ${title}`
     });
 
-    // Create notification for assignee
-    if (assignedToId && assignedToId !== req.user.userId) {
-      await createNotification({
-        userId: assignedToId,
-        ticketId: fullTicket.id,
-        type: 'TICKET_ASSIGNED',
-        title: 'New Ticket Assigned',
-        message: `You have been assigned ticket: ${title}`,
-        assigneeName: assignedUser[0]?.name
-      }, req);
-    }
+    // Broadcast appropriate notification type based on assignment
+    const notificationType = assignedToId ? 'TICKET_ASSIGNED' : 'TICKET_CREATED';
+    
+    req.emitNotification('broadcast', {
+      type: notificationType,
+      data: {
+        ticket: { id: fullTicket.id, title: fullTicket.title, priority: fullTicket.priority, status: fullTicket.status },
+        createdBy: createdUser[0]?.name,
+        assignedTo: assignedUser[0]?.name || null
+      }
+    });
 
+    console.log('Ticket created:', assignedToId ? 'assigned' : 'unassigned');
     res.status(201).json(fullTicket);
   } catch (error) {
     console.error('Create ticket error:', error);

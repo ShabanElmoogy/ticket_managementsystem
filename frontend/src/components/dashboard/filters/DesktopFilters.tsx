@@ -155,6 +155,7 @@ const DesktopFilters: React.FC<Props> = ({
                 sx={{ borderRadius: 2 }}
               >
                 <MenuItem value="">All Users</MenuItem>
+                <MenuItem value="NEW_TICKETS">🆕 New Tickets</MenuItem>
                 {allUsers.map((user) => (
                   <MenuItem key={user.id} value={user.id}>
                     <Box display="flex" alignItems="center" gap={1}>

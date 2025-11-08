@@ -41,16 +41,31 @@ export const createComment = async (req, res) => {
       user
     };
 
-    // Emit real-time notification for new comment to all connected users
-    req.emitNotification('broadcast', {
-      type: 'COMMENT_ADDED',
-      data: {
-        comment: commentWithUser,
-        ticket: { id: ticket.id, title: ticket.title },
-        commentBy: user.name
-      }
-    });
-    console.log('COMMENT_ADDED notification broadcasted to all users');
+    // Emit real-time notification for new comment
+    const targetUsers = [];
+    if (ticket.assignedToId) {
+      targetUsers.push(ticket.assignedToId);
+    }
+    if (ticket.createdById && ticket.createdById !== ticket.assignedToId) {
+      targetUsers.push(ticket.createdById);
+    }
+
+    if (targetUsers.length > 0) {
+      console.log('Emitting COMMENT_ADDED notification to users:', targetUsers);
+      targetUsers.forEach(userId => {
+        req.emitNotification(userId, {
+          type: 'COMMENT_ADDED',
+          data: {
+            comment: commentWithUser,
+            ticket: { id: ticket.id, title: ticket.title },
+            commentBy: user.name
+          }
+        });
+      });
+      console.log('Notification emitted successfully');
+    } else {
+      console.log('No target users for notification');
+    }
 
     res.status(201).json(commentWithUser);
   } catch (error) {
