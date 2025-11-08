@@ -1,6 +1,7 @@
 // components/Header.tsx - Main Header Component
 import React, { useState } from 'react';
 import { AppBar, Toolbar, Box, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { ticketsApi } from '../../services/api';
@@ -18,7 +19,6 @@ import MenuButton from './header/MenuButton';
 import DesktopMenu from './header/DesktopMenu';
 import MobileDrawer from './header/MobileDrawer';
 import NotificationPopover from './header/NotificationPopover';
-import { UserProfile } from '../profile';
 
 interface NotificationType {
   id: string;
@@ -29,9 +29,10 @@ interface NotificationType {
   };
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenDocuments, onTicketClick }) => {
+const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
   const { user, logout, token } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -39,7 +40,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   // Notifications hook
   const {
@@ -104,21 +104,31 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
   };
 
   const handleUserInfoClick = () => {
-    setProfileOpen(true);
+    navigate('/profile');
   };
 
-  // Create menu items
-  const menuItems = createMenuItems({
+  // Create menu items for desktop
+  const desktopMenuItems = createMenuItems({
     user: user!,
     mode,
-    onOpenAdminPanel,
-    onOpenKanban,
-    onOpenDocuments,
-    onOpenProfile: () => setProfileOpen(true),
+    navigate,
     onToggleTheme: toggleTheme,
     onLogout: logout,
     onClose: handleClose,
     onMobileMenuClose: handleMobileMenuClose,
+    isMobile: false,
+  });
+
+  // Create menu items for mobile
+  const mobileMenuItems = createMenuItems({
+    user: user!,
+    mode,
+    navigate,
+    onToggleTheme: toggleTheme,
+    onLogout: logout,
+    onClose: handleClose,
+    onMobileMenuClose: handleMobileMenuClose,
+    isMobile: true,
   });
 
   if (!user) return null;
@@ -178,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleClose}
-            menuItems={menuItems}
+            menuItems={desktopMenuItems}
           />
 
           {/* Mobile Drawer */}
@@ -187,7 +197,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
             onClose={handleMobileMenuClose}
             user={user}
             mode={mode}
-            menuItems={menuItems}
+            menuItems={mobileMenuItems}
           />
 
           {/* Notification Popover */}
@@ -207,11 +217,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenAdminPanel, onOpenKanban, onOpenD
         </Box>
       </Toolbar>
       
-      {/* User Profile Dialog */}
-      <UserProfile
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-      />
+
     </AppBar>
   );
 };

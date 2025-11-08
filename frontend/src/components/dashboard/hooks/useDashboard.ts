@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
-import { io, Socket } from "socket.io-client";
+
 import { useAuthStore } from "../../../stores/authStore";
 import { ticketsApi, usersApi, customersApi, applicationsApi, kanbanApi, type Ticket, type DashboardStats, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
 import type { KanbanBoard } from "../../../types/kanban";
@@ -11,7 +11,7 @@ export type SnackbarState = {
   severity: "success" | "error" | "warning" | "info";
 };
 
-export type ViewType = "dashboard" | "kanban" | "admin" | "documents";
+
 
 export type UseDashboardReturn = ReturnType<typeof useDashboard>;
 
@@ -24,7 +24,7 @@ export const useDashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("xl"));
 
-  const [currentView, setCurrentView] = useState<ViewType>("dashboard");
+
   const [stats, setStats] = useState<DashboardStats>({ totalTickets: 0, openTickets: 0, inProgressTickets: 0, resolvedTickets: 0 });
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
@@ -42,7 +42,7 @@ export const useDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [, setSocket] = useState<Socket | null>(null);
+
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: "", severity: "success" });
 
   const showSnackbar = (message: string, severity: SnackbarState["severity"]) => setSnackbar({ open: true, message, severity });
@@ -160,30 +160,7 @@ export const useDashboard = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // Socket
-  useEffect(() => {
-    if (!user) return;
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
-    newSocket.emit("join", user.id);
-    newSocket.on("notification", (notification: SocketNotification) => {
-      const { type } = notification;
-      switch (type) {
-        case "TICKET_CREATED":
-        case "TICKET_UPDATED":
-        case "TICKET_ASSIGNED":
-        case "COMMENT_ADDED":
-          if (token) fetchTickets();
-          break;
-        default:
-          break;
-      }
-    });
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [user, token, fetchTickets]);
+
 
   // Filters change effect
   useEffect(() => {
@@ -250,13 +227,10 @@ export const useDashboard = () => {
   }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, searchQuery]);
 
   return {
-    // view
-    currentView,
-    setCurrentView,
-
     // env
     isMobile,
     user,
+    userRole: user?.role,
     token,
 
     // state

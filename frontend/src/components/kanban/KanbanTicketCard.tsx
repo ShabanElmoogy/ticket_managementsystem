@@ -10,7 +10,8 @@ import {
   Menu,
   MenuItem,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  useTheme
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
@@ -51,7 +52,16 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
     setDetailsOpen(true);
   };
 
-  const getPriorityColor = (priority: Priority) => {
+  const getPriorityColor = (priority: Priority, isDark = false) => {
+    if (isDark) {
+      switch (priority) {
+        case 'URGENT': return '#f87171';
+        case 'HIGH': return '#fbbf24';
+        case 'MEDIUM': return '#60a5fa';
+        case 'LOW': return '#34d399';
+        default: return '#9ca3af';
+      }
+    }
     switch (priority) {
       case 'URGENT': return '#ef4444';
       case 'HIGH': return '#f59e0b';
@@ -61,8 +71,11 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
     }
   };
 
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   const getPriorityIcon = (priority: Priority) => {
-    const color = getPriorityColor(priority);
+    const color = getPriorityColor(priority, isDarkMode);
     return <FlagIcon sx={{ color, fontSize: 16 }} />;
   };
 
@@ -74,11 +87,11 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
     const tomorrow = addDays(now, 1);
 
     if (isBefore(dueDate, now)) {
-      return { status: 'overdue', color: '#ef4444' };
+      return { status: 'overdue', color: isDarkMode ? '#f87171' : '#ef4444' };
     } else if (isBefore(dueDate, tomorrow)) {
-      return { status: 'due-soon', color: '#f59e0b' };
+      return { status: 'due-soon', color: isDarkMode ? '#fbbf24' : '#f59e0b' };
     }
-    return { status: 'normal', color: '#10b981' };
+    return { status: 'normal', color: isDarkMode ? '#34d399' : '#10b981' };
   };
 
   const getProgressPercentage = () => {

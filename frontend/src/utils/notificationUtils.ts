@@ -38,7 +38,7 @@ export const createNotificationFromSocketData = (
       break;
     case "COMMENT_ADDED":
       title = "New Comment";
-      message = `${safeTicket.title || "Untitled ticket"} - Comment by ${safeData.commentBy || "Someone"}`;
+      message = `${safeData.commentBy || "Someone"} commented: "${safeData.comment?.content || "No content"}" on ${safeTicket.title || "Untitled ticket"}`;
       break;
     case "TICKET_DUE_SOON":
       title = "Ticket Due Soon";

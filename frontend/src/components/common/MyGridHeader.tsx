@@ -9,6 +9,7 @@ interface MyGridHeaderProps {
   onAdd?: () => void;
   addButtonText?: string;
   addTooltip?: string;
+  leftActions?: ReactNode;
   rightActions?: ReactNode;
   icon?: ElementType;
 }
@@ -18,6 +19,7 @@ const MyGridHeader = ({
   onAdd, 
   addButtonText = "Add", 
   addTooltip = "Add new item",
+  leftActions,
   rightActions,
   icon: Icon 
 }: MyGridHeaderProps) => {
@@ -61,6 +63,7 @@ const MyGridHeader = ({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {leftActions}
             {rightActions}
             {onAdd && (
               <Tooltip title={addTooltip}>

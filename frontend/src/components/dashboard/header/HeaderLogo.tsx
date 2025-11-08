@@ -2,18 +2,29 @@
 import React from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ConfirmationNumber as TicketIcon } from "@mui/icons-material";
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderLogoProps {
   mode: "light" | "dark";
 }
 
 const HeaderLogo: React.FC<HeaderLogoProps> = ({ mode }) => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Box display="flex" alignItems="center" sx={{ flexGrow: 1 }}>
+    <Box 
+      display="flex" 
+      alignItems="center" 
+      sx={{ 
+        flexGrow: 1, 
+        cursor: 'pointer',
+        '&:hover': { opacity: 0.8 }
+      }}
+      onClick={() => navigate('/dashboard')}
+    >
       <TicketIcon
         sx={{
           mr: { xs: 1, sm: 2 },

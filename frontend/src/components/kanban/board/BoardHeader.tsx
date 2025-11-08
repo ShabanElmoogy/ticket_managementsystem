@@ -15,7 +15,10 @@ import {
   Dashboard as DashboardIcon,
   Description as DescriptionIcon,
   Verified as VerifiedIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@mui/material';
 import type { KanbanBoard } from '../../../types/kanban';
 
 interface BoardHeaderProps {
@@ -27,6 +30,7 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({
   currentBoard,
   children
 }) => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Generate board icon based on type or name
@@ -198,33 +202,59 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({
             </Box>
           </Stack>
 
-          {/* Quick Stats - Desktop Only */}
-          {!isMobile && currentBoard.tickets && (
+          {/* Home Button and Quick Stats - Desktop Only */}
+          {!isMobile && (
             <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-              <Stack direction="row" spacing={1}>
-                <Chip
-                  label={`${currentBoard.tickets.length} Total`}
-                  size="small"
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  startIcon={<HomeIcon />}
+                  onClick={() => navigate('/dashboard')}
                   variant="outlined"
-                  sx={{
-                    fontSize: '0.75rem',
-                    height: 28,
-                    borderColor: alpha(theme.palette.text.secondary, 0.3),
-                    color: 'text.secondary',
-                  }}
-                />
-                <Chip
-                  label={`${currentBoard.columns?.length || 0} Columns`}
                   size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: '0.75rem',
-                    height: 28,
-                    borderColor: alpha(theme.palette.text.secondary, 0.3),
-                    color: 'text.secondary',
-                  }}
-                />
+                >
+                  Home
+                </Button>
+                {currentBoard.tickets && (
+                  <>
+                    <Chip
+                      label={`${currentBoard.tickets.length} Total`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.75rem',
+                        height: 28,
+                        borderColor: alpha(theme.palette.text.secondary, 0.3),
+                        color: 'text.secondary',
+                      }}
+                    />
+                    <Chip
+                      label={`${currentBoard.columns?.length || 0} Columns`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.75rem',
+                        height: 28,
+                        borderColor: alpha(theme.palette.text.secondary, 0.3),
+                        color: 'text.secondary',
+                      }}
+                    />
+                  </>
+                )}
               </Stack>
+            </Box>
+          )}
+          
+          {/* Mobile Home Button */}
+          {isMobile && (
+            <Box>
+              <Button
+                startIcon={<HomeIcon />}
+                onClick={() => navigate('/dashboard')}
+                variant="outlined"
+                size="small"
+              >
+                Home
+              </Button>
             </Box>
           )}
         </Stack>

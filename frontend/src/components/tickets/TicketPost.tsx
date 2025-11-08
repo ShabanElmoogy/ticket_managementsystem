@@ -93,6 +93,10 @@ const TicketPost: React.FC<TicketPostProps> = ({
 
   const handleAddComment = async () => {
     if (newComment.trim() && token) {
+      if (!onAddComment) {
+        console.error('onAddComment function is not provided');
+        return;
+      }
       try {
         await onAddComment(ticket.id, newComment.trim());
         setNewComment("");

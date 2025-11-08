@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Chip } from '@mui/material';
+import { Box, Chip, useTheme } from '@mui/material';
 import type { KanbanColumn as KanbanColumnType, TicketStatus } from '../../../types/kanban';
 
 interface BoardStatsProps {
@@ -15,6 +15,27 @@ const BoardStats: React.FC<BoardStatsProps> = ({
   getColumnByStatus,
   hasActiveFilters,
 }) => {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+  
+  const getStatusColor = (status: TicketStatus) => {
+    if (isDarkMode) {
+      switch (status) {
+        case 'OPEN': return '#2563eb';
+        case 'IN_PROGRESS': return '#d97706';
+        case 'RESOLVED': return '#059669';
+        case 'CLOSED': return '#4b5563';
+        default: return '#2563eb';
+      }
+    }
+    switch (status) {
+      case 'OPEN': return '#1d4ed8';
+      case 'IN_PROGRESS': return '#b45309';
+      case 'RESOLVED': return '#047857';
+      case 'CLOSED': return '#374151';
+      default: return '#1d4ed8';
+    }
+  };
   return (
     <Box
       display="flex"
@@ -38,8 +59,14 @@ const BoardStats: React.FC<BoardStatsProps> = ({
             size="small"
             variant="outlined"
             sx={{
-              backgroundColor: column?.color || "transparent",
-              color: column?.color ? "white" : "inherit",
+              backgroundColor: getStatusColor(status),
+              color: isDarkMode ? '#ffffff' : '#ffffff',
+              fontWeight: 700,
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              '&:hover': {
+                backgroundColor: getStatusColor(status),
+                opacity: 0.8,
+              }
             }}
           />
         );

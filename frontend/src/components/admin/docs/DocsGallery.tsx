@@ -15,9 +15,11 @@ import {
   ViewList as ViewListIcon,
   ViewModule as ViewModuleIcon,
   ArrowBack as ArrowBackIcon,
+  Home as HomeIcon,
 } from "@mui/icons-material";
 import MyGridHeader from "../../common/MyGridHeader";
 import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
+import { useNavigate } from 'react-router-dom';
 import { useDocsBuilder } from "./hooks/useDocsBuilder";
 import {
   DocumentCard,
@@ -34,6 +36,7 @@ interface DocsGalleryProps {
 }
 
 const DocsGallery: React.FC<DocsGalleryProps> = () => {
+  const navigate = useNavigate();
   const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsBuilder();
   const [searchTerm, setSearchTerm] = useState("");
   const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
@@ -130,6 +133,16 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
       <MyGridHeader
         title="Document Gallery"
         icon={VisibilityIcon}
+        leftActions={
+          <Button
+            startIcon={<HomeIcon />}
+            onClick={() => navigate('/dashboard')}
+            variant="outlined"
+            size="small"
+          >
+            Home
+          </Button>
+        }
         rightActions={
           <ToggleButtonGroup
             value={viewMode}

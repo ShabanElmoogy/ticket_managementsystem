@@ -28,17 +28,31 @@ export const useNotifications = ({ user, token }: UseNotificationsProps) => {
     setSocket(newSocket);
 
     // Join user room for targeted notifications
-    newSocket.emit("join", user.id);
+    newSocket.on('connect', () => {
+      console.log('Socket connected, joining room for user:', user.id);
+      newSocket.emit("join", user.id);
+    });
 
     // Listen for notifications
     newSocket.on("notification", (socketNotification: any) => {
+      console.log('Raw socket notification received:', socketNotification);
+      console.log('Comment content:', socketNotification?.data?.comment?.content);
+      console.log('Comment by:', socketNotification?.data?.commentBy);
       const notification = createNotificationFromSocketData(socketNotification);
+      console.log('Processed notification:', notification);
 
-      setNotifications((prev) => [notification, ...prev.slice(0, 19)]); // Keep only last 20
+      setNotifications((prev) => {
+        console.log('Adding notification to state:', notification);
+        return [notification, ...prev.slice(0, 19)];
+      }); // Keep only last 20
       setUnreadCount((prev) => prev + 1);
 
       // Play notification sound
       playNotificationSound();
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
     });
 
     // Cleanup on unmount

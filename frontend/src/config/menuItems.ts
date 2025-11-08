@@ -9,48 +9,37 @@ import {
   DarkMode as DarkModeIcon,
   ViewColumn as KanbanIcon,
   Description as DocumentIcon,
+
   } from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
 
 interface CreateMenuItemsProps {
   user: UserInfo;
   mode: "light" | "dark";
-  onOpenAdminPanel?: () => void;
-  onOpenKanban?: () => void;
-  onOpenDocuments?: () => void;
-  onOpenProfile?: () => void;
+  navigate: (path: string) => void;
   onToggleTheme: () => void;
   onLogout: () => void;
   onClose: () => void;
   onMobileMenuClose: () => void;
+  isMobile?: boolean;
 }
 
 export const createMenuItems = ({
   user,
   mode,
-  onOpenAdminPanel,
-  onOpenKanban,
-  onOpenDocuments,
-  onOpenProfile,
+  navigate,
   onToggleTheme,
   onLogout,
   onClose,
   onMobileMenuClose,
+  isMobile = false,
 }: CreateMenuItemsProps): MenuItem[] => {
   return [
     {
       label: "Profile",
       icon: React.createElement(PersonIcon),
       onClick: () => {
-        if (onOpenProfile) onOpenProfile();
-        onClose();
-        onMobileMenuClose();
-      },
-    },
-    {
-      label: "Dashboard",
-      icon: React.createElement(DashboardIcon),
-      onClick: () => {
+        navigate('/profile');
         onClose();
         onMobileMenuClose();
       },
@@ -59,48 +48,51 @@ export const createMenuItems = ({
       label: "Kanban Board",
       icon: React.createElement(KanbanIcon),
       onClick: () => {
-        if (onOpenKanban) onOpenKanban();
+        navigate('/kanban');
         onClose();
         onMobileMenuClose();
       },
     },
-    ...(onOpenDocuments
+
+    ...(user?.role === "EMPLOYEE" || user?.role === "ADMIN"
       ? [
           {
             label: "Documents",
             icon: React.createElement(DocumentIcon),
             onClick: () => {
-              onOpenDocuments();
+              navigate('/documents');
               onClose();
               onMobileMenuClose();
             },
           },
         ]
       : []),
-        ...(user?.role === "ADMIN" && onOpenAdminPanel
+        ...(user?.role === "ADMIN"
       ? [
           {
             label: "Admin Panel",
             icon: React.createElement(AdminPanelSettingsIcon),
             onClick: () => {
-              onOpenAdminPanel();
+              navigate('/admin');
               onClose();
               onMobileMenuClose();
             },
           },
         ]
       : []),
-    {
-      label: mode === "light" ? "Dark Mode" : "Light Mode",
-      icon: React.createElement(
-        mode === "light" ? DarkModeIcon : LightModeIcon
-      ),
-      onClick: () => {
-        onToggleTheme();
-        onClose();
-        onMobileMenuClose();
+    ...(isMobile ? [
+      {
+        label: mode === "light" ? "Dark Mode" : "Light Mode",
+        icon: React.createElement(
+          mode === "light" ? DarkModeIcon : LightModeIcon
+        ),
+        onClick: () => {
+          onToggleTheme();
+          onClose();
+          onMobileMenuClose();
+        },
       },
-    },
+    ] : []),
     {
       label: "Logout",
       icon: React.createElement(LogoutIcon),
