@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
+import { io } from "socket.io-client";
 
 import { useAuthStore } from "../../../stores/authStore";
 import { ticketsApi, usersApi, customersApi, applicationsApi, kanbanApi, type Ticket, type DashboardStats, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
@@ -166,12 +167,29 @@ export const useDashboard = () => {
     }
   };
 
+  // Socket for real-time ticket updates
+  useEffect(() => {
+    if (!user || !token) return;
+
+    const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001");
+    socket.emit("join", user.id);
+    
+    socket.on("notification", (notification: any) => {
+      if (notification.type === "TICKET_CREATED" || notification.type === "TICKET_ASSIGNED" || notification.type === "TICKET_UPDATED") {
+        // Refresh tickets when new tickets are created or assigned
+        fetchTickets();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, token, fetchTickets]);
+
   // Initial load
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
-
-
 
   // Filters change effect
   useEffect(() => {
@@ -184,7 +202,7 @@ export const useDashboard = () => {
       const ticketWithBoard = { ...ticketData, boardId: defaultBoard?.id };
       await ticketsApi.createTicket(ticketWithBoard);
       showSnackbar("Ticket posted successfully! 🎉", "success");
-      fetchData();
+      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error creating ticket", "error");
     }
@@ -195,7 +213,7 @@ export const useDashboard = () => {
     try {
       await ticketsApi.addComment(ticketId, content);
       showSnackbar("Comment added successfully", "success");
-      fetchData();
+      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error adding comment", "error");
     }
@@ -206,7 +224,7 @@ export const useDashboard = () => {
     try {
       await ticketsApi.takeTicket(ticketId);
       showSnackbar("Ticket assigned successfully", "success");
-      fetchData();
+      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error taking ticket", "error");
     }
@@ -217,7 +235,7 @@ export const useDashboard = () => {
     try {
       await ticketsApi.updateTicket(ticketId, { status });
       showSnackbar("Ticket updated successfully", "success");
-      fetchData();
+      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error updating ticket", "error");
     }
