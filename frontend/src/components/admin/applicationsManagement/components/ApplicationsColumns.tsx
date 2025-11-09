@@ -8,7 +8,6 @@ import {
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Application } from "../../../../services/api";
 
-// Columns factory
 export const getApplicationsColumns = (handlers: {
   onEdit: (app: Application) => void;
   onDelete: (app: Application) => void;

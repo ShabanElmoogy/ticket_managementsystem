@@ -4,3 +4,4 @@ export { default as AdminDataGrid, buildActionsColumn, ActionsCell } from './Adm
 export type { AdminDataGridProps, ActionColor, RowAction, ActionsCellProps } from './AdminDataGrid';
 export { default as DeleteConfirmDialog } from './DeleteConfirmDialog';
 export { default as ConfirmTextDialog } from './ConfirmTextDialog';
+export { default as MyGridHeader } from './MyGridHeader';

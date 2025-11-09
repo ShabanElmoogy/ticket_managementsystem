@@ -10,7 +10,7 @@ export { authApi } from "./auth";
 export { usersApi } from "./users";
 export { ticketsApi } from "./tickets";
 export { customersApi } from "./customers";
-export { applicationsApi } from "./applications";
+export { applicationsApi } from "../../components/admin/applicationsManagement/api/applications";
 export { dashboardApi } from "./dashboard";
 export { profileApi } from "./profile";
 export { kanbanApi } from "./kanban";

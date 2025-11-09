@@ -11,7 +11,7 @@ import {
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
 import CustomersManagement from "./components/CustomersManagement";
-import ApplicationsManagement from "./components/ApplicationsManagement";
+import ApplicationsPageWithHOC from "./components/ApplicationsPageWithHOC";
 import TicketsManagement from "./components/TicketsManagement";
 import TasksManagement from "./components/TasksManagement";
 import UserManagement from "./components/UserManagement";
@@ -58,7 +58,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
       case "customers":
         return <CustomersManagement />;
       case "applications":
-        return <ApplicationsManagement />;
+        return <ApplicationsPageWithHOC />;
       case "tickets":
         return <TicketsManagement />;
       case "tasks":

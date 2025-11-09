@@ -1,15 +1,23 @@
 import React from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-} from "@mui/material";
-import type { ApplicationFormDialogProps } from "../types/types";
-import useApplicationForm from "../hooks/useApplicationForm";
+import { ReusableFormDialog } from "../../../common/forms";
+import type { FormField } from "../../../common/forms";
+import type { CreateApplicationData } from "../../../../services/api";
+import { applicationFormSchema } from "../schemas/applicationSchema";
+
+export interface ApplicationFormDialogProps {
+  open: boolean;
+  editing?: boolean;
+  initialValues?: CreateApplicationData;
+  onClose: () => void;
+  onSubmit: (values: CreateApplicationData) => void;
+  submitting?: boolean;
+}
+
+const applicationFields: FormField<CreateApplicationData>[] = [
+  { name: "name", label: "Name", required: true, autoFocus: true, width: 2 },
+  { name: "version", label: "Version", width: 2 },
+  { name: "description", label: "Description", type: "multiline", rows: 3, width: 1 },
+];
 
 const ApplicationFormDialog: React.FC<ApplicationFormDialogProps> = ({
   open,
@@ -17,60 +25,20 @@ const ApplicationFormDialog: React.FC<ApplicationFormDialogProps> = ({
   initialValues,
   onClose,
   onSubmit,
+  submitting = false,
 }) => {
-  const { register, submit, errors, isValid } = useApplicationForm({
-    open,
-    initialValues,
-    onSubmit,
-  });
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {editing ? "Edit Application" : "Create New Application"}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField
-            label="Name"
-            {...register("name")}
-            required
-            fullWidth
-            autoComplete="off"
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-          <TextField
-            label="Description"
-            {...register("description")}
-            multiline
-            rows={3}
-            fullWidth
-            autoComplete="off"
-            error={!!errors.description}
-            helperText={errors.description?.message}
-          />
-          <TextField
-            label="Version"
-            {...register("version")}
-            fullWidth
-            autoComplete="off"
-            error={!!errors.version}
-            helperText={errors.version?.message}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={submit}
-          variant="contained"
-          disabled={!isValid}
-        >
-          {editing ? "Update" : "Create"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ReusableFormDialog
+      open={open}
+      title={editing ? "Edit Application" : "Create New Application"}
+      editing={editing}
+      schema={applicationFormSchema}
+      fields={applicationFields}
+      initialValues={initialValues || { name: "", description: "", version: "" }}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      submitting={submitting}
+    />
   );
 };
 

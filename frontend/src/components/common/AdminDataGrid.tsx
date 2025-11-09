@@ -58,6 +58,9 @@ const AdminDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
           },
         }}
         disableRowSelectionOnClick
+        rowBuffer={10}
+        columnBuffer={2}
+        disableVirtualization={false}
         sx={{
           "& .MuiDataGrid-cell": {
             borderBottom: (theme) =>

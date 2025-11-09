@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useAuthStore } from "../../../../../stores/authStore";
+import { useAuthStore } from "../../stores/authStore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface EntityDataReturn<T, CreateT> {
@@ -17,7 +17,7 @@ export interface EntityConfig<T, CreateT> {
     getAll: () => Promise<T[]>;
     create: (data: CreateT) => Promise<T>;
     update: (id: string, data: CreateT) => Promise<T>;
-    delete: (id: string) => Promise<any>;
+    delete: (id: string) => Promise<unknown>;
   };
 }
 
@@ -44,7 +44,7 @@ export function useEntityData<T, CreateT>(
       ]);
       return { previousEntities };
     },
-    onError: (err, newEntity, context) => {
+    onError: (_, __, context) => {
       queryClient.setQueryData(config.queryKey, context?.previousEntities);
     },
     onSettled: () => {
@@ -60,12 +60,12 @@ export function useEntityData<T, CreateT>(
       const previousEntities = queryClient.getQueryData(config.queryKey);
       queryClient.setQueryData(config.queryKey, (old: T[] = []) =>
         old.map(entity => 
-          (entity as any).id === id ? { ...entity, ...data } : entity
+          (entity as { id: string }).id === id ? { ...entity, ...data } : entity
         )
       );
       return { previousEntities };
     },
-    onError: (err, variables, context) => {
+    onError: (_, __, context) => {
       queryClient.setQueryData(config.queryKey, context?.previousEntities);
     },
     onSettled: () => {
@@ -79,11 +79,11 @@ export function useEntityData<T, CreateT>(
       await queryClient.cancelQueries({ queryKey: config.queryKey });
       const previousEntities = queryClient.getQueryData(config.queryKey);
       queryClient.setQueryData(config.queryKey, (old: T[] = []) =>
-        old.filter(entity => (entity as any).id !== id)
+        old.filter(entity => (entity as { id: string }).id !== id)
       );
       return { previousEntities };
     },
-    onError: (err, id, context) => {
+    onError: (_, __, context) => {
       queryClient.setQueryData(config.queryKey, context?.previousEntities);
     },
     onSettled: () => {
