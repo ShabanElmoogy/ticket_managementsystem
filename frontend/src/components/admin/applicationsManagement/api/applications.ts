@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { Application, CreateApplicationData } from "./types";
+import { BaseApiService } from "../../../../services/api/base";
+import type { Application, CreateApplicationData } from "../../../../services/api/types";
 
 export class ApplicationsApiService extends BaseApiService {
   async getApplications(): Promise<Application[]> {

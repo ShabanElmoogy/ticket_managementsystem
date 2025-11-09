@@ -102,6 +102,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         sx={{
           flexGrow: 1,
           p: 3,
+          mt:10,
           width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : "100%" },
         }}
       >

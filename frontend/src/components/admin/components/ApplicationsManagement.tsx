@@ -20,6 +20,7 @@ const ApplicationsManagement: React.FC = () => {
 
     snackbar,
     deleteDialog,
+    submitting,
 
     handleOpenDialog,
     handleCloseDialog,
@@ -36,8 +37,8 @@ const ApplicationsManagement: React.FC = () => {
     <Box>
       <MyGridHeader
         title="Applications Management"
-        onAdd={handleOpenDialog}
-        addButtonText="Add Category"
+        onAdd={() => handleOpenDialog()}
+        addButtonText="Add Application"
         addTooltip="Add Application"
         icon={ApiIcon}
       />

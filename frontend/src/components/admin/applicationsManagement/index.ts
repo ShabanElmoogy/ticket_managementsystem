@@ -5,6 +5,7 @@ export { default as ApplicationsColumns, getApplicationsColumns } from "./compon
 
 export { default as ApplicationFormDialog } from "./components/ApplicationFormDialog";
 
+export { default as useApplications } from "./hooks/useApplications";
 export { default as useApplicationForm } from "./hooks/useApplicationForm";
 
 export { applicationFormSchema } from "./utils/validation";
@@ -15,3 +16,4 @@ export type {
   ApplicationFormDialogProps,
   UseApplicationFormArgs,
 } from "./types/types";
+// 

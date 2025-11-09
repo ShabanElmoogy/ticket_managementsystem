@@ -12,6 +12,7 @@ export interface ApplicationFormDialogProps {
   initialValues?: ApplicationFormValues;
   onClose: () => void;
   onSubmit: (values: ApplicationFormValues) => void;
+  submitting?: boolean;
 }
 
 export interface UseApplicationFormArgs {
