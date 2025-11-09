@@ -7,40 +7,44 @@ html {
 
 /* Firefox */
 * {
-  scrollbar-width: thin; /* auto | thin | none */
-  scrollbar-color: rgba(0, 0, 0, 0.35) transparent; /* thumb | track */
+  scrollbar-width: auto;
+  scrollbar-color: #333 #ddd;
 }
 
 /* WebKit (Chrome, Edge (Chromium), Safari) */
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
 }
 
 *::-webkit-scrollbar-track {
-  background: transparent;
+  background: #ddd;
+  border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.35);
-  border-radius: 8px;
-  border: 2px solid transparent; /* creates padding effect */
-  background-clip: padding-box;
+  background: #333;
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.5);
+  background: #000;
 }
 
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   * {
-    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    scrollbar-color: #666 #333;
+  }
+  *::-webkit-scrollbar-track {
+    background: #333;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.35);
+    background: #666;
+    border: 2px solid #333;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.5);
+    background: #888;
   }
 }
