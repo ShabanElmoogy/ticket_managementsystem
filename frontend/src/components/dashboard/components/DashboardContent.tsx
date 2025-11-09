@@ -140,14 +140,16 @@ const DashboardContent: React.FC<Props> = ({
                   userFilter={userFilter}
                   customerFilter={customerFilter}
                   applicationFilter={applicationFilter}
+                  searchQuery={searchQuery}
                   setStatusFilter={setStatusFilter}
                   setPriorityFilter={setPriorityFilter}
                   setUserFilter={setUserFilter}
                   setCustomerFilter={setCustomerFilter}
                   setApplicationFilter={setApplicationFilter}
-                  allUsers={userRole === "ADMIN" ? allUsers : []}
-                  customers={userRole === "ADMIN" ? customers : []}
-                  applications={userRole === "ADMIN" ? applications : []}
+                  setSearchQuery={setSearchQuery}
+                  allUsers={allUsers}
+                  customers={customers}
+                  applications={applications}
                   loading={loading}
                   onRefresh={onRefresh}
                 />

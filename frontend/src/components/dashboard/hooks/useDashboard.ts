@@ -1,10 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
-import { io } from "socket.io-client";
-
 import { useAuthStore } from "../../../stores/authStore";
-import { ticketsApi, usersApi, customersApi, applicationsApi, kanbanApi, type Ticket, type DashboardStats, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
+import { kanbanApi, type Ticket, type CreateTicketData } from "../../../services/api";
 import type { KanbanBoard } from "../../../types/kanban";
+import { 
+  useTicketsQuery, 
+  useUsersQuery, 
+  useEmployeesQuery, 
+  useCustomersQuery, 
+  useApplicationsQuery,
+  useCreateTicketMutation,
+  useTakeTicketMutation,
+  useUpdateTicketMutation,
+  useAddCommentMutation
+} from "./useTicketsQuery";
+import { useSocketQuery } from "../../../hooks/useSocketQuery";
 
 export type SnackbarState = {
   open: boolean;
@@ -12,27 +22,14 @@ export type SnackbarState = {
   severity: "success" | "error" | "warning" | "info";
 };
 
-
-
 export type UseDashboardReturn = ReturnType<typeof useDashboard>;
-
-type SocketNotification = {
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
-};
 
 export const useDashboard = () => {
   const { user, token } = useAuthStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("xl"));
 
-
-  const [stats, setStats] = useState<DashboardStats>({ totalTickets: 0, openTickets: 0, inProgressTickets: 0, resolvedTickets: 0 });
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [employees, setEmployees] = useState<User[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
   const [defaultBoard, setDefaultBoard] = useState<KanbanBoard | null>(null);
-  const [loading, setLoading] = useState(true);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [statusFilter, setStatusFilter] = useState<Ticket['status'] | "">("");
@@ -40,22 +37,64 @@ export const useDashboard = () => {
   const [userFilter, setUserFilter] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
   const [applicationFilter, setApplicationFilter] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+
+  // TanStack Query hooks
+  const { data: rawTickets = [], isLoading: ticketsLoading } = useTicketsQuery({
+    status: statusFilter,
+    priority: priorityFilter,
+    userFilter,
+    customerFilter,
+    applicationFilter
+  });
+  
+  // Deferred search to prevent UI blocking
+  const tickets = useMemo(() => {
+    if (!searchQuery) return rawTickets;
+    
+    // Limit search to first 100 tickets for instant response
+    const searchLimit = Math.min(rawTickets.length, 100);
+    const q = searchQuery.toLowerCase();
+    const results = [];
+    
+    for (let i = 0; i < searchLimit; i++) {
+      const t = rawTickets[i];
+      if (t.title.toLowerCase().includes(q) || t.id.includes(q)) {
+        results.push(t);
+      }
+    }
+    
+    return results;
+  }, [rawTickets, searchQuery]);
+  
+  const { data: allUsers = [] } = useUsersQuery();
+  const { data: employees = [] } = useEmployeesQuery();
+  const { data: customers = [] } = useCustomersQuery();
+  const { data: applications = [] } = useApplicationsQuery();
+  
+  const createTicketMutation = useCreateTicketMutation();
+  const takeTicketMutation = useTakeTicketMutation();
+  const updateTicketMutation = useUpdateTicketMutation();
+  const addCommentMutation = useAddCommentMutation();
+  
+  // Socket for real-time updates
+  useSocketQuery();
 
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: "", severity: "success" });
 
   const showSnackbar = (message: string, severity: SnackbarState["severity"]) => setSnackbar({ open: true, message, severity });
   const closeSnackbar = () => setSnackbar((s) => ({ ...s, open: false }));
 
-  const calculateFilteredStats = (tickets: Ticket[]) => {
+  const stats = useMemo(() => {
     const totalTickets = tickets.length;
     const openTickets = tickets.filter((t) => t.status === "OPEN").length;
     const inProgressTickets = tickets.filter((t) => t.status === "IN_PROGRESS").length;
     const resolvedTickets = tickets.filter((t) => t.status === "RESOLVED").length;
     return { totalTickets, openTickets, inProgressTickets, resolvedTickets };
-  };
+  }, [tickets]);
 
   const getOrCreateDefaultBoard = async (): Promise<KanbanBoard | null> => {
     if (!token) return null;
@@ -72,170 +111,58 @@ export const useDashboard = () => {
     }
   };
 
-  const fetchInitialData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return;
     try {
-      setLoading(true);
-      const [ticketsData, employeesData, usersData, customersData, applicationsData, defaultBoardData] = await Promise.all([
-        ticketsApi.getTickets({}),
-        user?.role === "ADMIN" ? usersApi.getEmployees() : Promise.resolve([]),
-        user?.role === "ADMIN" ? usersApi.getUsers() : Promise.resolve([]),
-        user?.role === "ADMIN" ? customersApi.getCustomers() : Promise.resolve([]),
-        user?.role === "ADMIN" ? applicationsApi.getApplications() : Promise.resolve([]),
-        getOrCreateDefaultBoard(),
-      ]);
-      const initialStats = calculateFilteredStats(ticketsData);
-      setStats(initialStats);
-      setTickets(ticketsData);
-      setEmployees(employeesData);
-      setAllUsers(usersData);
-      setCustomers(customersData);
-      setApplications(applicationsData);
+      const defaultBoardData = await getOrCreateDefaultBoard();
       setDefaultBoard(defaultBoardData);
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error fetching data", "error");
-    } finally {
-      setLoading(false);
     }
-  }, [token, user?.role]);
-
-  const fetchTickets = useCallback(async () => {
-    if (!token) return;
-    try {
-      let ticketsData = await ticketsApi.getTickets({ status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter });
-      if (userFilter) {
-        if (userFilter === 'NEW_TICKETS') {
-          // Show unassigned tickets or tickets assigned to other users
-          ticketsData = ticketsData.filter((t) => !t.assignedTo || t.assignedTo.id !== user?.id);
-        } else {
-          ticketsData = ticketsData.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
-        }
-      }
-      if (customerFilter) {
-        ticketsData = ticketsData.filter((t) => t.customer?.id === customerFilter);
-      }
-      if (applicationFilter) {
-        ticketsData = ticketsData.filter((t) => t.application?.id === applicationFilter);
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        ticketsData = ticketsData.filter(
-          (t) =>
-            t.title.toLowerCase().includes(q) ||
-            t.description.toLowerCase().includes(q) ||
-            t.createdBy?.name.toLowerCase().includes(q) ||
-            t.assignedTo?.name.toLowerCase().includes(q) ||
-            t.customer?.name.toLowerCase().includes(q) ||
-            t.application?.name.toLowerCase().includes(q) ||
-            t.id.toLowerCase().includes(q)
-        );
-      }
-      setTickets(ticketsData);
-      setStats(calculateFilteredStats(ticketsData));
-    } catch (_error) {
-      showSnackbar(_error instanceof Error ? _error.message : "Error fetching tickets", "error");
-    }
-  }, [token, statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, searchQuery]);
-
-  const fetchData = async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const [ticketsData, employeesData, usersData] = await Promise.all([
-        ticketsApi.getTickets({ status: statusFilter === "" ? undefined : statusFilter, priority: priorityFilter }),
-        user?.role === "ADMIN" ? usersApi.getEmployees() : Promise.resolve([]),
-        user?.role === "ADMIN" ? usersApi.getUsers() : Promise.resolve([]),
-      ]);
-      let filtered = ticketsData;
-      if (userFilter) {
-        if (userFilter === 'NEW_TICKETS') {
-          filtered = filtered.filter((t) => !t.assignedTo || t.assignedTo.id !== user?.id);
-        } else {
-          filtered = filtered.filter((t) => t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter);
-        }
-      }
-      if (customerFilter) filtered = filtered.filter((t) => t.customer?.id === customerFilter);
-      if (applicationFilter) filtered = filtered.filter((t) => t.application?.id === applicationFilter);
-      setStats(calculateFilteredStats(filtered));
-      setTickets(filtered);
-      setEmployees(employeesData);
-      setAllUsers(usersData);
-    } catch (_error) {
-      showSnackbar(_error instanceof Error ? _error.message : "Error fetching data", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Socket for real-time ticket updates
-  useEffect(() => {
-    if (!user || !token) return;
-
-    const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001");
-    socket.emit("join", user.id);
-    
-    socket.on("notification", (notification: any) => {
-      if (notification.type === "TICKET_CREATED" || notification.type === "TICKET_ASSIGNED" || notification.type === "TICKET_UPDATED") {
-        // Refresh tickets when new tickets are created or assigned
-        fetchTickets();
-      }
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user, token, fetchTickets]);
+  }, [token]);
 
   // Initial load
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    fetchData();
+  }, [fetchData]);
 
-  // Filters change effect
+  // Instant search - no debounce
   useEffect(() => {
-    if (token && !loading) fetchTickets();
-  }, [token, loading, fetchTickets]);
+    setSearchQuery(searchInput);
+  }, [searchInput]);
 
   const handleCreateTicket = async (ticketData: CreateTicketData) => {
-    if (!token) return;
     try {
       const ticketWithBoard = { ...ticketData, boardId: defaultBoard?.id };
-      await ticketsApi.createTicket(ticketWithBoard);
+      await createTicketMutation.mutateAsync(ticketWithBoard);
       showSnackbar("Ticket posted successfully! 🎉", "success");
-      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error creating ticket", "error");
     }
   };
 
   const handleAddComment = async (ticketId: string, content: string) => {
-    if (!token) return;
     try {
-      await ticketsApi.addComment(ticketId, content);
+      await addCommentMutation.mutateAsync({ ticketId, content });
       showSnackbar("Comment added successfully", "success");
-      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error adding comment", "error");
     }
   };
 
   const handleTakeTicket = async (ticketId: string) => {
-    if (!token) return;
     try {
-      await ticketsApi.takeTicket(ticketId);
+      await takeTicketMutation.mutateAsync(ticketId);
       showSnackbar("Ticket assigned successfully", "success");
-      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error taking ticket", "error");
     }
   };
 
   const handleUpdateTicketStatus = async (ticketId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
-    if (!token) return;
     try {
-      await ticketsApi.updateTicket(ticketId, { status });
+      await updateTicketMutation.mutateAsync({ id: ticketId, data: { status } });
       showSnackbar("Ticket updated successfully", "success");
-      // Don't call fetchData here as socket will handle the update
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error updating ticket", "error");
     }
@@ -252,7 +179,7 @@ export const useDashboard = () => {
     user: userFilter,
     customer: customerFilter,
     application: applicationFilter,
-    search: searchQuery,
+    search: searchInput,
   }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, searchQuery]);
 
   return {
@@ -269,7 +196,7 @@ export const useDashboard = () => {
     customers,
     applications,
     defaultBoard,
-    loading,
+    loading: ticketsLoading,
     detailsDialogOpen,
     selectedTicket,
     statusFilter,
@@ -277,7 +204,7 @@ export const useDashboard = () => {
     userFilter,
     customerFilter,
     applicationFilter,
-    searchQuery,
+    searchQuery: searchInput,
     showMobileSearch,
     allUsers,
     snackbar,
@@ -290,13 +217,12 @@ export const useDashboard = () => {
     setUserFilter,
     setCustomerFilter,
     setApplicationFilter,
-    setSearchQuery,
+    setSearchQuery: setSearchInput,
     setShowMobileSearch,
     setSnackbar,
 
     // data ops
     fetchData,
-    fetchTickets,
 
     // handlers
     showSnackbar,
