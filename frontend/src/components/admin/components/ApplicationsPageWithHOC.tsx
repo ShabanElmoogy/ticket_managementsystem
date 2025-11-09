@@ -9,23 +9,26 @@ import ApiIcon from "@mui/icons-material/Api";
 
 interface ApplicationsPageProps extends CRUDProps<Application, CreateApplicationData>, UIStateProps, MessagesProps, ErrorHandlingProps {}
 
-function ApplicationsPageComponent({
-  entities: applications,
-  create,
-  update,
-  remove,
-  uiState,
-  openDialog,
-  closeDialog,
-  showSnackbar,
-  closeSnackbar,
-  openDeleteDialog,
-  closeDeleteDialog,
-  setSubmitting,
-  messages,
-  handleError,
-  logError,
-}: Omit<ApplicationsPageProps, 'loading'>) {
+interface ApplicationsPageComponentProps extends Omit<ApplicationsPageProps, 'loading'> {}
+
+function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
+  const {
+    entities: applications,
+    create,
+    update,
+    remove,
+    uiState,
+    openDialog,
+    closeDialog,
+    showSnackbar,
+    closeSnackbar,
+    openDeleteDialog,
+    closeDeleteDialog,
+    setSubmitting,
+    messages,
+    handleError,
+    logError,
+  } = props;
   
   const handleSubmit = async (values: CreateApplicationData) => {
     setSubmitting(true);
@@ -108,7 +111,7 @@ function ApplicationsPageComponent({
 }
 
 // Compose HOCs
-export const ApplicationsPageWithHOC = withCRUD(
+const ApplicationsPageWithHOC = withCRUD(
   withUIState(
     withMessages(
       withErrorHandling(ApplicationsPageComponent),
@@ -140,6 +143,8 @@ export const ApplicationsPageWithHOC = withCRUD(
       delete: applicationsApi.deleteApplication.bind(applicationsApi),
     },
   }
-);
+) as React.ComponentType<{}>;
+
+export { ApplicationsPageWithHOC };
 
 export default ApplicationsPageWithHOC;

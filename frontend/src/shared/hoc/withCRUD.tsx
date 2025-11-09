@@ -20,7 +20,7 @@ export function withCRUD<T, CreateT, P extends object = Record<string, never>>(
   Component: React.ComponentType<P & CRUDProps<T, CreateT>>,
   config: CRUDConfig<T, CreateT>
 ) {
-  const CRUDWrapper = (props: P) => {
+  const CRUDWrapper = (props: P = {} as P) => {
     const { entities, loading, create, update, remove, refetch } = useEntityData<T, CreateT>(config);
 
     const crudProps: CRUDProps<T, CreateT> = {
