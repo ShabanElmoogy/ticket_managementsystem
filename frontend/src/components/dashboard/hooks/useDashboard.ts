@@ -61,7 +61,7 @@ export const useDashboard = () => {
     const results = [];
     
     for (let i = 0; i < searchLimit; i++) {
-      const t = rawTickets[i];
+      const t: Ticket = rawTickets[i];
       if (t.title.toLowerCase().includes(q) || t.id.includes(q)) {
         results.push(t);
       }
