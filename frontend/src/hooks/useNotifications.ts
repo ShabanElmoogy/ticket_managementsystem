@@ -1,21 +1,18 @@
 // hooks/useNotifications.ts
 import { useState, useEffect } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 import { type Notification, type UserInfo } from "../types/header";
-import {
-  createNotificationFromSocketData,
-  playNotificationSound,
-} from "../utils/notificationUtils";
+
 
 interface UseNotificationsProps {
   user: UserInfo | null;
   token: string | null;
 }
 
-export const useNotifications = ({ user, token }: UseNotificationsProps) => {
+export const useNotifications = ({ token }: UseNotificationsProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [, setSocket] = useState<Socket | null>(null);
+  useState<Socket | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Disabled - using activity feed socket instead

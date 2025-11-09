@@ -36,7 +36,7 @@ interface Props {
   onTicketClick: (t: Ticket) => void;
   onTakeTicket: (id: string) => Promise<void> | void;
   onUpdateStatus: (id: string, status: Ticket['status']) => Promise<void> | void;
-  onAddComment?: (id: string, content: string) => Promise<void> | void;
+  onAddComment: (id: string, content: string) => Promise<void> | void;
 }
 
 const DashboardContent: React.FC<Props> = ({

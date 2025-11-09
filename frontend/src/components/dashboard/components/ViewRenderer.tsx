@@ -5,11 +5,11 @@ import DocsGallery from '../../admin/docs/DocsGallery';
 import ErrorBoundary from '../../common/ErrorBoundary';
 import DashboardContent from './DashboardContent';
 import DashboardOverlays from './DashboardOverlays';
-import type { ViewType, UseDashboardReturn } from '../hooks';
+import type { UseDashboardReturn } from '../hooks';
 
 interface ViewRendererProps {
-  currentView: ViewType;
-  setCurrentView: (view: ViewType) => void;
+  currentView: string;
+  setCurrentView: (view: string) => void;
   dashboardProps: UseDashboardReturn;
 }
 

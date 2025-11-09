@@ -1,2 +1,2 @@
 export { useDashboard } from './useDashboard';
-export type { ViewType, UseDashboardReturn } from './useDashboard';
+export type { UseDashboardReturn } from './useDashboard';

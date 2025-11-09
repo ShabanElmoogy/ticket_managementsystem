@@ -336,8 +336,6 @@ const DesktopFilters: React.FC<Props> = memo(({
       </Box>
     </Box>
   );
-};
-
 });
 
 export default DesktopFilters;

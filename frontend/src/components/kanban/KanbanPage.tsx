@@ -17,13 +17,13 @@ import {
   Dashboard as DashboardIcon,
   Home as HomeIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+
 import { useKanbanStore } from '../../stores/kanbanStore';
 import KanbanBoard from './KanbanBoard';
 import CreateBoardDialog from './CreateBoardDialog';
 
 const KanbanPage: React.FC = () => {
-  const navigate = useNavigate();
+
   const {
     boards,
     loading,

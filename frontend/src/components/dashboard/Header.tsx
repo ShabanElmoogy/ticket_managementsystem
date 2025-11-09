@@ -4,7 +4,7 @@ import { AppBar, Toolbar, Box, useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { ticketsApi } from '../../services/api';
+
 import { type HeaderProps } from '../../types/header';
 import { createMenuItems } from '../../config/menuItems';
 
@@ -20,8 +20,8 @@ import MobileDrawer from './header/MobileDrawer';
 
 
 
-const Header: React.FC<HeaderProps> = ({ onTicketClick }) => {
-  const { user, logout, token } = useAuthStore();
+const Header: React.FC<HeaderProps> = ({ onTicketClick: _ }) => {
+  const { user, logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const theme = useTheme();

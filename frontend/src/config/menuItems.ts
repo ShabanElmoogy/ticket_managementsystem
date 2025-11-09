@@ -2,7 +2,7 @@
 import React from "react";
 import {
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon,
+
   Person as PersonIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   LightMode as LightModeIcon,

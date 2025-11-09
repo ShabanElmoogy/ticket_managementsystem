@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useAuthStore } from "../../../stores/authStore";
 import { kanbanApi, type Ticket, type CreateTicketData } from "../../../services/api";
@@ -39,7 +39,7 @@ export const useDashboard = () => {
   const [applicationFilter, setApplicationFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   // TanStack Query hooks
