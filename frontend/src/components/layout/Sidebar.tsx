@@ -26,7 +26,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const { t } = useTranslation();
 
   const menuItems = [

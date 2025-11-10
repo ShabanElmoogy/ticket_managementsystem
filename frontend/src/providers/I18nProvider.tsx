@@ -2,14 +2,12 @@ import React, { useEffect, useMemo } from 'react';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import rtlPlugin from 'stylis-plugin-rtl';
-import { prefixer } from 'stylis';
-import { useTranslation } from 'react-i18next';
 import { getCurrentLanguage, isRTL } from '../i18n';
 
 // Create caches once and reuse
 const rtlCache = createCache({
   key: 'muirtl',
-  stylisPlugins: [prefixer, rtlPlugin],
+  stylisPlugins: [rtlPlugin],
 });
 
 const ltrCache = createCache({

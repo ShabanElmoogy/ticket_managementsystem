@@ -5,15 +5,12 @@ import {
   MenuItem, 
   Box, 
   Typography,
-  Chip,
   alpha
 } from '@mui/material';
-import { Language as LanguageIcon, ExpandMore } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { ExpandMore } from '@mui/icons-material';
 import { changeLanguage, getCurrentLanguage } from '../../i18n';
 
 const LanguageSelector: React.FC = () => {
-  const { t } = useTranslation();
   const currentLanguage = getCurrentLanguage();
 
   const handleLanguageChange = (event: any) => {
@@ -24,8 +21,6 @@ const LanguageSelector: React.FC = () => {
     en: { flag: '🇺🇸', label: 'English', code: 'EN' },
     ar: { flag: '🇸🇦', label: 'العربية', code: 'AR' }
   };
-
-  const currentLang = languages[currentLanguage as keyof typeof languages];
 
   return (
     <FormControl size="small">
