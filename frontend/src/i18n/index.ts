@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translation files
 import enTranslations from './locales/en.json';
@@ -11,21 +10,19 @@ const resources = {
   ar: { translation: arTranslations }
 };
 
+// Get initial language from localStorage or default to 'en'
+const initialLanguage = localStorage.getItem('i18nextLng') || 'en';
+
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
+    lng: initialLanguage,
     fallbackLng: 'en',
     debug: false,
     
     interpolation: {
       escapeValue: false,
-    },
-    
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
     }
   });
 
@@ -55,5 +52,9 @@ export const changeLanguage = (lng: string) => {
   });
 };
 
-export const getCurrentLanguage = () => i18n.language || 'en';
+export const getCurrentLanguage = () => {
+  const lang = i18n.language || 'en';
+  // Ensure the language exists in our supported languages
+  return ['en', 'ar'].includes(lang) ? lang : 'en';
+};
 export const isRTL = () => getCurrentLanguage() === 'ar';

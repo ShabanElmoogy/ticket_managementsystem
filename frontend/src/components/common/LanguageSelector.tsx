@@ -30,7 +30,7 @@ const LanguageSelector: React.FC = () => {
         displayEmpty
         IconComponent={ExpandMore}
         renderValue={(value) => {
-          const lang = languages[value as keyof typeof languages];
+          const lang = languages[value as keyof typeof languages] || languages.en;
           return (
             <Box display="flex" alignItems="center" gap={1}>
               <span style={{ fontSize: '1.1rem' }}>{lang.flag}</span>

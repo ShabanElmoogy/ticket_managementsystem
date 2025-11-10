@@ -26,7 +26,6 @@
     "chat-app": "file:..",
     "date-fns": "^4.1.0",
     "i18next": "^25.6.1",
-    "i18next-browser-languagedetector": "^8.2.0",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "qrcode.react": "^4.2.0",
