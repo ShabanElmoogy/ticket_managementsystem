@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import rtlPlugin from 'stylis-plugin-rtl';
+import i18n from '../i18n';
 import { getCurrentLanguage, isRTL } from '../i18n';
 
 // Create caches once and reuse
@@ -19,8 +20,20 @@ interface I18nProviderProps {
 }
 
 const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
-  const currentLanguage = getCurrentLanguage();
+  const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());
   const isRtl = isRTL();
+
+  // Listen for language changes
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLanguage(lng);
+    };
+    
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
 
   // Memoize cache selection to prevent unnecessary re-renders
   const cache = useMemo(() => {

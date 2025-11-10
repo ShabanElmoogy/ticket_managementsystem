@@ -11,10 +11,22 @@ import { ExpandMore } from '@mui/icons-material';
 import { changeLanguage, getCurrentLanguage } from '../../i18n';
 
 const LanguageSelector: React.FC = () => {
-  const currentLanguage = getCurrentLanguage();
+  const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());
+
+  // Listen for language changes
+  React.useEffect(() => {
+    const handleLanguageChange = () => {
+      setCurrentLanguage(getCurrentLanguage());
+    };
+    
+    // Listen to i18n language changes
+    const interval = setInterval(handleLanguageChange, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLanguageChange = (event: any) => {
     changeLanguage(event.target.value);
+    setCurrentLanguage(event.target.value);
   };
 
   const languages = {

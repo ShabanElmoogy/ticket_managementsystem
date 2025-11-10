@@ -30,12 +30,14 @@ export default i18n;
 
 // Language utilities
 export const changeLanguage = (lng: string) => {
-  // Batch all updates together
   const isRtl = lng === 'ar';
   
   // Update i18n first
   i18n.changeLanguage(lng);
   localStorage.setItem('i18nextLng', lng);
+  
+  // Force re-render by dispatching custom event
+  window.dispatchEvent(new CustomEvent('languageChanged', { detail: lng }));
   
   // Use requestAnimationFrame for smooth DOM updates
   requestAnimationFrame(() => {
