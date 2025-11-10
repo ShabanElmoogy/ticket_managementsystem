@@ -7,6 +7,7 @@ import {
   Typography,
   alpha
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { changeLanguage, getCurrentLanguage } from '../../i18n';
 
@@ -24,7 +25,7 @@ const LanguageSelector: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLanguageChange = (event: any) => {
+  const handleLanguageChange = (event: SelectChangeEvent<string>) => {
     changeLanguage(event.target.value);
     setCurrentLanguage(event.target.value);
   };
@@ -92,6 +93,7 @@ const LanguageSelector: React.FC = () => {
           }
         }}
         MenuProps={{
+          disableScrollLock: true,
           PaperProps: {
             sx: {
               mt: 1,

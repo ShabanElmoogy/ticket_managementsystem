@@ -21,7 +21,7 @@ import MobileDrawer from './header/MobileDrawer';
 
 
 
-const Header: React.FC<HeaderProps> = ({ onTicketClick: _ }) => {
+const Header: React.FC<HeaderProps> = () => {
   const { user, logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
