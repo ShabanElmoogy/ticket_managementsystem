@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "applications": "التطبيقات",
+    "users": "المستخدمون",
+    "customers": "العملاء",
+    "tickets": "التذاكر",
+    "tasks": "المهام",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "update": "تحديث",
+    "search": "بحث",
+    "filter": "تصفية",
+    "actions": "الإجراءات",
+    "name": "الاسم",
+    "description": "الوصف",
+    "version": "الإصدار",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "applications": {
+    "title": "إدارة التطبيقات",
+    "create": "إنشاء تطبيق جديد",
+    "edit": "تعديل التطبيق",
+    "delete_confirm": "هل أنت متأكد من حذف هذا التطبيق؟",
+    "name": "اسم التطبيق",
+    "version": "الإصدار",
+    "description": "الوصف"
+  },
+  "users": {
+    "title": "إدارة المستخدمين",
+    "create": "إنشاء مستخدم جديد",
+    "edit": "تعديل المستخدم",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "admin": "مدير",
+    "employee": "موظف",
+    "user": "مستخدم"
+  },
+  "tickets": {
+    "title": "إدارة التذاكر",
+    "create": "إنشاء تذكرة جديدة",
+    "priority": "الأولوية",
+    "high": "عالية",
+    "medium": "متوسطة",
+    "low": "منخفضة",
+    "open": "مفتوحة",
+    "in_progress": "قيد التنفيذ",
+    "resolved": "محلولة",
+    "closed": "مغلقة"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "total_applications": "إجمالي التطبيقات",
+    "total_users": "إجمالي المستخدمين",
+    "open_tickets": "التذاكر المفتوحة",
+    "recent_activity": "النشاط الأخير"
+  }
+}

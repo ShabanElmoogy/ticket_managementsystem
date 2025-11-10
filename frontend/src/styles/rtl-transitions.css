@@ -1,0 +1,9 @@
+/* RTL/LTR Smooth Transitions */
+* {
+  transition: margin 0.15s ease, padding 0.15s ease, text-align 0.15s ease !important;
+}
+
+/* Smooth direction changes */
+[dir="rtl"], [dir="ltr"] {
+  transition: all 0.15s ease;
+}

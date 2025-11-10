@@ -11,6 +11,7 @@ import { createMenuItems } from '../../config/menuItems';
 // Component imports
 import HeaderLogo from './header/HeaderLogo';
 import UserAvatar from './header/UserAvatar';
+import LanguageSelector from '../common/LanguageSelector';
 
 import ThemeToggleButton from './header/ThemeToggleButton';
 import MenuButton from './header/MenuButton';
@@ -116,6 +117,9 @@ const Header: React.FC<HeaderProps> = ({ onTicketClick: _ }) => {
           />
 
 
+
+          {/* Language Selector */}
+          <LanguageSelector />
 
           {/* Desktop Theme Toggle */}
           {!isMobile && (
