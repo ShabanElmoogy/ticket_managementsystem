@@ -1,15 +1,35 @@
 import { Box, Snackbar, Alert } from "@mui/material";
-import { withCRUD, withUIState, withMessages, withErrorHandling, type CRUDProps, type UIStateProps, type MessagesProps, type ErrorHandlingProps } from "../../../shared";
+import {
+  withCRUD,
+  withUIState,
+  withMessages,
+  withErrorHandling,
+  type CRUDProps,
+  type UIStateProps,
+  type MessagesProps,
+  type ErrorHandlingProps,
+} from "../../../shared";
 import { DeleteConfirmDialog, MyGridHeader } from "../../common";
-import { ApplicationsTable, ApplicationFormDialog } from "../applicationsManagement";
+import {
+  ApplicationsTable,
+  ApplicationFormDialog,
+} from "../applicationsManagement";
 import { applicationsApi } from "../applicationsManagement/api/applications";
 const applicationsKeys = { all: ["applications"] as const };
-import { type Application, type CreateApplicationData } from "../../../services/api";
+import {
+  type Application,
+  type CreateApplicationData,
+} from "../../../services/api";
 import ApiIcon from "@mui/icons-material/Api";
 
-interface ApplicationsPageProps extends CRUDProps<Application, CreateApplicationData>, UIStateProps, MessagesProps, ErrorHandlingProps {}
+interface ApplicationsPageProps
+  extends CRUDProps<Application, CreateApplicationData>,
+    UIStateProps,
+    MessagesProps,
+    ErrorHandlingProps {}
 
-interface ApplicationsPageComponentProps extends Omit<ApplicationsPageProps, 'loading'> {}
+interface ApplicationsPageComponentProps
+  extends Omit<ApplicationsPageProps, "loading"> {}
 
 function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
   const {
@@ -29,7 +49,7 @@ function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
     handleError,
     logError,
   } = props;
-  
+
   const handleSubmit = async (values: CreateApplicationData) => {
     setSubmitting(true);
     try {
@@ -42,7 +62,9 @@ function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
       }
       closeDialog();
     } catch (error) {
-      const errorMessage = uiState.editingItem ? messages.error.update : messages.error.create;
+      const errorMessage = uiState.editingItem
+        ? messages.error.update
+        : messages.error.create;
       showSnackbar(handleError(error, errorMessage), "error");
       logError(uiState.editingItem ? "Update" : "Create", error);
     } finally {
@@ -82,11 +104,16 @@ function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
       <ApplicationFormDialog
         open={uiState.dialogOpen}
         editing={!!uiState.editingItem}
-        initialValues={uiState.editingItem ? {
-          name: (uiState.editingItem as Application).name,
-          description: (uiState.editingItem as Application).description || "",
-          version: (uiState.editingItem as Application).version || "",
-        } : undefined}
+        initialValues={
+          uiState.editingItem
+            ? {
+                name: (uiState.editingItem as Application).name,
+                description:
+                  (uiState.editingItem as Application).description || "",
+                version: (uiState.editingItem as Application).version || "",
+              }
+            : undefined
+        }
         onClose={closeDialog}
         onSubmit={handleSubmit}
         submitting={uiState.submitting}
@@ -101,7 +128,11 @@ function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
         loading={false}
       />
 
-      <Snackbar open={uiState.snackbar.open} autoHideDuration={6000} onClose={closeSnackbar}>
+      <Snackbar
+        open={uiState.snackbar.open}
+        autoHideDuration={6000}
+        onClose={closeSnackbar}
+      >
         <Alert onClose={closeSnackbar} severity={uiState.snackbar.severity}>
           {uiState.snackbar.message}
         </Alert>
@@ -113,25 +144,22 @@ function ApplicationsPageComponent(props: ApplicationsPageComponentProps) {
 // Compose HOCs
 const ApplicationsPageWithHOC = withCRUD(
   withUIState(
-    withMessages(
-      withErrorHandling(ApplicationsPageComponent),
-      {
-        success: {
-          created: "Application created successfully",
-          updated: "Application updated successfully",
-          deleted: "Application deleted successfully",
-        },
-        error: {
-          create: "Error creating application",
-          update: "Error updating application",
-          delete: "Error deleting application",
-        },
-        titles: {
-          create: "Create New Application",
-          edit: "Edit Application",
-        },
-      }
-    )
+    withMessages(withErrorHandling(ApplicationsPageComponent), {
+      success: {
+        created: "Application created successfully",
+        updated: "Application updated successfully",
+        deleted: "Application deleted successfully",
+      },
+      error: {
+        create: "Error creating application",
+        update: "Error updating application",
+        delete: "Error deleting application",
+      },
+      titles: {
+        create: "Create New Application",
+        edit: "Edit Application",
+      },
+    })
   ),
   {
     entityName: "applications",
