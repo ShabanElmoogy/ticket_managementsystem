@@ -1,4 +1,4 @@
-import type { KanbanTask, KanbanBoard, User, TaskStatus } from "../../../../types/kanban";
+import type { KanbanBoard, User, TaskStatus } from "../../../../types/kanban";
 
 export interface TaskFormValues {
   title: string;
