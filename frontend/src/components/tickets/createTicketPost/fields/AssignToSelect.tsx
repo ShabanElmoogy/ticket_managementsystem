@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { Avatar, Box, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import type { User } from "../../../services/api";
+import type { User } from "../../../../services/api";
 import { getInitials } from "../Header";
 
 export interface AssignToSelectProps {

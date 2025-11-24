@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";

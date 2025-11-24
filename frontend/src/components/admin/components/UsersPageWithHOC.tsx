@@ -56,14 +56,22 @@ function UsersPageComponent(props: UsersPageProps) {
   const [forceDeleteUser, setForceDeleteUser] = React.useState<User | null>(null);
   const [forceDeleteLoading, setForceDeleteLoading] = React.useState(false);
 
-  const handleSubmit = async (values: CreateUserData) => {
+  const handleSubmit = async (values: any) => {
+    // Filter out undefined password for editing
+    const submitData: CreateUserData = {
+      ...values,
+      password: values.password || undefined
+    };
+    if (uiState.editingItem && !submitData.password) {
+      delete (submitData as any).password;
+    }
     setSubmitting(true);
     try {
       if (uiState.editingItem) {
-        await update((uiState.editingItem as User).id, values);
+        await update((uiState.editingItem as User).id, submitData);
         showSnackbar(messages.success.updated, "success");
       } else {
-        await create(values);
+        await create(submitData);
         showSnackbar(messages.success.created, "success");
       }
       closeDialog();
@@ -158,15 +166,15 @@ function UsersPageComponent(props: UsersPageProps) {
         loading={false}
         warningMessage={
           (uiState.deleteDialog.item as User)?._count &&
-          ((uiState.deleteDialog.item as User)._count.assignedTickets > 0 ||
-            (uiState.deleteDialog.item as User)._count.createdTickets > 0 ||
-            (uiState.deleteDialog.item as User)._count.comments > 0)
+          (((uiState.deleteDialog.item as User)._count?.assignedTickets || 0) > 0 ||
+            ((uiState.deleteDialog.item as User)._count?.createdTickets || 0) > 0 ||
+            ((uiState.deleteDialog.item as User)._count?.comments || 0) > 0)
             ? `This user has associated data: ${
-                (uiState.deleteDialog.item as User)._count.assignedTickets || 0
+                (uiState.deleteDialog.item as User)._count?.assignedTickets || 0
               } assigned ticket(s), ${
-                (uiState.deleteDialog.item as User)._count.createdTickets || 0
+                (uiState.deleteDialog.item as User)._count?.createdTickets || 0
               } created ticket(s), ${
-                (uiState.deleteDialog.item as User)._count.comments || 0
+                (uiState.deleteDialog.item as User)._count?.comments || 0
               } comment(s). Click Delete to proceed with force deletion.`
             : undefined
         }

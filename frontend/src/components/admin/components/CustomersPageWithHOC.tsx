@@ -135,8 +135,8 @@ function CustomersPageComponent(props: CustomersPageProps) {
         loading={false}
         warningMessage={
           (uiState.deleteDialog.item as Customer)?._count?.tickets &&
-          (uiState.deleteDialog.item as Customer)._count.tickets > 0
-            ? `This customer has ${(uiState.deleteDialog.item as Customer)._count.tickets} associated ticket(s). Please reassign or delete them first.`
+          ((uiState.deleteDialog.item as Customer)._count?.tickets || 0) > 0
+            ? `This customer has ${(uiState.deleteDialog.item as Customer)._count?.tickets || 0} associated ticket(s). Please reassign or delete them first.`
             : undefined
         }
       />

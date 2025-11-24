@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { Box, Avatar, Typography } from "@mui/material";
 import MyTextField from "../../common/MyTextField";
 

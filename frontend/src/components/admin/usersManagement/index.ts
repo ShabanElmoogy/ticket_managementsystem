@@ -9,5 +9,5 @@ export type {
   UseUserFormArgs,
 } from "./types/types";
 export type { UsersTableProps } from "./components/UsersTable";
-export type { UserFormDialogProps as FormDialogProps } from "./components/UserFormDialog";
+
 

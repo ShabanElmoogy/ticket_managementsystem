@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import type { Application } from "../../../services/api";
+import type { Application } from "../../../../services/api";
 
 export interface ApplicationSelectProps {
   value: string;

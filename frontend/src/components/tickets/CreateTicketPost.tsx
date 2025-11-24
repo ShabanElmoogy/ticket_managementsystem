@@ -7,7 +7,7 @@ import Description from "./createTicketPost/Description";
 import OptionsBar from "./createTicketPost/OptionsBar";
 import AdvancedOptions from "./createTicketPost/AdvancedOptions";
 import FooterBar from "./createTicketPost/FooterBar";
-import type { Priority } from "./CreateTicketPost/utils";
+import type { Priority } from "./createTicketPost/utils";
 
 interface CreateTicketPostProps {
   onSubmit: (data: CreateTicketData) => void;

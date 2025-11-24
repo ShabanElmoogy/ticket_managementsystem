@@ -8,4 +8,4 @@ export type {
   UseCustomerFormArgs,
 } from "./types/types";
 export type { CustomersTableProps } from "./components/CustomersTable";
-export type { CustomerFormDialogProps as FormDialogProps } from "./components/CustomerFormDialog";
+
