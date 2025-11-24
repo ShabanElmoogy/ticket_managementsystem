@@ -26,7 +26,7 @@ import PeopleIcon from "@mui/icons-material/People";
 const usersKeys = { all: ["users"] as const };
 
 type UsersPageProps = CRUDProps<User, CreateUserData> &
-  UIStateProps<User> &
+  UIStateProps &
   MessagesProps &
   ErrorHandlingProps;
 
@@ -54,7 +54,7 @@ function UsersPageComponent(props: UsersPageProps) {
   const [forceDeleteOpen, setForceDeleteOpen] = React.useState(false);
   const [forceDeleteUser, setForceDeleteUser] = React.useState<User | null>(null);
   const [forceDeleteLoading, setForceDeleteLoading] = React.useState(false);
-  const [auxLoading, setAuxLoading] = React.useState(false);
+  const [auxLoading] = React.useState(false);
 
   const handleSubmit = async (values: any) => {
     // Filter out undefined password for editing
@@ -225,9 +225,10 @@ function UsersPageComponent(props: UsersPageProps) {
 }
 
 const UsersPageWithHOC = withCRUD<User, CreateUserData>(
-  withUIState<User>(
+  withUIState(
     withMessages(
-      withErrorHandling(UsersPageComponent, {
+      withErrorHandling(UsersPageComponent),
+      {
         success: {
           created: "User created successfully",
           updated: "User updated successfully",
@@ -242,7 +243,7 @@ const UsersPageWithHOC = withCRUD<User, CreateUserData>(
           create: "Create New User",
           edit: "Edit User",
         },
-      })
+      }
     )
   ),
   {

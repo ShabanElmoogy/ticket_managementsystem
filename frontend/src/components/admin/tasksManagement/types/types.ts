@@ -5,7 +5,7 @@ export interface TaskFormValues {
   description: string;
   boardId: string;
   columnId: string;
-  assigneeId: string | undefined;
-  dueDate: Date | null;
+  assigneeId?: string;
+  dueDate?: Date | null;
   status: TaskStatus;
 }

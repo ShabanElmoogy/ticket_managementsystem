@@ -12,6 +12,4 @@ export type { TaskFormSchema, TaskFormSchemaValues } from "./schemas/taskSchema"
 
 export type {
   TaskFormValues,
-  TaskFormDialogProps,
-  UseTaskFormArgs,
 } from "./types/types";

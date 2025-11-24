@@ -1,8 +1,19 @@
 import React, { useMemo } from "react";
 import { ReusableFormDialog } from "../../../common/forms";
 import type { FormField, SelectOption } from "../../../common/forms";
-import type { TaskFormDialogProps, TaskFormValues } from "../types/types";
+import type { TaskFormValues } from "../types/types";
 import { taskFormSchema } from "../schemas/taskSchema";
+
+interface TaskFormDialogProps {
+  open: boolean;
+  editing?: boolean;
+  initialValues?: TaskFormValues;
+  boards: { id: string; name: string; type: string; columns?: { id: string; name: string }[] }[];
+  users: { id: string; name: string }[];
+  onClose: () => void;
+  onSubmit: (values: TaskFormValues) => void;
+  submitting?: boolean;
+}
 
 const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   open,
@@ -18,8 +29,8 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   const taskBoards: SelectOption[] = useMemo(
     () =>
       boards
-        .filter((b) => b.type === "TASKS")
-        .map((b) => ({ value: b.id, label: `${b.name} (${b.type})` })),
+        .filter((b: { type: string }) => b.type === "TASKS")
+        .map((b: { id: string; name: string; type: string }) => ({ value: b.id, label: `${b.name} (${b.type})` })),
     [boards]
   );
 
@@ -27,7 +38,7 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   const userOptions: SelectOption[] = useMemo(
     () => [
       { value: "", label: "Unassigned" },
-      ...users.map((u) => ({ value: u.id, label: u.name })),
+      ...users.map((u: { id: string; name: string }) => ({ value: u.id, label: u.name })),
     ],
     [users]
   );
@@ -74,9 +85,9 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
       required: true,
       dependsOn: "boardId",
       disabled: (values) => !values.boardId,
-      filterOptions: (options, values) => {
-        const selectedBoard = boards.find((b) => b.id === values.boardId);
-        return selectedBoard?.columns?.map((c) => ({ value: c.id, label: c.name })) || [];
+      filterOptions: (_options, values) => {
+        const selectedBoard = boards.find((b: { id: string; columns?: { id: string; name: string }[] }) => b.id === values.boardId);
+        return selectedBoard?.columns?.map((c: { id: string; name: string }) => ({ value: c.id, label: c.name })) || [];
       },
       width: 2,
     },
