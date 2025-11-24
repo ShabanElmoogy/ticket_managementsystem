@@ -5,11 +5,10 @@ export { default as TasksColumns, getTasksColumns } from "./components/TasksColu
 
 export { default as TaskFormDialog } from "./components/TaskFormDialog";
 
-export { default as useTaskForm } from "./hooks/useTaskForm";
-export { default as useTasksManagement } from "./hooks/useTasksManagement";
 
-export { taskFormSchema } from "./utils/validation";
-export type { TaskFormSchema, TaskFormSchemaValues } from "./utils/validation";
+
+export { taskFormSchema } from "./schemas/taskSchema";
+export type { TaskFormSchema, TaskFormSchemaValues } from "./schemas/taskSchema";
 
 export type {
   TaskFormValues,

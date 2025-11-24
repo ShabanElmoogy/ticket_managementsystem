@@ -1,6 +1,6 @@
-import type { TaskStatus, KanbanBoard, User } from "../../../../types/kanban";
+import type { KanbanTask, KanbanBoard, User, TaskStatus } from "../../../../types/kanban";
 
-export type TaskFormValues = {
+export interface TaskFormValues {
   title: string;
   description: string;
   boardId: string;
@@ -8,7 +8,7 @@ export type TaskFormValues = {
   assigneeId?: string;
   dueDate?: Date | null;
   status: TaskStatus;
-};
+}
 
 export interface TaskFormDialogProps {
   open: boolean;
@@ -17,11 +17,11 @@ export interface TaskFormDialogProps {
   boards: KanbanBoard[];
   users: User[];
   onClose: () => void;
-  onSubmit: (values: TaskFormValues) => void;
+  onSubmit: (values: TaskFormValues) => Promise<void>;
 }
 
 export interface UseTaskFormArgs {
   open: boolean;
   initialValues?: TaskFormValues;
-  onSubmit: (values: TaskFormValues) => void;
+  onSubmit: (values: TaskFormValues) => Promise<void>;
 }

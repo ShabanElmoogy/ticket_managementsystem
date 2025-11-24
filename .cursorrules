@@ -1,0 +1,53 @@
+# Admin CRUD Module Rules
+
+When creating or modifying admin CRUD modules in `frontend/src/components/admin`, follow this architecture:
+
+## Directory Structure
+Each module must have its own directory with the following structure:
+- `api/`: Contains API service class extending `BaseApiService`.
+- `components/`: Contains UI components (`Table`, `FormDialog`, `Columns`).
+- `schemas/`: Contains Zod validation schemas.
+- `types/`: Contains shared type definitions.
+- `index.ts`: Public API exports.
+
+**Note**: Do NOT create a `hooks/` directory. Use Higher-Order Components (HOCs) for logic reuse.
+
+## Architecture Layers
+
+### 1. API Layer (`api/`)
+- Create a service class extending `BaseApiService`.
+- Use `get`, `post`, `put`, `delete` methods from the base class.
+- Export a singleton instance.
+
+### 2. Schema Layer (`schemas/`)
+- Define Zod schemas for forms.
+- Export schemas for use in components and types.
+
+### 3. Component Layer (`components/`)
+- **Table**: Use `AdminDataGrid` with `rows`, `columns`, and `loading` props.
+- **Columns**: Define columns using a helper function (e.g., `getApplicationsColumns`).
+- **Dialog**: Use `Dialog` component.
+  - **Must** use `react-hook-form`'s `useForm` hook directly within the component.
+  - **Must** use `zodResolver` with the schema from the `schemas/` directory.
+  - **Do NOT** create a custom hook (e.g., `useTaskForm`) for form logic.
+
+### 4. Types Layer (`types/`)
+- Define interfaces for props and form values.
+- Export types for use across the module.
+
+## Key Patterns
+
+### HOC Composition (Mandatory)
+- Use `withCRUD`, `withUIState`, `withMessages`, and `withErrorHandling` from `shared`.
+- Compose these HOCs to create the main Page component.
+- Pass API methods via the `withCRUD` configuration.
+- **Do not** use custom hooks for controller logic; use the props provided by the HOCs.
+
+### Virtualization
+- Use `AdminDataGrid` which supports virtualization for large datasets.
+
+### Strict Typing
+- Ensure all props and API responses are strictly typed.
+
+## Reference
+- See `frontend/src/components/admin/applicationsManagement` for the canonical implementation.

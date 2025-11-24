@@ -14,7 +14,20 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import MySelect from "../../../common/MySelect";
 import type { TaskFormDialogProps } from "../types/types";
-import useTaskForm from "../hooks/useTaskForm";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { taskFormSchema } from "../schemas/taskSchema";
+import type { TaskFormValues } from "../types/types";
+
+const DEFAULT_VALUES: TaskFormValues = {
+  title: "",
+  description: "",
+  boardId: "",
+  columnId: "",
+  assigneeId: "",
+  dueDate: null,
+  status: "TODO",
+};
 
 const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   open,
@@ -25,11 +38,26 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const { register, submit, errors, isValid, watch, setValue } = useTaskForm({
-    open,
-    initialValues,
-    onSubmit,
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+    watch,
+    setValue,
+  } = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    mode: "onChange",
+    defaultValues: initialValues || DEFAULT_VALUES,
   });
+
+  React.useEffect(() => {
+    if (open) {
+      reset(initialValues || DEFAULT_VALUES);
+    }
+  }, [open, initialValues, reset]);
+
+  const submit = handleSubmit(onSubmit);
 
   const boardId = watch("boardId");
 
