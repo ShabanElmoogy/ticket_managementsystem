@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,8 +13,10 @@ import {
   Chip,
   Typography,
 } from "@mui/material";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { CustomerFormDialogProps } from "../types/types";
-import useCustomerForm from "../hooks/useCustomerForm";
+import { customerFormSchema } from "../schemas/customerSchema";
 import MySelect from "../../../common/MySelect";
 
 const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
@@ -25,11 +27,45 @@ const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const { register, submit, errors, isValid, watch, setValue } = useCustomerForm({
-    open,
-    initialValues,
-    onSubmit,
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(customerFormSchema),
+    mode: "onChange",
+    defaultValues: initialValues || {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      description: "",
+      applicationIds: [],
+    },
   });
+
+  useEffect(() => {
+    if (open) {
+      reset(initialValues || {
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        description: "",
+        applicationIds: [],
+      });
+      // Focus first field after dialog opens
+      setTimeout(() => {
+        const firstInput = document.querySelector('input[name="name"]') as HTMLInputElement;
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+  }, [open, initialValues, reset]);
+
+  const submit = handleSubmit(onSubmit);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -44,6 +80,7 @@ const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
             required
             fullWidth
             autoComplete="off"
+            autoFocus
             error={!!errors.name}
             helperText={errors.name?.message}
           />

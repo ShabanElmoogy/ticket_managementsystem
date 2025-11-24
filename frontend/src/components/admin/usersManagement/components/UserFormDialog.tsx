@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,8 +11,10 @@ import {
   InputLabel,
   MenuItem
 } from "@mui/material";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { UserFormDialogProps } from "../types/types";
-import useUserForm from "../hooks/useUserForm";
+import { userFormSchema } from "../schemas/userSchema";
 import MySelect from "../../../common/MySelect";
 
 const UserFormDialog: React.FC<UserFormDialogProps> = ({
@@ -22,13 +24,45 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const { register, submit, errors, isValid, watch, setValue } = useUserForm({
-    open,
-    initialValues,
-    editing,
-    onSubmit,
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isValid },
+  } = useForm({
+    resolver: zodResolver(userFormSchema),
+    mode: "onChange",
+    defaultValues: initialValues || {
+      name: "",
+      email: "",
+      password: "",
+      role: "EMPLOYEE" as const,
+      phone: "",
+      whatsappNotifications: false,
+    },
   });
 
+  useEffect(() => {
+    if (open) {
+      reset(initialValues || {
+        name: "",
+        email: "",
+        password: "",
+        role: "EMPLOYEE" as const,
+        phone: "",
+        whatsappNotifications: false,
+      });
+      // Focus first field after dialog opens
+      setTimeout(() => {
+        const firstInput = document.querySelector('input[name="name"]') as HTMLInputElement;
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+  }, [open, initialValues, reset]);
+
+  const submit = handleSubmit(onSubmit);
   const roleValue = watch("role");
  
   return (
@@ -42,6 +76,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
             required
             fullWidth
             autoComplete="off"
+            autoFocus
             error={!!errors.name}
             helperText={errors.name?.message}
           />

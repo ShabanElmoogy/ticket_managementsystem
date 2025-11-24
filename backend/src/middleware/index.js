@@ -6,7 +6,7 @@ import socketMiddleware from './socketMiddleware.js';
 
 const CORS_ORIGINS = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) 
-  : ['http://localhost:3000', 'http://localhost:5173', 'https://localhost:5173'];
+  : ['http://localhost:3000', 'http://localhost:5173', 'https://localhost:5173', 'https://localhost:5174'];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

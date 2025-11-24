@@ -1,7 +1,7 @@
 import { db } from '../../config/database.js';
 import bcrypt from 'bcryptjs';
 import { users } from './users.schema.js';
-import { tickets } from '../tickets/tickets.schema.js';
+import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import { eq, count, desc, inArray, or } from 'drizzle-orm';
 
@@ -407,13 +407,8 @@ await tx.delete(comments).where(eq(comments.userId, id));
 await tx.delete(ticketActivities).where(eq(ticketActivities.userId, id));
 // Unassign tickets assigned to the user
 await tx.update(tickets).set({ assignedToId: null }).where(eq(tickets.assignedToId, id));
-// Unassign tasks assigned to the user
-await tx.update(tasks).set({ assigneeId: null }).where(eq(tasks.assigneeId, id));
 // Delete tickets created by the user
 await tx.delete(tickets).where(eq(tickets.createdById, id));
-// Clean up direct relations
-await tx.delete(notifications).where(eq(notifications.userId, id));
-await tx.delete(boardPermissions).where(eq(boardPermissions.userId, id));
 // Finally delete the user
 await tx.delete(users).where(eq(users.id, id));
 });

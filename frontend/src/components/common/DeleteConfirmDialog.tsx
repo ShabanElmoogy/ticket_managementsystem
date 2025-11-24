@@ -24,6 +24,7 @@ interface DeleteConfirmDialogProps {
   itemType?: string;
   loading?: boolean;
   warningMessage?: string;
+  onForceDelete?: () => void;
 }
 
 const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
@@ -36,6 +37,7 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   itemType = 'item',
   loading = false,
   warningMessage,
+  onForceDelete,
 }) => {
   const defaultTitle = `Delete ${itemType}`;
   const defaultMessage = itemName 
@@ -100,8 +102,9 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
         >
           Cancel
         </Button>
+
         <Button
-          onClick={onConfirm}
+          onClick={warningMessage && onForceDelete ? onForceDelete : onConfirm}
           variant="contained"
           color="error"
           disabled={loading}
