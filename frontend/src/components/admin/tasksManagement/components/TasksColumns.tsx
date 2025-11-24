@@ -1,5 +1,6 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
+import dayjs from "dayjs";
 import { buildActionsColumn } from "../../../common";
 import type { KanbanTask, TaskStatus } from "../../../../types/kanban";
 
@@ -65,7 +66,11 @@ export const getTasksColumns = (handlers: {
       width: 140,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (params.value ? new Date(params.value as string).toLocaleDateString() : "-"),
+      renderCell: (params) => {
+        const v = params.value as string | undefined;
+        const d = v ? dayjs(v) : null;
+        return d && d.isValid() ? d.format("DD/MM/YYYY") : "-";
+      },
     },
     {
       field: "createdAt",
@@ -73,7 +78,11 @@ export const getTasksColumns = (handlers: {
       width: 140,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => new Date(params.value as string).toLocaleDateString(),
+      renderCell: (params) => {
+        const v = params.value as string | undefined;
+        const d = v ? dayjs(v) : null;
+        return d && d.isValid() ? d.format("DD/MM/YYYY") : "-";
+      },
     },
     buildActionsColumn<KanbanTask>({ headerName: "Actions", width: 140, onEdit, onDelete }),
   ];

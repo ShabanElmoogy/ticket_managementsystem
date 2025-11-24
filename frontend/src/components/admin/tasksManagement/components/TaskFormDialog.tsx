@@ -1,33 +1,8 @@
 import React, { useMemo } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  FormControl,
-  InputLabel,
-  MenuItem,
-} from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import MySelect from "../../../common/MySelect";
-import type { TaskFormDialogProps } from "../types/types";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { ReusableFormDialog } from "../../../common/forms";
+import type { FormField, SelectOption } from "../../../common/forms";
+import type { TaskFormDialogProps, TaskFormValues } from "../types/types";
 import { taskFormSchema } from "../schemas/taskSchema";
-import type { TaskFormValues } from "../types/types";
-
-const DEFAULT_VALUES: TaskFormValues = {
-  title: "",
-  description: "",
-  boardId: "",
-  columnId: "",
-  assigneeId: "",
-  dueDate: null,
-  status: "TODO",
-};
 
 const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   open,
@@ -37,154 +12,122 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
   users,
   onClose,
   onSubmit,
+  submitting = false,
 }) => {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isValid },
-    watch,
-    setValue,
-  } = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema),
-    mode: "onChange",
-    defaultValues: initialValues || DEFAULT_VALUES,
-  });
+  // Filter boards to only show TASKS type
+  const taskBoards: SelectOption[] = useMemo(
+    () =>
+      boards
+        .filter((b) => b.type === "TASKS")
+        .map((b) => ({ value: b.id, label: `${b.name} (${b.type})` })),
+    [boards]
+  );
 
-  React.useEffect(() => {
-    if (open) {
-      reset(initialValues || DEFAULT_VALUES);
-    }
-  }, [open, initialValues, reset]);
+  // Convert users to SelectOption format
+  const userOptions: SelectOption[] = useMemo(
+    () => [
+      { value: "", label: "Unassigned" },
+      ...users.map((u) => ({ value: u.id, label: u.name })),
+    ],
+    [users]
+  );
 
-  const submit = handleSubmit(onSubmit);
+  // Status options
+  const statusOptions: SelectOption[] = [
+    { value: "TODO", label: "To Do" },
+    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "REVIEW", label: "Review" },
+    { value: "DONE", label: "Done" },
+  ];
 
-  const boardId = watch("boardId");
-
-  const taskBoards = useMemo(() => boards.filter((b) => b.type === "TASKS"), [boards]);
-  const columns = useMemo(() => boards.find((b) => b.id === boardId)?.columns || [], [boards, boardId]);
+  const taskFields: FormField<TaskFormValues>[] = [
+    {
+      name: "title",
+      label: "Title",
+      required: true,
+      autoFocus: true,
+      width: 1,
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "multiline",
+      rows: 4,
+      required: true,
+      width: 1,
+    },
+    {
+      name: "boardId",
+      label: "Board",
+      type: "customSelect",
+      required: true,
+      options: taskBoards,
+      width: 2,
+      onClear: () => {
+        // Board clear will be handled by form reset
+      },
+    },
+    {
+      name: "columnId",
+      label: "Column",
+      type: "customSelect",
+      required: true,
+      dependsOn: "boardId",
+      disabled: (values) => !values.boardId,
+      filterOptions: (options, values) => {
+        const selectedBoard = boards.find((b) => b.id === values.boardId);
+        return selectedBoard?.columns?.map((c) => ({ value: c.id, label: c.name })) || [];
+      },
+      width: 2,
+    },
+    {
+      name: "status",
+      label: "Status",
+      type: "customSelect",
+      options: statusOptions,
+      width: 2,
+    },
+    {
+      name: "assigneeId",
+      label: "Assignee",
+      type: "customSelect",
+      options: userOptions,
+      width: 2,
+      onClear: () => {
+        // Assignee clear will be handled by form
+      },
+    },
+    {
+      name: "dueDate",
+      label: "Due Date",
+      type: "datepicker",
+      dateFormat: "dd/MM/yyyy",
+      width: 1,
+    },
+  ];
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {editing ? "Edit Task" : "Create New Task"}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField
-            label="Title"
-            {...register("title")}
-            required
-            fullWidth
-            autoComplete="off"
-            error={!!errors.title}
-            helperText={errors.title?.message}
-          />
-          <TextField
-            label="Description"
-            {...register("description")}
-            multiline
-            rows={4}
-            required
-            fullWidth
-            autoComplete="off"
-            error={!!errors.description}
-            helperText={errors.description?.message}
-          />
-          <FormControl fullWidth required>
-            <InputLabel>Board</InputLabel>
-            <MySelect
-              label="Board"
-              value={boardId}
-              onChange={(e) => {
-                setValue("boardId", e.target.value as string, { shouldValidate: true });
-                setValue("columnId", "", { shouldValidate: true }); // reset column on board change
-              }}
-              onClear={() => {
-                setValue("boardId", "", { shouldValidate: true });
-                setValue("columnId", "", { shouldValidate: true });
-              }}
-            >
-              {taskBoards.map((board) => (
-                <MenuItem key={board.id} value={board.id}>
-                  {board.name} ({board.type})
-                </MenuItem>
-              ))}
-              {taskBoards.length === 0 && (
-                <MenuItem disabled value="">
-                  No task boards available
-                </MenuItem>
-              )}
-            </MySelect>
-          </FormControl>
-          <FormControl fullWidth required disabled={!boardId}>
-            <InputLabel>Column</InputLabel>
-            <MySelect
-              label="Column"
-              value={watch("columnId")}
-              onChange={(e) => setValue("columnId", e.target.value as string, { shouldValidate: true })}
-              onClear={() => setValue("columnId", "", { shouldValidate: true })}
-            >
-              {columns.map((column) => (
-                <MenuItem key={column.id} value={column.id}>
-                  {column.name}
-                </MenuItem>
-              ))}
-              {boardId && columns.length === 0 && (
-                <MenuItem disabled value="">
-                  No columns available for this board
-                </MenuItem>
-              )}
-            </MySelect>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <MySelect
-              label="Status"
-              value={watch("status")}
-              onChange={(e) => setValue("status", e.target.value as any, { shouldValidate: true })}
-            >
-              <MenuItem value="TODO">To Do</MenuItem>
-              <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-              <MenuItem value="REVIEW">Review</MenuItem>
-              <MenuItem value="DONE">Done</MenuItem>
-            </MySelect>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel>Assignee</InputLabel>
-            <MySelect
-              label="Assignee"
-              value={watch("assigneeId") || ""}
-              onChange={(e) => setValue("assigneeId", e.target.value as string, { shouldValidate: true })}
-              onClear={() => setValue("assigneeId", "", { shouldValidate: true })}
-            >
-              <MenuItem value="">Unassigned</MenuItem>
-              {users.map((user) => (
-                <MenuItem key={user.id} value={user.id}>
-                  {user.name}
-                </MenuItem>
-              ))}
-            </MySelect>
-          </FormControl>
-          <DatePicker
-            label="Due Date"
-            value={watch("dueDate") || null}
-            onChange={(date) => setValue("dueDate", date || null, { shouldValidate: true })}
-            slotProps={{
-              textField: {
-                fullWidth: true,
-              },
-            }}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={submit} variant="contained" disabled={!isValid}>
-          {editing ? "Update" : "Create"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ReusableFormDialog
+      open={open}
+      title={editing ? "Edit Task" : "Create New Task"}
+      editing={editing}
+      schema={taskFormSchema}
+      fields={taskFields}
+      initialValues={
+        initialValues || {
+          title: "",
+          description: "",
+          boardId: "",
+          columnId: "",
+          assigneeId: "",
+          dueDate: null,
+          status: "TODO",
+        }
+      }
+      onClose={onClose}
+      onSubmit={onSubmit}
+      submitting={submitting}
+    />
   );
 };
 

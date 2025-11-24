@@ -20,11 +20,16 @@ import {
   FormHelperText,
   Slider,
   Typography,
+  Chip,
+  Box,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useForm, Controller } from "react-hook-form";
 import type { FieldValues, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodSchema } from "zod";
+import LoadingButton from "../LoadingButton";
+import MySelect from "../MySelect";
 
 export interface SelectOption {
   value: string | number | boolean;
@@ -34,15 +39,21 @@ export interface SelectOption {
 export interface FormField<T extends FieldValues> {
   name: Path<T>;
   label: string;
-  type?: "text" | "multiline" | "select" | "checkbox" | "switch" | "radio" | "number" | "email" | "password" | "date" | "datetime-local" | "slider";
+  type?: "text" | "multiline" | "select" | "customSelect" | "multiSelect" | "datepicker" | "checkbox" | "switch" | "radio" | "number" | "email" | "password" | "date" | "datetime-local" | "slider";
   required?: boolean;
   rows?: number;
   autoFocus?: boolean;
-  options?: SelectOption[]; // For select/radio fields
+  options?: SelectOption[]; // For select/radio/customSelect/multiSelect fields
   width?: 1 | 2 | 3; // Fields per row: 1=full, 2=half, 3=third
   min?: number; // For number/slider fields
   max?: number; // For number/slider fields
   step?: number; // For number/slider fields
+  dependsOn?: Path<T>; // Field this depends on (for dynamic behavior)
+  disabled?: (values: T) => boolean; // Dynamic disabled state
+  filterOptions?: (options: SelectOption[], values: T) => SelectOption[]; // Filter options based on form values
+  onClear?: () => void; // For customSelect clear button
+  dateFormat?: string; // For datepicker format
+  renderChip?: (value: string | number, options: SelectOption[]) => string; // For multiSelect chip labels
 }
 
 export interface ReusableFormDialogProps<T extends FieldValues> {
@@ -80,6 +91,7 @@ function ReusableFormDialog<T extends FieldValues>({
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors, isValid },
   } = useForm<T>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +100,8 @@ function ReusableFormDialog<T extends FieldValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultValues: initialValues as any,
   });
+
+  const formValues = watch();
 
   useEffect(() => {
     if (open) {
@@ -111,9 +125,9 @@ function ReusableFormDialog<T extends FieldValues>({
         <Grid container spacing={2} sx={{ pt: 1 }}>
           {fields.map((field) => {
             const gridSize = field.width === 3 ? 4 : field.width === 2 ? 6 : 12;
-            
+
             let fieldComponent;
-            
+
             switch (field.type) {
               case "select":
                 fieldComponent = (
@@ -134,6 +148,115 @@ function ReusableFormDialog<T extends FieldValues>({
                             </MenuItem>
                           ))}
                         </Select>
+                        {errors[field.name] && (
+                          <FormHelperText>{errors[field.name]?.message as string}</FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                );
+                break;
+
+              case "customSelect":
+                const filteredOptions = field.filterOptions
+                  ? field.filterOptions(field.options || [], formValues)
+                  : field.options || [];
+                const isDisabled = field.disabled ? field.disabled(formValues) : false;
+
+                fieldComponent = (
+                  <Controller
+                    name={field.name}
+                    control={control}
+                    render={({ field: controllerField }) => (
+                      <FormControl fullWidth required={field.required} disabled={isDisabled || submitting}>
+                        <InputLabel>{field.label}</InputLabel>
+                        <MySelect
+                          label={field.label}
+                          value={controllerField.value || ""}
+                          onChange={controllerField.onChange}
+                          onClear={field.onClear}
+                        >
+                          {filteredOptions.map((option) => (
+                            <MenuItem key={String(option.value)} value={String(option.value)}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                          {filteredOptions.length === 0 && (
+                            <MenuItem disabled value="">
+                              No options available
+                            </MenuItem>
+                          )}
+                        </MySelect>
+                        {errors[field.name] && (
+                          <FormHelperText error>{errors[field.name]?.message as string}</FormHelperText>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                );
+                break;
+
+              case "datepicker":
+                fieldComponent = (
+                  <Controller
+                    name={field.name}
+                    control={control}
+                    render={({ field: controllerField }) => (
+                      <DatePicker
+                        label={field.label}
+                        format={field.dateFormat || "dd/MM/yyyy"}
+                        value={controllerField.value || null}
+                        onChange={controllerField.onChange}
+                        disabled={submitting}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!errors[field.name],
+                            helperText: errors[field.name]?.message as string,
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                );
+                break;
+
+              case "multiSelect":
+                fieldComponent = (
+                  <Controller
+                    name={field.name}
+                    control={control}
+                    render={({ field: controllerField }) => (
+                      <FormControl fullWidth error={!!errors[field.name]} disabled={submitting}>
+                        <InputLabel required={field.required}>{field.label}</InputLabel>
+                        <MySelect
+                          label={field.label}
+                          multiple
+                          value={controllerField.value || []}
+                          onChange={controllerField.onChange}
+                          renderValue={(selected) => (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                              {(selected as (string | number)[]).map((value) => {
+                                const label = field.renderChip
+                                  ? field.renderChip(value, field.options || [])
+                                  : field.options?.find((opt) => opt.value === value)?.label || String(value);
+                                return (
+                                  <Chip
+                                    key={String(value)}
+                                    label={label}
+                                    size="small"
+                                  />
+                                );
+                              })}
+                            </Box>
+                          )}
+                        >
+                          {field.options?.map((option) => (
+                            <MenuItem key={String(option.value)} value={String(option.value)}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </MySelect>
                         {errors[field.name] && (
                           <FormHelperText>{errors[field.name]?.message as string}</FormHelperText>
                         )}
@@ -275,7 +398,7 @@ function ReusableFormDialog<T extends FieldValues>({
             }
 
             return (
-              <Grid size={{xs:12, sm:gridSize}} key={field.name}>
+              <Grid size={{ xs: 12, sm: gridSize }} key={field.name}>
                 {fieldComponent}
               </Grid>
             );
@@ -286,13 +409,14 @@ function ReusableFormDialog<T extends FieldValues>({
         <Button onClick={onClose} disabled={submitting}>
           {cancelLabel}
         </Button>
-        <Button
+        <LoadingButton
           onClick={submit}
           variant="contained"
-          disabled={!isValid || submitting}
+          disabled={!isValid}
+          loading={submitting}
         >
           {submitLabel || (editing ? "Update" : "Create")}
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );

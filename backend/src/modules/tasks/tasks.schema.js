@@ -12,6 +12,7 @@ export const tasks = pgTable('tasks', {
   position: integer('position').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+  dueDate: timestamp('due_date'),
   
   // Foreign keys
   boardId: uuid('board_id').notNull().references(() => kanbanBoards.id, { onDelete: 'cascade' }),

@@ -10,6 +10,7 @@ export interface CustomerFormDialogProps {
   applications: Application[];
   onClose: () => void;
   onSubmit: (values: CustomerFormValues) => void;
+  submitting?: boolean;
 }
 
 export interface UseCustomerFormArgs {

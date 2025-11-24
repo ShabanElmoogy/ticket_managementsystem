@@ -18,6 +18,7 @@ export const getTasks = async (req, res) => {
         boardId: tasks.boardId,
         columnId: tasks.columnId,
         assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
         status: tasks.status,
         position: tasks.position,
         createdAt: tasks.createdAt,
@@ -69,6 +70,7 @@ export const getTask = async (req, res) => {
         boardId: tasks.boardId,
         columnId: tasks.columnId,
         assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
         status: tasks.status,
         position: tasks.position,
         createdAt: tasks.createdAt,
@@ -110,7 +112,7 @@ export const getTask = async (req, res) => {
 // Create a new task
 export const createTask = async (req, res) => {
   try {
-    const { title, description, boardId, columnId, assigneeId, status } = req.body;
+    const { title, description, boardId, columnId, assigneeId, dueDate, status } = req.body;
 
     if (!title || !boardId || !columnId) {
       return res.status(400).json({ error: 'Title, boardId, and columnId are required' });
@@ -160,6 +162,7 @@ export const createTask = async (req, res) => {
         boardId,
         columnId,
         assigneeId: assigneeId || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'TODO',
         position
       })
@@ -173,6 +176,7 @@ export const createTask = async (req, res) => {
         boardId: tasks.boardId,
         columnId: tasks.columnId,
         assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
         status: tasks.status,
         position: tasks.position,
         createdAt: tasks.createdAt,
@@ -211,7 +215,7 @@ export const createTask = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, assigneeId, status, columnId, position } = req.body;
+    const { title, description, assigneeId, dueDate, status, columnId, position } = req.body;
 
     const existingTask = await db
       .select()
@@ -227,6 +231,7 @@ export const updateTask = async (req, res) => {
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (assigneeId !== undefined) updateData.assigneeId = assigneeId;
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (status !== undefined) updateData.status = status;
     if (columnId !== undefined) updateData.columnId = columnId;
     if (position !== undefined) updateData.position = position;
@@ -244,6 +249,7 @@ export const updateTask = async (req, res) => {
         boardId: tasks.boardId,
         columnId: tasks.columnId,
         assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
         status: tasks.status,
         position: tasks.position,
         createdAt: tasks.createdAt,
@@ -338,6 +344,7 @@ export const moveTask = async (req, res) => {
         boardId: tasks.boardId,
         columnId: tasks.columnId,
         assigneeId: tasks.assigneeId,
+        dueDate: tasks.dueDate,
         status: tasks.status,
         position: tasks.position,
         createdAt: tasks.createdAt,

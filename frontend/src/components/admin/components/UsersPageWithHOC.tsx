@@ -25,11 +25,10 @@ import PeopleIcon from "@mui/icons-material/People";
 
 const usersKeys = { all: ["users"] as const };
 
-interface UsersPageProps
-  extends CRUDProps<User, CreateUserData>,
-    UIStateProps,
-    MessagesProps,
-    ErrorHandlingProps {}
+type UsersPageProps = CRUDProps<User, CreateUserData> &
+  UIStateProps<User> &
+  MessagesProps &
+  ErrorHandlingProps;
 
 function UsersPageComponent(props: UsersPageProps) {
   const {
@@ -55,6 +54,7 @@ function UsersPageComponent(props: UsersPageProps) {
   const [forceDeleteOpen, setForceDeleteOpen] = React.useState(false);
   const [forceDeleteUser, setForceDeleteUser] = React.useState<User | null>(null);
   const [forceDeleteLoading, setForceDeleteLoading] = React.useState(false);
+  const [auxLoading, setAuxLoading] = React.useState(false);
 
   const handleSubmit = async (values: any) => {
     // Filter out undefined password for editing
@@ -133,7 +133,7 @@ function UsersPageComponent(props: UsersPageProps) {
 
       <UsersTable
         users={users}
-        loading={loading}
+        loading={loading || auxLoading}
         onEdit={openDialog}
         onDelete={openDeleteDialog}
       />
@@ -144,13 +144,13 @@ function UsersPageComponent(props: UsersPageProps) {
         initialValues={
           uiState.editingItem
             ? {
-                name: (uiState.editingItem as User).name,
-                email: (uiState.editingItem as User).email,
-                password: "",
-                role: (uiState.editingItem as User).role,
-                phone: (uiState.editingItem as User).phone || "",
-                whatsappNotifications: (uiState.editingItem as User).whatsappNotifications || false,
-              }
+              name: (uiState.editingItem as User).name,
+              email: (uiState.editingItem as User).email,
+              password: "",
+              role: (uiState.editingItem as User).role,
+              phone: (uiState.editingItem as User).phone || "",
+              whatsappNotifications: (uiState.editingItem as User).whatsappNotifications || false,
+            }
             : undefined
         }
         onClose={closeDialog}
@@ -166,16 +166,13 @@ function UsersPageComponent(props: UsersPageProps) {
         loading={false}
         warningMessage={
           (uiState.deleteDialog.item as User)?._count &&
-          (((uiState.deleteDialog.item as User)._count?.assignedTickets || 0) > 0 ||
-            ((uiState.deleteDialog.item as User)._count?.createdTickets || 0) > 0 ||
-            ((uiState.deleteDialog.item as User)._count?.comments || 0) > 0)
-            ? `This user has associated data: ${
-                (uiState.deleteDialog.item as User)._count?.assignedTickets || 0
-              } assigned ticket(s), ${
-                (uiState.deleteDialog.item as User)._count?.createdTickets || 0
-              } created ticket(s), ${
-                (uiState.deleteDialog.item as User)._count?.comments || 0
-              } comment(s). Click Delete to proceed with force deletion.`
+            (((uiState.deleteDialog.item as User)._count?.assignedTickets || 0) > 0 ||
+              ((uiState.deleteDialog.item as User)._count?.createdTickets || 0) > 0 ||
+              ((uiState.deleteDialog.item as User)._count?.comments || 0) > 0)
+            ? `This user has associated data: ${(uiState.deleteDialog.item as User)._count?.assignedTickets || 0
+            } assigned ticket(s), ${(uiState.deleteDialog.item as User)._count?.createdTickets || 0
+            } created ticket(s), ${(uiState.deleteDialog.item as User)._count?.comments || 0
+            } comment(s). Click Delete to proceed with force deletion.`
             : undefined
         }
         onForceDelete={() => {
@@ -227,24 +224,26 @@ function UsersPageComponent(props: UsersPageProps) {
   );
 }
 
-const UsersPageWithHOC = withCRUD(
-  withUIState(
-    withMessages(withErrorHandling(UsersPageComponent), {
-      success: {
-        created: "User created successfully",
-        updated: "User updated successfully",
-        deleted: "User deleted successfully",
-      },
-      error: {
-        create: "Error creating user",
-        update: "Error updating user",
-        delete: "Error deleting user",
-      },
-      titles: {
-        create: "Create New User",
-        edit: "Edit User",
-      },
-    })
+const UsersPageWithHOC = withCRUD<User, CreateUserData>(
+  withUIState<User>(
+    withMessages(
+      withErrorHandling(UsersPageComponent, {
+        success: {
+          created: "User created successfully",
+          updated: "User updated successfully",
+          deleted: "User deleted successfully",
+        },
+        error: {
+          create: "Error creating user",
+          update: "Error updating user",
+          delete: "Error deleting user",
+        },
+        titles: {
+          create: "Create New User",
+          edit: "Edit User",
+        },
+      })
+    )
   ),
   {
     entityName: "users",

@@ -24,8 +24,8 @@ const AdminDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
   rows,
   columns,
   loading,
-  height = 600,
-  initialPageSize = 8,
+  height = 500,
+  initialPageSize = 7,
   pageSizeOptions = [8, 16, 24],
   sx,
   ...rest

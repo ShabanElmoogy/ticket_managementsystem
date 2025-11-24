@@ -7,18 +7,7 @@ import Boom from '@hapi/boom';
 export const listDocs = async (req, res, next) => {
   try {
     const docsData = await db.select().from(docs).orderBy(desc(docs.updatedAt));
-    const parsedDocs = docsData.map(doc => {
-      let blocks = doc.blocks;
-      if (typeof blocks === 'string') {
-        try {
-          blocks = JSON.parse(blocks);
-        } catch (e) {
-          blocks = [];
-        }
-      }
-      return { ...doc, blocks };
-    });
-    res.json(parsedDocs);
+    res.json(docsData);
   } catch (err) { next(err); }
 };
 
@@ -27,12 +16,7 @@ export const getDoc = async (req, res, next) => {
     const { id } = req.params;
     const [doc] = await db.select().from(docs).where(eq(docs.id, id)).limit(1);
     if (!doc) return next(Boom.notFound('Doc not found'));
-    // Parse blocks JSON string to array
-    const parsedDoc = {
-      ...doc,
-      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
-    };
-    res.json(parsedDoc);
+    res.json(doc);
   } catch (err) { next(err); }
 };
 
@@ -41,14 +25,9 @@ export const createDoc = async (req, res, next) => {
     const { title, blocks } = req.body;
     const [doc] = await db.insert(docs).values({ 
       title, 
-      blocks: JSON.stringify(blocks || []) 
+      blocks: blocks || [] 
     }).returning();
-    // Parse blocks back to array for response
-    const parsedDoc = {
-      ...doc,
-      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
-    };
-    res.status(201).json(parsedDoc);
+    res.status(201).json(doc);
   } catch (err) { next(err); }
 };
 
@@ -64,23 +43,17 @@ export const updateDoc = async (req, res, next) => {
     if (existingDoc) {
       [doc] = await db.update(docs).set({ 
         title, 
-        blocks: JSON.stringify(blocks || []) 
+        blocks: blocks || [] 
       }).where(eq(docs.id, id)).returning();
     } else {
       [doc] = await db.insert(docs).values({ 
         id, 
         title: title || 'Untitled', 
-        blocks: JSON.stringify(blocks || []) 
+        blocks: blocks || [] 
       }).returning();
     }
     
-    // Parse blocks back to array for response
-    const parsedDoc = {
-      ...doc,
-      blocks: typeof doc.blocks === 'string' ? JSON.parse(doc.blocks) : doc.blocks
-    };
-    
-    res.json(parsedDoc);
+    res.json(doc);
   } catch (err) { next(err); }
 };
 

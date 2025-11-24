@@ -24,16 +24,75 @@ Each module must have its own directory with the following structure:
 - Export schemas for use in components and types.
 
 ### 3. Component Layer (`components/`)
-- **Table**: Use `AdminDataGrid` with `rows`, `columns`, and `loading` props.
-- **Columns**: Define columns using a helper function (e.g., `getApplicationsColumns`).
-- **Dialog**: Use `Dialog` component.
-  - **Must** use `react-hook-form`'s `useForm` hook directly within the component.
-  - **Must** use `zodResolver` with the schema from the `schemas/` directory.
-  - **Do NOT** create a custom hook (e.g., `useTaskForm`) for form logic.
+- **Table**: Create a wrapper component that uses `AdminDataGrid`.
+  - Props: `{entityName}` (array), `loading` (boolean), `onEdit`, `onDelete` callbacks
+  - Imports columns from separate Columns file
+  - Example: `ApplicationsTable` receives `applications`, `loading`, `onEdit`, `onDelete`
+  - Passes `rows`, `columns`, and `loading` to `AdminDataGrid`
+  
+- **Columns**: Define columns in a separate file (e.g., `ApplicationsColumns.tsx`).
+  - Export a function (e.g., `getApplicationsColumns`) that accepts handlers (`onEdit`, `onDelete`)
+  - Returns `GridColDef[]` array with column definitions
+  - Use reusable cell components from `common`:
+    - `VersionCell` - for version display
+    - `CustomersCell` - for customer lists
+    - `CountChip` - for count badges
+    - `StatusCell` - for active/inactive status
+    - `buildActionsColumn` - for edit/delete actions
+  - Standard column properties: `field`, `headerName`, `align: "center"`, `headerAlign: "center"`, `width`
+  - Use `renderCell` for custom formatting
+  
+- **Dialog**: 
+  - **Preferred**: Use `ReusableFormDialog` from `common/forms` for simple forms.
+    - Define form fields as an array of `FormField` objects.
+    - Pass the Zod schema, fields array, and handlers as props.
+    - Receives `submitting` prop from parent to show loading state.
+  - **Alternative**: For complex forms with custom logic, use `Dialog` component with `react-hook-form`.
+    - **Must** use `useForm` hook directly within the component.
+    - **Must** use `zodResolver` with the schema from the `schemas/` directory.
+    - **Do NOT** create a custom hook (e.g., `useTaskForm`) for form logic.
+    - Handle `submitting` state internally and pass to `LoadingButton`.
 
 ### 4. Types Layer (`types/`)
 - Define interfaces for props and form values.
 - Export types for use across the module.
+
+### 5. Auxiliary Data Loading
+For modules that require additional data (e.g., boards, users, applications):
+- Create separate state for auxiliary data: `const [auxData, setAuxData] = useState([])`
+- Create loading state: `const [auxLoading, setAuxLoading] = useState(false)`
+- Fetch in `useEffect` on component mount
+- Combine loading states: `loading={loading || auxLoading}` when passing to Table
+- Handle errors gracefully (log to console, don't block main functionality)
+
+**Example Pattern**:
+```typescript
+const [boards, setBoards] = useState([]);
+const [auxLoading, setAuxLoading] = useState(false);
+
+useEffect(() => {
+  const fetchAuxData = async () => {
+    setAuxLoading(true);
+    try {
+      const data = await api.getBoards();
+      setBoards(data);
+    } catch (error) {
+      console.error("Failed to fetch auxiliary data", error);
+    } finally {
+      setAuxLoading(false);
+    }
+  };
+  fetchAuxData();
+}, []);
+
+// In render:
+<Table loading={loading || auxLoading} />
+```
+
+### 6. Loading States
+- **Skeleton Loading**: `AdminDataGrid` automatically shows skeleton rows when `loading={true}`
+- **Combined Loading**: Use `loading || auxLoading` to show loading during both main data fetch and auxiliary data fetch
+- **Form Loading**: Pass `submitting={uiState.submitting}` to form dialogs
 
 ## Key Patterns
 

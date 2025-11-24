@@ -6,7 +6,7 @@ export const docNodeTypeEnum = pgEnum('doc_node_type', ['FOLDER', 'DOC']);
 export const docs = pgTable('docs', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: varchar('title', { length: 191 }).notNull(),
-  blocks: json('blocks').notNull().$default(() => []),
+  blocks: json('blocks').notNull().default([]),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

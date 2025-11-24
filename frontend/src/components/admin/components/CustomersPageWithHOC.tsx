@@ -26,9 +26,9 @@ import { useQuery } from "@tanstack/react-query";
 
 interface CustomersPageProps
   extends CRUDProps<Customer, CreateCustomerData>,
-    UIStateProps,
-    MessagesProps,
-    ErrorHandlingProps {}
+  UIStateProps,
+  MessagesProps,
+  ErrorHandlingProps { }
 
 function CustomersPageComponent(props: CustomersPageProps) {
   const {
@@ -50,7 +50,7 @@ function CustomersPageComponent(props: CustomersPageProps) {
     logError,
   } = props;
 
-  const { data: applications = [] } = useQuery({
+  const { data: applications = [], isLoading: isLoadingApplications } = useQuery({
     queryKey: ["applications"],
     queryFn: applicationsApi.getApplications,
   });
@@ -101,7 +101,7 @@ function CustomersPageComponent(props: CustomersPageProps) {
 
       <CustomersTable
         customers={customers}
-        loading={loading}
+        loading={loading || isLoadingApplications}
         onEdit={openDialog}
         onDelete={openDeleteDialog}
       />
@@ -112,18 +112,19 @@ function CustomersPageComponent(props: CustomersPageProps) {
         initialValues={
           uiState.editingItem
             ? {
-                name: (uiState.editingItem as Customer).name,
-                email: (uiState.editingItem as Customer).email,
-                phone: (uiState.editingItem as Customer).phone || "",
-                address: (uiState.editingItem as Customer).address || "",
-                description: (uiState.editingItem as Customer).description || "",
-                applicationIds: (uiState.editingItem as Customer).applications?.map((ca) => ca.applicationId) || [],
-              }
+              name: (uiState.editingItem as Customer).name,
+              email: (uiState.editingItem as Customer).email,
+              phone: (uiState.editingItem as Customer).phone || "",
+              address: (uiState.editingItem as Customer).address || "",
+              description: (uiState.editingItem as Customer).description || "",
+              applicationIds: (uiState.editingItem as Customer).applications?.map((ca) => ca.applicationId) || [],
+            }
             : undefined
         }
         applications={applications}
         onClose={closeDialog}
         onSubmit={handleSubmit}
+        submitting={uiState.submitting}
       />
 
       <DeleteConfirmDialog
@@ -135,7 +136,7 @@ function CustomersPageComponent(props: CustomersPageProps) {
         loading={false}
         warningMessage={
           (uiState.deleteDialog.item as Customer)?._count?.tickets &&
-          ((uiState.deleteDialog.item as Customer)._count?.tickets || 0) > 0
+            ((uiState.deleteDialog.item as Customer)._count?.tickets || 0) > 0
             ? `This customer has ${(uiState.deleteDialog.item as Customer)._count?.tickets || 0} associated ticket(s). Please reassign or delete them first.`
             : undefined
         }

@@ -15,7 +15,8 @@ import {
 import { DeleteConfirmDialog, MyGridHeader } from "../../common";
 import { TasksTable, TaskFormDialog } from "../tasksManagement";
 import { tasksApi } from "../tasksManagement/api/tasks";
-import type { KanbanTask } from "../../../types/kanban";
+import type { KanbanTask, KanbanBoard, User, TaskStatus } from "../../../types/kanban";
+import type { TaskFormValues } from "../tasksManagement/types/types";
 import AddTaskIcon from "@mui/icons-material/AddTask";
 
 // Define keys for React Query
@@ -29,11 +30,10 @@ interface TasksPageProps
   // Add any additional props if needed
 }
 
-interface TasksPageComponentProps extends Omit<TasksPageProps, "loading"> { }
-
-function TasksPageComponent(props: TasksPageComponentProps) {
+function TasksPageComponent(props: TasksPageProps) {
   const {
     entities: tasks,
+    loading,
     create,
     update,
     remove,
@@ -50,23 +50,14 @@ function TasksPageComponent(props: TasksPageComponentProps) {
     logError,
   } = props;
 
-  // We need to fetch boards and users for the form
-  // In a real HOC setup, these might be passed down or fetched via separate hooks/HOCs
-  // For now, we'll keep it simple and let the form handle its own dependencies or fetch them here
-  // But wait, the original hook fetched them.
-  // The HOC pattern in ApplicationsPageWithHOC doesn't seem to fetch auxiliary data (boards/users).
-  // Let's assume for now we might need a custom hook or effect for that, OR we can fetch them inside the FormDialog if not passed.
-  // However, the FormDialog expects them as props.
-  // Let's check how ApplicationsPageWithHOC handles dependencies. It doesn't seem to have any.
-  // Tasks needs boards and users.
-  // I will add a simple useEffect here to fetch them or use a custom hook for auxiliary data.
-  // Actually, to stick to the pattern, I should probably use a separate hook for auxiliary data or just fetch them here.
+  const [boards, setBoards] = React.useState<KanbanBoard[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
 
-  const [boards, setBoards] = React.useState<any[]>([]);
-  const [users, setUsers] = React.useState<any[]>([]);
+  const [auxLoading, setAuxLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     const fetchAuxData = async () => {
+      setAuxLoading(true);
       try {
         const [boardsData, usersData] = await Promise.all([
           tasksApi.getBoards(),
@@ -76,19 +67,23 @@ function TasksPageComponent(props: TasksPageComponentProps) {
         setUsers(usersData);
       } catch (error) {
         console.error("Failed to fetch auxiliary data", error);
+      } finally {
+        setAuxLoading(false);
       }
     };
     fetchAuxData();
   }, []);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: TaskFormValues) => {
     setSubmitting(true);
     try {
       // Format data if needed (e.g. dueDate)
-      const submitData = {
-        ...values,
-        assigneeId: values.assigneeId || undefined,
+      const { assigneeId, ...rest } = values;
+      const submitData: Partial<KanbanTask> = {
+        ...rest,
+        assignee: assigneeId ? { id: assigneeId, name: "", email: "" } : undefined,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        status: values.status as TaskStatus,
       };
 
       if (uiState.editingItem) {
@@ -135,7 +130,7 @@ function TasksPageComponent(props: TasksPageComponentProps) {
 
         <TasksTable
           tasks={tasks}
-          loading={false}
+          loading={loading || auxLoading}
           onEdit={openDialog}
           onDelete={openDeleteDialog}
         />
@@ -160,6 +155,7 @@ function TasksPageComponent(props: TasksPageComponentProps) {
           users={users}
           onClose={closeDialog}
           onSubmit={handleSubmit}
+          submitting={uiState.submitting}
         />
 
         <DeleteConfirmDialog
@@ -215,6 +211,6 @@ const TasksManagement = withCRUD(
       delete: tasksApi.deleteTask.bind(tasksApi),
     },
   }
-) as React.ComponentType<{}>;
+) as React.ComponentType;
 
 export default TasksManagement;
