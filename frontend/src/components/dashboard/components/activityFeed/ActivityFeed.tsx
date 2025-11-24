@@ -157,7 +157,19 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
   };
 
   const handleActivityClick = async (activity: ActivityItemType) => {
-    if (!token || !activity.data.ticket?.id || clickingActivity) return;
+    if (clickingActivity) return;
+
+    // Try to robustly extract a ticket ID from various possible shapes
+    const ticketId = activity?.data?.ticket?.id
+      || (activity as any)?.data?.ticket?.ticketId
+      || (activity as any)?.data?.ticketId
+      || (activity as any)?.ticketId
+      || "";
+
+    if (!ticketId) {
+      console.warn("Activity click ignored: missing ticket id in activity:", activity);
+      return;
+    }
 
     try {
       setClickingActivity(activity.id);
@@ -172,8 +184,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
-      const ticketId = activity.data.ticket.id;
       if (onTicketClick) {
+        if (!token) {
+          console.warn("Missing auth token; cannot fetch full ticket for dialog. Activity:", activity);
+          return;
+        }
         const fullTicket = await ticketsApi.getTicket(ticketId);
         onTicketClick(fullTicket);
       } else {

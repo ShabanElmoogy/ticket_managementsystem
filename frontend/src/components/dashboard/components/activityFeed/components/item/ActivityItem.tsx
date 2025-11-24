@@ -141,7 +141,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
       <ListItem disablePadding>
         <ListItemButton
           onClick={() => onClick(activity)}
-          disabled={!activity.data.ticket?.id || isClicking}
+          disabled={isClicking}
           sx={{
             py: 1.5,
             px: 2,

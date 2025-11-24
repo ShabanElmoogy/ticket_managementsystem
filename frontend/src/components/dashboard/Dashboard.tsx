@@ -4,6 +4,7 @@ import Header from "./Header";
 import { LoadingSpinner } from "./ui";
 import { DashboardContent } from "./components";
 import TicketReminder from "./components/TicketReminder";
+import TicketDetailsDialog from "../tickets/TicketDetailsDialog";
 import { useDashboard } from "./hooks";
 
 const Dashboard: React.FC = () => {
@@ -19,6 +20,13 @@ const Dashboard: React.FC = () => {
       <Header onTicketClick={handleTicketClick} />
       <Toolbar sx={{ minHeight: { xs: 56, sm: 64, md: 70 } }} />
       <DashboardContent {...dashboardProps} onAddComment={dashboardProps.handleAddComment} onCreateTicket={dashboardProps.handleCreateTicket} onRefresh={dashboardProps.fetchData} onTicketClick={dashboardProps.handleTicketClick} onTakeTicket={dashboardProps.handleTakeTicket} onUpdateStatus={dashboardProps.handleUpdateTicketStatus} />
+      <TicketDetailsDialog
+        open={dashboardProps.detailsDialogOpen}
+        onClose={() => dashboardProps.setDetailsDialogOpen(false)}
+        ticket={dashboardProps.selectedTicket}
+        onUpdateStatus={dashboardProps.handleUpdateTicketStatus}
+        token={dashboardProps.token || ""}
+      />
       <TicketReminder onTicketClick={handleTicketClick} />
     </Box>
   );
