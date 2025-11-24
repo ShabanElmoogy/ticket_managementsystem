@@ -151,10 +151,13 @@ export const useDashboard = () => {
   };
 
   const handleTakeTicket = async (ticketId: string) => {
+    console.log(`Attempting to take ticket: ${ticketId}`);
     try {
       await takeTicketMutation.mutateAsync(ticketId);
       showSnackbar("Ticket assigned successfully", "success");
+      console.log(`Successfully took ticket: ${ticketId}`);
     } catch (_error) {
+      console.error(`Error taking ticket ${ticketId}:`, _error);
       showSnackbar(_error instanceof Error ? _error.message : "Error taking ticket", "error");
     }
   };

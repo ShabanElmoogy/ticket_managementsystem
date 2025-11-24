@@ -13,8 +13,9 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import { io } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../../stores/authStore";
-import { dashboardApi, ticketsApi } from "../../../../services/api";
+import { dashboardApi, ticketsApi, type Ticket } from "../../../../services/api";
 import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
 type ActivityItemType = {
@@ -32,7 +33,7 @@ type ActivityItemType = {
 };
 
 type ActivityFeedProps = {
-  onTicketClick: (ticket: any) => void;
+  onTicketClick?: (ticket: Ticket) => void;
 };
 
 type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
@@ -75,6 +76,7 @@ const useActivitySocket = (
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
   const { token } = useAuthStore();
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<ActivityItemType[]>([]);
   const [expanded, setExpanded] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -170,10 +172,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
-      const fullTicket = await ticketsApi.getTicket(activity.data.ticket.id);
-      onTicketClick(fullTicket);
+      const ticketId = activity.data.ticket.id;
+      if (onTicketClick) {
+        const fullTicket = await ticketsApi.getTicket(ticketId);
+        onTicketClick(fullTicket);
+      } else {
+        navigate(`/tickets/${ticketId}`);
+      }
     } catch (error) {
-      console.error("Error fetching ticket details:", error);
+      console.error("Error handling activity click:", error);
     } finally {
       setClickingActivity(null);
     }
