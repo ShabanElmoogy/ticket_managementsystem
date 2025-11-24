@@ -25,28 +25,45 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 const ReportsManagement: React.FC = () => {
   const { token } = useAuthStore();
   const [loading, setLoading] = useState<boolean>(true);
+  const [auxLoading, setAuxLoading] = useState<boolean>(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [reportType, setReportType] = useState<ReportType>("summary");
 
-  const fetchData = useCallback(async () => {
+  const fetchTickets = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const [ticketsData, customersData] = await Promise.all([
-        ticketsApi.getTickets({}),
-        customersApi.getCustomers(),
-      ]);
-      setTickets(ticketsData);
-      setCustomers(customersData);
+      const data = await ticketsApi.getTickets({});
+      setTickets(data);
+    } catch (error) {
+      console.error("Failed to fetch tickets", error);
     } finally {
       setLoading(false);
     }
   }, [token]);
 
+  const fetchAuxData = useCallback(async () => {
+    if (!token) return;
+    setAuxLoading(true);
+    try {
+      const data = await customersApi.getCustomers();
+      setCustomers(data);
+    } catch (error) {
+      console.error("Failed to fetch auxiliary data", error);
+    } finally {
+      setAuxLoading(false);
+    }
+  }, [token]);
+
+  const handleRefresh = useCallback(() => {
+    fetchTickets();
+    fetchAuxData();
+  }, [fetchTickets, fetchAuxData]);
+
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    handleRefresh();
+  }, [handleRefresh]);
 
   // Build rows for each report shape
   const summaryRows = useMemo(
@@ -63,7 +80,7 @@ const ReportsManagement: React.FC = () => {
   );
 
   // Select rows and columns by report type
-  const gridData = useMemo((): { rows: any[]; columns: GridColDef[] } => {
+  const gridData = useMemo((): { rows: unknown[]; columns: GridColDef[] } => {
     switch (reportType) {
       case "summary":
         return {
@@ -102,10 +119,10 @@ const ReportsManagement: React.FC = () => {
     <ReportsToolbar
       reportType={reportType}
       setReportType={setReportType}
-      reportTypes={reportTypes as any}
+      reportTypes={[...reportTypes]}
       onGeneratePdf={handleGeneratePdf}
-      onRefresh={fetchData}
-      disabled={loading}
+      onRefresh={handleRefresh}
+      disabled={loading || auxLoading}
     />
   );
 
@@ -116,7 +133,7 @@ const ReportsManagement: React.FC = () => {
         rightActions={rightActions}
         icon={AssessmentIcon}
       />
-{/* 
+      {/* 
       <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
         {reportType === "summary" &&
           "Aggregated counts of tickets per customer."}
@@ -130,7 +147,7 @@ const ReportsManagement: React.FC = () => {
       <ReportsTable
         rows={gridData.rows}
         columns={gridData.columns}
-        loading={loading}
+        loading={loading || auxLoading}
         height={600}
       />
     </Box>

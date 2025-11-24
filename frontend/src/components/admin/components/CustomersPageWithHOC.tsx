@@ -22,7 +22,7 @@ import {
 } from "../../../services/api";
 const customersKeys = { all: ["customers"] as const };
 import PeopleIcon from "@mui/icons-material/People";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
 
 interface CustomersPageProps
   extends CRUDProps<Customer, CreateCustomerData>,
@@ -50,10 +50,23 @@ function CustomersPageComponent(props: CustomersPageProps) {
     logError,
   } = props;
 
-  const { data: applications = [], isLoading: isLoadingApplications } = useQuery({
-    queryKey: ["applications"],
-    queryFn: applicationsApi.getApplications,
-  });
+  const [applications, setApplications] = useState<any[]>([]);
+  const [auxLoading, setAuxLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchAuxData = async () => {
+      setAuxLoading(true);
+      try {
+        const data = await applicationsApi.getApplications();
+        setApplications(data);
+      } catch (error) {
+        console.error("Failed to fetch auxiliary data", error);
+      } finally {
+        setAuxLoading(false);
+      }
+    };
+    fetchAuxData();
+  }, []);
 
   const handleSubmit = async (values: CreateCustomerData) => {
     setSubmitting(true);
@@ -101,7 +114,7 @@ function CustomersPageComponent(props: CustomersPageProps) {
 
       <CustomersTable
         customers={customers}
-        loading={loading || isLoadingApplications}
+        loading={loading || auxLoading}
         onEdit={openDialog}
         onDelete={openDeleteDialog}
       />
