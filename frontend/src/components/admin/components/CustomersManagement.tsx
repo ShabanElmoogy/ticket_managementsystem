@@ -23,7 +23,7 @@ import {
 } from "../../../services/api";
 const customersKeys = { all: ["customers"] as const };
 import PeopleIcon from "@mui/icons-material/People";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 interface CustomersPageProps
   extends CRUDProps<Customer, CreateCustomerData>,
@@ -198,7 +198,7 @@ const CustomersManagement = withCRUD(
       delete: customersApi.deleteCustomer.bind(customersApi),
     },
   }
-);
+) as React.ComponentType;
 
 
 export default CustomersManagement;
