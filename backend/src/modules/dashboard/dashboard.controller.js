@@ -7,7 +7,7 @@ import { eq, and, count, desc, inArray } from 'drizzle-orm';
 // Get dashboard statistics
 export const getStats = async (req, res) => {
   try {
-    const isAdmin = req.user.role === 'ADMIN';
+    const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'TENANT_ADMIN';
     
     const totalTicketsQuery = isAdmin 
       ? db.select({ count: count() }).from(tickets)

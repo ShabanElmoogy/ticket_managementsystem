@@ -1,12 +1,14 @@
 import { pgTable, text, timestamp, pgEnum, boolean, integer, uuid } from 'drizzle-orm/pg-core';
+import { tenants } from '../tenants/tenants.schema.js';
 
 // User role enum
-export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'EMPLOYEE']);
+export const userRoleEnum = pgEnum('user_role', ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE']);
 
 // Users table
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').notNull().unique(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
   name: text('name').notNull(),
   password: text('password').notNull(),
   phone: text('phone'),

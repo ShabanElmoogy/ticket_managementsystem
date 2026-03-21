@@ -13,7 +13,8 @@ export const TICKET_PRIORITY = {
 };
 
 export const USER_ROLES = {
-  ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  TENANT_ADMIN: 'TENANT_ADMIN',
   EMPLOYEE: 'EMPLOYEE'
 };
 

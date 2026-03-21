@@ -1,6 +1,6 @@
 import express from 'express';
 import * as customersController from './customers.controller.js';
-import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 
 const router = express.Router();
 
@@ -11,18 +11,18 @@ router.get('/', authenticateToken, customersController.getAllCustomers);
 router.get('/:id', authenticateToken, customersController.getCustomerById);
 
 // Create new customer (admin only)
-router.post('/', authenticateToken, requireAdmin, customersController.createCustomer);
+router.post('/', authenticateToken, requireTenantAdmin, customersController.createCustomer);
 
 // Update customer (admin only)
-router.put('/:id', authenticateToken, requireAdmin, customersController.updateCustomer);
+router.put('/:id', authenticateToken, requireTenantAdmin, customersController.updateCustomer);
 
 // Delete customer (admin only)
-router.delete('/:id', authenticateToken, requireAdmin, customersController.deleteCustomer);
+router.delete('/:id', authenticateToken, requireTenantAdmin, customersController.deleteCustomer);
 
 // Assign application to customer (admin only)
-router.post('/assign-application', authenticateToken, requireAdmin, customersController.assignApplication);
+router.post('/assign-application', authenticateToken, requireTenantAdmin, customersController.assignApplication);
 
 // Remove application from customer (admin only)
-router.delete('/:customerId/applications/:applicationId', authenticateToken, requireAdmin, customersController.removeApplication);
+router.delete('/:customerId/applications/:applicationId', authenticateToken, requireTenantAdmin, customersController.removeApplication);
 
 export default router;

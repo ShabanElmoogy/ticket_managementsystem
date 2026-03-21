@@ -8,6 +8,7 @@ import {
   Assignment as TaskIcon,
   SupervisorAccount as UsersIcon,
   BarChart as ReportsIcon,
+  Apartment as TenantsIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
 import CustomersManagement from "./components/CustomersManagement";
@@ -21,6 +22,7 @@ import AdminTopBar from "./layout/AdminTopBar";
 import AdminSidebar from "./layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
+import TenantsManagement from "./tenantsManagement/TenantsManagement";
 
 const drawerWidth = 240;
 
@@ -33,26 +35,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
-  const [selectedView, setSelectedView] = useState("dashboard");
+  const [selectedView, setSelectedView] = useState(isSuperAdmin ? "tenants" : "dashboard");
 
   const handleMobileDrawerToggle = () => setMobileOpen((v) => !v);
   const handleDesktopDrawerToggle = () => setDesktopOpen((v) => !v);
 
-  const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-    { id: "users", label: "Users", icon: <UsersIcon /> },
-    { id: "customers", label: "Customers", icon: <PeopleIcon /> },
-    { id: "applications", label: "Applications", icon: <AppsIcon /> },
-    { id: "tickets", label: "Tickets", icon: <TicketIcon /> },
-    { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
-    { id: "reports", label: "Reports", icon: <ReportsIcon /> },
-    { id: "docs", label: "Docs", icon: <NotesIcon /> },
-  ];
+  const menuItems = isSuperAdmin
+    ? [
+        { id: "tenants", label: "Tenants", icon: <TenantsIcon /> },
+        { id: "users", label: "Users", icon: <UsersIcon /> },
+      ]
+    : [
+        { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+        { id: "users", label: "Users", icon: <UsersIcon /> },
+        { id: "customers", label: "Customers", icon: <PeopleIcon /> },
+        { id: "applications", label: "Applications", icon: <AppsIcon /> },
+        { id: "tickets", label: "Tickets", icon: <TicketIcon /> },
+        { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
+        { id: "reports", label: "Reports", icon: <ReportsIcon /> },
+        { id: "docs", label: "Docs", icon: <NotesIcon /> },
+      ];
 
   const renderContent = () => {
     switch (selectedView) {
+      case "tenants":
+        return <TenantsManagement />;
       case "users":
         return <UserManagement />;
       case "customers":

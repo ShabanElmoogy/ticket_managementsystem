@@ -1,10 +1,12 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { tenants } from '../tenants/tenants.schema.js';
 
 // Customers table
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  email: text('email').notNull().unique(),
+  email: text('email').notNull(),
   phone: text('phone'),
   company: text('company'),
   address: text('address'),

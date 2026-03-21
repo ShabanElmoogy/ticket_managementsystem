@@ -74,7 +74,7 @@ const AppRouter: React.FC = () => {
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
-          <ProtectedRoute requiredRole="ADMIN">
+          <ProtectedRoute>
             <AdminPage />
           </ProtectedRoute>
         } />

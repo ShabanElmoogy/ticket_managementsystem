@@ -17,7 +17,8 @@ export const userFormSchema = z.object({
     .max(100, "Password must be at most 100 characters")
     .optional()
     .or(z.literal("")),
-  role: z.enum(["ADMIN", "EMPLOYEE"]),
+  role: z.enum(["SUPER_ADMIN", "TENANT_ADMIN", "EMPLOYEE"]),
+  tenantSlug: z.string().trim().min(1, "Tenant is required").optional().or(z.literal("")),
   phone: z
     .string()
     .trim()

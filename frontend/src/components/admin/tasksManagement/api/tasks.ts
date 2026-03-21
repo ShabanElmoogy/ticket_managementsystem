@@ -27,7 +27,8 @@ export class TasksApiService extends BaseApiService {
   }
 
   async getUsers(): Promise<User[]> {
-    return this.get<User[]>("/users");
+    // Tenant admin should only see users in their tenant
+    return this.get<User[]>("/users/tenant");
   }
 }
 

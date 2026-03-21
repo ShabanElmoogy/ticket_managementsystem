@@ -59,7 +59,7 @@ export function useTicketsManagement(): TicketsControllerReturn {
       setLoading(true);
       const [ticketsData, usersData] = await Promise.all([
         ticketsApi.getTickets(),
-        usersApi.getUsers(),
+        usersApi.getTenantUsers(),
       ]);
       setTickets(ticketsData);
       setUsers(usersData);

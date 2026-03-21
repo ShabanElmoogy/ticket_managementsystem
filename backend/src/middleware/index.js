@@ -21,6 +21,8 @@ export function registerCoreMiddleware(app, notificationEmitter) {
       'Authorization',
       'X-Request-ID',
       'X-Requested-With',
+      'X-Tenant-Slug',
+      'X-Tenant-Id',
     ],
     exposedHeaders: ['X-Request-ID'],
     maxAge: 86400, // 24 hours

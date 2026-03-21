@@ -1,5 +1,5 @@
 import { db } from './src/config/database.js';
-import { docs } from './drizzle/schema.js';
+import { docs } from './src/modules/docs/docs.schema.js';
 
 async function checkDocs() {
   try {

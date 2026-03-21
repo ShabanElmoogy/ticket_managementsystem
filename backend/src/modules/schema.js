@@ -10,3 +10,4 @@ export * from './notifications/notifications.schema.js';
 export * from './tasks/tasks.schema.js';
 export * from './users/users.schema.js';
 export * from './docs/docs.schema.js';
+export * from './tenants/tenants.schema.js';

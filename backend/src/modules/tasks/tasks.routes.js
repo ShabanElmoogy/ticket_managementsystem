@@ -1,6 +1,6 @@
 import express from 'express';
 import * as tasksController from './tasks.controller.js';
-import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 
 const router = express.Router();
 
@@ -14,13 +14,13 @@ router.get('/', tasksController.getTasks);
 router.get('/:id', tasksController.getTask);
 
 // POST /api/tasks - Create a new task
-router.post('/', tasksController.createTask);
+router.post('/', requireTenantAdmin, tasksController.createTask);
 
 // PUT /api/tasks/:id - Update a task
-router.put('/:id', tasksController.updateTask);
+router.put('/:id', requireTenantAdmin, tasksController.updateTask);
 
 // DELETE /api/tasks/:id - Delete a task
-router.delete('/:id', tasksController.deleteTask);
+router.delete('/:id', requireTenantAdmin, tasksController.deleteTask);
 
 // PUT /api/tasks/:id/move - Move a task to different column/position
 router.put('/:id/move', tasksController.moveTask);

@@ -54,7 +54,7 @@ export const createMenuItems = ({
       },
     },
 
-    ...(user?.role === "EMPLOYEE" || user?.role === "ADMIN"
+    ...(user?.role === "EMPLOYEE" || user?.role === "TENANT_ADMIN"
       ? [
           {
             label: "Documents",
@@ -67,10 +67,10 @@ export const createMenuItems = ({
           },
         ]
       : []),
-        ...(user?.role === "ADMIN"
+    ...(user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN"
       ? [
           {
-            label: "Admin Panel",
+            label: user?.role === "SUPER_ADMIN" ? "System Management" : "Admin Panel",
             icon: React.createElement(AdminPanelSettingsIcon),
             onClick: () => {
               navigate('/admin');

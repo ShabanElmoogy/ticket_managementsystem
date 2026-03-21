@@ -31,7 +31,7 @@ export interface MenuItem {
 export interface UserInfo {
   id: string;
   name: string;
-  role: "ADMIN" | "USER" | "EMPLOYEE";
+  role: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
 }
 
 export interface NotificationComponentProps {

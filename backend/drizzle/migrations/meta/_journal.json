@@ -1,26 +1,40 @@
 {
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1761986839311,
-      "tag": "0000_smooth_owl",
+      "version": "7",
+      "when": 1774098644843,
+      "tag": "0000_cool_tomas",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1762021288275,
-      "tag": "0001_superb_zaran",
+      "when": 1774099729055,
+      "tag": "0001_melodic_mathemanic",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1762024237343,
-      "tag": "0002_majestic_rumiko_fujikawa",
+      "when": 1774100431043,
+      "tag": "0002_round_groot",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774101092899,
+      "tag": "0003_lethal_malice",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774110678887,
+      "tag": "0004_tiny_rogue",
       "breakpoints": true
     }
   ]

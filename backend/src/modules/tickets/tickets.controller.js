@@ -6,6 +6,23 @@ import { applications } from '../applications/applications.schema.js';
 import { ticketLabels, labels } from '../labels/labels.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import { eq, and, or, desc, asc, count, inArray, isNull, lt } from 'drizzle-orm';
+
+const requireTenantScope = (req) => {
+  // SUPER_ADMIN can see everything.
+  if (req.user?.role === 'SUPER_ADMIN') return;
+
+  // TENANT_ADMIN must be tenant-scoped.
+  if (req.user?.role === 'TENANT_ADMIN') {
+    if (!req.user.tenantId) {
+      throw new Error('Tenant admin is missing tenantId');
+    }
+    // Prefer token tenantId; requireTenantAdmin middleware also enforces this.
+    req.tenantId = req.user.tenantId;
+    return;
+  }
+
+  // EMPLOYEE: no tenant-wide access.
+};
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 
@@ -19,8 +36,15 @@ export const getAllTickets = async (req, res) => {
     if (assignedTo) conditions.push(eq(tickets.assignedToId, assignedTo));
     if (priority) conditions.push(eq(tickets.priority, priority));
 
+    // Tenant admin: restrict to tickets created by users in the same tenant.
+    // (Tickets table has no tenantId column, so we scope via createdBy user.)
+    if (req.user.role === 'TENANT_ADMIN') {
+      requireTenantScope(req);
+      conditions.push(eq(users.tenantId, req.tenantId));
+    }
+
     // If user is not admin, only show tickets assigned to them or unassigned
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'TENANT_ADMIN') {
       conditions.push(
         or(
           eq(tickets.assignedToId, req.user.userId),
@@ -31,7 +55,7 @@ export const getAllTickets = async (req, res) => {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const ticketsData = await db
+    const ticketsQuery = db
       .select({
         id: tickets.id,
         title: tickets.title,
@@ -50,8 +74,30 @@ export const getAllTickets = async (req, res) => {
         boardId: tickets.boardId
       })
       .from(tickets)
+      // join createdBy user so we can tenant-scope for TENANT_ADMIN
+      .innerJoin(users, eq(tickets.createdById, users.id))
       .where(whereClause)
       .orderBy(desc(tickets.createdAt));
+
+    const ticketsDataRaw = await ticketsQuery;
+    // Drizzle returns joined rows; normalize to the ticket projection.
+    const ticketsData = ticketsDataRaw.map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      status: r.status,
+      priority: r.priority,
+      dueDate: r.dueDate,
+      estimatedHours: r.estimatedHours,
+      actualHours: r.actualHours,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      customerId: r.customerId,
+      applicationId: r.applicationId,
+      createdById: r.createdById,
+      assignedToId: r.assignedToId,
+      boardId: r.boardId,
+    }));
 
     // Get related data
     const ticketIds = ticketsData.map(t => t.id);
@@ -97,6 +143,47 @@ export const getTicketById = async (req, res) => {
   try {
     const { id } = req.params;
     
+    // Tenant admin: ensure ticket belongs to their tenant (via createdBy user)
+    if (req.user.role === 'TENANT_ADMIN') {
+      requireTenantScope(req);
+      const ticketData = await db
+        .select({ ticket: tickets })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, req.tenantId)))
+        .limit(1);
+
+      if (!ticketData.length) {
+        return res.status(404).json({ error: 'Ticket not found' });
+      }
+
+      const ticket = ticketData[0].ticket;
+
+      // Get all related data
+      const [assignedUser, createdUser, customer, application, labelsData, commentsData, activitiesData] = await Promise.all([
+        ticket.assignedToId ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.assignedToId)).limit(1) : Promise.resolve([]),
+        db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.createdById)).limit(1),
+        ticket.customerId ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1) : Promise.resolve([]),
+        ticket.applicationId ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1) : Promise.resolve([]),
+        db.select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } }).from(ticketLabels).innerJoin(labels, eq(ticketLabels.labelId, labels.id)).where(eq(ticketLabels.ticketId, id)),
+        db.select({ id: comments.id, content: comments.content, createdAt: comments.createdAt, userId: comments.userId, ticketId: comments.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(comments).innerJoin(users, eq(comments.userId, users.id)).where(eq(comments.ticketId, id)).orderBy(asc(comments.createdAt)),
+        db.select({ id: ticketActivities.id, action: ticketActivities.action, description: ticketActivities.description, oldValue: ticketActivities.oldValue, newValue: ticketActivities.newValue, createdAt: ticketActivities.createdAt, userId: ticketActivities.userId, ticketId: ticketActivities.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(ticketActivities).innerJoin(users, eq(ticketActivities.userId, users.id)).where(eq(ticketActivities.ticketId, id)).orderBy(desc(ticketActivities.createdAt)).limit(20)
+      ]);
+
+      const fullTicket = {
+        ...ticket,
+        assignedTo: assignedUser[0] || null,
+        createdBy: createdUser[0] || null,
+        customer: customer[0] || null,
+        application: application[0] || null,
+        labels: labelsData,
+        comments: commentsData,
+        activities: activitiesData
+      };
+
+      return res.json(fullTicket);
+    }
+
     const ticketData = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
 
     if (!ticketData.length) {
@@ -128,8 +215,9 @@ export const getTicketById = async (req, res) => {
     };
 
     // Check if user has access to this ticket
-    if (req.user.role !== 'ADMIN' && 
-        fullTicket.assignedToId !== req.user.userId && 
+    if (req.user.role !== 'SUPER_ADMIN' &&
+        req.user.role !== 'TENANT_ADMIN' &&
+        fullTicket.assignedToId !== req.user.userId &&
         fullTicket.createdById !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied' });
     }

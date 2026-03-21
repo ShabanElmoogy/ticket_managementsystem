@@ -3,7 +3,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "ADMIN" | "EMPLOYEE";
+  role: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
   phone?: string;
   whatsappNotifications?: boolean;
   reminderEnabled?: boolean;
@@ -133,7 +133,7 @@ export interface CreateUserData {
   email: string;
   name: string;
   password: string;
-  role?: "ADMIN" | "EMPLOYEE";
+  role?: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
   phone?: string;
   whatsappNotifications?: boolean;
 }
@@ -142,7 +142,7 @@ export interface UpdateUserData {
   email?: string;
   name?: string;
   password?: string;
-  role?: "ADMIN" | "EMPLOYEE";
+  role?: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
   phone?: string;
   whatsappNotifications?: boolean;
   reminderEnabled?: boolean;
@@ -158,7 +158,8 @@ export interface UserStats {
   total: number;
   active: number;
   byRole: {
-    ADMIN?: number;
+    SUPER_ADMIN?: number;
+    TENANT_ADMIN?: number;
     EMPLOYEE?: number;
   };
 }

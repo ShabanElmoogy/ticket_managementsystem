@@ -11,6 +11,8 @@ import {
   InputLabel,
   MenuItem
 } from "@mui/material";
+import { useAuthStore } from "../../../../stores/authStore";
+import { tenantsApi, type Tenant } from "../../../../services/api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { UserFormDialogProps } from "../types/types";
@@ -24,6 +26,11 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+  const [tenants, setTenants] = React.useState<Tenant[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -39,6 +46,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
       email: "",
       password: "",
       role: "EMPLOYEE" as const,
+      tenantSlug: "",
       phone: "",
       whatsappNotifications: false,
     },
@@ -51,6 +59,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
         email: "",
         password: "",
         role: "EMPLOYEE" as const,
+        tenantSlug: "",
         phone: "",
         whatsappNotifications: false,
       });
@@ -62,9 +71,34 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
     }
   }, [open, initialValues, reset]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (!isSuperAdmin) return;
+
+    let mounted = true;
+    tenantsApi
+      .list()
+      .then((rows) => {
+        if (!mounted) return;
+        setTenants(rows);
+      })
+      .catch((e) => {
+        console.error("Failed to load tenants", e);
+        setTenants([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [open, isSuperAdmin]);
+
   const submit = handleSubmit(onSubmit);
   const roleValue = watch("role");
- 
+  const tenantSlugValue = watch("tenantSlug");
+
+  // Super admin can create tenant admins; tenant admins can only create employees.
+  const canCreateTenantAdmin = !editing;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editing ? "Edit User" : "Create New User"}</DialogTitle>
@@ -107,12 +141,41 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
               label="Role"
               name="role"
               value={roleValue}
-              onChange={(e) => setValue("role", e.target.value as "ADMIN" | "EMPLOYEE", { shouldValidate: true })}
+              onChange={(e) =>
+                setValue("role", e.target.value as "TENANT_ADMIN" | "EMPLOYEE", { shouldValidate: true })
+              }
             >
               <MenuItem value="EMPLOYEE">Employee</MenuItem>
-              <MenuItem value="ADMIN">Administrator</MenuItem>
+              {canCreateTenantAdmin && (
+                <MenuItem value="TENANT_ADMIN">Tenant Admin</MenuItem>
+              )}
             </MySelect>
           </FormControl>
+
+          {isSuperAdmin && (
+            <FormControl fullWidth error={!!errors.tenantSlug}>
+              <InputLabel id="tenant-label">Tenant</InputLabel>
+              <MySelect
+                labelId="tenant-label"
+                label="Tenant"
+                name="tenantSlug"
+                value={tenantSlugValue || ""}
+                onChange={(e) => setValue("tenantSlug", String(e.target.value), { shouldValidate: true })}
+              >
+                <MenuItem value="">Select tenant</MenuItem>
+                {tenants.map((t) => (
+                  <MenuItem key={t.id} value={t.slug}>
+                    {t.name} ({t.slug})
+                  </MenuItem>
+                ))}
+              </MySelect>
+              {errors.tenantSlug?.message && (
+                <Box sx={{ color: "error.main", fontSize: 12, mt: 0.5 }}>
+                  {String(errors.tenantSlug.message)}
+                </Box>
+              )}
+            </FormControl>
+          )}
 
           <TextField
             label="Phone Number"

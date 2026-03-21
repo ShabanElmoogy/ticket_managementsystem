@@ -60,6 +60,16 @@ http.interceptors.request.use(
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
+    // Add tenant header (multi-tenant)
+    // Best practice:
+    // - SUPER_ADMIN login is global and can omit tenant.
+    // - Tenant users must send X-Tenant-Slug even for /auth/login.
+    // We attach tenant slug whenever it exists; backend will ignore it for SUPER_ADMIN.
+    const tenantSlug = localStorage.getItem("tenantSlug");
+    if (tenantSlug) {
+      (config.headers as Record<string, string>)["X-Tenant-Slug"] = tenantSlug;
+    }
+
     // Add request ID for tracing
     const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     (config.headers as Record<string, string>)["X-Request-ID"] = requestId;

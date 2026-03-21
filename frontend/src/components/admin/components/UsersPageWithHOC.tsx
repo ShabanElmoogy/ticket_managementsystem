@@ -20,10 +20,19 @@ import {
   type User,
   type CreateUserData,
   usersApi,
+  tenantsApi,
 } from "../../../services/api";
+import { useAuthStore } from "../../../stores/authStore";
 import PeopleIcon from "@mui/icons-material/People";
 
-const usersKeys = { all: ["users"] as const };
+const usersKeys = { all: ["users"] as const, tenant: ["users", "tenant"] as const };
+
+const getUsersQueryKey = () => {
+  const user = useAuthStore.getState().user;
+  const tenantSlug = localStorage.getItem("tenantSlug") || "";
+  // Include tenantSlug so switching tenants triggers a refetch.
+  return user?.role === "TENANT_ADMIN" ? ([...usersKeys.tenant, tenantSlug] as const) : usersKeys.all;
+};
 
 type UsersPageProps = CRUDProps<User, CreateUserData> &
   UIStateProps &
@@ -51,28 +60,108 @@ function UsersPageComponent(props: UsersPageProps) {
     logError,
   } = props;
 
+  const authUser = useAuthStore((s) => s.user);
+  const isTenantAdmin = authUser?.role === "TENANT_ADMIN";
+
   const [forceDeleteOpen, setForceDeleteOpen] = React.useState(false);
   const [forceDeleteUser, setForceDeleteUser] = React.useState<User | null>(null);
   const [forceDeleteLoading, setForceDeleteLoading] = React.useState(false);
   const [auxLoading] = React.useState(false);
 
+  const handleCreateTenantWithAdmin = async () => {
+    setSubmitting(true);
+    try {
+      // Minimal flow:
+      // 1) Create tenant
+      // 2) Create tenant admin user under that tenant (by setting X-Tenant-Slug via localStorage)
+      const tenantName = window.prompt("Tenant name");
+      if (!tenantName) return;
+
+      const tenantSlug = window.prompt(
+        "Tenant slug (optional). Leave empty to auto-generate",
+        tenantName.toLowerCase().replace(/\s+/g, "-")
+      );
+
+      const tenant = await tenantsApi.create({
+        name: tenantName,
+        slug: tenantSlug?.trim() ? tenantSlug.trim() : undefined,
+      });
+
+      const adminName = window.prompt("Tenant admin name");
+      if (!adminName) return;
+
+      const adminEmail = window.prompt("Tenant admin email");
+      if (!adminEmail) return;
+
+      const adminPassword = window.prompt("Tenant admin password");
+      if (!adminPassword) return;
+
+      // Temporarily set tenant context for the create-user call.
+      const prevTenantSlug = localStorage.getItem("tenantSlug");
+      localStorage.setItem("tenantSlug", tenant.slug);
+      try {
+        await usersApi.createUser({
+          name: adminName,
+          email: adminEmail,
+          password: adminPassword,
+          role: "TENANT_ADMIN",
+        });
+      } finally {
+        if (prevTenantSlug) localStorage.setItem("tenantSlug", prevTenantSlug);
+        else localStorage.removeItem("tenantSlug");
+      }
+
+      showSnackbar("Tenant and tenant admin created successfully", "success");
+      refetch();
+    } catch (error) {
+      showSnackbar(handleError(error, "Error creating tenant and admin"), "error");
+      logError("Create Tenant + Admin", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (values: any) => {
+    // If super admin selected a tenant in the form, temporarily set tenant context
+    // so the API client sends X-Tenant-Slug.
+    const prevTenantSlug = localStorage.getItem("tenantSlug");
+    const nextTenantSlug = values?.tenantSlug ? String(values.tenantSlug) : "";
+
+    if (nextTenantSlug) localStorage.setItem("tenantSlug", nextTenantSlug);
+
     // Filter out undefined password for editing
     const submitData: CreateUserData = {
       ...values,
-      password: values.password || undefined
+      password: values.password || undefined,
     };
+
+    // tenantSlug is UI-only; backend uses header.
+    delete (submitData as any).tenantSlug;
+
     if (uiState.editingItem && !submitData.password) {
       delete (submitData as any).password;
     }
+
     setSubmitting(true);
     try {
       if (uiState.editingItem) {
+        // Tenant admin editing is not supported by backend routes (super admin only)
+        if (isTenantAdmin) {
+          showSnackbar("Tenant admin cannot edit users (not implemented)", "error");
+          return;
+        }
         await update((uiState.editingItem as User).id, submitData);
         showSnackbar(messages.success.updated, "success");
       } else {
-        await create(submitData);
-        showSnackbar(messages.success.created, "success");
+        // Tenant admin creates via tenant-scoped endpoint
+        if (isTenantAdmin) {
+          await usersApi.createTenantUser(submitData);
+          showSnackbar(messages.success.created, "success");
+          refetch();
+        } else {
+          await create(submitData);
+          showSnackbar(messages.success.created, "success");
+        }
       }
       closeDialog();
     } catch (error) {
@@ -82,6 +171,11 @@ function UsersPageComponent(props: UsersPageProps) {
       showSnackbar(handleError(error, errorMessage), "error");
       logError(uiState.editingItem ? "Update" : "Create", error);
     } finally {
+      // restore tenant context
+      if (nextTenantSlug) {
+        if (prevTenantSlug) localStorage.setItem("tenantSlug", prevTenantSlug);
+        else localStorage.removeItem("tenantSlug");
+      }
       setSubmitting(false);
     }
   };
@@ -124,11 +218,31 @@ function UsersPageComponent(props: UsersPageProps) {
   return (
     <Box>
       <MyGridHeader
-        title="Users Management"
+        title={isTenantAdmin ? "Tenant Users" : "Users Management"}
         onAdd={() => openDialog()}
         addButtonText="Add User"
         addTooltip="Add User"
         icon={PeopleIcon}
+        extraActions={
+          isTenantAdmin ? null : (
+            <>
+              <button
+                type="button"
+                onClick={handleCreateTenantWithAdmin}
+                style={{
+                  marginLeft: 8,
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                Create Tenant + Admin
+              </button>
+            </>
+          )
+        }
       />
 
       <UsersTable
@@ -148,6 +262,7 @@ function UsersPageComponent(props: UsersPageProps) {
               email: (uiState.editingItem as User).email,
               password: "",
               role: (uiState.editingItem as User).role,
+              tenantSlug: "",
               phone: (uiState.editingItem as User).phone || "",
               whatsappNotifications: (uiState.editingItem as User).whatsappNotifications || false,
             }
@@ -248,9 +363,23 @@ const UsersPageWithHOC = withCRUD<User, CreateUserData>(
   ),
   {
     entityName: "users",
-    queryKey: usersKeys.all,
+    queryKey: getUsersQueryKey(),
     api: {
-      getAll: usersApi.getUsers.bind(usersApi),
+      // For tenant admin, the backend requires /users/tenant.
+      // We decide which endpoint to call based on the logged-in role.
+      getAll: async () => {
+        const user = useAuthStore.getState().user;
+        if (user?.role === "TENANT_ADMIN") {
+          // Ensure tenant context exists; otherwise the backend will return 400.
+          const tenantSlug = localStorage.getItem("tenantSlug");
+          if (!tenantSlug) {
+            console.warn("Missing tenantSlug in localStorage; cannot load tenant users");
+            return [];
+          }
+          return usersApi.getTenantUsers();
+        }
+        return usersApi.getUsers();
+      },
       create: usersApi.createUser.bind(usersApi),
       update: usersApi.updateUser.bind(usersApi),
       delete: (id: string) => usersApi.deleteUser(id),

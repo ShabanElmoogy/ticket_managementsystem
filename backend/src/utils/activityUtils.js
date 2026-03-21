@@ -1,5 +1,5 @@
 import { db } from '../config/database.js';
-import { ticketActivities, users, tickets } from '../../drizzle/schema.js';
+import { ticketActivities, users, tickets } from '../modules/schema.js';
 import { eq, desc } from 'drizzle-orm';
 
 export const logActivity = async ({ ticketId, userId, action, description, oldValue, newValue }) => {

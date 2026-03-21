@@ -19,7 +19,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'EMPLOYEE';
+  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE';
   phone?: string;
 }
 
@@ -27,7 +27,7 @@ interface TokenPayload {
   userId: string;
   email: string;
   name?: string;
-  role: 'ADMIN' | 'EMPLOYEE';
+  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE';
   exp: number;
   iat: number;
   iss?: string;
@@ -368,4 +368,7 @@ export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenti
 export const useUser = () => useAuthStore((state) => state.user);
 export const useToken = () => useAuthStore((state) => state.token);
 export const useIsLoading = () => useAuthStore((state) => state.isLoading);
-export const useIsAdmin = () => useAuthStore((state) => state.user?.role === 'ADMIN');
+export const useIsAdmin = () =>
+  useAuthStore(
+    (state) => state.user?.role === 'SUPER_ADMIN' || state.user?.role === 'TENANT_ADMIN'
+  );

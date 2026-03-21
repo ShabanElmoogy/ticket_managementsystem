@@ -12,6 +12,7 @@ import taskRoutes from './tasks/tasks.routes.js';
 import userRoutes from './users/users.routes.js';
 import reminderRoutes from './reminders/reminders.routes.js';
 import docRoutes from './docs/docs.routes.js';
+import tenantRoutes from './tenants/tenants.routes.js';
 
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/users', userRoutes);
 router.use('/reminders', reminderRoutes);
+router.use('/tenants', tenantRoutes);
 router.use('/tickets', commentRoutes);
 router.use('/docs', docRoutes);
 router.use('/docsbuilder', docRoutes);

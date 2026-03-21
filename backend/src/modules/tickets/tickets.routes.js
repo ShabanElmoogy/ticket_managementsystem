@@ -1,6 +1,6 @@
 import express from 'express';
 import * as ticketController from './tickets.controller.js';
-import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 
 const router = express.Router();
 
@@ -8,9 +8,9 @@ const router = express.Router();
 router.get('/', authenticateToken, ticketController.getAllTickets);
 router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
 router.get('/:id', authenticateToken, ticketController.getTicketById);
-router.post('/', authenticateToken, requireAdmin, ticketController.createTicket);
+router.post('/', authenticateToken, requireTenantAdmin, ticketController.createTicket);
 router.put('/:id', authenticateToken, ticketController.updateTicket);
-router.delete('/:id', authenticateToken, requireAdmin, ticketController.deleteTicket);
+router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.deleteTicket);
 router.post('/:id/take', authenticateToken, ticketController.takeTicket);
 
 export default router;

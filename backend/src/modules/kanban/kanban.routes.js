@@ -1,6 +1,6 @@
 import express from 'express';
 import * as kanbanController from './kanban.controller.js';
-import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 
 const router = express.Router();
 
@@ -8,8 +8,8 @@ const router = express.Router();
 router.get('/boards', authenticateToken, kanbanController.getAllBoards);
 router.get('/boards/:id', authenticateToken, kanbanController.getBoardById);
 router.post('/boards', authenticateToken, kanbanController.createBoard);
-router.put('/boards/:id', authenticateToken, requireAdmin, kanbanController.updateBoard);
-router.delete('/boards/:id', authenticateToken, requireAdmin, kanbanController.deleteBoard);
+router.put('/boards/:id', authenticateToken, requireTenantAdmin, kanbanController.updateBoard);
+router.delete('/boards/:id', authenticateToken, requireTenantAdmin, kanbanController.deleteBoard);
 
 // Test endpoint for debugging auth
 router.get('/test-auth', authenticateToken, (req, res) => {
@@ -23,9 +23,9 @@ router.put('/tickets/:ticketId/move', authenticateToken, kanbanController.moveTi
 router.put('/tasks/:taskId/move', kanbanController.moveTask);
 
 // Column Management
-router.post('/boards/:boardId/columns', authenticateToken, requireAdmin, kanbanController.addColumn);
-router.put('/columns/:columnId', authenticateToken, requireAdmin, kanbanController.updateColumn);
-router.delete('/columns/:columnId', authenticateToken, requireAdmin, kanbanController.deleteColumn);
+router.post('/boards/:boardId/columns', authenticateToken, requireTenantAdmin, kanbanController.addColumn);
+router.put('/columns/:columnId', authenticateToken, requireTenantAdmin, kanbanController.updateColumn);
+router.delete('/columns/:columnId', authenticateToken, requireTenantAdmin, kanbanController.deleteColumn);
 
 // Analytics
 router.get('/boards/:boardId/analytics', authenticateToken, kanbanController.getBoardAnalytics);

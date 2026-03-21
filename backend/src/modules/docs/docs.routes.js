@@ -1,21 +1,27 @@
 import express from 'express';
-import { authenticateToken } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 import { listDocs, getDoc, createDoc, updateDoc, deleteDoc, listTree, createFolder, createDocNode, renameNode, moveNode, deleteNode } from './docs.controller.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, listDocs);
-router.get('/tree', authenticateToken, listTree);
-router.get('/tree/list', authenticateToken, listTree);
-router.post('/tree/folder', authenticateToken, createFolder);
-router.post('/tree/doc', authenticateToken, createDocNode);
-router.put('/tree/:id/rename', authenticateToken, renameNode);
-router.put('/tree/:id/move', authenticateToken, moveNode);
-router.delete('/tree/:id', authenticateToken, deleteNode);
+// Apply authentication middleware to all routes (same pattern as tasks)
+router.use(authenticateToken);
 
-router.get('/:id', authenticateToken, getDoc);
-router.post('/', authenticateToken, createDoc);
-router.put('/:id', authenticateToken, updateDoc);
-router.delete('/:id', authenticateToken, deleteDoc);
+// Reads
+router.get('/', listDocs);
+router.get('/tree', listTree);
+router.get('/tree/list', listTree);
+router.get('/:id', getDoc);
+
+// Writes (tenant admins only)
+router.post('/', requireTenantAdmin, createDoc);
+router.put('/:id', requireTenantAdmin, updateDoc);
+router.delete('/:id', requireTenantAdmin, deleteDoc);
+
+router.post('/tree/folder', requireTenantAdmin, createFolder);
+router.post('/tree/doc', requireTenantAdmin, createDocNode);
+router.put('/tree/:id/rename', requireTenantAdmin, renameNode);
+router.put('/tree/:id/move', requireTenantAdmin, moveNode);
+router.delete('/tree/:id', requireTenantAdmin, deleteNode);
 
 export default router;

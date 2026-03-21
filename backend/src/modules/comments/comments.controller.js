@@ -2,7 +2,7 @@ import { db } from '../../config/database.js';
 import { comments } from './comments.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Create new comment on a ticket
 export const createComment = async (req, res) => {
@@ -11,13 +11,32 @@ export const createComment = async (req, res) => {
     const { content } = req.body;
 
     // Check if ticket exists and user has access
-    const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+    // Tenant admin: ensure ticket belongs to their tenant (via createdBy user)
+    let ticket;
+    if (req.user.role === 'TENANT_ADMIN') {
+      if (!req.user.tenantId) {
+        return res.status(403).json({ error: 'Tenant admin is missing tenantId' });
+      }
+
+      const rows = await db
+        .select({ ticket: tickets })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, req.user.tenantId)))
+        .limit(1);
+
+      ticket = rows[0]?.ticket;
+    } else {
+      const rows = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+      ticket = rows[0];
+    }
 
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
-    if (req.user.role !== 'ADMIN' &&
+    if (req.user.role !== 'SUPER_ADMIN' &&
+        req.user.role !== 'TENANT_ADMIN' &&
         ticket.assignedToId !== req.user.userId &&
         ticket.createdById !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied' });

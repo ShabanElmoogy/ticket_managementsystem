@@ -136,8 +136,14 @@ export const createCustomer = async (req, res) => {
       return res.status(400).json({ error: 'Customer with this email already exists' });
     }
 
+    const tenantId = req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     // Create customer
     const [customer] = await db.insert(customers).values({
+      tenantId,
       name,
       email,
       phone,

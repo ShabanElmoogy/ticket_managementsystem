@@ -6,12 +6,22 @@ export class UsersApiService extends BaseApiService {
     return this.get<User[]>("/users");
   }
 
+  // Tenant admin: list users for current tenant
+  async getTenantUsers(): Promise<User[]> {
+    return this.get<User[]>("/users/tenant");
+  }
+
   async getUser(id: string): Promise<User> {
     return this.get<User>(`/users/${id}`);
   }
 
   async createUser(data: CreateUserData): Promise<User> {
     return this.post<User>("/users", data);
+  }
+
+  // Tenant admin: create user under current tenant
+  async createTenantUser(data: CreateUserData): Promise<User> {
+    return this.post<User>("/users/tenant", data);
   }
 
   async updateUser(id: string, data: UpdateUserData): Promise<User> {

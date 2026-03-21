@@ -38,6 +38,8 @@ import { useThemeStore } from '../../stores/themeStore';
 import { authApi } from '../../services/api';
 
 const LoginForm: React.FC = () => {
+  const [tenantSlug, setTenantSlug] = useState('');
+  const [isSystemLogin, setIsSystemLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -53,7 +55,31 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
+      // Best practice (multi-tenant):
+      // - System/SUPER_ADMIN login must be global and must not send tenant context.
+      // - Tenant users (TENANT_ADMIN/EMPLOYEE) are tenant-scoped and should send tenant context.
+      //
+      // Use an explicit toggle instead of inferring from an empty tenant field.
+      // This avoids accidental tenant leakage from previous sessions.
+      const normalizedTenant = tenantSlug.trim().toLowerCase();
+      if (isSystemLogin) {
+        localStorage.removeItem('tenantSlug');
+      } else if (normalizedTenant) {
+        localStorage.setItem('tenantSlug', normalizedTenant);
+      } else {
+        // Strict behavior: do not reuse a previous tenant.
+        localStorage.removeItem('tenantSlug');
+      }
+
       const response = await authApi.login({ email, password });
+
+      // Persist tenant context returned by backend (best practice)
+      // This ensures tenant-scoped pages (like Users grid) always have X-Tenant-Slug.
+      const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
+      if (responseTenantSlug) {
+        localStorage.setItem('tenantSlug', String(responseTenantSlug));
+      }
+
       login(response.user, response.token, response.refreshToken);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -62,14 +88,34 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
+  const handleDemoLogin = async (
+    demoEmail: string,
+    demoPassword: string,
+    options?: { tenantSlug?: string | null }
+  ) => {
+    const demoTenant = (options?.tenantSlug ?? '').trim().toLowerCase();
+
+    setIsSystemLogin(!demoTenant);
+    setTenantSlug(demoTenant);
     setEmail(demoEmail);
     setPassword(demoPassword);
     setLoading(true);
     setError('');
 
     try {
+    if (!demoTenant) {
+    localStorage.removeItem('tenantSlug');
+    } else {
+    localStorage.setItem('tenantSlug', demoTenant);
+    }
+
       const response = await authApi.login({ email: demoEmail, password: demoPassword });
+
+      const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
+      if (responseTenantSlug) {
+        localStorage.setItem('tenantSlug', String(responseTenantSlug));
+      }
+
       login(response.user, response.token, response.refreshToken);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -288,6 +334,35 @@ const LoginForm: React.FC = () => {
             </Stack>
 
             <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+                <Chip
+                  label={isSystemLogin ? 'System login (SUPER_ADMIN)' : 'Tenant login'}
+                  color={isSystemLogin ? 'primary' : 'default'}
+                  variant={isSystemLogin ? 'filled' : 'outlined'}
+                  onClick={() => setIsSystemLogin((v) => !v)}
+                  disabled={loading}
+                  sx={{ cursor: loading ? 'default' : 'pointer' }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {isSystemLogin
+                    ? 'Tenant context will be cleared.'
+                    : 'Provide tenant slug for tenant-scoped users.'}
+                </Typography>
+              </Stack>
+
+              <TextField
+                fullWidth
+                label="Tenant slug"
+                placeholder="e.g. acme"
+                value={tenantSlug}
+                onChange={(e) => setTenantSlug(e.target.value)}
+                margin="normal"
+                disabled={loading || isSystemLogin}
+                helperText={isSystemLogin
+                  ? 'Disabled for system login.'
+                  : 'Required for tenant users (TENANT_ADMIN/EMPLOYEE).'}
+              />
+
               <TextField
                 fullWidth
                 label="Email address"
@@ -386,7 +461,7 @@ const LoginForm: React.FC = () => {
                     },
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.08)' : 'rgba(25, 118, 210, 0.04)',
                   }}
-                  onClick={() => handleDemoLogin('admin@company.com', 'admin123')}
+                  onClick={() => handleDemoLogin('manager@company.com', 'shabanelmogy', { tenantSlug: 'default' })}
                 >
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -398,7 +473,7 @@ const LoginForm: React.FC = () => {
                           System Administrator
                         </Typography>
                         <Typography variant="body2" color="text.secondary" noWrap>
-                          admin@company.com
+                          manager@company.com
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={1} alignItems="center">
@@ -433,7 +508,7 @@ const LoginForm: React.FC = () => {
                     },
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.08)' : 'rgba(156, 39, 176, 0.04)',
                   }}
-                  onClick={() => handleDemoLogin('john@company.com', 'employee123')}
+                  onClick={() => handleDemoLogin('john@company.com', 'employee123', { tenantSlug: 'default' })}
                 >
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Stack direction="row" spacing={2} alignItems="center">

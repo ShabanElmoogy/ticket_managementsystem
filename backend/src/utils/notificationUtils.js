@@ -1,5 +1,5 @@
 import { db } from '../config/database.js';
-import { notifications, tickets, users, customers, applications } from '../../drizzle/schema.js';
+import { notifications, tickets, users, customers, applications } from '../modules/schema.js';
 import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 
 export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {

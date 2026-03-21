@@ -1,10 +1,12 @@
-import { pgTable, varchar, text, integer, timestamp, pgEnum, index, json } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, integer, timestamp, pgEnum, index, json, uuid } from 'drizzle-orm/pg-core';
+import { tenants } from '../tenants/tenants.schema.js';
 import { relations } from 'drizzle-orm';
 
 export const docNodeTypeEnum = pgEnum('doc_node_type', ['FOLDER', 'DOC']);
 
 export const docs = pgTable('docs', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 191 }).notNull(),
   blocks: json('blocks').notNull().default([]),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -13,6 +15,7 @@ export const docs = pgTable('docs', {
 
 export const docNodes = pgTable('doc_nodes', {
   id: varchar('id', { length: 191 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   type: docNodeTypeEnum('type').notNull(),
   title: varchar('title', { length: 191 }).notNull(),
   position: integer('position').default(0).notNull(),
@@ -22,6 +25,7 @@ export const docNodes = pgTable('doc_nodes', {
   docId: varchar('doc_id', { length: 191 }).references(() => docs.id, { onDelete: 'cascade' }),
 }, (table) => ({
   parentIdPositionIdx: index('doc_nodes_parent_id_position_idx').on(table.parentId, table.position),
+  tenantIdParentIdPositionIdx: index('doc_nodes_tenant_id_parent_id_position_idx').on(table.tenantId, table.parentId, table.position),
 }));
 
 export const docsRelations = relations(docs, ({ many }) => ({
