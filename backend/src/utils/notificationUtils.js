@@ -5,7 +5,7 @@ import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {
   try {
     console.log('Creating notification:', { userId, ticketId, type, title, message, hasReq: !!req, hasEmitFn: !!req?.emitNotification });
-    
+
     const [notification] = await db.insert(notifications).values({
       userId,
       ticketId,
@@ -28,7 +28,7 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
       title,
       message,
       data: {
-        ticket: ticketId ? { id: ticketId, title: ticketTitle || "Untitled ticket" } : undefined,
+        ticket: ticketId ? { id: ticketId, title: ticketTitle || 'Untitled ticket' } : undefined,
         assignedTo: assigneeName
       },
       timestamp: notification.createdAt,
@@ -54,7 +54,7 @@ export const markNotificationAsRead = async (notificationId) => {
     await db.update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, notificationId));
-    
+
     return { success: true };
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -62,11 +62,20 @@ export const markNotificationAsRead = async (notificationId) => {
   }
 };
 
-export const getUserNotifications = async (userId, { limit = 50, unreadOnly = false } = {}) => {
+export const getUserNotifications = async (
+  userId,
+  { limit = 50, unreadOnly = false, tenantId = null } = {}
+) => {
   try {
     const conditions = [eq(notifications.userId, userId)];
     if (unreadOnly) {
       conditions.push(eq(notifications.isRead, false));
+    }
+
+    // Tenant scoping:
+    // notifications table does not have tenant_id, so we scope by joining users and filtering users.tenantId.
+    if (tenantId) {
+      conditions.push(eq(users.tenantId, tenantId));
     }
 
     return await db
@@ -83,6 +92,7 @@ export const getUserNotifications = async (userId, { limit = 50, unreadOnly = fa
         }
       })
       .from(notifications)
+      .leftJoin(users, eq(notifications.userId, users.id))
       .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
       .where(and(...conditions))
       .orderBy(desc(notifications.createdAt))

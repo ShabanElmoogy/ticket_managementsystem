@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { db } from '../../config/database.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/tokenService.js';
+import { generateAccessToken, generateRefreshToken } from '../../utils/tokenService.js';
 import { users } from '../users/users.schema.js';
 import { refreshTokens } from './auth.schema.js';
 import { tenants } from '../tenants/tenants.schema.js';
@@ -74,8 +74,47 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'Email, name, and password are required' });
     }
 
+    // Tenant-scoped registration:
+    // - SUPER_ADMIN can be created without tenant.
+    // - TENANT_ADMIN / EMPLOYEE must be created within a tenant context.
+    const tenantSlugRaw = req.headers['x-tenant-slug'];
+    const tenantSlug = typeof tenantSlugRaw === 'string' ? tenantSlugRaw.trim() : '';
+
+    let tenantId = null;
+    let tenant = null;
+
+    if (role !== 'SUPER_ADMIN') {
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: 'Tenant context required',
+          details: 'Provide X-Tenant-Slug header to register tenant users.'
+        });
+      }
+
+      [tenant] = await db
+        .select({ id: tenants.id, slug: tenants.slug })
+        .from(tenants)
+        .where(eq(tenants.slug, tenantSlug))
+        .limit(1);
+
+      if (!tenant) {
+        return res.status(400).json({
+          error: 'Invalid tenant',
+          details: 'X-Tenant-Slug does not match any tenant.'
+        });
+      }
+
+      tenantId = tenant.id;
+    }
+
     // Check if user already exists
-    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    // - SUPER_ADMIN: global uniqueness by email
+    // - Tenant users: uniqueness by (email, tenantId)
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(role === 'SUPER_ADMIN' ? eq(users.email, email) : and(eq(users.email, email), eq(users.tenantId, tenantId)))
+      .limit(1);
 
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
@@ -85,18 +124,23 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const [user] = await db.insert(users).values({
-      email,
-      name,
-      password: hashedPassword,
-      role
-    }).returning({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      createdAt: users.createdAt
-    });
+    const [user] = await db
+      .insert(users)
+      .values({
+        email,
+        name,
+        password: hashedPassword,
+        role,
+        ...(role === 'SUPER_ADMIN' ? {} : { tenantId })
+      })
+      .returning({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        tenantId: users.tenantId,
+        createdAt: users.createdAt
+      });
 
     // Generate tokens
     // Best practice: include tenantId in token for tenant-scoped roles.
@@ -104,14 +148,14 @@ export const register = async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {}),
+      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {})
     });
 
     const refreshTokenValue = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {}),
+      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {})
     });
 
     // Store refresh token in database
@@ -120,7 +164,8 @@ export const register = async (req, res) => {
     res.status(201).json({
       user,
       token: accessToken,
-      refreshToken: refreshTokenValue
+      refreshToken: refreshTokenValue,
+      ...(tenant ? { tenant: { id: tenantId, slug: tenant.slug } } : {})
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -194,9 +239,8 @@ export const login = async (req, res) => {
           refreshToken: refreshTokenValue,
         });
       }
+
       // If password doesn't match, do NOT continue to tenant-scoped flow.
-      // This prevents confusing behavior where a SUPER_ADMIN email with wrong password
-      // falls through and fails due to missing tenant header.
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -313,13 +357,17 @@ export const refreshToken = async (req, res) => {
     }
 
     // Find user
-    const [user] = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      role: users.role,
-      tenantId: users.tenantId,
-    }).from(users).where(eq(users.id, storedToken.userId)).limit(1);
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        tenantId: users.tenantId,
+      })
+      .from(users)
+      .where(eq(users.id, storedToken.userId))
+      .limit(1);
 
     if (!user) {
       return res.status(401).json({ error: 'User not found' });

@@ -483,7 +483,7 @@ const LoginForm: React.FC = () => {
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              copyCreds('admin@company.com', 'admin123');
+                              copyCreds('manager@company.com', 'shabanelmogy');
                             }}
                             disabled={loading}
                           >

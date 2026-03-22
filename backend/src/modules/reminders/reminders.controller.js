@@ -3,7 +3,12 @@ import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
-import { eq, and, or, not, lt, desc, asc } from 'drizzle-orm';
+import { eq, and, or, not, lt, desc, asc, inArray } from 'drizzle-orm';
+
+const getTenantScope = (req) => {
+  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
+  return req.tenantId ?? req.user?.tenantId ?? null;
+};
 
 // Get user reminder settings
 export const getReminderSettings = async (req, res) => {
@@ -12,14 +17,19 @@ export const getReminderSettings = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const user = await db
       .select({
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval
       })
       .from(users)
-      .where(eq(users.id, userId))
+      .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
       .limit(1);
 
     if (!user.length) {
@@ -40,7 +50,12 @@ export const updateReminderSettings = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const { reminderEnabled, reminderInterval } = req.body;
 
     const updateData = {};
@@ -50,7 +65,7 @@ export const updateReminderSettings = async (req, res) => {
     const [user] = await db
       .update(users)
       .set(updateData)
-      .where(eq(users.id, userId))
+      .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
       .returning({
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval
@@ -71,14 +86,19 @@ export const getDelayedTickets = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const user = await db
       .select({
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval
       })
       .from(users)
-      .where(eq(users.id, userId))
+      .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
       .limit(1);
 
     if (!user.length || !user[0]?.reminderEnabled) {
@@ -86,8 +106,9 @@ export const getDelayedTickets = async (req, res) => {
     }
 
     const now = new Date();
-    const delayThreshold = new Date(now.getTime() - (user[0].reminderInterval * 60 * 1000));
+    const delayThreshold = new Date(now.getTime() - user[0].reminderInterval * 60 * 1000);
 
+    // Tickets table has no tenantId, so for tenant-scoped requests we scope via createdBy user.
     const ticketsData = await db
       .select({
         id: tickets.id,
@@ -102,34 +123,37 @@ export const getDelayedTickets = async (req, res) => {
         applicationId: tickets.applicationId
       })
       .from(tickets)
+      .innerJoin(users, eq(tickets.createdById, users.id))
       .leftJoin(customers, eq(tickets.customerId, customers.id))
       .leftJoin(applications, eq(tickets.applicationId, applications.id))
       .where(
         and(
           eq(tickets.assignedToId, userId),
+          ...(tenantId ? [eq(users.tenantId, tenantId)] : []),
           not(eq(tickets.status, 'CLOSED')),
-          or(
-            lt(tickets.dueDate, now),
-            lt(tickets.updatedAt, delayThreshold)
-          )
+          or(lt(tickets.dueDate, now), lt(tickets.updatedAt, delayThreshold))
         )
       )
       .orderBy(desc(tickets.priority), asc(tickets.dueDate));
 
     // Get related data separately
-    const customerIds = ticketsData.filter(t => t.customerId).map(t => t.customerId);
-    const applicationIds = ticketsData.filter(t => t.applicationId).map(t => t.applicationId);
-    
+    const customerIds = ticketsData.filter((t) => t.customerId).map((t) => t.customerId);
+    const applicationIds = ticketsData.filter((t) => t.applicationId).map((t) => t.applicationId);
+
     const [customersData, applicationsData] = await Promise.all([
-      customerIds.length > 0 ? db.select({ id: customers.id, name: customers.name }).from(customers).where(eq(customers.id, customerIds)) : [],
-      applicationIds.length > 0 ? db.select({ id: applications.id, name: applications.name }).from(applications).where(eq(applications.id, applicationIds)) : []
+      customerIds.length > 0
+        ? db.select({ id: customers.id, name: customers.name }).from(customers).where(inArray(customers.id, customerIds))
+        : [],
+      applicationIds.length > 0
+        ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds))
+        : []
     ]);
 
     // Combine data
-    const result = ticketsData.map(ticket => ({
+    const result = ticketsData.map((ticket) => ({
       ...ticket,
-      customer: customersData.find(c => c.id === ticket.customerId) || null,
-      application: applicationsData.find(a => a.id === ticket.applicationId) || null
+      customer: customersData.find((c) => c.id === ticket.customerId) || null,
+      application: applicationsData.find((a) => a.id === ticket.applicationId) || null
     }));
 
     res.json(result);

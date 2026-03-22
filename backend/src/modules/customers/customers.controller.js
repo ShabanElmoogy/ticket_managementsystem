@@ -3,41 +3,64 @@ import { customers, customerApplications } from './customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, count, desc } from 'drizzle-orm';
+import { eq, and, count, desc } from 'drizzle-orm';
+
+const getTenantScope = (req) => {
+  // SUPER_ADMIN: optional tenant scoping (if header provided)
+  if (req.user?.role === 'SUPER_ADMIN') {
+    return req.tenantId ?? null;
+  }
+
+  // Tenant-scoped roles
+  const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+  if (!tenantId) return null;
+  return tenantId;
+};
 
 // Get all customers
 export const getAllCustomers = async (req, res) => {
   try {
-    const customerList = await db.select({
-      id: customers.id,
-      name: customers.name,
-      email: customers.email,
-      phone: customers.phone,
-      address: customers.address,
-      company: customers.company,
-      createdAt: customers.createdAt,
-      updatedAt: customers.updatedAt
-    }).from(customers).orderBy(desc(customers.createdAt));
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const whereClause = tenantId ? eq(customers.tenantId, tenantId) : undefined;
+
+    const customerList = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        email: customers.email,
+        phone: customers.phone,
+        address: customers.address,
+        company: customers.company,
+        createdAt: customers.createdAt,
+        updatedAt: customers.updatedAt,
+      })
+      .from(customers)
+      .where(whereClause)
+      .orderBy(desc(customers.createdAt));
 
     // For each customer, get their applications and ticket count
     const customersWithDetails = await Promise.all(
       customerList.map(async (customer) => {
-        // Get applications
-        const customerApps = await db.select({
-          id: customerApplications.id,
-          assignedAt: customerApplications.assignedAt,
-          application: {
-            id: applications.id,
-            name: applications.name,
-            version: applications.version
-          }
-        })
-        .from(customerApplications)
-        .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
-        .where(eq(customerApplications.customerId, customer.id));
+        const customerApps = await db
+          .select({
+            id: customerApplications.id,
+            assignedAt: customerApplications.assignedAt,
+            application: {
+              id: applications.id,
+              name: applications.name,
+              version: applications.version,
+            },
+          })
+          .from(customerApplications)
+          .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+          .where(eq(customerApplications.customerId, customer.id));
 
-        // Get ticket count
-        const [ticketCount] = await db.select({ count: count() })
+        const [ticketCount] = await db
+          .select({ count: count() })
           .from(tickets)
           .where(eq(tickets.customerId, customer.id));
 
@@ -45,8 +68,8 @@ export const getAllCustomers = async (req, res) => {
           ...customer,
           applications: customerApps,
           _count: {
-            tickets: ticketCount.count
-          }
+            tickets: ticketCount.count,
+          },
         };
       })
     );
@@ -62,57 +85,66 @@ export const getAllCustomers = async (req, res) => {
 export const getCustomerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const [customer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(tenantId ? and(eq(customers.id, id), eq(customers.tenantId, tenantId)) : eq(customers.id, id))
+      .limit(1);
 
     if (!customer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    // Get applications
-    const customerApps = await db.select({
-      id: customerApplications.id,
-      assignedAt: customerApplications.assignedAt,
-      application: {
-        id: applications.id,
-        name: applications.name,
-        version: applications.version
-      }
-    })
-    .from(customerApplications)
-    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
-    .where(eq(customerApplications.customerId, id));
+    const customerApps = await db
+      .select({
+        id: customerApplications.id,
+        assignedAt: customerApplications.assignedAt,
+        application: {
+          id: applications.id,
+          name: applications.name,
+          version: applications.version,
+        },
+      })
+      .from(customerApplications)
+      .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+      .where(eq(customerApplications.customerId, id));
 
-    // Get tickets with assigned and created users
-    const customerTickets = await db.select({
-      id: tickets.id,
-      title: tickets.title,
-      description: tickets.description,
-      status: tickets.status,
-      priority: tickets.priority,
-      dueDate: tickets.dueDate,
-      createdAt: tickets.createdAt,
-      assignedTo: {
-        id: users.id,
-        name: users.name,
-        email: users.email
-      },
-      createdBy: {
-        id: users.id,
-        name: users.name,
-        email: users.email
-      }
-    })
-    .from(tickets)
-    .leftJoin(users, eq(tickets.assignedToId, users.id))
-    .where(eq(tickets.customerId, id));
+    // Tickets table has no tenantId; for tenant users we still ensure the customer belongs to tenant above.
+    const customerTickets = await db
+      .select({
+        id: tickets.id,
+        title: tickets.title,
+        description: tickets.description,
+        status: tickets.status,
+        priority: tickets.priority,
+        dueDate: tickets.dueDate,
+        createdAt: tickets.createdAt,
+        assignedTo: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+        createdBy: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(tickets)
+      .leftJoin(users, eq(tickets.assignedToId, users.id))
+      .where(eq(tickets.customerId, id));
 
-    const customerWithDetails = {
+    res.json({
       ...customer,
       applications: customerApps,
-      tickets: customerTickets
-    };
-
-    res.json(customerWithDetails);
+      tickets: customerTickets,
+    });
   } catch (error) {
     console.error('Get customer error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -124,63 +156,65 @@ export const createCustomer = async (req, res) => {
   try {
     const { name, email, phone, address, company, applicationIds = [] } = req.body;
 
-    // Validate required fields
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
-    // Check if email already exists
-    const [existingCustomer] = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    // Email uniqueness should be per-tenant
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.email, email), eq(customers.tenantId, tenantId)))
+      .limit(1);
 
     if (existingCustomer) {
       return res.status(400).json({ error: 'Customer with this email already exists' });
     }
 
-    const tenantId = req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const [customer] = await db
+      .insert(customers)
+      .values({
+        tenantId,
+        name,
+        email,
+        phone,
+        address,
+        company,
+      })
+      .returning();
 
-    // Create customer
-    const [customer] = await db.insert(customers).values({
-      tenantId,
-      name,
-      email,
-      phone,
-      address,
-      company
-    }).returning();
-
-    // Create customer-application relationships
     if (applicationIds.length > 0) {
       await db.insert(customerApplications).values(
-        applicationIds.map(appId => ({
+        applicationIds.map((appId) => ({
           customerId: customer.id,
-          applicationId: appId
+          applicationId: appId,
         }))
       );
     }
 
-    // Get customer with applications for response
-    const customerApps = await db.select({
-      id: customerApplications.id,
-      assignedAt: customerApplications.assignedAt,
-      application: {
-        id: applications.id,
-        name: applications.name,
-        version: applications.version
-      }
-    })
-    .from(customerApplications)
-    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
-    .where(eq(customerApplications.customerId, customer.id));
+    const customerApps = await db
+      .select({
+        id: customerApplications.id,
+        assignedAt: customerApplications.assignedAt,
+        application: {
+          id: applications.id,
+          name: applications.name,
+          version: applications.version,
+        },
+      })
+      .from(customerApplications)
+      .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+      .where(eq(customerApplications.customerId, customer.id));
 
-    const customerWithApps = {
+    res.status(201).json({
       ...customer,
-      applications: customerApps
-    };
-
-    res.status(201).json(customerWithApps);
+      applications: customerApps,
+    });
   } catch (error) {
     console.error('Create customer error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -193,23 +227,33 @@ export const updateCustomer = async (req, res) => {
     const { id } = req.params;
     const { name, email, phone, address, company, applicationIds } = req.body;
 
-    // Check if customer exists
-    const [existingCustomer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .limit(1);
 
     if (!existingCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    // Check if email is being changed and if it already exists
     if (email && email !== existingCustomer.email) {
-      const [emailExists] = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+      const [emailExists] = await db
+        .select()
+        .from(customers)
+        .where(and(eq(customers.email, email), eq(customers.tenantId, tenantId)))
+        .limit(1);
 
       if (emailExists) {
         return res.status(400).json({ error: 'Customer with this email already exists' });
       }
     }
 
-    // Prepare update data
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
@@ -217,45 +261,43 @@ export const updateCustomer = async (req, res) => {
     if (address !== undefined) updateData.address = address;
     if (company !== undefined) updateData.company = company;
 
-    // Update customer
-    const [customer] = await db.update(customers).set(updateData).where(eq(customers.id, id)).returning();
+    const [customer] = await db
+      .update(customers)
+      .set(updateData)
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .returning();
 
-    // Handle application updates if provided
     if (applicationIds !== undefined) {
-      // Remove existing applications
       await db.delete(customerApplications).where(eq(customerApplications.customerId, id));
 
-      // Add new applications
       if (applicationIds.length > 0) {
         await db.insert(customerApplications).values(
-          applicationIds.map(appId => ({
+          applicationIds.map((appId) => ({
             customerId: id,
-            applicationId: appId
+            applicationId: appId,
           }))
         );
       }
     }
 
-    // Get updated customer with applications
-    const customerApps = await db.select({
-      id: customerApplications.id,
-      assignedAt: customerApplications.assignedAt,
-      application: {
-        id: applications.id,
-        name: applications.name,
-        version: applications.version
-      }
-    })
-    .from(customerApplications)
-    .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
-    .where(eq(customerApplications.customerId, id));
+    const customerApps = await db
+      .select({
+        id: customerApplications.id,
+        assignedAt: customerApplications.assignedAt,
+        application: {
+          id: applications.id,
+          name: applications.name,
+          version: applications.version,
+        },
+      })
+      .from(customerApplications)
+      .leftJoin(applications, eq(customerApplications.applicationId, applications.id))
+      .where(eq(customerApplications.customerId, id));
 
-    const customerWithApps = {
+    res.json({
       ...customer,
-      applications: customerApps
-    };
-
-    res.json(customerWithApps);
+      applications: customerApps,
+    });
   } catch (error) {
     console.error('Update customer error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -267,26 +309,34 @@ export const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if customer exists
-    const [existingCustomer] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .limit(1);
 
     if (!existingCustomer) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    // Check if customer has tickets
-    const [ticketCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.customerId, id));
+    const [ticketCount] = await db
+      .select({ count: count() })
+      .from(tickets)
+      .where(eq(tickets.customerId, id));
 
     if (ticketCount.count > 0) {
       return res.status(400).json({
-        error: 'Cannot delete customer with existing tickets. Please reassign or delete tickets first.'
+        error: 'Cannot delete customer with existing tickets. Please reassign or delete tickets first.',
       });
     }
 
-    // Remove customer-app relations
     await db.delete(customerApplications).where(eq(customerApplications.customerId, id));
-
-    await db.delete(customers).where(eq(customers.id, id));
+    await db.delete(customers).where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)));
 
     res.json({ message: 'Customer deleted successfully' });
   } catch (error) {
@@ -300,47 +350,41 @@ export const assignApplication = async (req, res) => {
   try {
     const { customerId, applicationId } = req.body;
 
-    // Check if customer and application exist
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId }
-    });
-
-    const application = await prisma.application.findUnique({
-      where: { id: applicationId }
-    });
-
-    if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
     }
 
-    if (!application) {
-      return res.status(404).json({ error: 'Application not found' });
-    }
+    // Ensure both belong to tenant
+    const [customer] = await db
+      .select({ id: customers.id })
+      .from(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.tenantId, tenantId)))
+      .limit(1);
 
-    // Check if assignment already exists
-    const existingAssignment = await prisma.customerApplication.findUnique({
-      where: {
-        customerId_applicationId: {
-          customerId,
-          applicationId
-        }
-      }
-    });
+    const [application] = await db
+      .select({ id: applications.id })
+      .from(applications)
+      .where(and(eq(applications.id, applicationId), eq(applications.tenantId, tenantId)))
+      .limit(1);
 
-    if (existingAssignment) {
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+
+    const [existing] = await db
+      .select({ id: customerApplications.id })
+      .from(customerApplications)
+      .where(and(eq(customerApplications.customerId, customerId), eq(customerApplications.applicationId, applicationId)))
+      .limit(1);
+
+    if (existing) {
       return res.status(400).json({ error: 'Customer is already assigned to this application' });
     }
 
-    const assignment = await prisma.customerApplication.create({
-      data: {
-        customerId,
-        applicationId
-      },
-      include: {
-        customer: true,
-        application: true
-      }
-    });
+    const [assignment] = await db
+      .insert(customerApplications)
+      .values({ customerId, applicationId })
+      .returning();
 
     res.status(201).json(assignment);
   } catch (error) {
@@ -354,27 +398,33 @@ export const removeApplication = async (req, res) => {
   try {
     const { customerId, applicationId } = req.params;
 
-    const assignment = await prisma.customerApplication.findUnique({
-      where: {
-        customerId_applicationId: {
-          customerId,
-          applicationId
-        }
-      }
-    });
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    // Ensure customer belongs to tenant
+    const [customer] = await db
+      .select({ id: customers.id })
+      .from(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.tenantId, tenantId)))
+      .limit(1);
+
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+    const [assignment] = await db
+      .select({ id: customerApplications.id })
+      .from(customerApplications)
+      .where(and(eq(customerApplications.customerId, customerId), eq(customerApplications.applicationId, applicationId)))
+      .limit(1);
 
     if (!assignment) {
       return res.status(404).json({ error: 'Assignment not found' });
     }
 
-    await prisma.customerApplication.delete({
-      where: {
-        customerId_applicationId: {
-          customerId,
-          applicationId
-        }
-      }
-    });
+    await db
+      .delete(customerApplications)
+      .where(and(eq(customerApplications.customerId, customerId), eq(customerApplications.applicationId, applicationId)));
 
     res.json({ message: 'Application removed from customer successfully' });
   } catch (error) {

@@ -4,11 +4,23 @@ import { users } from '../users/users.schema.js';
 import { kanbanBoards, kanbanColumns } from '../kanban/kanban.schema.js';
 import { eq, desc, asc, and } from 'drizzle-orm';
 
+const getTenantScope = (req) => {
+  // SUPER_ADMIN can operate without tenant scope.
+  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
+  // Tenant-scoped roles must have a tenant context (resolved header/param or token).
+  return req.tenantId ?? req.user?.tenantId ?? null;
+};
+
 // Get all tasks for a board
 export const getTasks = async (req, res) => {
   try {
     const { boardId } = req.query;
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     // Build base query first to avoid passing undefined into where()
     let query = db
       .select({
@@ -44,9 +56,12 @@ export const getTasks = async (req, res) => {
       .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
       .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id));
 
-    if (boardId) {
-      query = query.where(eq(tasks.boardId, boardId));
-    }
+    // Tenant scoping is enforced via the board's tenantId.
+    // (Tasks table has no tenantId column.)
+    const whereConditions = [];
+    if (boardId) whereConditions.push(eq(tasks.boardId, boardId));
+    if (tenantId) whereConditions.push(eq(kanbanBoards.tenantId, tenantId));
+    if (whereConditions.length) query = query.where(and(...whereConditions));
 
     const tasksData = await query.orderBy(asc(tasks.position), desc(tasks.createdAt));
 
@@ -61,6 +76,11 @@ export const getTasks = async (req, res) => {
 export const getTask = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
 
     const task = await db
       .select({
@@ -95,7 +115,7 @@ export const getTask = async (req, res) => {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
       .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(eq(tasks.id, id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     if (!task.length) {
@@ -114,15 +134,20 @@ export const createTask = async (req, res) => {
   try {
     const { title, description, boardId, columnId, assigneeId, dueDate, status } = req.body;
 
+    const tenantId = getTenantScope(req);
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     if (!title || !boardId || !columnId) {
       return res.status(400).json({ error: 'Title, boardId, and columnId are required' });
     }
 
-    // Verify board exists and is of type TASKS
+    // Verify board exists, belongs to tenant, and is of type TASKS
     const board = await db
       .select()
       .from(kanbanBoards)
-      .where(eq(kanbanBoards.id, boardId))
+      .where(and(eq(kanbanBoards.id, boardId), eq(kanbanBoards.tenantId, tenantId)))
       .limit(1);
 
     if (!board.length) {
@@ -133,22 +158,23 @@ export const createTask = async (req, res) => {
       return res.status(400).json({ error: 'Board must be of type TASKS' });
     }
 
-    // Verify column exists and belongs to the board
+    // Verify column exists and belongs to the board + tenant
     const column = await db
       .select()
       .from(kanbanColumns)
-      .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.boardId, boardId)))
+      .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.boardId, boardId), eq(kanbanColumns.tenantId, tenantId)))
       .limit(1);
 
     if (!column.length) {
       return res.status(404).json({ error: 'Column not found or does not belong to this board' });
     }
 
-    // Get the next position for this column
+    // Get the next position for this column (within tenant)
     const lastTask = await db
       .select({ position: tasks.position })
       .from(tasks)
-      .where(eq(tasks.columnId, columnId))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .where(and(eq(tasks.columnId, columnId), eq(kanbanBoards.tenantId, tenantId)))
       .orderBy(desc(tasks.position))
       .limit(1);
 
@@ -201,7 +227,7 @@ export const createTask = async (req, res) => {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
       .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(eq(tasks.id, newTask.id))
+      .where(and(eq(tasks.id, newTask.id), eq(kanbanBoards.tenantId, tenantId)))
       .limit(1);
 
     res.status(201).json(task[0]);
@@ -217,14 +243,32 @@ export const updateTask = async (req, res) => {
     const { id } = req.params;
     const { title, description, assigneeId, dueDate, status, columnId, position } = req.body;
 
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const existingTask = await db
-      .select()
+      .select({ id: tasks.id, boardId: tasks.boardId })
       .from(tasks)
-      .where(eq(tasks.id, id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // If moving to a different column, ensure the target column belongs to the same tenant.
+    if (columnId !== undefined && columnId !== null && tenantId) {
+      const [col] = await db
+        .select({ id: kanbanColumns.id })
+        .from(kanbanColumns)
+        .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.tenantId, tenantId)))
+        .limit(1);
+      if (!col) {
+        return res.status(400).json({ error: 'Invalid columnId for tenant' });
+      }
     }
 
     const updateData = {};
@@ -236,10 +280,7 @@ export const updateTask = async (req, res) => {
     if (columnId !== undefined) updateData.columnId = columnId;
     if (position !== undefined) updateData.position = position;
 
-    await db
-      .update(tasks)
-      .set(updateData)
-      .where(eq(tasks.id, id));
+    await db.update(tasks).set(updateData).where(eq(tasks.id, id));
 
     const task = await db
       .select({
@@ -274,7 +315,7 @@ export const updateTask = async (req, res) => {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
       .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(eq(tasks.id, id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     res.json(task[0]);
@@ -289,19 +330,23 @@ export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const existingTask = await db
-      .select()
+      .select({ id: tasks.id })
       .from(tasks)
-      .where(eq(tasks.id, id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     if (!existingTask.length) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    await db
-      .delete(tasks)
-      .where(eq(tasks.id, id));
+    await db.delete(tasks).where(eq(tasks.id, id));
 
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
@@ -316,14 +361,32 @@ export const moveTask = async (req, res) => {
     const { id } = req.params;
     const { columnId, position, status } = req.body;
 
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     const task = await db
-      .select()
+      .select({ id: tasks.id, status: tasks.status })
       .from(tasks)
-      .where(eq(tasks.id, id))
+      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     if (!task.length) {
       return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Ensure target column belongs to tenant (if provided)
+    if (columnId && tenantId) {
+      const [col] = await db
+        .select({ id: kanbanColumns.id })
+        .from(kanbanColumns)
+        .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.tenantId, tenantId)))
+        .limit(1);
+      if (!col) {
+        return res.status(400).json({ error: 'Invalid columnId for tenant' });
+      }
     }
 
     // Update task position and column
@@ -369,7 +432,7 @@ export const moveTask = async (req, res) => {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
       .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(eq(tasks.id, id))
+      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
       .limit(1);
 
     res.json(updatedTask[0]);

@@ -98,7 +98,7 @@ const DashboardContent: React.FC<Props> = ({
                 }}
               />
 
-              {userRole === "ADMIN" && (
+              {userRole === "TENANT_ADMIN" && (
                 <div data-testid="create-ticket">
                   <CreateTicketPost
                     onSubmit={onCreateTicket || (() => {})}

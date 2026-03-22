@@ -6,51 +6,54 @@ import { applications } from '../applications/applications.schema.js';
 import { ticketLabels, labels } from '../labels/labels.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import { eq, and, or, desc, asc, count, inArray, isNull, lt } from 'drizzle-orm';
+import { logActivity } from '../../utils/activityUtils.js';
+import { createNotification } from '../../utils/notificationUtils.js';
+
+const getTenantScope = (req) => {
+  // SUPER_ADMIN can operate without tenant scope.
+  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
+  // Prefer resolved tenant context (header/param) but fall back to token tenant.
+  return req.tenantId ?? req.user?.tenantId ?? null;
+};
 
 const requireTenantScope = (req) => {
   // SUPER_ADMIN can see everything.
-  if (req.user?.role === 'SUPER_ADMIN') return;
+  if (req.user?.role === 'SUPER_ADMIN') return null;
 
-  // TENANT_ADMIN must be tenant-scoped.
-  if (req.user?.role === 'TENANT_ADMIN') {
-    if (!req.user.tenantId) {
-      throw new Error('Tenant admin is missing tenantId');
-    }
-    // Prefer token tenantId; requireTenantAdmin middleware also enforces this.
-    req.tenantId = req.user.tenantId;
-    return;
+  const tenantId = getTenantScope(req);
+  if (!tenantId) {
+    throw new Error('Tenant context required');
   }
-
-  // EMPLOYEE: no tenant-wide access.
+  req.tenantId = tenantId;
+  return tenantId;
 };
-import { logActivity } from '../../utils/activityUtils.js';
-import { createNotification } from '../../utils/notificationUtils.js';
 
 // Get all tickets with filtering
 export const getAllTickets = async (req, res) => {
   try {
     const { status, assignedTo, priority } = req.query;
-    
+
     const conditions = [];
     if (status) conditions.push(eq(tickets.status, status));
     if (assignedTo) conditions.push(eq(tickets.assignedToId, assignedTo));
     if (priority) conditions.push(eq(tickets.priority, priority));
 
-    // Tenant admin: restrict to tickets created by users in the same tenant.
-    // (Tickets table has no tenantId column, so we scope via createdBy user.)
-    if (req.user.role === 'TENANT_ADMIN') {
-      requireTenantScope(req);
-      conditions.push(eq(users.tenantId, req.tenantId));
+    // Tenant scoping:
+    // Tickets table has no tenantId column, so we scope via createdBy user.tenantId.
+    const tenantId = getTenantScope(req);
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole) {
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant context required' });
+      }
+      req.tenantId = tenantId;
+      conditions.push(eq(users.tenantId, tenantId));
     }
 
     // If user is not admin, only show tickets assigned to them or unassigned
     if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'TENANT_ADMIN') {
-      conditions.push(
-        or(
-          eq(tickets.assignedToId, req.user.userId),
-          isNull(tickets.assignedToId)
-        )
-      );
+      conditions.push(or(eq(tickets.assignedToId, req.user.userId), isNull(tickets.assignedToId)));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -74,7 +77,7 @@ export const getAllTickets = async (req, res) => {
         boardId: tickets.boardId
       })
       .from(tickets)
-      // join createdBy user so we can tenant-scope for TENANT_ADMIN
+      // join createdBy user so we can tenant-scope
       .innerJoin(users, eq(tickets.createdById, users.id))
       .where(whereClause)
       .orderBy(desc(tickets.createdAt));
@@ -96,39 +99,63 @@ export const getAllTickets = async (req, res) => {
       applicationId: r.applicationId,
       createdById: r.createdById,
       assignedToId: r.assignedToId,
-      boardId: r.boardId,
+      boardId: r.boardId
     }));
 
     // Get related data
-    const ticketIds = ticketsData.map(t => t.id);
-    
-    let assignedUsers = [], createdUsers = [], ticketCustomers = [], ticketApplications = [], labelsData = [], commentCounts = [];
-    
+    const ticketIds = ticketsData.map((t) => t.id);
+
+    let assignedUsers = [],
+      createdUsers = [],
+      ticketCustomers = [],
+      ticketApplications = [],
+      labelsData = [],
+      commentCounts = [];
+
     if (ticketIds.length > 0) {
-      const assignedUserIds = ticketsData.filter(t => t.assignedToId).map(t => t.assignedToId);
-      const createdUserIds = ticketsData.map(t => t.createdById);
-      const customerIds = ticketsData.filter(t => t.customerId).map(t => t.customerId);
-      const applicationIds = ticketsData.filter(t => t.applicationId).map(t => t.applicationId);
-      
+      const assignedUserIds = ticketsData.filter((t) => t.assignedToId).map((t) => t.assignedToId);
+      const createdUserIds = ticketsData.map((t) => t.createdById);
+      const customerIds = ticketsData.filter((t) => t.customerId).map((t) => t.customerId);
+      const applicationIds = ticketsData.filter((t) => t.applicationId).map((t) => t.applicationId);
+
       [assignedUsers, createdUsers, ticketCustomers, ticketApplications, labelsData, commentCounts] = await Promise.all([
-        assignedUserIds.length > 0 ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, assignedUserIds)) : [],
-        createdUserIds.length > 0 ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, createdUserIds)) : [],
-        customerIds.length > 0 ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(inArray(customers.id, customerIds)) : [],
-        applicationIds.length > 0 ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(inArray(applications.id, applicationIds)) : [],
-        db.select({ ticketId: ticketLabels.ticketId, label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } }).from(ticketLabels).innerJoin(labels, eq(ticketLabels.labelId, labels.id)).where(inArray(ticketLabels.ticketId, ticketIds)),
-        db.select({ ticketId: comments.ticketId, count: count() }).from(comments).where(inArray(comments.ticketId, ticketIds)).groupBy(comments.ticketId)
+        assignedUserIds.length > 0
+          ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, assignedUserIds))
+          : [],
+        createdUserIds.length > 0
+          ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, createdUserIds))
+          : [],
+        customerIds.length > 0
+          ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(inArray(customers.id, customerIds))
+          : [],
+        applicationIds.length > 0
+          ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(inArray(applications.id, applicationIds))
+          : [],
+        db
+          .select({
+            ticketId: ticketLabels.ticketId,
+            label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description }
+          })
+          .from(ticketLabels)
+          .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
+          .where(inArray(ticketLabels.ticketId, ticketIds)),
+        db
+          .select({ ticketId: comments.ticketId, count: count() })
+          .from(comments)
+          .where(inArray(comments.ticketId, ticketIds))
+          .groupBy(comments.ticketId)
       ]);
     }
 
     // Combine data
-    const ticketsWithRelations = ticketsData.map(ticket => ({
+    const ticketsWithRelations = ticketsData.map((ticket) => ({
       ...ticket,
-      assignedTo: assignedUsers.find(u => u.id === ticket.assignedToId) || null,
-      createdBy: createdUsers.find(u => u.id === ticket.createdById) || null,
-      customer: ticketCustomers.find(c => c.id === ticket.customerId) || null,
-      application: ticketApplications.find(a => a.id === ticket.applicationId) || null,
-      labels: labelsData.filter(l => l.ticketId === ticket.id).map(l => ({ label: l.label })),
-      _count: { comments: commentCounts.find(c => c.ticketId === ticket.id)?.count || 0 }
+      assignedTo: assignedUsers.find((u) => u.id === ticket.assignedToId) || null,
+      createdBy: createdUsers.find((u) => u.id === ticket.createdById) || null,
+      customer: ticketCustomers.find((c) => c.id === ticket.customerId) || null,
+      application: ticketApplications.find((a) => a.id === ticket.applicationId) || null,
+      labels: labelsData.filter((l) => l.ticketId === ticket.id).map((l) => ({ label: l.label })),
+      _count: { comments: commentCounts.find((c) => c.ticketId === ticket.id)?.count || 0 }
     }));
 
     res.json(ticketsWithRelations);
@@ -142,15 +169,22 @@ export const getAllTickets = async (req, res) => {
 export const getTicketById = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Tenant admin: ensure ticket belongs to their tenant (via createdBy user)
-    if (req.user.role === 'TENANT_ADMIN') {
-      requireTenantScope(req);
+
+    const tenantId = getTenantScope(req);
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    // Tenant-scoped roles: ensure ticket belongs to their tenant (via createdBy user)
+    if (isTenantScopedRole) {
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant context required' });
+      }
+      req.tenantId = tenantId;
+
       const ticketData = await db
         .select({ ticket: tickets })
         .from(tickets)
         .innerJoin(users, eq(tickets.createdById, users.id))
-        .where(and(eq(tickets.id, id), eq(users.tenantId, req.tenantId)))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
         .limit(1);
 
       if (!ticketData.length) {
@@ -161,13 +195,51 @@ export const getTicketById = async (req, res) => {
 
       // Get all related data
       const [assignedUser, createdUser, customer, application, labelsData, commentsData, activitiesData] = await Promise.all([
-        ticket.assignedToId ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.assignedToId)).limit(1) : Promise.resolve([]),
+        ticket.assignedToId
+          ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.assignedToId)).limit(1)
+          : Promise.resolve([]),
         db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.createdById)).limit(1),
-        ticket.customerId ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1) : Promise.resolve([]),
-        ticket.applicationId ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1) : Promise.resolve([]),
-        db.select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } }).from(ticketLabels).innerJoin(labels, eq(ticketLabels.labelId, labels.id)).where(eq(ticketLabels.ticketId, id)),
-        db.select({ id: comments.id, content: comments.content, createdAt: comments.createdAt, userId: comments.userId, ticketId: comments.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(comments).innerJoin(users, eq(comments.userId, users.id)).where(eq(comments.ticketId, id)).orderBy(asc(comments.createdAt)),
-        db.select({ id: ticketActivities.id, action: ticketActivities.action, description: ticketActivities.description, oldValue: ticketActivities.oldValue, newValue: ticketActivities.newValue, createdAt: ticketActivities.createdAt, userId: ticketActivities.userId, ticketId: ticketActivities.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(ticketActivities).innerJoin(users, eq(ticketActivities.userId, users.id)).where(eq(ticketActivities.ticketId, id)).orderBy(desc(ticketActivities.createdAt)).limit(20)
+        ticket.customerId
+          ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
+          : Promise.resolve([]),
+        ticket.applicationId
+          ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1)
+          : Promise.resolve([]),
+        db
+          .select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } })
+          .from(ticketLabels)
+          .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
+          .where(eq(ticketLabels.ticketId, id)),
+        db
+          .select({
+            id: comments.id,
+            content: comments.content,
+            createdAt: comments.createdAt,
+            userId: comments.userId,
+            ticketId: comments.ticketId,
+            user: { id: users.id, name: users.name, email: users.email }
+          })
+          .from(comments)
+          .innerJoin(users, eq(comments.userId, users.id))
+          .where(eq(comments.ticketId, id))
+          .orderBy(asc(comments.createdAt)),
+        db
+          .select({
+            id: ticketActivities.id,
+            action: ticketActivities.action,
+            description: ticketActivities.description,
+            oldValue: ticketActivities.oldValue,
+            newValue: ticketActivities.newValue,
+            createdAt: ticketActivities.createdAt,
+            userId: ticketActivities.userId,
+            ticketId: ticketActivities.ticketId,
+            user: { id: users.id, name: users.name, email: users.email }
+          })
+          .from(ticketActivities)
+          .innerJoin(users, eq(ticketActivities.userId, users.id))
+          .where(eq(ticketActivities.ticketId, id))
+          .orderBy(desc(ticketActivities.createdAt))
+          .limit(20)
       ]);
 
       const fullTicket = {
@@ -181,9 +253,15 @@ export const getTicketById = async (req, res) => {
         activities: activitiesData
       };
 
+      // EMPLOYEE access check (tenant-scoped but not tenant-wide)
+      if (req.user.role === 'EMPLOYEE' && fullTicket.assignedToId !== req.user.userId && fullTicket.createdById !== req.user.userId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
       return res.json(fullTicket);
     }
 
+    // SUPER_ADMIN (or other non-tenant-scoped roles)
     const ticketData = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
 
     if (!ticketData.length) {
@@ -194,13 +272,51 @@ export const getTicketById = async (req, res) => {
 
     // Get all related data
     const [assignedUser, createdUser, customer, application, labelsData, commentsData, activitiesData] = await Promise.all([
-      ticket.assignedToId ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.assignedToId)).limit(1) : Promise.resolve([]),
+      ticket.assignedToId
+        ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.assignedToId)).limit(1)
+        : Promise.resolve([]),
       db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.createdById)).limit(1),
-      ticket.customerId ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1) : Promise.resolve([]),
-      ticket.applicationId ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1) : Promise.resolve([]),
-      db.select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } }).from(ticketLabels).innerJoin(labels, eq(ticketLabels.labelId, labels.id)).where(eq(ticketLabels.ticketId, id)),
-      db.select({ id: comments.id, content: comments.content, createdAt: comments.createdAt, userId: comments.userId, ticketId: comments.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(comments).innerJoin(users, eq(comments.userId, users.id)).where(eq(comments.ticketId, id)).orderBy(asc(comments.createdAt)),
-      db.select({ id: ticketActivities.id, action: ticketActivities.action, description: ticketActivities.description, oldValue: ticketActivities.oldValue, newValue: ticketActivities.newValue, createdAt: ticketActivities.createdAt, userId: ticketActivities.userId, ticketId: ticketActivities.ticketId, user: { id: users.id, name: users.name, email: users.email } }).from(ticketActivities).innerJoin(users, eq(ticketActivities.userId, users.id)).where(eq(ticketActivities.ticketId, id)).orderBy(desc(ticketActivities.createdAt)).limit(20)
+      ticket.customerId
+        ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
+        : Promise.resolve([]),
+      ticket.applicationId
+        ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1)
+        : Promise.resolve([]),
+      db
+        .select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } })
+        .from(ticketLabels)
+        .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
+        .where(eq(ticketLabels.ticketId, id)),
+      db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          userId: comments.userId,
+          ticketId: comments.ticketId,
+          user: { id: users.id, name: users.name, email: users.email }
+        })
+        .from(comments)
+        .innerJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.ticketId, id))
+        .orderBy(asc(comments.createdAt)),
+      db
+        .select({
+          id: ticketActivities.id,
+          action: ticketActivities.action,
+          description: ticketActivities.description,
+          oldValue: ticketActivities.oldValue,
+          newValue: ticketActivities.newValue,
+          createdAt: ticketActivities.createdAt,
+          userId: ticketActivities.userId,
+          ticketId: ticketActivities.ticketId,
+          user: { id: users.id, name: users.name, email: users.email }
+        })
+        .from(ticketActivities)
+        .innerJoin(users, eq(ticketActivities.userId, users.id))
+        .where(eq(ticketActivities.ticketId, id))
+        .orderBy(desc(ticketActivities.createdAt))
+        .limit(20)
     ]);
 
     const fullTicket = {
@@ -215,10 +331,12 @@ export const getTicketById = async (req, res) => {
     };
 
     // Check if user has access to this ticket
-    if (req.user.role !== 'SUPER_ADMIN' &&
-        req.user.role !== 'TENANT_ADMIN' &&
-        fullTicket.assignedToId !== req.user.userId &&
-        fullTicket.createdById !== req.user.userId) {
+    if (
+      req.user.role !== 'SUPER_ADMIN' &&
+      req.user.role !== 'TENANT_ADMIN' &&
+      fullTicket.assignedToId !== req.user.userId &&
+      fullTicket.createdById !== req.user.userId
+    ) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -232,36 +350,79 @@ export const getTicketById = async (req, res) => {
 // Create new ticket
 export const createTicket = async (req, res) => {
   try {
-    const { 
-      title, 
-      description, 
-      priority = 'MEDIUM', 
-      assignedToId, 
-      customerId, 
+    const {
+      title,
+      description,
+      priority = 'MEDIUM',
+      assignedToId,
+      customerId,
       applicationId,
       boardId,
       dueDate,
       estimatedHours,
-      labels = []
+      labels: labelIds = []
     } = req.body;
 
-    const [ticket] = await db.insert(tickets).values({
-      title, description, priority, assignedToId, customerId, applicationId, boardId,
-      dueDate: dueDate ? new Date(dueDate) : null, estimatedHours, createdById: req.user.userId
-    }).returning();
+    // Tenant admin: require tenant context and ensure createdBy belongs to that tenant.
+    // (Tickets table has no tenantId column.)
+    if (req.user?.role === 'TENANT_ADMIN') {
+      try {
+        requireTenantScope(req);
+      } catch {
+        return res.status(403).json({ error: 'Tenant context required' });
+      }
+
+      const [creator] = await db
+        .select({ id: users.id, tenantId: users.tenantId })
+        .from(users)
+        .where(and(eq(users.id, req.user.userId), eq(users.tenantId, req.tenantId)))
+        .limit(1);
+
+      if (!creator) {
+        return res.status(403).json({ error: 'Invalid tenant context' });
+      }
+    }
+
+    const [ticket] = await db
+      .insert(tickets)
+      .values({
+        title,
+        description,
+        priority,
+        assignedToId,
+        customerId,
+        applicationId,
+        boardId,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        estimatedHours,
+        createdById: req.user.userId
+      })
+      .returning();
 
     // Insert labels if provided
-    if (labels.length > 0) {
-      await db.insert(ticketLabels).values(labels.map(labelId => ({ ticketId: ticket.id, labelId })));
+    if (labelIds.length > 0) {
+      await db.insert(ticketLabels).values(labelIds.map((labelId) => ({ ticketId: ticket.id, labelId })));
     }
 
     // Get full ticket data with relations
     const [assignedUser, createdUser, customer, application, labelsData] = await Promise.all([
-      assignedToId ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, assignedToId)).limit(1) : Promise.resolve([]),
+      assignedToId
+        ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, assignedToId)).limit(1)
+        : Promise.resolve([]),
       db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, req.user.userId)).limit(1),
-      customerId ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, customerId)).limit(1) : Promise.resolve([]),
-      applicationId ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, applicationId)).limit(1) : Promise.resolve([]),
-      labels.length > 0 ? db.select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } }).from(ticketLabels).innerJoin(labels, eq(ticketLabels.labelId, labels.id)).where(eq(ticketLabels.ticketId, ticket.id)) : Promise.resolve([])
+      customerId
+        ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, customerId)).limit(1)
+        : Promise.resolve([]),
+      applicationId
+        ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, applicationId)).limit(1)
+        : Promise.resolve([]),
+      labelIds.length > 0
+        ? db
+            .select({ label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description } })
+            .from(ticketLabels)
+            .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
+            .where(eq(ticketLabels.ticketId, ticket.id))
+        : Promise.resolve([])
     ]);
 
     const fullTicket = {
@@ -283,7 +444,7 @@ export const createTicket = async (req, res) => {
 
     // Broadcast appropriate notification type based on assignment
     const notificationType = assignedToId ? 'TICKET_ASSIGNED' : 'TICKET_CREATED';
-    
+
     req.emitNotification('broadcast', {
       type: notificationType,
       data: {
@@ -315,6 +476,24 @@ export const updateTicket = async (req, res) => {
 export const deleteTicket = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const tenantId = getTenantScope(req);
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole) {
+      if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+
+      // Ensure ticket belongs to tenant via createdBy user
+      const [row] = await db
+        .select({ id: tickets.id })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
+        .limit(1);
+
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+    }
+
     await db.delete(tickets).where(eq(tickets.id, id));
     res.json({ message: 'Ticket deleted successfully' });
   } catch (error) {
@@ -327,22 +506,39 @@ export const deleteTicket = async (req, res) => {
 export const takeTicket = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const ticket = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
-    
+
+    const tenantId = getTenantScope(req);
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole && !tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const ticketQuery = db.select({ ticket: tickets }).from(tickets);
+
+    const ticket = isTenantScopedRole
+      ? await ticketQuery
+          .innerJoin(users, eq(tickets.createdById, users.id))
+          .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
+          .limit(1)
+      : await ticketQuery.where(eq(tickets.id, id)).limit(1);
+
     if (!ticket.length) {
       return res.status(404).json({ error: 'Ticket not found' });
     }
-    
-    if (ticket[0].assignedToId) {
+
+    const t = ticket[0].ticket ?? ticket[0];
+
+    if (t.assignedToId) {
       return res.status(400).json({ error: 'Ticket is already assigned' });
     }
-    
-    const [updatedTicket] = await db.update(tickets)
+
+    const [updatedTicket] = await db
+      .update(tickets)
       .set({ assignedToId: req.user.userId, status: 'IN_PROGRESS' })
       .where(eq(tickets.id, id))
       .returning();
-    
+
     res.json(updatedTicket);
   } catch (error) {
     console.error('Take ticket error:', error);
@@ -354,8 +550,15 @@ export const takeTicket = async (req, res) => {
 export const getDelayedTickets = async (req, res) => {
   try {
     const now = new Date();
-    
-    const delayedTickets = await db
+
+    const tenantId = getTenantScope(req);
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole && !tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    const delayedTicketsQuery = db
       .select({
         id: tickets.id,
         title: tickets.title,
@@ -373,29 +576,43 @@ export const getDelayedTickets = async (req, res) => {
       .where(
         and(
           eq(tickets.assignedToId, req.user.userId),
-          or(
-            and(isNull(tickets.dueDate), eq(tickets.status, 'OPEN')),
-            lt(tickets.dueDate, now)
-          ),
+          or(and(isNull(tickets.dueDate), eq(tickets.status, 'OPEN')), lt(tickets.dueDate, now)),
           or(eq(tickets.status, 'OPEN'), eq(tickets.status, 'IN_PROGRESS'))
         )
       )
       .orderBy(asc(tickets.dueDate));
 
+    const delayedTickets = isTenantScopedRole
+      ? await delayedTicketsQuery
+          .innerJoin(users, eq(tickets.createdById, users.id))
+          .where(
+            and(
+              eq(tickets.assignedToId, req.user.userId),
+              or(and(isNull(tickets.dueDate), eq(tickets.status, 'OPEN')), lt(tickets.dueDate, now)),
+              or(eq(tickets.status, 'OPEN'), eq(tickets.status, 'IN_PROGRESS')),
+              eq(users.tenantId, tenantId)
+            )
+          )
+      : await delayedTicketsQuery;
+
+    const normalized = delayedTickets.map((r) => r.ticket ?? r);
+
     // Get related data separately to avoid alias conflicts
-    const customerIds = delayedTickets.filter(t => t.customerId).map(t => t.customerId);
-    const applicationIds = delayedTickets.filter(t => t.applicationId).map(t => t.applicationId);
-    
+    const customerIds = normalized.filter((t) => t.customerId).map((t) => t.customerId);
+    const applicationIds = normalized.filter((t) => t.applicationId).map((t) => t.applicationId);
+
     const [customersData, applicationsData] = await Promise.all([
       customerIds.length > 0 ? db.select({ id: customers.id, name: customers.name }).from(customers).where(inArray(customers.id, customerIds)) : [],
-      applicationIds.length > 0 ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds)) : []
+      applicationIds.length > 0
+        ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds))
+        : []
     ]);
 
     // Combine data
-    const result = delayedTickets.map(ticket => ({
+    const result = normalized.map((ticket) => ({
       ...ticket,
-      customer: customersData.find(c => c.id === ticket.customerId) || null,
-      application: applicationsData.find(a => a.id === ticket.applicationId) || null
+      customer: customersData.find((c) => c.id === ticket.customerId) || null,
+      application: applicationsData.find((a) => a.id === ticket.applicationId) || null
     }));
 
     res.json(result);

@@ -4,26 +4,96 @@ import { comments } from '../comments/comments.schema.js';
 import { users } from '../users/users.schema.js';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 
+const getTenantScope = (req) => {
+  // SUPER_ADMIN can operate without tenant scope.
+  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
+  // Tenant-scoped roles must have a tenant context (resolved header/param or token).
+  return req.tenantId ?? req.user?.tenantId ?? null;
+};
+
 // Get dashboard statistics
 export const getStats = async (req, res) => {
   try {
     const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'TENANT_ADMIN';
-    
-    const totalTicketsQuery = isAdmin 
-      ? db.select({ count: count() }).from(tickets)
-      : db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, req.user.userId));
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    // Tickets table has no tenantId, so for tenant-scoped requests we scope via createdBy user.
+    const totalTicketsQuery = isAdmin
+      ? tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(eq(users.tenantId, tenantId))
+        : db.select({ count: count() }).from(tickets)
+      : tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.assignedToId, req.user.userId)))
+        : db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, req.user.userId));
+
     const openTicketsQuery = isAdmin
-      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'OPEN'))
-      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'OPEN')));
-    
+      ? tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.status, 'OPEN')))
+        : db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'OPEN'))
+      : tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'OPEN')))
+        : db
+            .select({ count: count() })
+            .from(tickets)
+            .where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'OPEN')));
+
     const inProgressTicketsQuery = isAdmin
-      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'IN_PROGRESS'))
-      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'IN_PROGRESS')));
-    
+      ? tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.status, 'IN_PROGRESS')))
+        : db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'IN_PROGRESS'))
+      : tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'IN_PROGRESS')))
+        : db
+            .select({ count: count() })
+            .from(tickets)
+            .where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'IN_PROGRESS')));
+
     const resolvedTicketsQuery = isAdmin
-      ? db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'RESOLVED'))
-      : db.select({ count: count() }).from(tickets).where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'RESOLVED')));
+      ? tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.status, 'RESOLVED')))
+        : db.select({ count: count() }).from(tickets).where(eq(tickets.status, 'RESOLVED'))
+      : tenantId
+        ? db
+            .select({ count: count() })
+            .from(tickets)
+            .innerJoin(users, eq(tickets.createdById, users.id))
+            .where(and(eq(users.tenantId, tenantId), eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'RESOLVED')))
+        : db
+            .select({ count: count() })
+            .from(tickets)
+            .where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'RESOLVED')));
 
     const [totalTickets, openTickets, inProgressTickets, resolvedTickets] = await Promise.all([
       totalTicketsQuery,
@@ -48,68 +118,119 @@ export const getStats = async (req, res) => {
 export const getActivities = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    
+
+    const tenantId = getTenantScope(req);
+    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
     // Get recent tickets with user data
-    const recentTickets = await db
-      .select({
-        id: tickets.id,
-        title: tickets.title,
-        priority: tickets.priority,
-        status: tickets.status,
-        createdAt: tickets.createdAt,
-        updatedAt: tickets.updatedAt,
-        assignedToId: tickets.assignedToId,
-        createdById: tickets.createdById
-      })
-      .from(tickets)
-      .orderBy(desc(tickets.updatedAt))
-      .limit(limit);
+    // Tenant scoping: tickets table has no tenantId, so scope via createdBy user.
+    const recentTickets = tenantId
+      ? await db
+          .select({
+            id: tickets.id,
+            title: tickets.title,
+            priority: tickets.priority,
+            status: tickets.status,
+            createdAt: tickets.createdAt,
+            updatedAt: tickets.updatedAt,
+            assignedToId: tickets.assignedToId,
+            createdById: tickets.createdById
+          })
+          .from(tickets)
+          .innerJoin(users, eq(tickets.createdById, users.id))
+          .where(eq(users.tenantId, tenantId))
+          .orderBy(desc(tickets.updatedAt))
+          .limit(limit)
+      : await db
+          .select({
+            id: tickets.id,
+            title: tickets.title,
+            priority: tickets.priority,
+            status: tickets.status,
+            createdAt: tickets.createdAt,
+            updatedAt: tickets.updatedAt,
+            assignedToId: tickets.assignedToId,
+            createdById: tickets.createdById
+          })
+          .from(tickets)
+          .orderBy(desc(tickets.updatedAt))
+          .limit(limit);
 
     // Get user data for tickets
-    const userIds = [...new Set([
-      ...recentTickets.map(t => t.assignedToId).filter(Boolean),
-      ...recentTickets.map(t => t.createdById).filter(Boolean)
-    ])];
-    
-    const ticketUsers = userIds.length > 0 ? await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email
-      })
-      .from(users)
-      .where(eq(users.id, userIds[0])) // Simplified for single user lookup
+    const userIds = [
+      ...new Set([
+        ...recentTickets.map((t) => t.assignedToId).filter(Boolean),
+        ...recentTickets.map((t) => t.createdById).filter(Boolean)
+      ])
+    ];
+
+    const ticketUsers = userIds.length
+      ? await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email
+          })
+          .from(users)
+          .where(inArray(users.id, userIds))
       : [];
 
     // Get recent comments with user and ticket data
-    const recentComments = await db
-      .select({
-        id: comments.id,
-        content: comments.content,
-        createdAt: comments.createdAt,
-        userId: comments.userId,
-        ticketId: comments.ticketId,
-        userName: users.name,
-        userEmail: users.email,
-        ticketTitle: tickets.title,
-        ticketPriority: tickets.priority,
-        ticketStatus: tickets.status
-      })
-      .from(comments)
-      .innerJoin(users, eq(users.id, comments.userId))
-      .innerJoin(tickets, eq(tickets.id, comments.ticketId))
-      .orderBy(desc(comments.createdAt))
-      .limit(limit);
+    // Tenant scoping: scope via ticket creator's tenant.
+    // NOTE: we need a second users alias for the ticket creator join.
+    const ticketCreator = users;
+
+    const recentComments = tenantId
+      ? await db
+          .select({
+            id: comments.id,
+            content: comments.content,
+            createdAt: comments.createdAt,
+            userId: comments.userId,
+            ticketId: comments.ticketId,
+            userName: users.name,
+            userEmail: users.email,
+            ticketTitle: tickets.title,
+            ticketPriority: tickets.priority,
+            ticketStatus: tickets.status
+          })
+          .from(comments)
+          .innerJoin(users, eq(users.id, comments.userId))
+          .innerJoin(tickets, eq(tickets.id, comments.ticketId))
+          .innerJoin(ticketCreator, eq(tickets.createdById, ticketCreator.id))
+          .where(eq(ticketCreator.tenantId, tenantId))
+          .orderBy(desc(comments.createdAt))
+          .limit(limit)
+      : await db
+          .select({
+            id: comments.id,
+            content: comments.content,
+            createdAt: comments.createdAt,
+            userId: comments.userId,
+            ticketId: comments.ticketId,
+            userName: users.name,
+            userEmail: users.email,
+            ticketTitle: tickets.title,
+            ticketPriority: tickets.priority,
+            ticketStatus: tickets.status
+          })
+          .from(comments)
+          .innerJoin(users, eq(users.id, comments.userId))
+          .innerJoin(tickets, eq(tickets.id, comments.ticketId))
+          .orderBy(desc(comments.createdAt))
+          .limit(limit);
 
     // Combine and format activities
     const activities = [];
 
     // Add ticket activities
-    recentTickets.forEach(ticket => {
+    recentTickets.forEach((ticket) => {
       const timeDiff = new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime();
       const isNewTicket = timeDiff < 60000; // 1 minute threshold
-      const createdByUser = ticketUsers.find(u => u.id === ticket.createdById);
-      const assignedToUser = ticketUsers.find(u => u.id === ticket.assignedToId);
+      const createdByUser = ticketUsers.find((u) => u.id === ticket.createdById);
+      const assignedToUser = ticketUsers.find((u) => u.id === ticket.assignedToId);
 
       if (isNewTicket) {
         activities.push({
@@ -160,7 +281,7 @@ export const getActivities = async (req, res) => {
     });
 
     // Add comment activities
-    recentComments.forEach(comment => {
+    recentComments.forEach((comment) => {
       activities.push({
         id: `comment-${comment.id}`,
         type: 'COMMENT_ADDED',

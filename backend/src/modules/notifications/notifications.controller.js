@@ -1,7 +1,8 @@
 import { db } from '../../config/database.js';
 import { notifications } from './notifications.schema.js';
-import { tickets } from '../tickets/tickets.schema.js';
-import { eq, and, count, desc } from 'drizzle-orm';
+import { users } from '../users/users.schema.js';
+import { eq, and, count } from 'drizzle-orm';
+import { getUserNotifications, markNotificationAsRead } from '../../utils/notificationUtils.js';
 
 // Get user notifications
 export const getNotifications = async (req, res) => {
@@ -9,12 +10,16 @@ export const getNotifications = async (req, res) => {
     const userId = req.user.id;
     const { limit, unreadOnly } = req.query;
 
-    const notifications = await getUserNotifications(userId, {
+    // Tenant scoping: prefer resolved tenant context (header/param) but fall back to token tenant.
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
+
+    const rows = await getUserNotifications(userId, {
       limit: limit ? parseInt(limit) : 50,
-      unreadOnly: unreadOnly === 'true'
+      unreadOnly: unreadOnly === 'true',
+      tenantId,
     });
 
-    res.json(notifications);
+    res.json(rows);
   } catch (error) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -67,11 +72,20 @@ export const markAllAsRead = async (req, res) => {
 export const getNotificationCount = async (req, res) => {
   try {
     const userId = req.user.id;
+    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
 
-    const [result] = await db
-      .select({ count: count() })
-      .from(notifications)
-      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    const baseWhere = and(eq(notifications.userId, userId), eq(notifications.isRead, false));
+
+    const [result] = tenantId
+      ? await db
+          .select({ count: count() })
+          .from(notifications)
+          .leftJoin(users, eq(notifications.userId, users.id))
+          .where(and(baseWhere, eq(users.tenantId, tenantId)))
+      : await db
+          .select({ count: count() })
+          .from(notifications)
+          .where(baseWhere);
 
     res.json({ unreadCount: result.count });
   } catch (error) {
@@ -97,9 +111,7 @@ export const deleteNotification = async (req, res) => {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    await db
-      .delete(notifications)
-      .where(eq(notifications.id, id));
+    await db.delete(notifications).where(eq(notifications.id, id));
 
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {

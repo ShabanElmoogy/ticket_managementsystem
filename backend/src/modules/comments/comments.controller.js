@@ -10,19 +10,29 @@ export const createComment = async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
 
-    // Check if ticket exists and user has access
-    // Tenant admin: ensure ticket belongs to their tenant (via createdBy user)
-    let ticket;
-    if (req.user.role === 'TENANT_ADMIN') {
-      if (!req.user.tenantId) {
-        return res.status(403).json({ error: 'Tenant admin is missing tenantId' });
-      }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
 
+    // Tenant scoping:
+    // Tickets table has no tenantId, so we scope via the ticket creator's user.tenantId.
+    // - SUPER_ADMIN: no tenant restriction
+    // - TENANT_ADMIN / EMPLOYEE: must have tenantId and ticket must belong to that tenant
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const tenantId = isTenantScopedRole ? (req.user?.tenantId ?? null) : null;
+
+    if (isTenantScopedRole && !tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    // Check if ticket exists and user has access
+    let ticket;
+    if (isTenantScopedRole) {
       const rows = await db
         .select({ ticket: tickets })
         .from(tickets)
         .innerJoin(users, eq(tickets.createdById, users.id))
-        .where(and(eq(tickets.id, id), eq(users.tenantId, req.user.tenantId)))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
         .limit(1);
 
       ticket = rows[0]?.ticket;
@@ -35,25 +45,51 @@ export const createComment = async (req, res) => {
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' &&
-        req.user.role !== 'TENANT_ADMIN' &&
-        ticket.assignedToId !== req.user.userId &&
-        ticket.createdById !== req.user.userId) {
+    // Authorization:
+    // - SUPER_ADMIN: always allowed
+    // - TENANT_ADMIN: allowed for any ticket in tenant (already scoped above)
+    // - EMPLOYEE: only if assigned to them or created by them
+    if (
+      req.user.role !== 'SUPER_ADMIN' &&
+      req.user.role !== 'TENANT_ADMIN' &&
+      ticket.assignedToId !== req.user.userId &&
+      ticket.createdById !== req.user.userId
+    ) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const [comment] = await db.insert(comments).values({
-      content,
-      ticketId: id,
-      userId: req.user.userId
-    }).returning();
+    // Defense-in-depth: ensure commenting user belongs to tenant
+    if (isTenantScopedRole) {
+      const [commentingUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.id, req.user.userId), eq(users.tenantId, tenantId)))
+        .limit(1);
+
+      if (!commentingUser) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const [comment] = await db
+      .insert(comments)
+      .values({
+        content: content.trim(),
+        ticketId: id,
+        userId: req.user.userId
+      })
+      .returning();
 
     // Get user data for the response
-    const [user] = await db.select({
-      id: users.id,
-      name: users.name,
-      email: users.email
-    }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email
+      })
+      .from(users)
+      .where(eq(users.id, req.user.userId))
+      .limit(1);
 
     const commentWithUser = {
       ...comment,
@@ -70,20 +106,16 @@ export const createComment = async (req, res) => {
     }
 
     if (targetUsers.length > 0) {
-      console.log('Emitting COMMENT_ADDED notification to users:', targetUsers);
-      targetUsers.forEach(userId => {
+      targetUsers.forEach((userId) => {
         req.emitNotification(userId, {
           type: 'COMMENT_ADDED',
           data: {
             comment: commentWithUser,
             ticket: { id: ticket.id, title: ticket.title },
-            commentBy: user.name
+            commentBy: user?.name
           }
         });
       });
-      console.log('Notification emitted successfully');
-    } else {
-      console.log('No target users for notification');
     }
 
     res.status(201).json(commentWithUser);

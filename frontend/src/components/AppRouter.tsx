@@ -4,23 +4,23 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import LoginForm from './auth/LoginForm';
 import DashboardPage from '../pages/DashboardPage';
+import SuperAdminDashboardPage from '../pages/SuperAdminDashboardPage';
 import ProfilePage from '../pages/ProfilePage';
 import KanbanPage from '../pages/KanbanPage';
 import DocumentsPage from '../pages/DocumentsPage';
 import AdminPage from '../pages/AdminPage';
 
-
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ children, requiredRole }) => {
   const { user } = useAuthStore();
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -30,16 +30,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AppRouter: React.FC = () => {
-  const { isLoading } = useAuthStore();
+  const { isLoading, user } = useAuthStore();
 
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
     );
@@ -48,36 +43,59 @@ const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={
-          <PublicRoute>
-            <LoginForm />
-          </PublicRoute>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="/kanban" element={
-          <ProtectedRoute>
-            <KanbanPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/documents" element={
-          <ProtectedRoute>
-            <DocumentsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminPage />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginForm />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              {user?.role === 'SUPER_ADMIN' ? <SuperAdminDashboardPage /> : <DashboardPage />}
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/kanban"
+          element={
+            <ProtectedRoute>
+              <KanbanPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/documents"
+          element={
+            <ProtectedRoute>
+              <DocumentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>

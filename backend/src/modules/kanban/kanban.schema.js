@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, pgEnum, boolean, integer, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../users/users.schema.js';
+import { tenants } from '../tenants/tenants.schema.js';
 
 // Board type enum
 export const boardTypeEnum = pgEnum('board_type', ['TICKETS', 'TASKS']);
@@ -10,6 +11,7 @@ export const permissionRoleEnum = pgEnum('permission_role', ['ADMIN', 'MEMBER', 
 // Kanban boards table
 export const kanbanBoards = pgTable('kanban_boards', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   type: boardTypeEnum('type').notNull().default('TICKETS'),
@@ -22,6 +24,7 @@ export const kanbanBoards = pgTable('kanban_boards', {
 // Kanban columns table
 export const kanbanColumns = pgTable('kanban_columns', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   color: text('color').default('#e3f2fd'),
@@ -30,7 +33,7 @@ export const kanbanColumns = pgTable('kanban_columns', {
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-  
+
   // Foreign keys
   boardId: uuid('board_id').notNull().references(() => kanbanBoards.id, { onDelete: 'cascade' })
 });
@@ -38,11 +41,11 @@ export const kanbanColumns = pgTable('kanban_columns', {
 // Board permissions table
 export const boardPermissions = pgTable('board_permissions', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   role: permissionRoleEnum('role').notNull().default('MEMBER'),
   createdAt: timestamp('created_at').defaultNow(),
-  
+
   // Foreign keys
   boardId: uuid('board_id').notNull().references(() => kanbanBoards.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' })
 });
-

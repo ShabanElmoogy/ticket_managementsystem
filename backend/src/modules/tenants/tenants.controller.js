@@ -9,13 +9,30 @@ const toSlug = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
+const parseOptionalDate = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const d = new Date(value);
+  // If invalid date, let DB/driver throw by passing the original value
+  return Number.isNaN(d.getTime()) ? value : d;
+};
+
 export const listTenants = async (req, res) => {
   const rows = await db.select().from(tenants).orderBy(tenants.createdAt);
   return res.json(rows);
 };
 
 export const createTenant = async (req, res) => {
-  const { name, slug } = req.body || {};
+  const {
+    name,
+    slug,
+    subscriptionPlan,
+    subscriptionStatus,
+    subscriptionStart,
+    subscriptionEnd,
+    subscriptionSeats,
+  } = req.body || {};
+
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   const finalSlug = toSlug(slug || name);
@@ -23,10 +40,53 @@ export const createTenant = async (req, res) => {
 
   const inserted = await db
     .insert(tenants)
-    .values({ name, slug: finalSlug })
+    .values({
+      name,
+      slug: finalSlug,
+      subscriptionPlan: subscriptionPlan || undefined,
+      subscriptionStatus: subscriptionStatus || undefined,
+      subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : undefined,
+      subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
+      subscriptionSeats: typeof subscriptionSeats === 'number' ? subscriptionSeats : undefined,
+    })
     .returning();
 
   return res.status(201).json(inserted[0]);
+};
+
+export const updateTenant = async (req, res) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: 'id is required' });
+
+  const {
+    name,
+    slug,
+    subscriptionPlan,
+    subscriptionStatus,
+    subscriptionStart,
+    subscriptionEnd,
+    subscriptionSeats,
+  } = req.body || {};
+
+  const patch = {
+    ...(name !== undefined ? { name } : {}),
+    ...(slug !== undefined ? { slug: toSlug(slug) } : {}),
+    ...(subscriptionPlan !== undefined ? { subscriptionPlan } : {}),
+    ...(subscriptionStatus !== undefined ? { subscriptionStatus } : {}),
+    ...(subscriptionSeats !== undefined ? { subscriptionSeats } : {}),
+    ...(subscriptionStart !== undefined ? { subscriptionStart: parseOptionalDate(subscriptionStart) } : {}),
+    ...(subscriptionEnd !== undefined ? { subscriptionEnd: parseOptionalDate(subscriptionEnd) } : {}),
+    updatedAt: new Date(),
+  };
+
+  const updated = await db
+    .update(tenants)
+    .set(patch)
+    .where(eq(tenants.id, id))
+    .returning();
+
+  if (!updated.length) return res.status(404).json({ error: 'Tenant not found' });
+  return res.json(updated[0]);
 };
 
 export const getTenantBySlug = async (req, res) => {
