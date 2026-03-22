@@ -1,16 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Button, Stack, Toolbar, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Stack,
+  Tab,
+  Tabs,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { AdminDataGrid } from "../components/common";
 import Header from "../components/dashboard/Header";
+import SuperAdminCharts from "../components/superadmin/SuperAdminCharts";
 import { tenantsApi, type Tenant } from "../services/api";
 
 type TenantRow = Tenant;
+
+type ViewMode = "overview" | "charts" | "grid";
 
 const SuperAdminDashboardPage: React.FC = () => {
   const [rows, setRows] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<ViewMode>("overview");
 
   const columns = useMemo<GridColDef<TenantRow>[]>(
     () => [
@@ -125,14 +138,75 @@ const SuperAdminDashboardPage: React.FC = () => {
               border: "1px solid",
               borderColor: "divider",
               borderRadius: 2,
-              p: 2,
               backgroundColor: "background.paper",
+              overflow: "hidden",
             }}
           >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-              <Typography variant="h6">Tenants</Typography>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ xs: "stretch", sm: "center" }}
+              sx={{ px: 2, pt: 2, gap: 1 }}
+            >
+              <Box>
+                <Typography variant="h6">Multi-view</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Switch between overview, charts, and tenant grid.
+                </Typography>
+              </Box>
+
+              <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                <Chip
+                  size="small"
+                  label={loading ? "Loading" : "Up to date"}
+                  color={loading ? "warning" : "success"}
+                  variant="outlined"
+                />
+              </Stack>
             </Stack>
-            <AdminDataGrid rows={rows} columns={columns} loading={loading} />
+
+            <Tabs
+              value={view}
+              onChange={(_, v) => setView(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ px: 1, borderBottom: "1px solid", borderColor: "divider" }}
+            >
+              <Tab value="overview" label="Overview" />
+              <Tab value="charts" label="Charts" />
+              <Tab value="grid" label="Tenants Grid" />
+            </Tabs>
+
+            <Box sx={{ p: 2 }}>
+              {view === "overview" && (
+                <Stack spacing={2}>
+                  <SuperAdminCharts tenants={rows} />
+                  <Box
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                      p: 2,
+                      backgroundColor: "background.paper",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ mb: 1 }}
+                    >
+                      <Typography variant="h6">Tenants</Typography>
+                    </Stack>
+                    <AdminDataGrid rows={rows} columns={columns} loading={loading} />
+                  </Box>
+                </Stack>
+              )}
+
+              {view === "charts" && <SuperAdminCharts tenants={rows} />}
+
+              {view === "grid" && <AdminDataGrid rows={rows} columns={columns} loading={loading} />}
+            </Box>
           </Box>
         </Stack>
       </Box>
