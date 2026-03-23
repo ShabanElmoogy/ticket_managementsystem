@@ -4,22 +4,15 @@ import { users } from '../users/users.schema.js';
 import { kanbanBoards, kanbanColumns } from '../kanban/kanban.schema.js';
 import { eq, desc, asc, and } from 'drizzle-orm';
 
-const getTenantScope = (req) => {
-  // SUPER_ADMIN can operate without tenant scope.
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  // Tenant-scoped roles must have a tenant context (resolved header/param or token).
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get all tasks for a board
 export const getTasks = async (req, res) => {
   try {
     const { boardId } = req.query;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Build base query first to avoid passing undefined into where()
     let query = db
@@ -38,18 +31,18 @@ export const getTasks = async (req, res) => {
         assignee: {
           id: users.id,
           name: users.name,
-          email: users.email
+          email: users.email,
         },
         board: {
           id: kanbanBoards.id,
           name: kanbanBoards.name,
-          type: kanbanBoards.type
+          type: kanbanBoards.type,
         },
         column: {
           id: kanbanColumns.id,
           name: kanbanColumns.name,
-          color: kanbanColumns.color
-        }
+          color: kanbanColumns.color,
+        },
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -77,10 +70,8 @@ export const getTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const task = await db
       .select({
@@ -98,18 +89,18 @@ export const getTask = async (req, res) => {
         assignee: {
           id: users.id,
           name: users.name,
-          email: users.email
+          email: users.email,
         },
         board: {
           id: kanbanBoards.id,
           name: kanbanBoards.name,
-          type: kanbanBoards.type
+          type: kanbanBoards.type,
         },
         column: {
           id: kanbanColumns.id,
           name: kanbanColumns.name,
-          color: kanbanColumns.color
-        }
+          color: kanbanColumns.color,
+        },
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -134,10 +125,7 @@ export const createTask = async (req, res) => {
   try {
     const { title, description, boardId, columnId, assigneeId, dueDate, status } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     if (!title || !boardId || !columnId) {
       return res.status(400).json({ error: 'Title, boardId, and columnId are required' });
@@ -190,7 +178,7 @@ export const createTask = async (req, res) => {
         assigneeId: assigneeId || null,
         dueDate: dueDate ? new Date(dueDate) : null,
         status: status || 'TODO',
-        position
+        position,
       })
       .returning();
 
@@ -210,18 +198,18 @@ export const createTask = async (req, res) => {
         assignee: {
           id: users.id,
           name: users.name,
-          email: users.email
+          email: users.email,
         },
         board: {
           id: kanbanBoards.id,
           name: kanbanBoards.name,
-          type: kanbanBoards.type
+          type: kanbanBoards.type,
         },
         column: {
           id: kanbanColumns.id,
           name: kanbanColumns.name,
-          color: kanbanColumns.color
-        }
+          color: kanbanColumns.color,
+        },
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -243,10 +231,8 @@ export const updateTask = async (req, res) => {
     const { id } = req.params;
     const { title, description, assigneeId, dueDate, status, columnId, position } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const existingTask = await db
       .select({ id: tasks.id, boardId: tasks.boardId })
@@ -298,18 +284,18 @@ export const updateTask = async (req, res) => {
         assignee: {
           id: users.id,
           name: users.name,
-          email: users.email
+          email: users.email,
         },
         board: {
           id: kanbanBoards.id,
           name: kanbanBoards.name,
-          type: kanbanBoards.type
+          type: kanbanBoards.type,
         },
         column: {
           id: kanbanColumns.id,
           name: kanbanColumns.name,
-          color: kanbanColumns.color
-        }
+          color: kanbanColumns.color,
+        },
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))
@@ -330,10 +316,8 @@ export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const existingTask = await db
       .select({ id: tasks.id })
@@ -361,10 +345,8 @@ export const moveTask = async (req, res) => {
     const { id } = req.params;
     const { columnId, position, status } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const task = await db
       .select({ id: tasks.id, status: tasks.status })
@@ -395,7 +377,7 @@ export const moveTask = async (req, res) => {
       .set({
         columnId,
         position,
-        status: status || task[0].status
+        status: status || task[0].status,
       })
       .where(eq(tasks.id, id));
 
@@ -415,18 +397,18 @@ export const moveTask = async (req, res) => {
         assignee: {
           id: users.id,
           name: users.name,
-          email: users.email
+          email: users.email,
         },
         board: {
           id: kanbanBoards.id,
           name: kanbanBoards.name,
-          type: kanbanBoards.type
+          type: kanbanBoards.type,
         },
         column: {
           id: kanbanColumns.id,
           name: kanbanColumns.name,
-          color: kanbanColumns.color
-        }
+          color: kanbanColumns.color,
+        },
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assigneeId, users.id))

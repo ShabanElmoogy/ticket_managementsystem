@@ -7,28 +7,19 @@ import { applications } from '../applications/applications.schema.js';
 import { tasks } from '../tasks/tasks.schema.js';
 import { eq, and, asc, count, inArray } from 'drizzle-orm';
 
-const getTenantScope = (req) => {
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get all boards
 export const getAllBoards = async (req, res) => {
   try {
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Get boards with columns
     const boards = await db
       .select()
       .from(kanbanBoards)
-      .where(
-        tenantId
-          ? and(eq(kanbanBoards.isActive, true), eq(kanbanBoards.tenantId, tenantId))
-          : eq(kanbanBoards.isActive, true)
-      );
+      .where(tenantId ? and(eq(kanbanBoards.isActive, true), eq(kanbanBoards.tenantId, tenantId)) : eq(kanbanBoards.isActive, true));
 
     const boardIds = boards.map((b) => b.id);
 
@@ -53,15 +44,11 @@ export const getAllBoards = async (req, res) => {
             userId: boardPermissions.userId,
             role: boardPermissions.role,
             userName: users.name,
-            userEmail: users.email
+            userEmail: users.email,
           })
           .from(boardPermissions)
           .innerJoin(users, eq(users.id, boardPermissions.userId))
-          .where(
-            tenantId
-              ? and(eq(boardPermissions.tenantId, tenantId), inArray(boardPermissions.boardId, boardIds))
-              : inArray(boardPermissions.boardId, boardIds)
-          )
+          .where(tenantId ? and(eq(boardPermissions.tenantId, tenantId), inArray(boardPermissions.boardId, boardIds)) : inArray(boardPermissions.boardId, boardIds))
       : [];
 
     // Nest user data
@@ -71,8 +58,8 @@ export const getAllBoards = async (req, res) => {
       role: perm.role,
       user: {
         name: perm.userName,
-        email: perm.userEmail
-      }
+        email: perm.userEmail,
+      },
     }));
 
     // Assign tickets/tasks to boards based on board type
@@ -94,7 +81,7 @@ export const getAllBoards = async (req, res) => {
               columnId: tasks.columnId,
               assigneeId: tasks.assigneeId,
               assigneeName: users.name,
-              assigneeEmail: users.email
+              assigneeEmail: users.email,
             })
             .from(tasks)
             .leftJoin(users, eq(users.id, tasks.assigneeId))
@@ -106,7 +93,7 @@ export const getAllBoards = async (req, res) => {
             columns: boardColumns,
             permissions: boardPerms,
             tasks: boardTasks,
-            tickets: []
+            tickets: [],
           };
         }
 
@@ -125,7 +112,7 @@ export const getAllBoards = async (req, res) => {
             assignedToName: users.name,
             assignedToEmail: users.email,
             customerName: customers.name,
-            applicationName: applications.name
+            applicationName: applications.name,
           })
           .from(tickets)
           .leftJoin(users, eq(users.id, tickets.assignedToId))
@@ -138,7 +125,7 @@ export const getAllBoards = async (req, res) => {
           columns: boardColumns,
           permissions: boardPerms,
           tickets: boardTickets,
-          tasks: []
+          tasks: [],
         };
       })
     );
@@ -148,7 +135,7 @@ export const getAllBoards = async (req, res) => {
     console.error('Error fetching boards:', error);
     res.status(500).json({
       error: 'Failed to fetch boards',
-      details: error.message
+      details: error.message,
     });
   }
 };
@@ -158,10 +145,8 @@ export const getBoardById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const [board] = await db
       .select()
@@ -190,23 +175,19 @@ export const getBoardById = async (req, res) => {
         userId: boardPermissions.userId,
         role: boardPermissions.role,
         userName: users.name,
-        userEmail: users.email
+        userEmail: users.email,
       })
       .from(boardPermissions)
       .innerJoin(users, eq(users.id, boardPermissions.userId))
-      .where(
-        tenantId
-          ? and(eq(boardPermissions.boardId, id), eq(boardPermissions.tenantId, tenantId))
-          : eq(boardPermissions.boardId, id)
-      );
+      .where(tenantId ? and(eq(boardPermissions.boardId, id), eq(boardPermissions.tenantId, tenantId)) : eq(boardPermissions.boardId, id));
 
     const nestedPermissions = permissions.map((perm) => ({
       userId: perm.userId,
       role: perm.role,
       user: {
         name: perm.userName,
-        email: perm.userEmail
-      }
+        email: perm.userEmail,
+      },
     }));
 
     if (board.type === 'TASKS') {
@@ -220,7 +201,7 @@ export const getBoardById = async (req, res) => {
           position: tasks.position,
           assigneeId: tasks.assigneeId,
           assigneeName: users.name,
-          assigneeEmail: users.email
+          assigneeEmail: users.email,
         })
         .from(tasks)
         .leftJoin(users, eq(users.id, tasks.assigneeId))
@@ -232,7 +213,7 @@ export const getBoardById = async (req, res) => {
         columns: boardColumns,
         permissions: nestedPermissions,
         tasks: boardTasks,
-        tickets: []
+        tickets: [],
       });
     }
 
@@ -251,7 +232,7 @@ export const getBoardById = async (req, res) => {
         assignedToName: users.name,
         assignedToEmail: users.email,
         customerName: customers.name,
-        applicationName: applications.name
+        applicationName: applications.name,
       })
       .from(tickets)
       .leftJoin(users, eq(users.id, tickets.assignedToId))
@@ -264,7 +245,7 @@ export const getBoardById = async (req, res) => {
       columns: boardColumns,
       permissions: nestedPermissions,
       tickets: boardTickets,
-      tasks: []
+      tasks: [],
     });
   } catch (error) {
     console.error('Error fetching board:', error);
@@ -275,10 +256,7 @@ export const getBoardById = async (req, res) => {
 // Create new board
 export const createBoard = async (req, res) => {
   try {
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const { name, description, columns, type, isDefault } = req.body;
 
@@ -306,7 +284,7 @@ export const createBoard = async (req, res) => {
         name,
         description,
         type: boardType,
-        isDefault: isDefault || false
+        isDefault: isDefault || false,
       })
       .returning();
 
@@ -315,7 +293,7 @@ export const createBoard = async (req, res) => {
       { name: 'To Do', position: 0, color: '#e3f2fd' },
       { name: 'In Progress', position: 1, color: '#fff3e0' },
       { name: 'Review', position: 2, color: '#f3e5f5' },
-      { name: 'Done', position: 3, color: '#e8f5e8' }
+      { name: 'Done', position: 3, color: '#e8f5e8' },
     ];
 
     const columnsToCreate =
@@ -326,12 +304,12 @@ export const createBoard = async (req, res) => {
         description: col.description,
         color: col.color,
         position: index,
-        wipLimit: col.wipLimit
+        wipLimit: col.wipLimit,
       })) ||
       defaultColumns.map((col) => ({
         tenantId,
         boardId: createdBoard.id,
-        ...col
+        ...col,
       }));
 
     await db.insert(kanbanColumns).values(columnsToCreate);
@@ -345,7 +323,7 @@ export const createBoard = async (req, res) => {
       tenantId,
       boardId: createdBoard.id,
       userId,
-      role: 'ADMIN'
+      role: 'ADMIN',
     });
 
     const createdPermissions = await db
@@ -362,7 +340,7 @@ export const createBoard = async (req, res) => {
           .limit(1);
         return {
           ...perm,
-          user: user[0] || { name: 'Unknown', email: 'unknown@example.com' }
+          user: user[0] || { name: 'Unknown', email: 'unknown@example.com' },
         };
       })
     );
@@ -370,13 +348,13 @@ export const createBoard = async (req, res) => {
     res.status(201).json({
       ...createdBoard,
       columns: createdColumns,
-      permissions: nestedCreatedPermissions
+      permissions: nestedCreatedPermissions,
     });
   } catch (error) {
     console.error('Error creating board:', error);
     res.status(500).json({
       error: 'Failed to create board',
-      details: error.message
+      details: error.message,
     });
   }
 };
@@ -387,10 +365,7 @@ export const updateBoard = async (req, res) => {
     const { id } = req.params;
     const { name, description, type } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const updateData = {};
     if (name) updateData.name = name;
@@ -420,10 +395,7 @@ export const deleteBoard = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     await db.delete(kanbanBoards).where(and(eq(kanbanBoards.id, id), eq(kanbanBoards.tenantId, tenantId)));
 
@@ -440,10 +412,8 @@ export const moveTicket = async (req, res) => {
     const { ticketId } = req.params;
     const { newStatus, newPosition, boardId } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Ensure board belongs to tenant (if provided)
     if (boardId && tenantId) {
@@ -480,10 +450,8 @@ export const moveTask = async (req, res) => {
     const { taskId } = req.params;
     const { columnId, position } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Ensure column belongs to tenant (if provided)
     if (columnId && tenantId) {
@@ -510,10 +478,7 @@ export const addColumn = async (req, res) => {
     const { boardId } = req.params;
     const { name, description, color, position, wipLimit } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     // Ensure board belongs to tenant
     const [board] = await db
@@ -535,7 +500,7 @@ export const addColumn = async (req, res) => {
         description,
         color,
         position,
-        wipLimit
+        wipLimit,
       })
       .returning();
 
@@ -552,10 +517,7 @@ export const updateColumn = async (req, res) => {
     const { columnId } = req.params;
     const { name, description, color, wipLimit } = req.body;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const updateData = {};
     if (name) updateData.name = name;
@@ -586,10 +548,7 @@ export const deleteColumn = async (req, res) => {
   try {
     const { columnId } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     await db.delete(kanbanColumns).where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.tenantId, tenantId)));
 
@@ -605,10 +564,8 @@ export const getBoardAnalytics = async (req, res) => {
   try {
     const { boardId } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     if (tenantId) {
       const [board] = await db
@@ -624,7 +581,7 @@ export const getBoardAnalytics = async (req, res) => {
 
     res.json({
       ticketCount: ticketCount.count,
-      taskCount: taskCount.count
+      taskCount: taskCount.count,
     });
   } catch (error) {
     console.error('Error fetching board analytics:', error);

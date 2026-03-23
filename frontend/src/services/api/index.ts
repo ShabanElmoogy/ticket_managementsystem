@@ -9,7 +9,7 @@ export type { AxiosRequestConfig } from "./base";
 export { authApi } from "./auth";
 export { usersApi } from "./users";
 export { ticketsApi } from "./tickets";
-export { customersApi } from "./customers";
+export { customersApi } from "../../components/admin/customersManagement/api/customers";
 export { applicationsApi } from "../../components/admin/applicationsManagement/api/applications";
 export { dashboardApi } from "./dashboard";
 export { profileApi } from "./profile";

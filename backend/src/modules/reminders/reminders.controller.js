@@ -5,10 +5,7 @@ import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { eq, and, or, not, lt, desc, asc, inArray } from 'drizzle-orm';
 
-const getTenantScope = (req) => {
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get user reminder settings
 export const getReminderSettings = async (req, res) => {
@@ -18,15 +15,13 @@ export const getReminderSettings = async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const user = await db
       .select({
         reminderEnabled: users.reminderEnabled,
-        reminderInterval: users.reminderInterval
+        reminderInterval: users.reminderInterval,
       })
       .from(users)
       .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
@@ -51,10 +46,8 @@ export const updateReminderSettings = async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const { reminderEnabled, reminderInterval } = req.body;
 
@@ -68,7 +61,7 @@ export const updateReminderSettings = async (req, res) => {
       .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
       .returning({
         reminderEnabled: users.reminderEnabled,
-        reminderInterval: users.reminderInterval
+        reminderInterval: users.reminderInterval,
       });
 
     res.json(user);
@@ -87,15 +80,13 @@ export const getDelayedTickets = async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const user = await db
       .select({
         reminderEnabled: users.reminderEnabled,
-        reminderInterval: users.reminderInterval
+        reminderInterval: users.reminderInterval,
       })
       .from(users)
       .where(tenantId ? and(eq(users.id, userId), eq(users.tenantId, tenantId)) : eq(users.id, userId))
@@ -120,7 +111,7 @@ export const getDelayedTickets = async (req, res) => {
         createdAt: tickets.createdAt,
         updatedAt: tickets.updatedAt,
         customerId: tickets.customerId,
-        applicationId: tickets.applicationId
+        applicationId: tickets.applicationId,
       })
       .from(tickets)
       .innerJoin(users, eq(tickets.createdById, users.id))
@@ -146,14 +137,14 @@ export const getDelayedTickets = async (req, res) => {
         : [],
       applicationIds.length > 0
         ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds))
-        : []
+        : [],
     ]);
 
     // Combine data
     const result = ticketsData.map((ticket) => ({
       ...ticket,
       customer: customersData.find((c) => c.id === ticket.customerId) || null,
-      application: applicationsData.find((a) => a.id === ticket.applicationId) || null
+      application: applicationsData.find((a) => a.id === ticket.applicationId) || null,
     }));
 
     res.json(result);

@@ -9,24 +9,7 @@ import { eq, and, or, desc, asc, count, inArray, isNull, lt } from 'drizzle-orm'
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 
-const getTenantScope = (req) => {
-  // SUPER_ADMIN can operate without tenant scope.
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  // Prefer resolved tenant context (header/param) but fall back to token tenant.
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
-
-const requireTenantScope = (req) => {
-  // SUPER_ADMIN can see everything.
-  if (req.user?.role === 'SUPER_ADMIN') return null;
-
-  const tenantId = getTenantScope(req);
-  if (!tenantId) {
-    throw new Error('Tenant context required');
-  }
-  req.tenantId = tenantId;
-  return tenantId;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get all tickets with filtering
 export const getAllTickets = async (req, res) => {
@@ -40,7 +23,8 @@ export const getAllTickets = async (req, res) => {
 
     // Tenant scoping:
     // Tickets table has no tenantId column, so we scope via createdBy user.tenantId.
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
 
     if (isTenantScopedRole) {
@@ -74,7 +58,7 @@ export const getAllTickets = async (req, res) => {
         applicationId: tickets.applicationId,
         createdById: tickets.createdById,
         assignedToId: tickets.assignedToId,
-        boardId: tickets.boardId
+        boardId: tickets.boardId,
       })
       .from(tickets)
       // join createdBy user so we can tenant-scope
@@ -99,7 +83,7 @@ export const getAllTickets = async (req, res) => {
       applicationId: r.applicationId,
       createdById: r.createdById,
       assignedToId: r.assignedToId,
-      boardId: r.boardId
+      boardId: r.boardId,
     }));
 
     // Get related data
@@ -134,7 +118,7 @@ export const getAllTickets = async (req, res) => {
         db
           .select({
             ticketId: ticketLabels.ticketId,
-            label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description }
+            label: { id: labels.id, name: labels.name, color: labels.color, description: labels.description },
           })
           .from(ticketLabels)
           .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
@@ -143,7 +127,7 @@ export const getAllTickets = async (req, res) => {
           .select({ ticketId: comments.ticketId, count: count() })
           .from(comments)
           .where(inArray(comments.ticketId, ticketIds))
-          .groupBy(comments.ticketId)
+          .groupBy(comments.ticketId),
       ]);
     }
 
@@ -155,7 +139,7 @@ export const getAllTickets = async (req, res) => {
       customer: ticketCustomers.find((c) => c.id === ticket.customerId) || null,
       application: ticketApplications.find((a) => a.id === ticket.applicationId) || null,
       labels: labelsData.filter((l) => l.ticketId === ticket.id).map((l) => ({ label: l.label })),
-      _count: { comments: commentCounts.find((c) => c.ticketId === ticket.id)?.count || 0 }
+      _count: { comments: commentCounts.find((c) => c.ticketId === ticket.id)?.count || 0 },
     }));
 
     res.json(ticketsWithRelations);
@@ -170,7 +154,8 @@ export const getTicketById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
 
     // Tenant-scoped roles: ensure ticket belongs to their tenant (via createdBy user)
@@ -217,7 +202,7 @@ export const getTicketById = async (req, res) => {
             createdAt: comments.createdAt,
             userId: comments.userId,
             ticketId: comments.ticketId,
-            user: { id: users.id, name: users.name, email: users.email }
+            user: { id: users.id, name: users.name, email: users.email },
           })
           .from(comments)
           .innerJoin(users, eq(comments.userId, users.id))
@@ -233,13 +218,13 @@ export const getTicketById = async (req, res) => {
             createdAt: ticketActivities.createdAt,
             userId: ticketActivities.userId,
             ticketId: ticketActivities.ticketId,
-            user: { id: users.id, name: users.name, email: users.email }
+            user: { id: users.id, name: users.name, email: users.email },
           })
           .from(ticketActivities)
           .innerJoin(users, eq(ticketActivities.userId, users.id))
           .where(eq(ticketActivities.ticketId, id))
           .orderBy(desc(ticketActivities.createdAt))
-          .limit(20)
+          .limit(20),
       ]);
 
       const fullTicket = {
@@ -250,7 +235,7 @@ export const getTicketById = async (req, res) => {
         application: application[0] || null,
         labels: labelsData,
         comments: commentsData,
-        activities: activitiesData
+        activities: activitiesData,
       };
 
       // EMPLOYEE access check (tenant-scoped but not tenant-wide)
@@ -294,7 +279,7 @@ export const getTicketById = async (req, res) => {
           createdAt: comments.createdAt,
           userId: comments.userId,
           ticketId: comments.ticketId,
-          user: { id: users.id, name: users.name, email: users.email }
+          user: { id: users.id, name: users.name, email: users.email },
         })
         .from(comments)
         .innerJoin(users, eq(comments.userId, users.id))
@@ -310,13 +295,13 @@ export const getTicketById = async (req, res) => {
           createdAt: ticketActivities.createdAt,
           userId: ticketActivities.userId,
           ticketId: ticketActivities.ticketId,
-          user: { id: users.id, name: users.name, email: users.email }
+          user: { id: users.id, name: users.name, email: users.email },
         })
         .from(ticketActivities)
         .innerJoin(users, eq(ticketActivities.userId, users.id))
         .where(eq(ticketActivities.ticketId, id))
         .orderBy(desc(ticketActivities.createdAt))
-        .limit(20)
+        .limit(20),
     ]);
 
     const fullTicket = {
@@ -327,7 +312,7 @@ export const getTicketById = async (req, res) => {
       application: application[0] || null,
       labels: labelsData,
       comments: commentsData,
-      activities: activitiesData
+      activities: activitiesData,
     };
 
     // Check if user has access to this ticket
@@ -360,22 +345,19 @@ export const createTicket = async (req, res) => {
       boardId,
       dueDate,
       estimatedHours,
-      labels: labelIds = []
+      labels: labelIds = [],
     } = req.body;
 
     // Tenant admin: require tenant context and ensure createdBy belongs to that tenant.
     // (Tickets table has no tenantId column.)
     if (req.user?.role === 'TENANT_ADMIN') {
-      try {
-        requireTenantScope(req);
-      } catch {
-        return res.status(403).json({ error: 'Tenant context required' });
-      }
+      const tenantId = requireTenantScope(req);
+      req.tenantId = tenantId;
 
       const [creator] = await db
         .select({ id: users.id, tenantId: users.tenantId })
         .from(users)
-        .where(and(eq(users.id, req.user.userId), eq(users.tenantId, req.tenantId)))
+        .where(and(eq(users.id, req.user.userId), eq(users.tenantId, tenantId)))
         .limit(1);
 
       if (!creator) {
@@ -395,7 +377,7 @@ export const createTicket = async (req, res) => {
         boardId,
         dueDate: dueDate ? new Date(dueDate) : null,
         estimatedHours,
-        createdById: req.user.userId
+        createdById: req.user.userId,
       })
       .returning();
 
@@ -422,7 +404,7 @@ export const createTicket = async (req, res) => {
             .from(ticketLabels)
             .innerJoin(labels, eq(ticketLabels.labelId, labels.id))
             .where(eq(ticketLabels.ticketId, ticket.id))
-        : Promise.resolve([])
+        : Promise.resolve([]),
     ]);
 
     const fullTicket = {
@@ -431,7 +413,7 @@ export const createTicket = async (req, res) => {
       createdBy: createdUser[0] || null,
       customer: customer[0] || null,
       application: application[0] || null,
-      labels: labelsData
+      labels: labelsData,
     };
 
     // Log activity
@@ -439,7 +421,7 @@ export const createTicket = async (req, res) => {
       ticketId: fullTicket.id,
       userId: req.user.userId,
       action: 'CREATED',
-      description: `Created ticket: ${title}`
+      description: `Created ticket: ${title}`,
     });
 
     // Broadcast appropriate notification type based on assignment
@@ -450,8 +432,8 @@ export const createTicket = async (req, res) => {
       data: {
         ticket: { id: fullTicket.id, title: fullTicket.title, priority: fullTicket.priority, status: fullTicket.status },
         createdBy: createdUser[0]?.name,
-        assignedTo: assignedUser[0]?.name || null
-      }
+        assignedTo: assignedUser[0]?.name || null,
+      },
     });
 
     console.log('Ticket created:', assignedToId ? 'assigned' : 'unassigned');
@@ -477,7 +459,8 @@ export const deleteTicket = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
 
     if (isTenantScopedRole) {
@@ -507,7 +490,8 @@ export const takeTicket = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
 
     if (isTenantScopedRole && !tenantId) {
@@ -551,7 +535,8 @@ export const getDelayedTickets = async (req, res) => {
   try {
     const now = new Date();
 
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
 
     if (isTenantScopedRole && !tenantId) {
@@ -570,7 +555,7 @@ export const getDelayedTickets = async (req, res) => {
         updatedAt: tickets.updatedAt,
         assignedToId: tickets.assignedToId,
         customerId: tickets.customerId,
-        applicationId: tickets.applicationId
+        applicationId: tickets.applicationId,
       })
       .from(tickets)
       .where(
@@ -605,14 +590,14 @@ export const getDelayedTickets = async (req, res) => {
       customerIds.length > 0 ? db.select({ id: customers.id, name: customers.name }).from(customers).where(inArray(customers.id, customerIds)) : [],
       applicationIds.length > 0
         ? db.select({ id: applications.id, name: applications.name }).from(applications).where(inArray(applications.id, applicationIds))
-        : []
+        : [],
     ]);
 
     // Combine data
     const result = normalized.map((ticket) => ({
       ...ticket,
       customer: customersData.find((c) => c.id === ticket.customerId) || null,
-      application: applicationsData.find((a) => a.id === ticket.applicationId) || null
+      application: applicationsData.find((a) => a.id === ticket.applicationId) || null,
     }));
 
     res.json(result);

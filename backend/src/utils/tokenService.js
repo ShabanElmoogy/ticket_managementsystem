@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 
 /**
  * Token Service - Centralized JWT token management
@@ -25,10 +25,19 @@ let REFRESH_TOKEN_SECRET;
 const initializeSecrets = () => {
   if (!ACCESS_TOKEN_SECRET) {
     ACCESS_TOKEN_SECRET = process.env.JWT_SECRET;
-    REFRESH_TOKEN_SECRET = process.env.JWT_SECRET;
-    
+    REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+
     if (!ACCESS_TOKEN_SECRET) {
       throw new Error('FATAL: JWT_SECRET must be set in environment variables');
+    }
+    if (!REFRESH_TOKEN_SECRET) {
+      throw new Error('FATAL: REFRESH_TOKEN_SECRET must be set in environment variables');
+    }
+    // timingSafeEqual prevents timing side-channel on secret comparison.
+    const a = Buffer.from(ACCESS_TOKEN_SECRET);
+    const b = Buffer.from(REFRESH_TOKEN_SECRET);
+    if (a.length === b.length && timingSafeEqual(a, b)) {
+      throw new Error('FATAL: JWT_SECRET and REFRESH_TOKEN_SECRET must be different values');
     }
   }
 };

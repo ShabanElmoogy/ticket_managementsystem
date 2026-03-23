@@ -1,15 +1,36 @@
 import cors from 'cors';
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import pinoHttp from 'pino-http';
+import rateLimit from 'express-rate-limit';
 import socketMiddleware from './socketMiddleware.js';
+import { authenticateToken } from './auth.js';
+import { resolveTenant, invalidateTenantCache } from './tenant.js';
 
-const CORS_ORIGINS = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) 
+export { resolveTenant, invalidateTenantCache };
+
+export const authenticateAndResolveTenant = [authenticateToken, resolveTenant];
+
+const CORS_ORIGINS = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
   : ['http://localhost:3000', 'http://localhost:5173', 'https://localhost:5173', 'https://localhost:5174'];
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const logger = pinoHttp({
+  autoLogging: true,
+  quietReqLogger: true,
+  customLogLevel: (req, res) => (res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info'),
+  serializers: {
+    req: (req) => ({ method: req.method, url: req.url, id: req.id }),
+    res: (res) => ({ statusCode: res.statusCode }),
+  },
+});
+
+export const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
 
 export function registerCoreMiddleware(app, notificationEmitter) {
   app.use(cors({
@@ -25,14 +46,9 @@ export function registerCoreMiddleware(app, notificationEmitter) {
       'X-Tenant-Id',
     ],
     exposedHeaders: ['X-Request-ID'],
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
   }));
   app.use(express.json());
-
-  // Serve static files from frontend dist
-  const frontendPath = path.join(__dirname, '../../../frontend/dist');
-  app.use(express.static(frontendPath));
-
-  // Inject socket notification function into req
+  app.use(logger);
   app.use(socketMiddleware(notificationEmitter));
 }

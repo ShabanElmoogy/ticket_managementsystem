@@ -4,22 +4,15 @@ import { comments } from '../comments/comments.schema.js';
 import { users } from '../users/users.schema.js';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 
-const getTenantScope = (req) => {
-  // SUPER_ADMIN can operate without tenant scope.
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  // Tenant-scoped roles must have a tenant context (resolved header/param or token).
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get dashboard statistics
 export const getStats = async (req, res) => {
   try {
     const isAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'TENANT_ADMIN';
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Tickets table has no tenantId, so for tenant-scoped requests we scope via createdBy user.
     const totalTicketsQuery = isAdmin
@@ -99,14 +92,14 @@ export const getStats = async (req, res) => {
       totalTicketsQuery,
       openTicketsQuery,
       inProgressTicketsQuery,
-      resolvedTicketsQuery
+      resolvedTicketsQuery,
     ]);
 
     res.json({
       totalTickets: totalTickets[0].count,
       openTickets: openTickets[0].count,
       inProgressTickets: inProgressTickets[0].count,
-      resolvedTickets: resolvedTickets[0].count
+      resolvedTickets: resolvedTickets[0].count,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -119,10 +112,8 @@ export const getActivities = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     // Get recent tickets with user data
     // Tenant scoping: tickets table has no tenantId, so scope via createdBy user.
@@ -136,7 +127,7 @@ export const getActivities = async (req, res) => {
             createdAt: tickets.createdAt,
             updatedAt: tickets.updatedAt,
             assignedToId: tickets.assignedToId,
-            createdById: tickets.createdById
+            createdById: tickets.createdById,
           })
           .from(tickets)
           .innerJoin(users, eq(tickets.createdById, users.id))
@@ -152,26 +143,21 @@ export const getActivities = async (req, res) => {
             createdAt: tickets.createdAt,
             updatedAt: tickets.updatedAt,
             assignedToId: tickets.assignedToId,
-            createdById: tickets.createdById
+            createdById: tickets.createdById,
           })
           .from(tickets)
           .orderBy(desc(tickets.updatedAt))
           .limit(limit);
 
     // Get user data for tickets
-    const userIds = [
-      ...new Set([
-        ...recentTickets.map((t) => t.assignedToId).filter(Boolean),
-        ...recentTickets.map((t) => t.createdById).filter(Boolean)
-      ])
-    ];
+    const userIds = [...new Set([...recentTickets.map((t) => t.assignedToId).filter(Boolean), ...recentTickets.map((t) => t.createdById).filter(Boolean)])];
 
     const ticketUsers = userIds.length
       ? await db
           .select({
             id: users.id,
             name: users.name,
-            email: users.email
+            email: users.email,
           })
           .from(users)
           .where(inArray(users.id, userIds))
@@ -179,7 +165,6 @@ export const getActivities = async (req, res) => {
 
     // Get recent comments with user and ticket data
     // Tenant scoping: scope via ticket creator's tenant.
-    // NOTE: we need a second users alias for the ticket creator join.
     const ticketCreator = users;
 
     const recentComments = tenantId
@@ -194,7 +179,7 @@ export const getActivities = async (req, res) => {
             userEmail: users.email,
             ticketTitle: tickets.title,
             ticketPriority: tickets.priority,
-            ticketStatus: tickets.status
+            ticketStatus: tickets.status,
           })
           .from(comments)
           .innerJoin(users, eq(users.id, comments.userId))
@@ -214,7 +199,7 @@ export const getActivities = async (req, res) => {
             userEmail: users.email,
             ticketTitle: tickets.title,
             ticketPriority: tickets.priority,
-            ticketStatus: tickets.status
+            ticketStatus: tickets.status,
           })
           .from(comments)
           .innerJoin(users, eq(users.id, comments.userId))
@@ -241,11 +226,11 @@ export const getActivities = async (req, res) => {
               id: ticket.id,
               title: ticket.title,
               priority: ticket.priority,
-              status: ticket.status
+              status: ticket.status,
             },
-            createdBy: createdByUser?.name || 'Unknown'
+            createdBy: createdByUser?.name || 'Unknown',
           },
-          timestamp: ticket.createdAt
+          timestamp: ticket.createdAt,
         });
       } else if (assignedToUser) {
         activities.push({
@@ -256,11 +241,11 @@ export const getActivities = async (req, res) => {
               id: ticket.id,
               title: ticket.title,
               priority: ticket.priority,
-              status: ticket.status
+              status: ticket.status,
             },
-            assignedTo: assignedToUser.name
+            assignedTo: assignedToUser.name,
           },
-          timestamp: ticket.updatedAt
+          timestamp: ticket.updatedAt,
         });
       } else {
         activities.push({
@@ -271,11 +256,11 @@ export const getActivities = async (req, res) => {
               id: ticket.id,
               title: ticket.title,
               priority: ticket.priority,
-              status: ticket.status
+              status: ticket.status,
             },
-            updatedBy: createdByUser?.name || 'Unknown'
+            updatedBy: createdByUser?.name || 'Unknown',
           },
-          timestamp: ticket.updatedAt
+          timestamp: ticket.updatedAt,
         });
       }
     });
@@ -288,17 +273,17 @@ export const getActivities = async (req, res) => {
         data: {
           comment: {
             id: comment.id,
-            content: comment.content.substring(0, 100) + (comment.content.length > 100 ? '...' : '')
+            content: comment.content.substring(0, 100) + (comment.content.length > 100 ? '...' : ''),
           },
           ticket: {
             id: comment.ticketId,
             title: comment.ticketTitle,
             priority: comment.ticketPriority,
-            status: comment.ticketStatus
+            status: comment.ticketStatus,
           },
-          commentBy: comment.userName
+          commentBy: comment.userName,
         },
-        timestamp: comment.createdAt
+        timestamp: comment.createdAt,
       });
     });
 

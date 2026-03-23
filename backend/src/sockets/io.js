@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { emitNotification } from '../utils/socketHelpers.js';
-import "dotenv/config";
+import { verifyAccessToken } from '../utils/tokenService.js';
+import 'dotenv/config';
 
 export function setupSocket(server) {
   const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : true;
@@ -15,18 +16,30 @@ export function setupSocket(server) {
     allowEIO3: true,
   });
 
+  // Authenticate every socket connection via JWT
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token ||
+      socket.handshake.headers?.authorization?.replace('Bearer ', '');
+    if (!token) return next(new Error('Authentication required'));
+    try {
+      socket.user = verifyAccessToken(token);
+      next();
+    } catch {
+      next(new Error('Invalid or expired token'));
+    }
+  });
+
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    // Only allow joining the room that matches the authenticated user
+    const authedUserId = socket.user?.userId;
+    if (authedUserId) socket.join(`user_${authedUserId}`);
 
     socket.on('join', (userId) => {
+      if (String(userId) !== String(authedUserId)) return;
       socket.join(`user_${userId}`);
-      console.log(`User ${userId} joined room user_${userId}`);
-      console.log(`Room user_${userId} now has ${io.sockets.adapter.rooms.get(`user_${userId}`)?.size || 0} members`);
     });
 
-    socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
-    });
+    socket.on('disconnect', () => {});
   });
 
   const notificationEmitter = emitNotification(io);

@@ -5,6 +5,7 @@ import { users } from '../users/users.schema.js';
 import { refreshTokens } from './auth.schema.js';
 import { tenants } from '../tenants/tenants.schema.js';
 import { eq, and } from 'drizzle-orm';
+import { Role, TENANT_SCOPED_ROLES } from '../../constants/roles.js';
 
 /**
  * Helper: Store refresh token in database
@@ -67,7 +68,7 @@ const validateRefreshTokenInDb = async (token) => {
 // Register new user
 export const register = async (req, res) => {
   try {
-    const { email, name, password, role = 'EMPLOYEE' } = req.body;
+    const { email, name, password, role = Role.EMPLOYEE } = req.body;
 
     // Validate input
     if (!email || !name || !password) {
@@ -83,7 +84,7 @@ export const register = async (req, res) => {
     let tenantId = null;
     let tenant = null;
 
-    if (role !== 'SUPER_ADMIN') {
+    if (role !== Role.SUPER_ADMIN) {
       if (!tenantSlug) {
         return res.status(400).json({
           error: 'Tenant context required',
@@ -113,7 +114,7 @@ export const register = async (req, res) => {
     const [existingUser] = await db
       .select()
       .from(users)
-      .where(role === 'SUPER_ADMIN' ? eq(users.email, email) : and(eq(users.email, email), eq(users.tenantId, tenantId)))
+      .where(role === Role.SUPER_ADMIN ? eq(users.email, email) : and(eq(users.email, email), eq(users.tenantId, tenantId)))
       .limit(1);
 
     if (existingUser) {
@@ -131,7 +132,7 @@ export const register = async (req, res) => {
         name,
         password: hashedPassword,
         role,
-        ...(role === 'SUPER_ADMIN' ? {} : { tenantId })
+        ...(role === Role.SUPER_ADMIN ? {} : { tenantId })
       })
       .returning({
         id: users.id,
@@ -148,14 +149,14 @@ export const register = async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {})
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {})
     });
 
     const refreshTokenValue = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {})
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {})
     });
 
     // Store refresh token in database
@@ -200,7 +201,7 @@ export const login = async (req, res) => {
     const [adminCandidate] = await db
       .select()
       .from(users)
-      .where(and(eq(users.email, email), eq(users.role, 'SUPER_ADMIN')))
+      .where(and(eq(users.email, email), eq(users.role, Role.SUPER_ADMIN)))
       .limit(1);
 
     // If admin exists and password matches, login as admin immediately.
@@ -304,14 +305,14 @@ export const login = async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId } : {}),
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId } : {}),
     });
 
     const refreshTokenValue = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId } : {}),
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId } : {}),
     });
 
     // Store refresh token in database
@@ -379,7 +380,7 @@ export const refreshToken = async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {}),
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {}),
     });
 
     // Generate new refresh token
@@ -387,7 +388,7 @@ export const refreshToken = async (req, res) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      ...(user.role === 'TENANT_ADMIN' || user.role === 'EMPLOYEE' ? { tenantId: user.tenantId } : {}),
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {}),
     });
 
     // Revoke old refresh token

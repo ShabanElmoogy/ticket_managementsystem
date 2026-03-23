@@ -4,13 +4,9 @@ import { users } from './users.schema.js';
 import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import { eq, count, desc, inArray, or, and } from 'drizzle-orm';
+import { Role } from '../../constants/roles.js';
 
-const getTenantScope = (req) => {
-  // SUPER_ADMIN can operate without tenant scope.
-  if (req.user?.role === 'SUPER_ADMIN') return req.tenantId ?? null;
-  // Prefer resolved tenant context (header/param) but fall back to token tenant.
-  return req.tenantId ?? req.user?.tenantId ?? null;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get all users (super admin only)
 export const getAllUsers = async (req, res) => {
@@ -27,11 +23,11 @@ export const getAllUsers = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       })
       .from(users)
       // SUPER_ADMIN should see only tenant admins in the admin grid
-      .where(eq(users.role, 'TENANT_ADMIN'))
+      .where(eq(users.role, Role.TENANT_ADMIN))
       .orderBy(desc(users.createdAt));
 
     // Get counts for each user
@@ -69,8 +65,8 @@ export const getAllUsers = async (req, res) => {
       _count: {
         assignedTickets: assignedCounts.find((c) => c.userId === user.id)?.count || 0,
         createdTickets: createdCounts.find((c) => c.userId === user.id)?.count || 0,
-        comments: commentCounts.find((c) => c.userId === user.id)?.count || 0
-      }
+        comments: commentCounts.find((c) => c.userId === user.id)?.count || 0,
+      },
     }));
 
     res.json(usersWithCounts);
@@ -96,7 +92,7 @@ export const getUserById = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       })
       .from(users)
       .where(eq(users.id, id))
@@ -107,9 +103,7 @@ export const getUserById = async (req, res) => {
     }
 
     const [assignedCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, id));
-
     const [createdCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.createdById, id));
-
     const [commentCount] = await db.select({ count: count() }).from(comments).where(eq(comments.userId, id));
 
     res.json({
@@ -117,8 +111,8 @@ export const getUserById = async (req, res) => {
       _count: {
         assignedTickets: assignedCount.count,
         createdTickets: createdCount.count,
-        comments: commentCount.count
-      }
+        comments: commentCount.count,
+      },
     });
   } catch (error) {
     console.error('Get user by ID error:', error);
@@ -129,16 +123,13 @@ export const getUserById = async (req, res) => {
 // Create new user (super admin only)
 export const createUser = async (req, res) => {
   try {
-    const { email, name, password, role = 'EMPLOYEE', phone, whatsappNotifications = false } = req.body;
+    const { email, name, password, role = Role.EMPLOYEE, phone, whatsappNotifications = false } = req.body;
 
     if (!email || !name || !password) {
       return res.status(400).json({ error: 'Email, name, and password are required' });
     }
 
-    const tenantId = req.tenantId || null;
-    if (role !== 'SUPER_ADMIN' && !tenantId) {
-      return res.status(400).json({ error: 'Tenant is required to create tenant users (X-Tenant-Slug)' });
-    }
+    const tenantId = role === Role.SUPER_ADMIN ? null : requireTenantScope(req);
 
     const existingUser = await db
       .select({ id: users.id })
@@ -155,13 +146,13 @@ export const createUser = async (req, res) => {
     const [user] = await db
       .insert(users)
       .values({
-        tenantId: role === 'SUPER_ADMIN' ? null : tenantId,
+        tenantId,
         email,
         name,
         password: hashedPassword,
         role,
         phone,
-        whatsappNotifications
+        whatsappNotifications,
       })
       .returning({
         id: users.id,
@@ -173,7 +164,7 @@ export const createUser = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       });
 
     res.status(201).json(user);
@@ -202,7 +193,7 @@ export const getCurrentProfile = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -263,7 +254,7 @@ export const updateOwnProfile = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       });
 
     res.json(user);
@@ -315,7 +306,7 @@ export const updateUser = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       });
 
     const [assignedCount] = await db.select({ count: count() }).from(tickets).where(eq(tickets.assignedToId, id));
@@ -327,8 +318,8 @@ export const updateUser = async (req, res) => {
       _count: {
         assignedTickets: assignedCount.count,
         createdTickets: createdCount.count,
-        comments: commentCount.count
-      }
+        comments: commentCount.count,
+      },
     });
   } catch (error) {
     console.error('Update user error:', error);
@@ -353,7 +344,7 @@ export const deleteUser = async (req, res) => {
 
     if (!force && (assignedCount.count > 0 || createdCount.count > 0 || commentCount.count > 0)) {
       return res.status(400).json({
-        error: 'Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.'
+        error: 'Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.',
       });
     }
 
@@ -381,19 +372,18 @@ export const deleteUser = async (req, res) => {
 // - TENANT_ADMIN/EMPLOYEE: sees employees only within resolved tenant
 export const getEmployees = async (req, res) => {
   try {
-    const tenantId = getTenantScope(req);
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
-
-    const whereClause = tenantId ? and(eq(users.role, 'EMPLOYEE'), eq(users.tenantId, tenantId)) : eq(users.role, 'EMPLOYEE');
+    const whereClause = tenantId
+      ? and(eq(users.role, Role.EMPLOYEE), eq(users.tenantId, tenantId))
+      : eq(users.role, Role.EMPLOYEE);
 
     const employees = await db
       .select({
         id: users.id,
         name: users.name,
-        email: users.email
+        email: users.email,
       })
       .from(users)
       .where(whereClause);
@@ -411,10 +401,7 @@ export const getEmployees = async (req, res) => {
 
 export const getTenantUsers = async (req, res) => {
   try {
-    const tenantId = req.tenantId;
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant context required (X-Tenant-Slug)' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const usersData = await db
       .select({
@@ -427,7 +414,7 @@ export const getTenantUsers = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       })
       .from(users)
       .where(eq(users.tenantId, tenantId))
@@ -442,18 +429,15 @@ export const getTenantUsers = async (req, res) => {
 
 export const createTenantUser = async (req, res) => {
   try {
-    const tenantId = req.tenantId;
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant context required (X-Tenant-Slug)' });
-    }
+    const tenantId = requireTenantScope(req);
 
-    const { email, name, password, role = 'EMPLOYEE', phone, whatsappNotifications = false } = req.body;
+    const { email, name, password, role = Role.EMPLOYEE, phone, whatsappNotifications = false } = req.body;
 
     if (!email || !name || !password) {
       return res.status(400).json({ error: 'Email, name, and password are required' });
     }
 
-    if (role === 'SUPER_ADMIN') {
+    if (role === Role.SUPER_ADMIN) {
       return res.status(403).json({ error: 'Not allowed to create SUPER_ADMIN' });
     }
 
@@ -478,7 +462,7 @@ export const createTenantUser = async (req, res) => {
         password: hashedPassword,
         role,
         phone,
-        whatsappNotifications
+        whatsappNotifications,
       })
       .returning({
         id: users.id,
@@ -490,7 +474,7 @@ export const createTenantUser = async (req, res) => {
         reminderEnabled: users.reminderEnabled,
         reminderInterval: users.reminderInterval,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        updatedAt: users.updatedAt,
       });
 
     res.status(201).json(user);
@@ -506,7 +490,7 @@ export const getUserStats = async (req, res) => {
     const stats = await db
       .select({
         role: users.role,
-        count: count()
+        count: count(),
       })
       .from(users)
       .groupBy(users.role);
@@ -528,7 +512,7 @@ export const getUserStats = async (req, res) => {
       byRole: stats.reduce((acc, stat) => {
         acc[stat.role] = stat.count;
         return acc;
-      }, {})
+      }, {}),
     });
   } catch (error) {
     console.error('Get user stats error:', error);

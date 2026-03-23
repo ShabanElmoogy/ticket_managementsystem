@@ -5,25 +5,13 @@ import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
 import { eq, and, count, desc } from 'drizzle-orm';
 
-const getTenantScope = (req) => {
-  // SUPER_ADMIN: optional tenant scoping (if header provided)
-  if (req.user?.role === 'SUPER_ADMIN') {
-    return req.tenantId ?? null;
-  }
-
-  // Tenant-scoped roles
-  const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-  if (!tenantId) return null;
-  return tenantId;
-};
+import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
 // Get all customers
 export const getAllCustomers = async (req, res) => {
   try {
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const whereClause = tenantId ? eq(customers.tenantId, tenantId) : undefined;
 
@@ -86,10 +74,8 @@ export const getCustomerById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = getTenantScope(req);
-    if (!tenantId && req.user?.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
     const [customer] = await db
       .select()
@@ -160,10 +146,7 @@ export const createCustomer = async (req, res) => {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     // Email uniqueness should be per-tenant
     const [existingCustomer] = await db
@@ -227,10 +210,7 @@ export const updateCustomer = async (req, res) => {
     const { id } = req.params;
     const { name, email, phone, address, company, applicationIds } = req.body;
 
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const [existingCustomer] = await db
       .select()
@@ -309,10 +289,7 @@ export const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     const [existingCustomer] = await db
       .select()
@@ -350,10 +327,7 @@ export const assignApplication = async (req, res) => {
   try {
     const { customerId, applicationId } = req.body;
 
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     // Ensure both belong to tenant
     const [customer] = await db
@@ -398,10 +372,7 @@ export const removeApplication = async (req, res) => {
   try {
     const { customerId, applicationId } = req.params;
 
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Tenant context required' });
-    }
+    const tenantId = requireTenantScope(req);
 
     // Ensure customer belongs to tenant
     const [customer] = await db

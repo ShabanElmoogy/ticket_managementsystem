@@ -12,13 +12,14 @@ import taskRoutes from './tasks/tasks.routes.js';
 import userRoutes from './users/users.routes.js';
 import reminderRoutes from './reminders/reminders.routes.js';
 import docRoutes from './docs/docs.routes.js';
+import docBuilderRoutes from './docs/docs.routes.js';
 import tenantRoutes from './tenants/tenants.routes.js';
 
 const router = express.Router();
 
-// Module routes
 router.use('/auth', authRoutes);
 router.use('/tickets', ticketRoutes);
+router.use('/tickets', commentRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/customers', customerRoutes);
 router.use('/dashboard', dashboardRoutes);
@@ -29,8 +30,7 @@ router.use('/tasks', taskRoutes);
 router.use('/users', userRoutes);
 router.use('/reminders', reminderRoutes);
 router.use('/tenants', tenantRoutes);
-router.use('/tickets', commentRoutes);
 router.use('/docs', docRoutes);
-router.use('/docsbuilder', docRoutes);
+router.use('/docsbuilder', docBuilderRoutes);
 
 export default router;
