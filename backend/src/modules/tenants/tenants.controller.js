@@ -1,6 +1,8 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../../config/database.js';
 import { tenants } from './tenants.schema.js';
+import { users } from '../users/users.schema.js';
+import { Role } from '../../constants/roles.js';
 
 const toSlug = (value) =>
   String(value || '')
@@ -15,6 +17,27 @@ const parseOptionalDate = (value) => {
   const d = new Date(value);
   // If invalid date, let DB/driver throw by passing the original value
   return Number.isNaN(d.getTime()) ? value : d;
+};
+
+export const listTenantsPublic = async (req, res) => {
+  const rows = await db
+    .select({ id: tenants.id, name: tenants.name, slug: tenants.slug })
+    .from(tenants)
+    .orderBy(tenants.name);
+
+  // Attach the first TENANT_ADMIN email for each tenant (dev convenience)
+  const withAdmin = await Promise.all(
+    rows.map(async (t) => {
+      const [admin] = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN)))
+        .limit(1);
+      return { ...t, adminEmail: admin?.email ?? null };
+    })
+  );
+
+  return res.json(withAdmin);
 };
 
 export const listTenants = async (req, res) => {

@@ -24,13 +24,7 @@ const router = express.Router();
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: Array of notifications
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Notification'
+ *         $ref: '#/components/responses/NotificationList'
  */
 router.get('/', authenticateToken, resolveTenant, validate(notificationQuerySchema, 'query'), notificationsController.getNotifications);
 
@@ -48,10 +42,7 @@ router.get('/', authenticateToken, resolveTenant, validate(notificationQuerySche
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 count:
- *                   type: integer
+ *               $ref: '#/components/schemas/NotificationCount'
  */
 router.get('/count', authenticateToken, resolveTenant, notificationsController.getNotificationCount);
 
@@ -65,7 +56,7 @@ router.get('/count', authenticateToken, resolveTenant, notificationsController.g
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: All marked as read
+ *         $ref: '#/components/responses/NoContent'
  */
 router.put('/read-all', authenticateToken, resolveTenant, notificationsController.markAllAsRead);
 
@@ -77,15 +68,10 @@ router.put('/read-all', authenticateToken, resolveTenant, notificationsControlle
  *     summary: Mark a notification as read
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Marked as read
+ *         $ref: '#/components/responses/NoContent'
  */
 router.put('/:id/read', authenticateToken, resolveTenant, notificationsController.markAsRead);
 
@@ -97,15 +83,10 @@ router.put('/:id/read', authenticateToken, resolveTenant, notificationsControlle
  *     summary: Delete a notification
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
  */
 router.delete('/:id', authenticateToken, resolveTenant, notificationsController.deleteNotification);
 

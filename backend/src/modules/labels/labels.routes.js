@@ -21,33 +21,17 @@ const router = express.Router();
  *     summary: List all labels
  *     responses:
  *       200:
- *         description: Array of labels
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Label'
+ *         $ref: '#/components/responses/LabelList'
  *   post:
  *     tags: [Labels]
  *     summary: Create a label (TENANT_ADMIN)
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name]
- *             properties:
- *               name:  { type: string }
- *               color: { type: string }
+ *       $ref: '#/components/requestBodies/CreateLabel'
  *     responses:
  *       201:
- *         description: Created label
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Label'
+ *         $ref: '#/components/responses/Label'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', authenticateToken, labelsController.getAllLabels);
 router.post('/', authenticateToken, requireTenantAdmin, validate(createLabelSchema), labelsController.createLabel);
@@ -59,18 +43,10 @@ router.post('/', authenticateToken, requireTenantAdmin, validate(createLabelSche
  *     tags: [Labels]
  *     summary: Assign a label to a ticket
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [labelId, ticketId]
- *             properties:
- *               labelId:  { type: string, format: uuid }
- *               ticketId: { type: string, format: uuid }
+ *       $ref: '#/components/requestBodies/AssignLabel'
  *     responses:
  *       200:
- *         description: Assigned
+ *         $ref: '#/components/responses/NoContent'
  */
 router.post('/assign', authenticateToken, validate(addLabelToTicketSchema), labelsController.addLabelToTicket);
 
@@ -81,41 +57,24 @@ router.post('/assign', authenticateToken, validate(addLabelToTicketSchema), labe
  *     tags: [Labels]
  *     summary: Update a label (TENANT_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:  { type: string }
- *               color: { type: string }
+ *       $ref: '#/components/requestBodies/UpdateLabel'
  *     responses:
  *       200:
- *         description: Updated label
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Label'
+ *         $ref: '#/components/responses/Label'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  *   delete:
  *     tags: [Labels]
  *     summary: Delete a label (TENANT_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.put('/:id', authenticateToken, requireTenantAdmin, validate(updateLabelSchema), labelsController.updateLabel);
 router.delete('/:id', authenticateToken, requireTenantAdmin, labelsController.deleteLabel);
@@ -127,21 +86,11 @@ router.delete('/:id', authenticateToken, requireTenantAdmin, labelsController.de
  *     tags: [Labels]
  *     summary: Remove a label from a ticket
  *     parameters:
- *       - in: path
- *         name: labelId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: path
- *         name: ticketId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathLabelId'
+ *       - $ref: '#/components/parameters/PathTicketId'
  *     responses:
  *       200:
- *         description: Removed
+ *         $ref: '#/components/responses/NoContent'
  */
 router.delete('/:labelId/tickets/:ticketId', authenticateToken, labelsController.removeLabelFromTicket);
 

@@ -24,38 +24,21 @@ const router = express.Router();
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: Array of customers
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Customer'
+ *         $ref: '#/components/responses/CustomerList'
  *   post:
  *     tags: [Customers]
  *     summary: Create a customer (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name, email]
- *             properties:
- *               name:    { type: string }
- *               email:   { type: string, format: email }
- *               phone:   { type: string, nullable: true }
- *               address: { type: string, nullable: true }
- *               company: { type: string, nullable: true }
+ *       $ref: '#/components/requestBodies/CreateCustomer'
  *     responses:
  *       201:
- *         description: Created customer
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Customer'
+ *         $ref: '#/components/responses/Customer'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', authenticateToken, resolveTenant, customersController.getAllCustomers);
 router.post('/', authenticateToken, resolveTenant, requireTenantAdmin, validate(createCustomerSchema), customersController.createCustomer);
@@ -69,18 +52,12 @@ router.post('/', authenticateToken, resolveTenant, requireTenantAdmin, validate(
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [customerId, applicationId]
- *             properties:
- *               customerId:    { type: string, format: uuid }
- *               applicationId: { type: string, format: uuid }
+ *       $ref: '#/components/requestBodies/AssignApplicationToCustomer'
  *     responses:
  *       200:
- *         description: Assignment created
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.post('/assign-application', authenticateToken, resolveTenant, requireTenantAdmin, validate(assignApplicationSchema), customersController.assignApplication);
 
@@ -92,69 +69,36 @@ router.post('/assign-application', authenticateToken, resolveTenant, requireTena
  *     summary: Get customer by ID
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Customer object
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Customer'
+ *         $ref: '#/components/responses/Customer'
  *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/NotFound'
  *   put:
  *     tags: [Customers]
  *     summary: Update customer (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:    { type: string }
- *               email:   { type: string, format: email }
- *               phone:   { type: string, nullable: true }
- *               address: { type: string, nullable: true }
- *               company: { type: string, nullable: true }
+ *       $ref: '#/components/requestBodies/UpdateCustomer'
  *     responses:
  *       200:
- *         description: Updated customer
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Customer'
+ *         $ref: '#/components/responses/Customer'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  *   delete:
  *     tags: [Customers]
  *     summary: Delete customer (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/:id', authenticateToken, resolveTenant, customersController.getCustomerById);
 router.put('/:id', authenticateToken, resolveTenant, requireTenantAdmin, validate(updateCustomerSchema), customersController.updateCustomer);
@@ -168,21 +112,13 @@ router.delete('/:id', authenticateToken, resolveTenant, requireTenantAdmin, cust
  *     summary: Remove application from customer (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: customerId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: path
- *         name: applicationId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathCustomerId'
+ *       - $ref: '#/components/parameters/PathApplicationId'
  *     responses:
  *       200:
- *         description: Removed
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.delete('/:customerId/applications/:applicationId', authenticateToken, resolveTenant, requireTenantAdmin, customersController.removeApplication);
 

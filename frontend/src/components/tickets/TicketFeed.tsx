@@ -23,6 +23,7 @@ interface TicketFeedProps {
   onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
+  onDeleteTicket?: (ticketId: string) => void;
 }
 
 const TicketFeed: React.FC<TicketFeedProps> = ({
@@ -31,6 +32,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   onUpdateStatus,
   onAddComment,
   onTicketClick,
+  onDeleteTicket,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -94,6 +96,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
               onUpdateStatus={onUpdateStatus}
               onAddComment={onAddComment}
               onTicketClick={onTicketClick}
+              onDeleteTicket={onDeleteTicket}
             />
           </div>
         </Fade>
@@ -113,6 +116,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
                       onUpdateStatus={onUpdateStatus}
                       onAddComment={onAddComment}
                       onTicketClick={onTicketClick}
+                      onDeleteTicket={onDeleteTicket}
                     />
                   </div>
                 </Fade>

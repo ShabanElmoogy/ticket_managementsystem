@@ -4,6 +4,7 @@ import {
   createTenant,
   getTenantBySlug,
   listTenants,
+  listTenantsPublic,
   updateTenant,
 } from './tenants.controller.js';
 import { validate } from '../../middleware/validate.js';
@@ -26,36 +27,19 @@ const router = express.Router();
  *     summary: List all tenants (SUPER_ADMIN)
  *     responses:
  *       200:
- *         description: Array of tenants
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Tenant'
+ *         $ref: '#/components/responses/TenantList'
  *   post:
  *     tags: [Tenants]
  *     summary: Create a tenant (SUPER_ADMIN)
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name]
- *             properties:
- *               name:               { type: string }
- *               slug:               { type: string }
- *               subscriptionPlan:   { type: string }
- *               subscriptionStatus: { type: string }
- *               subscriptionSeats:  { type: integer }
+ *       $ref: '#/components/requestBodies/CreateTenant'
  *     responses:
  *       201:
- *         description: Created tenant
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tenant'
+ *         $ref: '#/components/responses/Tenant'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', authenticateToken, requireSuperAdmin, listTenants);
 router.post('/', authenticateToken, requireSuperAdmin, validate(createTenantSchema), createTenant);
@@ -67,31 +51,14 @@ router.post('/', authenticateToken, requireSuperAdmin, validate(createTenantSche
  *     tags: [Tenants]
  *     summary: Update a tenant (SUPER_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:               { type: string }
- *               slug:               { type: string }
- *               subscriptionPlan:   { type: string }
- *               subscriptionStatus: { type: string }
- *               subscriptionSeats:  { type: integer }
+ *       $ref: '#/components/requestBodies/UpdateTenant'
  *     responses:
  *       200:
- *         description: Updated tenant
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tenant'
+ *         $ref: '#/components/responses/Tenant'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.patch('/:id', authenticateToken, requireSuperAdmin, validate(updateTenantSchema), updateTenant);
 
@@ -106,22 +73,26 @@ router.patch('/:id', authenticateToken, requireSuperAdmin, validate(updateTenant
  *       - in: path
  *         name: slug
  *         required: true
- *         schema:
- *           type: string
+ *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Tenant object
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tenant'
+ *         $ref: '#/components/responses/Tenant'
  *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get('/by-slug/:slug', getTenantBySlug);
+
+/**
+ * @swagger
+ * /tenants/public:
+ *   get:
+ *     tags: [Tenants]
+ *     summary: List tenants for login dropdown (public)
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Array of tenants (id, name, slug only)
+ */
+router.get('/public', listTenantsPublic);
 
 export default router;

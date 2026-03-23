@@ -3,6 +3,7 @@ import { comments } from './comments.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
 import { eq, and } from 'drizzle-orm';
+import { logActivity } from '../../utils/activityUtils.js';
 
 // Create new comment on a ticket
 export const createComment = async (req, res) => {
@@ -96,26 +97,29 @@ export const createComment = async (req, res) => {
       user
     };
 
-    // Emit real-time notification for new comment
-    const targetUsers = [];
-    if (ticket.assignedToId) {
-      targetUsers.push(ticket.assignedToId);
-    }
-    if (ticket.createdById && ticket.createdById !== ticket.assignedToId) {
-      targetUsers.push(ticket.createdById);
-    }
+    // Log activity so it appears in the activity feed
+    await logActivity({
+      ticketId: id,
+      userId: req.user.userId,
+      action: 'COMMENTED',
+      description: `Commented on ticket`,
+      newValue: content.trim().substring(0, 100),
+    });
 
-    if (targetUsers.length > 0) {
-      targetUsers.forEach((userId) => {
-        req.emitNotification(userId, {
-          type: 'COMMENT_ADDED',
-          data: {
-            comment: commentWithUser,
-            ticket: { id: ticket.id, title: ticket.title },
-            commentBy: user?.name
-          }
-        });
-      });
+    // Emit notification to all tenant users so their activity feeds refresh
+    const notificationPayload = {
+      type: 'COMMENT_ADDED',
+      data: {
+        ticket: { id: ticket.id, title: ticket.title },
+        commentBy: user?.name
+      }
+    };
+
+    if (tenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
     }
 
     res.status(201).json(commentWithUser);

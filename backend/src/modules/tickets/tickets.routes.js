@@ -27,28 +27,16 @@ router.use(resolveTenant);
  *       - $ref: '#/components/parameters/XTenantSlug'
  *       - in: query
  *         name: status
- *         schema:
- *           type: string
- *           enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+ *         schema: { type: string, enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED] }
  *       - in: query
  *         name: priority
- *         schema:
- *           type: string
- *           enum: [LOW, MEDIUM, HIGH, URGENT]
+ *         schema: { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
  *       - in: query
  *         name: assignedTo
- *         schema:
- *           type: string
- *           format: uuid
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
- *         description: Array of tickets
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/TicketList'
  */
 router.get('/', authenticateToken, validate(ticketQuerySchema, 'query'), ticketController.getAllTickets);
 
@@ -62,13 +50,7 @@ router.get('/', authenticateToken, validate(ticketQuerySchema, 'query'), ticketC
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: Array of delayed tickets
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/TicketList'
  */
 router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
 
@@ -80,25 +62,12 @@ router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
  *     summary: Get a ticket by ID
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Ticket object
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/Ticket'
  *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/NotFound'
  */
 router.get('/:id', authenticateToken, ticketController.getTicketById);
 
@@ -111,28 +80,14 @@ router.get('/:id', authenticateToken, ticketController.getTicketById);
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [title]
- *             properties:
- *               title:          { type: string }
- *               description:    { type: string }
- *               priority:       { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
- *               assignedToId:   { type: string, format: uuid, nullable: true }
- *               customerId:     { type: string, format: uuid, nullable: true }
- *               applicationId:  { type: string, format: uuid, nullable: true }
- *               dueDate:        { type: string, format: date-time, nullable: true }
- *               estimatedHours: { type: number, nullable: true }
+ *       $ref: '#/components/requestBodies/CreateTicket'
  *     responses:
  *       201:
- *         description: Created ticket
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/Ticket'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.post('/', authenticateToken, requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
 
@@ -144,32 +99,14 @@ router.post('/', authenticateToken, requireTenantAdmin, validate(createTicketSch
  *     summary: Update a ticket
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:          { type: string }
- *               status:         { type: string, enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED] }
- *               priority:       { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
- *               assignedToId:   { type: string, format: uuid, nullable: true }
- *               dueDate:        { type: string, format: date-time, nullable: true }
- *               actualHours:    { type: number, nullable: true }
+ *       $ref: '#/components/requestBodies/UpdateTicket'
  *     responses:
  *       200:
- *         description: Updated ticket
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/Ticket'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  */
 router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketController.updateTicket);
 
@@ -181,23 +118,18 @@ router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketContro
  *     summary: Delete a ticket (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/NotFound'
  */
 router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.deleteTicket);
+
+router.patch('/:id/restore', authenticateToken, requireTenantAdmin, ticketController.restoreTicket);
 
 /**
  * @swagger
@@ -207,19 +139,10 @@ router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.de
  *     summary: Self-assign (take) a ticket
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Ticket taken
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/Ticket'
  */
 router.post('/:id/take', authenticateToken, ticketController.takeTicket);
 

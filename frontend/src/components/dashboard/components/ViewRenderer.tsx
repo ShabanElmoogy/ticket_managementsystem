@@ -29,12 +29,14 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         customerFilter={dashboardProps.customerFilter}
         applicationFilter={dashboardProps.applicationFilter}
         searchQuery={dashboardProps.searchQuery}
+        deletedFilter={dashboardProps.deletedFilter}
         setStatusFilter={dashboardProps.setStatusFilter}
         setPriorityFilter={dashboardProps.setPriorityFilter}
         setUserFilter={dashboardProps.setUserFilter}
         setCustomerFilter={dashboardProps.setCustomerFilter}
         setApplicationFilter={dashboardProps.setApplicationFilter}
         setSearchQuery={dashboardProps.setSearchQuery}
+        setDeletedFilter={dashboardProps.setDeletedFilter}
         allUsers={dashboardProps.allUsers}
         employees={dashboardProps.employees}
         customers={dashboardProps.customers}
@@ -48,6 +50,7 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         onTakeTicket={dashboardProps.handleTakeTicket}
         onUpdateStatus={dashboardProps.handleUpdateTicketStatus}
         onAddComment={dashboardProps.handleAddComment}
+        onDeleteTicket={dashboardProps.handleDeleteTicket}
       />
 
       <DashboardOverlays

@@ -35,4 +35,5 @@ export const ticketQuerySchema = z.object({
   status: ticketStatus.optional(),
   priority: ticketPriority.optional(),
   assignedTo: z.string().uuid().optional(),
+  deleted: z.enum(['true', 'false']).optional(),
 });

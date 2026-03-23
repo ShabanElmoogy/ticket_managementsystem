@@ -29,9 +29,11 @@ const usersKeys = { all: ["users"] as const, tenant: ["users", "tenant"] as cons
 
 const getUsersQueryKey = () => {
   const user = useAuthStore.getState().user;
-  const tenantSlug = localStorage.getItem("tenantSlug") || "";
-  // Include tenantSlug so switching tenants triggers a refetch.
-  return user?.role === "TENANT_ADMIN" ? ([...usersKeys.tenant, tenantSlug] as const) : usersKeys.all;
+  if (user?.role === "TENANT_ADMIN") {
+    const tenantSlug = localStorage.getItem("tenantSlug") || "";
+    return [...usersKeys.tenant, tenantSlug] as const;
+  }
+  return usersKeys.all;
 };
 
 type UsersPageProps = CRUDProps<User, CreateUserData> &
@@ -129,6 +131,13 @@ function UsersPageComponent(props: UsersPageProps) {
 
     if (nextTenantSlug) localStorage.setItem("tenantSlug", nextTenantSlug);
 
+    // SUPER_ADMIN must select a tenant before creating a user
+    if (!isTenantAdmin && !uiState.editingItem && !nextTenantSlug) {
+      showSnackbar("Please select a tenant before creating a user", "error");
+      setSubmitting(false);
+      return;
+    }
+
     // Filter out undefined password for editing
     const submitData: CreateUserData = {
       ...values,
@@ -153,17 +162,15 @@ function UsersPageComponent(props: UsersPageProps) {
         await update((uiState.editingItem as User).id, submitData);
         showSnackbar(messages.success.updated, "success");
       } else {
-        // Tenant admin creates via tenant-scoped endpoint
         if (isTenantAdmin) {
           await usersApi.createTenantUser(submitData);
-          showSnackbar(messages.success.created, "success");
-          refetch();
         } else {
-          await create(submitData);
-          showSnackbar(messages.success.created, "success");
+          await usersApi.createUser(submitData);
         }
+        showSnackbar(messages.success.created, "success");
+        refetch();
+        closeDialog();
       }
-      closeDialog();
     } catch (error) {
       const errorMessage = uiState.editingItem
         ? messages.error.update
@@ -171,11 +178,9 @@ function UsersPageComponent(props: UsersPageProps) {
       showSnackbar(handleError(error, errorMessage), "error");
       logError(uiState.editingItem ? "Update" : "Create", error);
     } finally {
-      // restore tenant context
-      if (nextTenantSlug) {
-        if (prevTenantSlug) localStorage.setItem("tenantSlug", prevTenantSlug);
-        else localStorage.removeItem("tenantSlug");
-      }
+      // Always restore tenant context to what it was before this call
+      if (prevTenantSlug) localStorage.setItem("tenantSlug", prevTenantSlug);
+      else localStorage.removeItem("tenantSlug");
       setSubmitting(false);
     }
   };
@@ -363,7 +368,7 @@ const UsersPageWithHOC = withCRUD<User, CreateUserData>(
   ),
   {
     entityName: "users",
-    queryKey: getUsersQueryKey(),
+    queryKey: getUsersQueryKey,
     api: {
       // For tenant admin, the backend requires /users/tenant.
       // We decide which endpoint to call based on the logged-in role.

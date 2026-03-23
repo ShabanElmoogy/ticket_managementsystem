@@ -12,7 +12,8 @@ import {
   useCreateTicketMutation,
   useTakeTicketMutation,
   useUpdateTicketMutation,
-  useAddCommentMutation
+  useAddCommentMutation,
+  useDeleteTicketMutation,
 } from "./useTicketsQuery";
 import { useSocketQuery } from "../../../hooks/useSocketQuery";
 
@@ -37,6 +38,7 @@ export const useDashboard = () => {
   const [userFilter, setUserFilter] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
   const [applicationFilter, setApplicationFilter] = useState("");
+  const [deletedFilter, setDeletedFilter] = useState<'active' | 'deleted'>('active');
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -48,7 +50,8 @@ export const useDashboard = () => {
     priority: priorityFilter,
     userFilter,
     customerFilter,
-    applicationFilter
+    applicationFilter,
+    deletedFilter,
   });
   
   // Deferred search to prevent UI blocking
@@ -79,6 +82,7 @@ export const useDashboard = () => {
   const takeTicketMutation = useTakeTicketMutation();
   const updateTicketMutation = useUpdateTicketMutation();
   const addCommentMutation = useAddCommentMutation();
+  const deleteTicketMutation = useDeleteTicketMutation();
   
   // Socket for real-time updates
   useSocketQuery();
@@ -151,13 +155,10 @@ export const useDashboard = () => {
   };
 
   const handleTakeTicket = async (ticketId: string) => {
-    console.log(`Attempting to take ticket: ${ticketId}`);
     try {
       await takeTicketMutation.mutateAsync(ticketId);
       showSnackbar("Ticket assigned successfully", "success");
-      console.log(`Successfully took ticket: ${ticketId}`);
     } catch (_error) {
-      console.error(`Error taking ticket ${ticketId}:`, _error);
       showSnackbar(_error instanceof Error ? _error.message : "Error taking ticket", "error");
     }
   };
@@ -168,6 +169,15 @@ export const useDashboard = () => {
       showSnackbar("Ticket updated successfully", "success");
     } catch (_error) {
       showSnackbar(_error instanceof Error ? _error.message : "Error updating ticket", "error");
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId: string) => {
+    try {
+      await deleteTicketMutation.mutateAsync(ticketId);
+      showSnackbar("Ticket deleted", "success");
+    } catch (_error) {
+      showSnackbar(_error instanceof Error ? _error.message : "Error deleting ticket", "error");
     }
   };
 
@@ -182,8 +192,9 @@ export const useDashboard = () => {
     user: userFilter,
     customer: customerFilter,
     application: applicationFilter,
+    deleted: deletedFilter,
     search: searchInput,
-  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, searchQuery]);
+  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchQuery]);
 
   return {
     // env
@@ -207,6 +218,7 @@ export const useDashboard = () => {
     userFilter,
     customerFilter,
     applicationFilter,
+    deletedFilter,
     searchQuery: searchInput,
     showMobileSearch,
     allUsers,
@@ -220,6 +232,7 @@ export const useDashboard = () => {
     setUserFilter,
     setCustomerFilter,
     setApplicationFilter,
+    setDeletedFilter,
     setSearchQuery: setSearchInput,
     setShowMobileSearch,
     setSnackbar,
@@ -233,6 +246,7 @@ export const useDashboard = () => {
     handleAddComment,
     handleTakeTicket,
     handleUpdateTicketStatus,
+    handleDeleteTicket,
     handleTicketClick,
 
     // ui helpers

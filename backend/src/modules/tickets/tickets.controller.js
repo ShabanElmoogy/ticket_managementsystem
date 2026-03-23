@@ -5,7 +5,7 @@ import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { ticketLabels, labels } from '../labels/labels.schema.js';
 import { comments } from '../comments/comments.schema.js';
-import { eq, and, or, desc, asc, count, inArray, isNull, lt } from 'drizzle-orm';
+import { eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt } from 'drizzle-orm';
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 
@@ -14,12 +14,18 @@ import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 // Get all tickets with filtering
 export const getAllTickets = async (req, res) => {
   try {
-    const { status, assignedTo, priority } = req.query;
+    const { status, assignedTo, priority, deleted } = req.query;
 
     const conditions = [];
     if (status) conditions.push(eq(tickets.status, status));
     if (assignedTo) conditions.push(eq(tickets.assignedToId, assignedTo));
     if (priority) conditions.push(eq(tickets.priority, priority));
+    // deleted filter: 'true' = deleted only, 'false' = active only
+    if (deleted === 'true') {
+      conditions.push(isNotNull(tickets.deletedAt));
+    } else {
+      conditions.push(isNull(tickets.deletedAt));
+    }
 
     // Tenant scoping:
     // Tickets table has no tenantId column, so we scope via createdBy user.tenantId.
@@ -59,6 +65,7 @@ export const getAllTickets = async (req, res) => {
         createdById: tickets.createdById,
         assignedToId: tickets.assignedToId,
         boardId: tickets.boardId,
+        deletedAt: tickets.deletedAt,
       })
       .from(tickets)
       // join createdBy user so we can tenant-scope
@@ -84,6 +91,7 @@ export const getAllTickets = async (req, res) => {
       createdById: r.createdById,
       assignedToId: r.assignedToId,
       boardId: r.boardId,
+      deletedAt: r.deletedAt,
     }));
 
     // Get related data
@@ -348,9 +356,8 @@ export const createTicket = async (req, res) => {
       labels: labelIds = [],
     } = req.body;
 
-    // Tenant admin: require tenant context and ensure createdBy belongs to that tenant.
-    // (Tickets table has no tenantId column.)
-    if (req.user?.role === 'TENANT_ADMIN') {
+    // Require tenant context for all tenant-scoped roles
+    if (req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE') {
       const tenantId = requireTenantScope(req);
       req.tenantId = tenantId;
 
@@ -424,17 +431,28 @@ export const createTicket = async (req, res) => {
       description: `Created ticket: ${title}`,
     });
 
-    // Broadcast appropriate notification type based on assignment
+    // Emit notification only to users of the same tenant (or all if SUPER_ADMIN/no tenant)
     const notificationType = assignedToId ? 'TICKET_ASSIGNED' : 'TICKET_CREATED';
-
-    req.emitNotification('broadcast', {
+    const notificationPayload = {
       type: notificationType,
       data: {
         ticket: { id: fullTicket.id, title: fullTicket.title, priority: fullTicket.priority, status: fullTicket.status },
         createdBy: createdUser[0]?.name,
         assignedTo: assignedUser[0]?.name || null,
       },
-    });
+    };
+
+    const creatorTenantId = req.tenantId || null;
+    if (creatorTenantId) {
+      // Emit only to users belonging to the same tenant
+      const tenantUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.tenantId, creatorTenantId));
+      tenantUsers.forEach(({ id }) => req.emitNotification(id, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
 
     console.log('Ticket created:', assignedToId ? 'assigned' : 'unassigned');
     res.status(201).json(fullTicket);
@@ -454,7 +472,7 @@ export const updateTicket = async (req, res) => {
   }
 };
 
-// Delete ticket
+// Delete ticket (soft delete)
 export const deleteTicket = async (req, res) => {
   try {
     const { id } = req.params;
@@ -466,7 +484,6 @@ export const deleteTicket = async (req, res) => {
     if (isTenantScopedRole) {
       if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
 
-      // Ensure ticket belongs to tenant via createdBy user
       const [row] = await db
         .select({ id: tickets.id })
         .from(tickets)
@@ -477,10 +494,40 @@ export const deleteTicket = async (req, res) => {
       if (!row) return res.status(404).json({ error: 'Ticket not found' });
     }
 
-    await db.delete(tickets).where(eq(tickets.id, id));
+    await db.update(tickets).set({ deletedAt: new Date() }).where(eq(tickets.id, id));
     res.json({ message: 'Ticket deleted successfully' });
   } catch (error) {
     console.error('Delete ticket error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Restore ticket
+export const restoreTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole) {
+      if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+
+      const [row] = await db
+        .select({ id: tickets.id })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
+        .limit(1);
+
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    await db.update(tickets).set({ deletedAt: null }).where(eq(tickets.id, id));
+    res.json({ message: 'Ticket restored successfully' });
+  } catch (error) {
+    console.error('Restore ticket error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

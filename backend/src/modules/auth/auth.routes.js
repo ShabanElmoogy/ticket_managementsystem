@@ -21,24 +21,15 @@ const router = express.Router();
  *     summary: Register a new user
  *     security: []
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/RegisterRequest'
  *     responses:
  *       201:
- *         description: User created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
+ *         $ref: '#/components/responses/AuthResponse'
  *       400:
- *         description: Validation error or user already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/BadRequest'
  */
 router.post('/register', authRateLimit, validate(registerSchema), authController.register);
 
@@ -52,24 +43,15 @@ router.post('/register', authRateLimit, validate(registerSchema), authController
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
  *       200:
- *         description: Authenticated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
+ *         $ref: '#/components/responses/AuthResponse'
  *       401:
- *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.post('/login', authRateLimit, validate(loginSchema), authController.login);
 
@@ -81,28 +63,12 @@ router.post('/login', authRateLimit, validate(loginSchema), authController.login
  *     summary: Refresh access token
  *     security: []
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [refreshToken]
- *             properties:
- *               refreshToken:
- *                 type: string
+ *       $ref: '#/components/requestBodies/RefreshToken'
  *     responses:
  *       200:
- *         description: New access token issued
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AuthResponse'
+ *         $ref: '#/components/responses/AuthResponse'
  *       401:
- *         description: Invalid or expired refresh token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.post('/refresh', authRateLimit, validate(refreshTokenSchema), authController.refreshToken);
 
@@ -114,17 +80,10 @@ router.post('/refresh', authRateLimit, validate(refreshTokenSchema), authControl
  *     summary: Revoke refresh token and logout
  *     security: []
  *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
+ *       $ref: '#/components/requestBodies/Logout'
  *     responses:
  *       200:
- *         description: Logged out
+ *         $ref: '#/components/responses/NoContent'
  */
 router.post('/logout', authController.logout);
 

@@ -20,30 +20,14 @@ const router = express.Router();
  *     tags: [Comments]
  *     summary: Add a comment to a ticket
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Ticket ID
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [content]
- *             properties:
- *               content:
- *                 type: string
+ *       $ref: '#/components/requestBodies/CreateComment'
  *     responses:
  *       201:
- *         description: Created comment
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Comment'
+ *         $ref: '#/components/responses/Comment'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  */
 router.post('/:id/comments', authenticateToken, validate(createCommentSchema), commentsController.createComment);
 

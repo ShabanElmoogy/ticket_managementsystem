@@ -10,12 +10,14 @@ type Props = {
   customerFilter: string;
   applicationFilter: string;
   searchQuery: string;
+  deletedFilter: 'active' | 'deleted';
   setStatusFilter: (v: Ticket['status'] | "") => void;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
   setCustomerFilter: (v: string) => void;
   setApplicationFilter: (v: string) => void;
   setSearchQuery: (v: string) => void;
+  setDeletedFilter: (v: 'active' | 'deleted') => void;
   allUsers: User[];
   customers: Customer[];
   applications: Application[];
@@ -30,12 +32,14 @@ const DesktopFilters: React.FC<Props> = memo(({
   customerFilter,
   applicationFilter,
   searchQuery,
+  deletedFilter,
   setStatusFilter,
   setPriorityFilter,
   setUserFilter,
   setCustomerFilter,
   setApplicationFilter,
   setSearchQuery,
+  setDeletedFilter,
   allUsers,
   customers,
   applications,
@@ -132,12 +136,37 @@ const DesktopFilters: React.FC<Props> = memo(({
               },
             }}
           >
+            <InputLabel>Show</InputLabel>
+            <Select
+              value={deletedFilter}
+              label="Show"
+              onChange={(e) => setDeletedFilter(e.target.value as 'active' | 'deleted')}
+              sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
+            >
+              <MenuItem value="active">✅ Active</MenuItem>
+              <MenuItem value="deleted">🗑️ Deleted</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: { xs: 110, sm: 120 },
+              flex: {
+                xs: "1 1 calc(50% - 4px)",
+                md: "1 1 calc(33.333% - 8px)",
+                lg: "0 0 auto",
+              },
+            }}
+          >
             <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
               label="Status"
               onChange={(e) => setStatusFilter(e.target.value as Ticket['status'] | "")}
               sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
             >
               <MenuItem value="">All</MenuItem>
               <MenuItem value="OPEN">🔵 Open</MenuItem>
@@ -164,6 +193,7 @@ const DesktopFilters: React.FC<Props> = memo(({
               label="Priority"
               onChange={(e) => setPriorityFilter(e.target.value)}
               sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
             >
               <MenuItem value="">All</MenuItem>
               <MenuItem value="LOW">🟢 Low</MenuItem>
@@ -190,6 +220,7 @@ const DesktopFilters: React.FC<Props> = memo(({
               label="User"
               onChange={(e) => setUserFilter(e.target.value)}
               sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
             >
               <MenuItem value="">All Users</MenuItem>
               <MenuItem value="NEW_TICKETS">🆕 New Tickets</MenuItem>
@@ -240,6 +271,7 @@ const DesktopFilters: React.FC<Props> = memo(({
               label="Customer"
               onChange={(e) => setCustomerFilter(e.target.value)}
               sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
             >
               <MenuItem value="">All Customers</MenuItem>
               {customers.map((customer) => (
@@ -287,6 +319,7 @@ const DesktopFilters: React.FC<Props> = memo(({
               label="Application"
               onChange={(e) => setApplicationFilter(e.target.value)}
               sx={{ borderRadius: 2 }}
+              MenuProps={{ disableScrollLock: true }}
             >
               <MenuItem value="">All Applications</MenuItem>
               {applications.map((app) => (

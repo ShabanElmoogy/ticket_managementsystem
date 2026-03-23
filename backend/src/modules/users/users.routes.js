@@ -22,15 +22,24 @@ const router = express.Router();
  *     summary: List all tenant admins (SUPER_ADMIN)
  *     responses:
  *       200:
- *         description: Array of users
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/UserList'
+ *   post:
+ *     tags: [Users]
+ *     summary: Create a user under a tenant (SUPER_ADMIN)
+ *     parameters:
+ *       - $ref: '#/components/parameters/XTenantSlug'
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/CreateTenantUser'
+ *     responses:
+ *       201:
+ *         $ref: '#/components/responses/User'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', authenticateToken, requireSuperAdmin, usersController.getAllUsers);
+router.post('/', authenticateToken, requireSuperAdmin, resolveTenant, validate(createUserSchema), usersController.createUser);
 
 /**
  * @swagger
@@ -54,38 +63,21 @@ router.get('/stats', authenticateToken, requireSuperAdmin, usersController.getUs
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: Array of users
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/UserList'
  *   post:
  *     tags: [Users]
  *     summary: Create a user in the resolved tenant (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, name, password]
- *             properties:
- *               email:    { type: string, format: email }
- *               name:     { type: string }
- *               password: { type: string, minLength: 6 }
- *               role:     { type: string, enum: [TENANT_ADMIN, EMPLOYEE] }
- *               phone:    { type: string }
+ *       $ref: '#/components/requestBodies/CreateTenantUser'
  *     responses:
  *       201:
- *         description: Created user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/User'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantUsers);
 router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, validate(createUserSchema), usersController.createTenantUser);
@@ -98,33 +90,17 @@ router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, val
  *     summary: Get own profile
  *     responses:
  *       200:
- *         description: Current user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/User'
  *   put:
  *     tags: [Users]
  *     summary: Update own profile
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:             { type: string }
- *               email:            { type: string, format: email }
- *               phone:            { type: string, nullable: true }
- *               reminderEnabled:  { type: boolean }
- *               reminderInterval: { type: integer }
+ *       $ref: '#/components/requestBodies/UpdateOwnProfile'
  *     responses:
  *       200:
- *         description: Updated user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/User'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  */
 router.get('/profile', authenticateToken, usersController.getCurrentProfile);
 router.put('/profile', authenticateToken, validate(updateOwnProfileSchema), usersController.updateOwnProfile);
@@ -139,13 +115,7 @@ router.put('/profile', authenticateToken, validate(updateOwnProfileSchema), user
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
- *         description: Array of employees
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/UserList'
  */
 router.get('/employees', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getEmployees);
 
@@ -156,70 +126,34 @@ router.get('/employees', authenticateToken, resolveTenant, requireTenantAdmin, u
  *     tags: [Users]
  *     summary: Get user by ID (SUPER_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: User object
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/User'
  *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         $ref: '#/components/responses/NotFound'
  *   put:
  *     tags: [Users]
  *     summary: Update user by ID (SUPER_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:  { type: string }
- *               email: { type: string, format: email }
- *               role:  { type: string, enum: [SUPER_ADMIN, TENANT_ADMIN, EMPLOYEE] }
+ *       $ref: '#/components/requestBodies/UpdateUser'
  *     responses:
  *       200:
- *         description: Updated user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
+ *         $ref: '#/components/responses/User'
  *   delete:
  *     tags: [Users]
  *     summary: Delete user by ID (SUPER_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *       - in: query
  *         name: force
- *         schema:
- *           type: boolean
+ *         schema: { type: boolean }
  *         description: Force-delete and cascade related data
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
  */
 router.get('/:id', authenticateToken, requireSuperAdmin, usersController.getUserById);
 router.put('/:id', authenticateToken, requireSuperAdmin, validate(updateUserSchema), usersController.updateUser);

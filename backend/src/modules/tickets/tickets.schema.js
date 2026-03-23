@@ -30,7 +30,8 @@ export const tickets = pgTable('tickets', {
   applicationId: uuid('application_id').references(() => applications.id),
   createdById: uuid('created_by_id').notNull().references(() => users.id),
   assignedToId: uuid('assigned_to_id').references(() => users.id),
-  boardId: uuid('board_id') // Will reference kanban boards when created
+  boardId: uuid('board_id'), // Will reference kanban boards when created
+  deletedAt: timestamp('deleted_at'),
 });
 
 // Ticket activities table

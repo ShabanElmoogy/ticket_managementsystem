@@ -18,12 +18,14 @@ interface Props {
   customerFilter: string;
   applicationFilter: string;
   searchQuery: string;
+  deletedFilter: 'active' | 'deleted';
   setStatusFilter: Dispatch<SetStateAction<Ticket['status'] | "">>;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
   setCustomerFilter: (v: string) => void;
   setApplicationFilter: (v: string) => void;
   setSearchQuery: (v: string) => void;
+  setDeletedFilter: (v: 'active' | 'deleted') => void;
   allUsers: User[];
   employees: User[];
   customers: Customer[];
@@ -37,6 +39,7 @@ interface Props {
   onTakeTicket: (id: string) => Promise<void> | void;
   onUpdateStatus: (id: string, status: Ticket['status']) => Promise<void> | void;
   onAddComment: (id: string, content: string) => Promise<void> | void;
+  onDeleteTicket: (id: string) => Promise<void> | void;
 }
 
 const DashboardContent: React.FC<Props> = ({
@@ -48,12 +51,14 @@ const DashboardContent: React.FC<Props> = ({
   customerFilter,
   applicationFilter,
   searchQuery,
+  deletedFilter,
   setStatusFilter,
   setPriorityFilter,
   setUserFilter,
   setCustomerFilter,
   setApplicationFilter,
   setSearchQuery,
+  setDeletedFilter,
   allUsers,
   employees,
   customers,
@@ -67,6 +72,7 @@ const DashboardContent: React.FC<Props> = ({
   onTakeTicket,
   onUpdateStatus,
   onAddComment,
+  onDeleteTicket,
 }) => {
   return (
     <Box>
@@ -141,12 +147,14 @@ const DashboardContent: React.FC<Props> = ({
                   customerFilter={customerFilter}
                   applicationFilter={applicationFilter}
                   searchQuery={searchQuery}
+                  deletedFilter={deletedFilter}
                   setStatusFilter={setStatusFilter}
                   setPriorityFilter={setPriorityFilter}
                   setUserFilter={setUserFilter}
                   setCustomerFilter={setCustomerFilter}
                   setApplicationFilter={setApplicationFilter}
                   setSearchQuery={setSearchQuery}
+                  setDeletedFilter={setDeletedFilter}
                   allUsers={allUsers}
                   customers={customers}
                   applications={applications}
@@ -163,6 +171,7 @@ const DashboardContent: React.FC<Props> = ({
                 onTakeTicket={onTakeTicket}
                 onUpdateStatus={onUpdateStatus}
                 onAddComment={onAddComment}
+                onDeleteTicket={onDeleteTicket}
               />
             </Container>
           </Box>

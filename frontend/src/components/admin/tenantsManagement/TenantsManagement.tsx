@@ -19,11 +19,16 @@ type TenantRow = Tenant;
 
 const toDateInputValue = (value?: string | null) => {
   if (!value) return "";
-  // Accept ISO string or date-like string
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  return d.toISOString().slice(0, 10);
 };
+
+const toISOOrUndefined = (value: string) =>
+  value ? new Date(value).toISOString() : undefined;
+
+const toISOOrNull = (value: string) =>
+  value ? new Date(value).toISOString() : null;
 
 const TenantsManagement: React.FC = () => {
   const [rows, setRows] = useState<TenantRow[]>([]);
@@ -77,9 +82,9 @@ const TenantsManagement: React.FC = () => {
         slug: slug || undefined,
         subscriptionPlan,
         subscriptionStatus,
-        subscriptionSeats,
-        subscriptionStart: subscriptionStart || undefined,
-        subscriptionEnd: subscriptionEnd || undefined,
+        subscriptionSeats: subscriptionSeats || undefined,
+        subscriptionStart: toISOOrUndefined(subscriptionStart),
+        subscriptionEnd: toISOOrUndefined(subscriptionEnd),
       });
 
       setCreateOpen(false);
@@ -118,9 +123,9 @@ const TenantsManagement: React.FC = () => {
         slug: editSlug,
         subscriptionPlan: editPlan,
         subscriptionStatus: editStatus,
-        subscriptionSeats: editSeats,
-        subscriptionStart: editStart || null,
-        subscriptionEnd: editEnd || null,
+        subscriptionSeats: editSeats || undefined,
+        subscriptionStart: toISOOrNull(editStart),
+        subscriptionEnd: toISOOrNull(editEnd),
       });
 
       setEditOpen(false);

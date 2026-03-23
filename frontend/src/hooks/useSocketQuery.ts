@@ -10,7 +10,7 @@ export const useSocketQuery = () => {
   useEffect(() => {
     if (!user || !token) return;
 
-    const socket = getSocket(user.id);
+    const socket = getSocket(user.id, token);
     
     socket.on("notification", (notification: any) => {
       if (notification.type === "TICKET_CREATED" || notification.type === "TICKET_ASSIGNED" || notification.type === "TICKET_UPDATED") {

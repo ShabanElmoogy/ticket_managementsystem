@@ -2,12 +2,13 @@ import { io, Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
 
-export const getSocket = (userId: string): Socket => {
+export const getSocket = (userId: string, token?: string): Socket => {
   if (!socket) {
     const socketUrl = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? "http://localhost:3001" : "https://ticket-managementsystem-2.onrender.com");
     console.log('Connecting to socket URL:', socketUrl);
 
     socket = io(socketUrl, {
+      auth: { token },
       transports: ['polling', 'websocket'],
       upgrade: true,
       rememberUpgrade: false,

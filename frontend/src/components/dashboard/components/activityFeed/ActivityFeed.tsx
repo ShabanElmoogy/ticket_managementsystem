@@ -12,10 +12,10 @@ import {
 import {
   Search as SearchIcon,
 } from "@mui/icons-material";
-import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../../stores/authStore";
 import { dashboardApi, ticketsApi, type Ticket } from "../../../../services/api";
+import { getSocket } from "../../../../services/socketService";
 import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
 type ActivityItemType = {
@@ -39,39 +39,19 @@ type ActivityFeedProps = {
 type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
 
 const useActivitySocket = (
-  setActivities: React.Dispatch<React.SetStateAction<ActivityItemType[]>>,
-  setUnreadCount: React.Dispatch<React.SetStateAction<number>>
+  onNotification: () => void
 ) => {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const onNotificationRef = React.useRef(onNotification);
+  useEffect(() => { onNotificationRef.current = onNotification; });
+
   useEffect(() => {
-    if (!user) return;
-
-    const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001");
-    socket.emit("join", user.id);
-    socket.on("notification", (notification: any) => {
-      console.log('Activity feed received notification:', notification);
-      const activityItem: ActivityItemType = {
-        id: notification.id || Date.now().toString(),
-        type: notification.type || "TICKET_ASSIGNED",
-        data: {
-          ticket: notification.data?.ticket,
-          createdBy: notification.data?.createdBy,
-          updatedBy: notification.data?.updatedBy,
-          assignedTo: notification.data?.assignedTo || notification.data?.assigneeName || user?.name,
-          commentBy: notification.data?.commentBy
-        },
-        timestamp: notification.timestamp || new Date().toISOString(),
-        read: false
-      };
-      console.log('Adding activity item:', activityItem);
-      setActivities(prev => [activityItem, ...prev.slice(0, 19)]);
-      setUnreadCount(prev => prev + 1);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user, setActivities, setUnreadCount]);
+    if (!user || !token) return;
+    const socket = getSocket(user.id, token);
+    const handler = () => { onNotificationRef.current(); };
+    socket.on("notification", handler);
+    return () => { socket.off("notification", handler); };
+  }, [user?.id, token]);
 };
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => {
@@ -85,27 +65,34 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
    const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
    const [searchQuery, setSearchQuery] = useState("");
 
-  useActivitySocket(setActivities, setUnreadCount);
+  const loadActivities = React.useCallback(async (markNew = false) => {
+    if (!token) return;
+    try {
+      const data = await dashboardApi.getActivities(20);
+      setActivities(prev => {
+        const prevIds = new Set(prev.map(a => a.id));
+        const mapped = data.map((a: ActivityItemType) => ({
+          ...a,
+          read: markNew ? !prevIds.has(a.id) ? false : true : true,
+        }));
+        if (markNew) {
+          const newCount = mapped.filter((a: ActivityItemType) => !a.read).length;
+          if (newCount > 0) setUnreadCount(c => c + newCount);
+        }
+        return mapped;
+      });
+    } catch (error) {
+      console.error("Error loading activities:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useActivitySocket(() => loadActivities(true));
 
   useEffect(() => {
-    const loadInitialActivities = async () => {
-      if (!token) return;
-
-      try {
-        setLoading(true);
-        const initialActivities = await dashboardApi.getActivities(20);
-        setActivities(
-          initialActivities.map((activity: ActivityItemType) => ({ ...activity, read: true }))
-        );
-      } catch (error) {
-        console.error("Error loading activities:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialActivities();
-  }, [token]);
+    loadActivities(false);
+  }, [loadActivities]);
 
   const handleToggleExpanded = () => {
     setExpanded(!expanded);

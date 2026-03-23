@@ -14,6 +14,11 @@ import {
   TextField,
   Badge,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -25,11 +30,14 @@ import {
   Person as PersonIcon,
   ExpandMore as ExpandMoreIcon,
   Send as SendIcon,
+  Delete as DeleteIcon,
+  RestoreFromTrash as RestoreIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
+import { useQueryClient } from "@tanstack/react-query";
 import MyChip from "../common/MyChip";
 
 interface TicketPostProps {
@@ -38,6 +46,7 @@ interface TicketPostProps {
   onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
+  onDeleteTicket?: (ticketId: string) => void;
 }
 
 const TicketPost: React.FC<TicketPostProps> = ({
@@ -46,8 +55,10 @@ const TicketPost: React.FC<TicketPostProps> = ({
   onUpdateStatus,
   onAddComment,
   onTicketClick,
+  onDeleteTicket,
 }) => {
   const { user, token } = useAuthStore();
+  const queryClient = useQueryClient();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -55,9 +66,15 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [newComment, setNewComment] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [, setLoadingComments] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [commentsFetched, setCommentsFetched] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const isDeleted = !!ticket.deletedAt;
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -74,47 +91,41 @@ const TicketPost: React.FC<TicketPostProps> = ({
 
   const fetchComments = async () => {
     if (!token) return;
-
-    setLoadingComments(true);
     try {
       const ticketDetails = await ticketsApi.getTicket(ticket.id);
-      // Sort comments from newest to oldest
       const sortedComments = (ticketDetails.comments || []).sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       setComments(sortedComments);
+      setCommentsFetched(true);
     } catch (error) {
       console.error("Error fetching comments:", error);
-    } finally {
-      setLoadingComments(false);
     }
   };
 
   const handleAddComment = async () => {
-    if (newComment.trim() && token) {
-      if (!onAddComment) {
-        console.error('onAddComment function is not provided');
-        return;
-      }
-      try {
-        await onAddComment(ticket.id, newComment.trim());
-        setNewComment("");
-        // Refresh comments after adding and reset visible count to show new comment
-        await fetchComments();
-        setVisibleCommentsCount(3); // Reset to show first 3 comments including the new one
-      } catch (error) {
-        console.error("Error adding comment:", error);
-      }
+    if (!newComment.trim() || !token || submitting) return;
+    const content = newComment.trim();
+    setNewComment("");
+    setSubmitting(true);
+    try {
+      await onAddComment(ticket.id, content);
+      fetchComments();
+      setVisibleCommentsCount(3);
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      setNewComment(content);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleShowComments = () => {
-    setShowComments(!showComments);
-    if (!showComments && comments.length === 0) {
+    const next = !showComments;
+    setShowComments(next);
+    if (next && !commentsFetched) {
       fetchComments();
     }
-    // Reset visible comments count when toggling
     setVisibleCommentsCount(3);
   };
 
@@ -127,12 +138,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
   };
 
   useEffect(() => {
-    // Auto-load comments if there are any
-    if (ticket._count?.comments && ticket._count.comments > 0) {
+    if (ticket._count?.comments && ticket._count.comments > 0 && !commentsFetched) {
       fetchComments();
       setShowComments(true);
     }
-  }, [ticket.id]);
+  }, [ticket.id]); // only re-run if ticket ID changes, not on every prop update
 
   const getInitials = (name: string) => {
     return name
@@ -193,6 +203,32 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const canUpdateStatus =
     user?.role === "ADMIN" || ticket.assignedTo?.id === user?.id;
   const canTakeTicket = !ticket.assignedTo && user?.role === "EMPLOYEE";
+  const canDelete = user?.role === "TENANT_ADMIN";
+
+  const handleDeleteConfirmed = async () => {
+    setDeleting(true);
+    try {
+      await ticketsApi.deleteTicket(ticket.id);
+      setConfirmDeleteOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    } catch (error) {
+      console.error('Delete ticket error:', error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      await ticketsApi.restoreTicket(ticket.id);
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    } catch (error) {
+      console.error('Restore ticket error:', error);
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const shouldTruncate = ticket.description.length > 200;
   const displayDescription =
@@ -691,9 +727,8 @@ const TicketPost: React.FC<TicketPostProps> = ({
         </Box>
       </CardActions>
 
-      {/* Comments Section - Always visible if there are comments */}
-      {(showComments ||
-        (ticket._count?.comments && ticket._count.comments > 0)) && (
+      {/* Comments Section - only show when explicitly opened or has comments and was fetched */}
+      {(showComments || (commentsFetched && comments.length > 0)) && (
         <>
           <Divider />
 
@@ -882,7 +917,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
                     endAdornment: (
                       <IconButton
                         onClick={handleAddComment}
-                        disabled={!newComment.trim()}
+                        disabled={!newComment.trim() || submitting}
                         size="small"
                         sx={{ p: { xs: 0.5, sm: 1 } }}
                       >
@@ -902,6 +937,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        disableScrollLock
         PaperProps={{
           sx: { borderRadius: 2, minWidth: 200 },
         }}
@@ -931,7 +967,51 @@ const TicketPost: React.FC<TicketPostProps> = ({
             ⚫ Mark as Closed
           </MenuItem>,
         ]}
+        {canDelete && [
+          <Divider key="delete-divider" />,
+          isDeleted ? (
+            <MenuItem
+              key="restore"
+              onClick={() => { handleRestore(); handleMenuClose(); }}
+              sx={{ color: 'success.main' }}
+              disabled={restoring}
+            >
+              <RestoreIcon sx={{ mr: 2, fontSize: 20 }} />
+              {restoring ? 'Restoring...' : 'Restore Ticket'}
+            </MenuItem>
+          ) : (
+            <MenuItem
+              key="delete"
+              onClick={() => { setConfirmDeleteOpen(true); handleMenuClose(); }}
+              sx={{ color: 'error.main' }}
+            >
+              <DeleteIcon sx={{ mr: 2, fontSize: 20 }} />
+              Delete Ticket
+            </MenuItem>
+          ),
+        ]}
       </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} disableScrollLock>
+        <DialogTitle>Delete Ticket</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete <strong>{ticket.title}</strong>? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleting}
+            onClick={handleDeleteConfirmed}
+          >
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

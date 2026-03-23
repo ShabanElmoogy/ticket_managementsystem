@@ -1,6 +1,5 @@
 import { db } from '../../config/database.js';
-import { tickets } from '../tickets/tickets.schema.js';
-import { comments } from '../comments/comments.schema.js';
+import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 
@@ -115,184 +114,52 @@ export const getActivities = async (req, res) => {
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
-    // Get recent tickets with user data
-    // Tenant scoping: tickets table has no tenantId, so scope via createdBy user.
-    const recentTickets = tenantId
-      ? await db
-          .select({
-            id: tickets.id,
-            title: tickets.title,
-            priority: tickets.priority,
-            status: tickets.status,
-            createdAt: tickets.createdAt,
-            updatedAt: tickets.updatedAt,
-            assignedToId: tickets.assignedToId,
-            createdById: tickets.createdById,
-          })
-          .from(tickets)
-          .innerJoin(users, eq(tickets.createdById, users.id))
-          .where(eq(users.tenantId, tenantId))
-          .orderBy(desc(tickets.updatedAt))
-          .limit(limit)
-      : await db
-          .select({
-            id: tickets.id,
-            title: tickets.title,
-            priority: tickets.priority,
-            status: tickets.status,
-            createdAt: tickets.createdAt,
-            updatedAt: tickets.updatedAt,
-            assignedToId: tickets.assignedToId,
-            createdById: tickets.createdById,
-          })
-          .from(tickets)
-          .orderBy(desc(tickets.updatedAt))
-          .limit(limit);
+    // Build base query for ticket activities joined with ticket and user
+    const baseQuery = db
+      .select({
+        id: ticketActivities.id,
+        action: ticketActivities.action,
+        description: ticketActivities.description,
+        createdAt: ticketActivities.createdAt,
+        ticketId: tickets.id,
+        ticketTitle: tickets.title,
+        ticketPriority: tickets.priority,
+        ticketStatus: tickets.status,
+        ticketAssignedToId: tickets.assignedToId,
+        userName: users.name,
+        userTenantId: users.tenantId,
+      })
+      .from(ticketActivities)
+      .innerJoin(tickets, eq(ticketActivities.ticketId, tickets.id))
+      .innerJoin(users, eq(ticketActivities.userId, users.id));
 
-    // Get user data for tickets
-    const userIds = [...new Set([...recentTickets.map((t) => t.assignedToId).filter(Boolean), ...recentTickets.map((t) => t.createdById).filter(Boolean)])];
+    const rows = tenantId
+      ? await baseQuery.where(eq(users.tenantId, tenantId)).orderBy(desc(ticketActivities.createdAt)).limit(limit)
+      : await baseQuery.orderBy(desc(ticketActivities.createdAt)).limit(limit);
 
-    const ticketUsers = userIds.length
-      ? await db
-          .select({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-          })
-          .from(users)
-          .where(inArray(users.id, userIds))
-      : [];
+    // Map action → activity type
+    const actionTypeMap = {
+      CREATED: 'TICKET_CREATED',
+      ASSIGNED: 'TICKET_ASSIGNED',
+      STATUS_CHANGED: 'TICKET_UPDATED',
+      PRIORITY_CHANGED: 'TICKET_UPDATED',
+      UPDATED: 'TICKET_UPDATED',
+      COMMENTED: 'COMMENT_ADDED',
+    };
 
-    // Get recent comments with user and ticket data
-    // Tenant scoping: scope via ticket creator's tenant.
-    const ticketCreator = users;
+    const activities = rows.map((row) => ({
+      id: `activity-${row.id}`,
+      type: actionTypeMap[row.action] || 'TICKET_UPDATED',
+      data: {
+        ticket: { id: row.ticketId, title: row.ticketTitle, priority: row.ticketPriority, status: row.ticketStatus },
+        createdBy: row.action === 'CREATED' ? row.userName : undefined,
+        updatedBy: row.action !== 'CREATED' && row.action !== 'ASSIGNED' ? row.userName : undefined,
+        assignedTo: row.action === 'ASSIGNED' ? row.userName : undefined,
+      },
+      timestamp: row.createdAt,
+    }));
 
-    const recentComments = tenantId
-      ? await db
-          .select({
-            id: comments.id,
-            content: comments.content,
-            createdAt: comments.createdAt,
-            userId: comments.userId,
-            ticketId: comments.ticketId,
-            userName: users.name,
-            userEmail: users.email,
-            ticketTitle: tickets.title,
-            ticketPriority: tickets.priority,
-            ticketStatus: tickets.status,
-          })
-          .from(comments)
-          .innerJoin(users, eq(users.id, comments.userId))
-          .innerJoin(tickets, eq(tickets.id, comments.ticketId))
-          .innerJoin(ticketCreator, eq(tickets.createdById, ticketCreator.id))
-          .where(eq(ticketCreator.tenantId, tenantId))
-          .orderBy(desc(comments.createdAt))
-          .limit(limit)
-      : await db
-          .select({
-            id: comments.id,
-            content: comments.content,
-            createdAt: comments.createdAt,
-            userId: comments.userId,
-            ticketId: comments.ticketId,
-            userName: users.name,
-            userEmail: users.email,
-            ticketTitle: tickets.title,
-            ticketPriority: tickets.priority,
-            ticketStatus: tickets.status,
-          })
-          .from(comments)
-          .innerJoin(users, eq(users.id, comments.userId))
-          .innerJoin(tickets, eq(tickets.id, comments.ticketId))
-          .orderBy(desc(comments.createdAt))
-          .limit(limit);
-
-    // Combine and format activities
-    const activities = [];
-
-    // Add ticket activities
-    recentTickets.forEach((ticket) => {
-      const timeDiff = new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime();
-      const isNewTicket = timeDiff < 60000; // 1 minute threshold
-      const createdByUser = ticketUsers.find((u) => u.id === ticket.createdById);
-      const assignedToUser = ticketUsers.find((u) => u.id === ticket.assignedToId);
-
-      if (isNewTicket) {
-        activities.push({
-          id: `ticket-created-${ticket.id}`,
-          type: 'TICKET_CREATED',
-          data: {
-            ticket: {
-              id: ticket.id,
-              title: ticket.title,
-              priority: ticket.priority,
-              status: ticket.status,
-            },
-            createdBy: createdByUser?.name || 'Unknown',
-          },
-          timestamp: ticket.createdAt,
-        });
-      } else if (assignedToUser) {
-        activities.push({
-          id: `ticket-assigned-${ticket.id}-${ticket.updatedAt}`,
-          type: 'TICKET_ASSIGNED',
-          data: {
-            ticket: {
-              id: ticket.id,
-              title: ticket.title,
-              priority: ticket.priority,
-              status: ticket.status,
-            },
-            assignedTo: assignedToUser.name,
-          },
-          timestamp: ticket.updatedAt,
-        });
-      } else {
-        activities.push({
-          id: `ticket-updated-${ticket.id}-${ticket.updatedAt}`,
-          type: 'TICKET_UPDATED',
-          data: {
-            ticket: {
-              id: ticket.id,
-              title: ticket.title,
-              priority: ticket.priority,
-              status: ticket.status,
-            },
-            updatedBy: createdByUser?.name || 'Unknown',
-          },
-          timestamp: ticket.updatedAt,
-        });
-      }
-    });
-
-    // Add comment activities
-    recentComments.forEach((comment) => {
-      activities.push({
-        id: `comment-${comment.id}`,
-        type: 'COMMENT_ADDED',
-        data: {
-          comment: {
-            id: comment.id,
-            content: comment.content.substring(0, 100) + (comment.content.length > 100 ? '...' : ''),
-          },
-          ticket: {
-            id: comment.ticketId,
-            title: comment.ticketTitle,
-            priority: comment.ticketPriority,
-            status: comment.ticketStatus,
-          },
-          commentBy: comment.userName,
-        },
-        timestamp: comment.createdAt,
-      });
-    });
-
-    // Sort by timestamp and limit
-    const sortedActivities = activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, limit);
-
-    res.json(sortedActivities);
+    res.json(activities);
   } catch (error) {
     console.error('Get activities error:', error);
     res.status(500).json({ error: 'Internal server error' });

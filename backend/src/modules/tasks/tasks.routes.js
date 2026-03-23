@@ -27,42 +27,22 @@ router.use(resolveTenant);
  *       - $ref: '#/components/parameters/XTenantSlug'
  *       - in: query
  *         name: boardId
- *         schema:
- *           type: string
- *           format: uuid
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
- *         description: Array of tasks
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/TaskList'
  *   post:
  *     tags: [Tasks]
  *     summary: Create a task (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [title]
- *             properties:
- *               title:       { type: string }
- *               description: { type: string }
- *               boardId:     { type: string, format: uuid }
- *               columnId:    { type: string, format: uuid }
+ *       $ref: '#/components/requestBodies/CreateTask'
  *     responses:
  *       201:
- *         description: Created task
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/Task'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', tasksController.getTasks);
 router.post('/', requireTenantAdmin, validate(createTaskSchema), tasksController.createTask);
@@ -74,59 +54,32 @@ router.post('/', requireTenantAdmin, validate(createTaskSchema), tasksController
  *     tags: [Tasks]
  *     summary: Get task by ID
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Task object
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/Task'
  *   put:
  *     tags: [Tasks]
  *     summary: Update a task (TENANT_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:       { type: string }
- *               description: { type: string }
- *               status:      { type: string }
+ *       $ref: '#/components/requestBodies/UpdateTask'
  *     responses:
  *       200:
- *         description: Updated task
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/Task'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  *   delete:
  *     tags: [Tasks]
  *     summary: Delete a task (TENANT_ADMIN)
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
- *         description: Deleted
+ *         $ref: '#/components/responses/NoContent'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/:id', tasksController.getTask);
 router.put('/:id', requireTenantAdmin, validate(updateTaskSchema), tasksController.updateTask);
@@ -139,24 +92,12 @@ router.delete('/:id', requireTenantAdmin, tasksController.deleteTask);
  *     tags: [Tasks]
  *     summary: Move a task to a different column / position
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
+ *       - $ref: '#/components/parameters/PathId'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               columnId: { type: string, format: uuid }
- *               position: { type: integer }
+ *       $ref: '#/components/requestBodies/MoveItem'
  *     responses:
  *       200:
- *         description: Moved
+ *         $ref: '#/components/responses/NoContent'
  */
 router.put('/:id/move', validate(moveTaskSchema), tasksController.moveTask);
 

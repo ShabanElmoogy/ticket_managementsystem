@@ -25,25 +25,19 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 reminderEnabled:  { type: boolean }
- *                 reminderInterval: { type: integer, description: Interval in minutes }
+ *               $ref: '#/components/schemas/ReminderSettings'
  *   put:
  *     tags: [Reminders]
  *     summary: Update reminder settings
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               reminderEnabled:  { type: boolean }
- *               reminderInterval: { type: integer }
+ *       $ref: '#/components/requestBodies/UpdateReminderSettings'
  *     responses:
  *       200:
  *         description: Updated settings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReminderSettings'
  */
 router.get('/settings', authenticateToken, remindersController.getReminderSettings);
 router.put('/settings', authenticateToken, validate(updateReminderSettingsSchema), remindersController.updateReminderSettings);
@@ -56,13 +50,7 @@ router.put('/settings', authenticateToken, validate(updateReminderSettingsSchema
  *     summary: Get delayed tickets assigned to the current user
  *     responses:
  *       200:
- *         description: Array of delayed tickets
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Ticket'
+ *         $ref: '#/components/responses/TicketList'
  */
 router.get('/delayed-tickets', authenticateToken, remindersController.getDelayedTickets);
 

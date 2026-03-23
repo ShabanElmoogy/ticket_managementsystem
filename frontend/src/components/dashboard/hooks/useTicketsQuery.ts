@@ -9,8 +9,9 @@ export const useTicketsQuery = (filters: {
   userFilter?: string;
   customerFilter?: string;
   applicationFilter?: string;
+  deletedFilter?: 'active' | 'deleted';
 }) => {
-  const { status, priority, userFilter, customerFilter, applicationFilter } = filters;
+  const { status, priority, userFilter, customerFilter, applicationFilter, deletedFilter } = filters;
   
   const selectFn = useMemo(() => (data: Ticket[]) => {
     let ticketsData = data;
@@ -37,12 +38,13 @@ export const useTicketsQuery = (filters: {
   }, [userFilter, customerFilter, applicationFilter]);
   
   return useQuery({
-    queryKey: ['tickets', { status, priority, userFilter, customerFilter, applicationFilter }],
+    queryKey: ['tickets', { status, priority, deletedFilter }],
     queryFn: () => ticketsApi.getTickets({
       status: status === '' ? undefined : status as Ticket['status'],
-      priority: priority || undefined
+      priority: priority || undefined,
+      deleted: deletedFilter === 'deleted',
     }),
-    staleTime: 30000,
+    staleTime: 0,
     select: selectFn,
   });
 };
@@ -159,3 +161,15 @@ export const useAddCommentMutation = () => {
     },
   });
 };
+
+export const useDeleteTicketMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ticketId: string) => ticketsApi.deleteTicket(ticketId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+};
+

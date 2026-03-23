@@ -129,7 +129,17 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ error: 'Email, name, and password are required' });
     }
 
-    const tenantId = role === Role.SUPER_ADMIN ? null : requireTenantScope(req);
+    // SUPER_ADMIN must supply X-Tenant-Slug to scope the new user to a tenant.
+    // SUPER_ADMIN itself (role === SUPER_ADMIN) is the only role allowed without a tenant.
+    const scope = getTenantScope(req);
+    let tenantId;
+    if (role === Role.SUPER_ADMIN) {
+      tenantId = null;
+    } else if (scope.type === 'TENANT') {
+      tenantId = scope.tenantId;
+    } else {
+      return res.status(400).json({ error: 'X-Tenant-Slug header is required to create a tenant-scoped user' });
+    }
 
     const existingUser = await db
       .select({ id: users.id })

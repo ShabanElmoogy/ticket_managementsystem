@@ -12,7 +12,7 @@ export interface EntityDataReturn<T, CreateT> {
 }
 
 export interface EntityConfig<T, CreateT> {
-  queryKey: readonly string[];
+  queryKey: readonly string[] | (() => readonly string[]);
   api: {
     getAll: () => Promise<T[]>;
     create: (data: CreateT) => Promise<T>;
@@ -27,8 +27,10 @@ export function useEntityData<T, CreateT>(
   const { token } = useAuthStore();
   const queryClient = useQueryClient();
 
+  const resolvedKey = typeof config.queryKey === 'function' ? config.queryKey() : config.queryKey;
+
   const { data: entities = [], isLoading: loading, refetch } = useQuery({
-    queryKey: config.queryKey,
+    queryKey: resolvedKey,
     queryFn: config.api.getAll,
     enabled: !!token,
   });
@@ -36,58 +38,58 @@ export function useEntityData<T, CreateT>(
   const createMutation = useMutation({
     mutationFn: config.api.create,
     onMutate: async (newEntity) => {
-      await queryClient.cancelQueries({ queryKey: config.queryKey });
-      const previousEntities = queryClient.getQueryData(config.queryKey);
-      queryClient.setQueryData(config.queryKey, (old: T[] = []) => [
+      await queryClient.cancelQueries({ queryKey: resolvedKey });
+      const previousEntities = queryClient.getQueryData(resolvedKey);
+      queryClient.setQueryData(resolvedKey, (old: T[] = []) => [
         ...old,
         { ...newEntity, id: `temp-${Date.now()}`, createdAt: new Date().toISOString() } as T
       ]);
       return { previousEntities };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(config.queryKey, context?.previousEntities);
+      queryClient.setQueryData(resolvedKey, context?.previousEntities);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey: resolvedKey });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CreateT }) => 
+    mutationFn: ({ id, data }: { id: string; data: CreateT }) =>
       config.api.update(id, data),
     onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: config.queryKey });
-      const previousEntities = queryClient.getQueryData(config.queryKey);
-      queryClient.setQueryData(config.queryKey, (old: T[] = []) =>
-        old.map(entity => 
+      await queryClient.cancelQueries({ queryKey: resolvedKey });
+      const previousEntities = queryClient.getQueryData(resolvedKey);
+      queryClient.setQueryData(resolvedKey, (old: T[] = []) =>
+        old.map(entity =>
           (entity as { id: string }).id === id ? { ...entity, ...data } : entity
         )
       );
       return { previousEntities };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(config.queryKey, context?.previousEntities);
+      queryClient.setQueryData(resolvedKey, context?.previousEntities);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey: resolvedKey });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: config.api.delete,
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: config.queryKey });
-      const previousEntities = queryClient.getQueryData(config.queryKey);
-      queryClient.setQueryData(config.queryKey, (old: T[] = []) =>
+      await queryClient.cancelQueries({ queryKey: resolvedKey });
+      const previousEntities = queryClient.getQueryData(resolvedKey);
+      queryClient.setQueryData(resolvedKey, (old: T[] = []) =>
         old.filter(entity => (entity as { id: string }).id !== id)
       );
       return { previousEntities };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData(config.queryKey, context?.previousEntities);
+      queryClient.setQueryData(resolvedKey, context?.previousEntities);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      queryClient.invalidateQueries({ queryKey: resolvedKey });
     },
   });
 

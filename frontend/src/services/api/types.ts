@@ -79,6 +79,7 @@ export interface Ticket {
   _count?: {
     comments: number;
   };
+  deletedAt?: string | null;
 }
 
 export interface Comment {

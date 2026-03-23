@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -15,7 +15,11 @@ import {
   Stack,
   Chip,
   Avatar,
-  Snackbar
+  Snackbar,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Select,
 } from '@mui/material';
 import {
   LightMode as LightModeIcon,
@@ -35,11 +39,13 @@ import {
 } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { authApi } from '../../services/api';
+import { authApi, tenantsApi, type Tenant } from '../../services/api';
 
 const LoginForm: React.FC = () => {
   const [tenantSlug, setTenantSlug] = useState('');
   const [isSystemLogin, setIsSystemLogin] = useState(false);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenantsLoading, setTenantsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +54,15 @@ const LoginForm: React.FC = () => {
   const [snack, setSnack] = useState<string | null>(null);
   const { login } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
+
+  // Load tenants for the dropdown on mount
+  useEffect(() => {
+    setTenantsLoading(true);
+    tenantsApi.listPublic()
+      .then(setTenants)
+      .catch(() => setTenants([]))
+      .finally(() => setTenantsLoading(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,18 +365,38 @@ const LoginForm: React.FC = () => {
                 </Typography>
               </Stack>
 
-              <TextField
-                fullWidth
-                label="Tenant slug"
-                placeholder="e.g. acme"
-                value={tenantSlug}
-                onChange={(e) => setTenantSlug(e.target.value)}
-                margin="normal"
-                disabled={loading || isSystemLogin}
-                helperText={isSystemLogin
-                  ? 'Disabled for system login.'
-                  : 'Required for tenant users (TENANT_ADMIN/EMPLOYEE).'}
-              />
+              <FormControl fullWidth margin="normal" disabled={loading || isSystemLogin}>
+                <InputLabel id="tenant-select-label">
+                  {tenantsLoading ? 'Loading tenants…' : 'Tenant'}
+                </InputLabel>
+                <Select
+                  labelId="tenant-select-label"
+                  label={tenantsLoading ? 'Loading tenants…' : 'Tenant'}
+                  value={tenantSlug}
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    setTenantSlug(slug);
+                    const found = tenants.find((t) => t.slug === slug);
+                    if (found?.adminEmail) setEmail(found.adminEmail);
+                  }}
+                  displayEmpty
+                >
+                  <MenuItem value=""><em>— select tenant —</em></MenuItem>
+                  {tenants.map((t) => (
+                    <MenuItem key={t.id} value={t.slug}>
+                      {t.name}
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                        ({t.slug}){t.adminEmail ? ` — ${t.adminEmail}` : ''}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.5 }}>
+                  {isSystemLogin
+                    ? 'Disabled for system login.'
+                    : 'Required for tenant users (TENANT_ADMIN / EMPLOYEE).'}
+                </Typography>
+              </FormControl>
 
               <TextField
                 fullWidth

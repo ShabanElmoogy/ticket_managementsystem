@@ -57,6 +57,13 @@
       "when": 1774199682786,
       "tag": "0007_black_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774300294441,
+      "tag": "0008_square_satana",
+      "breakpoints": true
     }
   ]
 }

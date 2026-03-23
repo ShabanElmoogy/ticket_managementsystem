@@ -3,12 +3,13 @@ import type { Ticket, TicketWithComments, CreateTicketData, Comment } from "./ty
 
 export class TicketsApiService extends BaseApiService {
   async getTickets(
-    filters?: { status?: string; priority?: string; assignedTo?: string }
+    filters?: { status?: string; priority?: string; assignedTo?: string; deleted?: boolean }
   ): Promise<Ticket[]> {
     const params: Record<string, string> = {};
     if (filters?.status) params.status = filters.status;
     if (filters?.priority) params.priority = filters.priority;
     if (filters?.assignedTo) params.assignedTo = filters.assignedTo;
+    params.deleted = filters?.deleted === true ? 'true' : 'false';
 
     return this.get<Ticket[]>("/tickets", { params });
   }
@@ -27,6 +28,10 @@ export class TicketsApiService extends BaseApiService {
 
   async deleteTicket(id: string): Promise<{ message: string }> {
     return this.delete<{ message: string }>(`/tickets/${id}`);
+  }
+
+  async restoreTicket(id: string): Promise<{ message: string }> {
+    return this.patch<{ message: string }>(`/tickets/${id}/restore`, {});
   }
 
   async takeTicket(id: string): Promise<Ticket> {
