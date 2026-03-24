@@ -12,10 +12,14 @@ import {
   Box,
   TextField,
   CircularProgress,
+  IconButton,
+  Tooltip,
+  Avatar,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { ticketsApi, type Ticket, type Comment } from '../../services/api';
+import { ExpandMore as ExpandMoreIcon, Delete as DeleteIcon, History as HistoryIcon, OpenInFull as MaximizeIcon, CloseFullscreen as MinimizeIcon, Close as CloseIcon } from '@mui/icons-material';
+import { ticketsApi, type Ticket, type Comment, type TicketActivity } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface TicketDetailsDialogProps {
   open: boolean;
@@ -33,12 +37,17 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   token,
 }) => {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityMaximized, setActivityMaximized] = useState(false);
 
   useEffect(() => {
     if (ticket && open) {
@@ -54,6 +63,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
     try {
       const data = await ticketsApi.getTicket(ticket.id);
       setComments(data.comments || []);
+      setActivities(data.activities || []);
     } catch (error) {
       console.error('Error fetching ticket details:', error);
     } finally {
@@ -74,6 +84,21 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       console.error('Error adding comment:', error);
     } finally {
       setAddingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!ticket) return;
+    setDeletingCommentId(commentId);
+    try {
+      await ticketsApi.deleteComment(ticket.id, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      window.dispatchEvent(new CustomEvent('commentDeleted', { detail: { ticketId: ticket.id } }));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
@@ -109,9 +134,48 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
     }
   };
 
+  const getActivityColor = (action: string) => {
+    switch (action) {
+      case 'CREATED': return '#10b981';
+      case 'STATUS_CHANGED': return '#3b82f6';
+      case 'PRIORITY_CHANGED': return '#f59e0b';
+      case 'ASSIGNED': return '#8b5cf6';
+      case 'COMMENTED': return '#6366f1';
+      case 'COMMENT_DELETED': return '#ef4444';
+      case 'DELETED': return '#ef4444';
+      case 'RESTORED': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+  const getActivityLabel = (activity: TicketActivity) => {
+    switch (activity.action) {
+      case 'CREATED': return 'created this ticket';
+      case 'STATUS_CHANGED': return `changed status to ${activity.newValue?.replace('_', ' ')}`;
+      case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
+      case 'ASSIGNED': return 'took this ticket';
+      case 'COMMENTED': return 'added a comment';
+      case 'COMMENT_DELETED': return 'deleted a comment';
+      case 'UPDATED': return 'updated this ticket';
+      case 'DELETED': return 'deleted this ticket';
+      case 'RESTORED': return 'restored this ticket';
+      default: return activity.description;
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{ticket.title}</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>{ticket.title}</Typography>
+          <Tooltip title={`Activity log (${activities.length})`}>
+            <IconButton size="small" onClick={() => setActivityDialogOpen(true)}>
+              <HistoryIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{xs:12,sm:6}}>
@@ -198,16 +262,27 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             {comments.slice(0, visibleCommentsCount).map((comment) => (
               <Paper key={comment.id} sx={{ p: 2, mb: 2 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                  <Typography variant="subtitle2">
-                    {comment.user.name}
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </Typography>
+                  <Typography variant="subtitle2">{comment.user.name}</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="caption" color="textSecondary">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </Typography>
+                    {(comment.userId === user?.id || comment.user?.id === user?.id) && (
+                      <Tooltip title="Delete comment">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          disabled={deletingCommentId === comment.id}
+                        >
+                          {deletingCommentId === comment.id
+                            ? <CircularProgress size={14} />
+                            : <DeleteIcon fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
-                <Typography variant="body2">
-                  {comment.content}
-                </Typography>
+                <Typography variant="body2">{comment.content}</Typography>
               </Paper>
             ))}
             
@@ -266,11 +341,207 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             {addingComment ? <CircularProgress size={20} /> : 'Add Comment'}
           </Button>
         </Box>
+
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
+
+    {/* Activity Log Dialog */}
+    <Dialog
+      open={activityDialogOpen}
+      onClose={() => { setActivityDialogOpen(false); setActivityMaximized(false); }}
+      maxWidth={activityMaximized ? false : 'sm'}
+      fullWidth
+      fullScreen={activityMaximized}
+      PaperProps={{
+        sx: {
+          borderRadius: activityMaximized ? 0 : 3,
+          overflow: 'hidden',
+          ...(activityMaximized ? {} : { maxHeight: '80vh' }),
+        },
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          background: (theme) =>
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+              : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            bgcolor: 'rgba(255,255,255,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <HistoryIcon sx={{ color: '#fff', fontSize: 20 }} />
+        </Box>
+        <Box flex={1}>
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2 }}>
+            Activity Log
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            {ticket.title}
+          </Typography>
+        </Box>
+        <Chip
+          label={`${activities.length} event${activities.length !== 1 ? 's' : ''}`}
+          size="small"
+          sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600, border: 'none' }}
+        />
+        <Tooltip title={activityMaximized ? 'Restore' : 'Maximize'}>
+          <IconButton
+            size="small"
+            onClick={() => setActivityMaximized((v) => !v)}
+            sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
+          >
+            {activityMaximized ? <MinimizeIcon fontSize="small" /> : <MaximizeIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Close">
+          <IconButton
+            size="small"
+            onClick={() => { setActivityDialogOpen(false); setActivityMaximized(false); }}
+            sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <DialogContent
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc',
+        }}
+      >
+        {activities.length === 0 ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={8} gap={2}>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <HistoryIcon sx={{ fontSize: 32, color: '#6366f1', opacity: 0.6 }} />
+            </Box>
+            <Typography variant="body2" color="text.secondary">No activity recorded yet</Typography>
+          </Box>
+        ) : (
+          <Box sx={{ overflowY: 'auto', flex: 1, px: 3, py: 2 }}>
+            {activities.map((activity, index) => (
+              <Box key={activity.id} display="flex" gap={2}>
+                {/* Left: avatar + connector */}
+                <Box display="flex" flexDirection="column" alignItems="center" sx={{ minWidth: 40 }}>
+                  <Avatar
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      bgcolor: getActivityColor(activity.action),
+                      boxShadow: `0 0 0 3px ${getActivityColor(activity.action)}33`,
+                    }}
+                  >
+                    {activity.user.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                  {index < activities.length - 1 && (
+                    <Box
+                      sx={{
+                        width: 2,
+                        flex: 1,
+                        minHeight: 20,
+                        my: 0.5,
+                        background: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
+                            : 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.03))',
+                        borderRadius: 1,
+                      }}
+                    />
+                  )}
+                </Box>
+
+                {/* Right: content card */}
+                <Box
+                  pb={index < activities.length - 1 ? 2 : 0}
+                  flex={1}
+                  sx={{ minWidth: 0 }}
+                >
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff',
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': {
+                        boxShadow: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? '0 2px 12px rgba(0,0,0,0.4)'
+                            : '0 2px 12px rgba(0,0,0,0.08)',
+                      },
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {activity.user.name}
+                        </Typography>
+                        <Chip
+                          label={activity.action.replace('_', ' ')}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: '0.6rem',
+                            fontWeight: 700,
+                            bgcolor: `${getActivityColor(activity.action)}22`,
+                            color: getActivityColor(activity.action),
+                            border: `1px solid ${getActivityColor(activity.action)}44`,
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {getActivityLabel(activity)}
+                    </Typography>
+                  </Paper>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

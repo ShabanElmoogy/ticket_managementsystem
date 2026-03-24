@@ -62,8 +62,8 @@ const ReminderSettings: React.FC = () => {
     try {
       const updatedSettings = await profileApi.updateReminderSettings(tempSettings);
       setSettings(updatedSettings);
-      setMessage({ type: 'success', text: 'Reminder settings saved successfully!' });
-      setTimeout(() => setMessage(null), 3000);
+      window.dispatchEvent(new CustomEvent('reminderSettingsChanged', { detail: updatedSettings }));
+      setExpanded(false);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
       setTimeout(() => setMessage(null), 3000);

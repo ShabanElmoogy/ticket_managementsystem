@@ -91,8 +91,21 @@ export interface Comment {
   userId: string;
 }
 
+export interface TicketActivity {
+  id: string;
+  action: string;
+  description: string;
+  oldValue?: string;
+  newValue?: string;
+  createdAt: string;
+  userId: string;
+  ticketId: string;
+  user: { id: string; name: string; email: string };
+}
+
 export interface TicketWithComments extends Ticket {
   comments: Comment[];
+  activities: TicketActivity[];
 }
 
 export interface DashboardStats {

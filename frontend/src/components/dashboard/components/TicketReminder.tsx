@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -34,66 +34,52 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
   const [settings, setSettings] = useState<ReminderSettings>({ reminderEnabled: true, reminderInterval: 60 });
   const [tempSettings, setTempSettings] = useState<ReminderSettings>({ reminderEnabled: true, reminderInterval: 60 });
 
-  // Load settings on mount
+  // Load settings on mount + listen for external changes (from ReminderSettings card)
   useEffect(() => {
     if (!token || user?.role !== 'EMPLOYEE') return;
 
-    const loadSettings = async () => {
-      try {
-        const reminderSettings = await profileApi.getReminderSettings();
-        setSettings(reminderSettings);
-        setTempSettings(reminderSettings);
-      } catch (error) {
-        console.error('Error loading reminder settings:', error);
-      }
-    };
+    profileApi.getReminderSettings().then((s) => {
+      setSettings(s);
+      setTempSettings(s);
+    }).catch(console.error);
 
-    loadSettings();
+    const handleExternalChange = (e: Event) => {
+      const updated = (e as CustomEvent<ReminderSettings>).detail;
+      setSettings(updated);
+      setTempSettings(updated);
+    };
+    window.addEventListener('reminderSettingsChanged', handleExternalChange);
+    return () => window.removeEventListener('reminderSettingsChanged', handleExternalChange);
   }, [token, user]);
 
-  // Set up reminder interval
-  useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) {
-      console.log('TicketReminder: Skipping - token:', !!token, 'role:', user?.role, 'enabled:', settings.reminderEnabled);
-      return;
-    }
-
-    const fetchDelayedTickets = async () => {
-      try {
-        console.log('TicketReminder: Fetching delayed tickets...');
-        const delayedTickets = await ticketsApi.getDelayedTickets();
-        console.log('TicketReminder: Found delayed tickets:', delayedTickets.length, delayedTickets);
-        
-        if (delayedTickets.length > 0) {
-          setOpenTickets(delayedTickets);
-          setOpen(true);
-        }
-      } catch (error) {
-        console.error('Error fetching delayed tickets:', error);
+  const fetchDelayedTickets = useCallback(async () => {
+    try {
+      const delayedTickets = await ticketsApi.getDelayedTickets();
+      if (delayedTickets.length > 0) {
+        setOpenTickets(delayedTickets);
+        setOpen(true);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching delayed tickets:', error);
+    }
+  }, []);
 
-    // Show immediately on mount
+  // Initial fetch on mount
+  useEffect(() => {
+    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) return;
     fetchDelayedTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user]);
 
-    // Set up interval based on user settings
+  // Restart interval whenever settings change
+  useEffect(() => {
+    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) return;
     const interval = setInterval(fetchDelayedTickets, settings.reminderInterval * 60 * 1000);
-
     return () => clearInterval(interval);
-  }, [token, user, settings]);
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleTicketClick = (ticket: Ticket) => {
-    onTicketClick(ticket);
-    setOpen(false);
-  };
+  }, [token, user, settings, fetchDelayedTickets]);
 
   const handleSaveSettings = async () => {
     if (!token) return;
-    
     try {
       const updatedSettings = await profileApi.updateReminderSettings(tempSettings);
       setSettings(updatedSettings);
@@ -127,7 +113,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
       {/* Main Reminder Dialog */}
       <Dialog
         open={open && openTickets.length > 0}
-        onClose={handleClose}
+        onClose={() => setOpen(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{
@@ -145,84 +131,68 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
             <IconButton onClick={() => setShowSettings(true)} size="small" sx={{ mr: 1 }}>
               <SettingsIcon />
             </IconButton>
-            <IconButton onClick={handleClose} size="small">
+            <IconButton onClick={() => setOpen(false)} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Please complete these tickets to keep your workload up to date:
-        </Typography>
-        <List>
-          {openTickets.map((ticket) => (
-            <ListItem
-              key={ticket.id}
-              component="button"
-              onClick={() => handleTicketClick(ticket)}
-              sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                mb: 1,
-                cursor: 'pointer',
-                textAlign: 'left',
-                backgroundColor: 'background.paper',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                  boxShadow: 1,
-                }
-              }}
-            >
-              <ListItemText
-                disableTypography
-                primary={
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
-                    {ticket.title}
-                  </Typography>
-                }
-                secondary={
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Chip
-                        label={ticket.status.replace('_', ' ')}
-                        color={getStatusColor(ticket.status)}
-                        size="small"
-                      />
-                      <Chip
-                        label={ticket.priority}
-                        color={getPriorityColor(ticket.priority)}
-                        variant="outlined"
-                        size="small"
-                      />
-                      {ticket.dueDate && (
-                        <Chip
-                          label={`Due: ${new Date(ticket.dueDate).toLocaleDateString()}`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Please complete these tickets to keep your workload up to date:
+          </Typography>
+          <List>
+            {openTickets.map((ticket) => (
+              <ListItem
+                key={ticket.id}
+                component="button"
+                onClick={() => { onTicketClick(ticket); setOpen(false); }}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  mb: 1,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  backgroundColor: 'background.paper',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': { backgroundColor: 'action.hover', boxShadow: 1 },
+                }}
+              >
+                <ListItemText
+                  disableTypography
+                  primary={
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}>
+                      {ticket.title}
+                    </Typography>
+                  }
+                  secondary={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip label={ticket.status.replace('_', ' ')} color={getStatusColor(ticket.status)} size="small" />
+                        <Chip label={ticket.priority} color={getPriorityColor(ticket.priority)} variant="outlined" size="small" />
+                        {ticket.dueDate && (
+                          <Chip label={`Due: ${new Date(ticket.dueDate).toLocaleDateString()}`} size="small" variant="outlined" />
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
+                        {ticket.customer && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                            <strong>Customer:</strong> {ticket.customer.name}
+                          </Typography>
+                        )}
+                        {ticket.application && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                            <strong>Application:</strong> {ticket.application.name}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
-                      {ticket.customer && (
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                          <strong>Customer:</strong> {ticket.customer.name}
-                        </Typography>
-                      )}
-                      {ticket.application && (
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                          <strong>Application:</strong> {ticket.application.name}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </DialogContent>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
       </Dialog>
 
       {/* Settings Dialog */}
@@ -239,9 +209,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
               }
               label="Enable ticket reminders"
             />
-            
             <Divider sx={{ my: 2 }} />
-            
             <TextField
               fullWidth
               label="Reminder interval (minutes)"
@@ -252,7 +220,6 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
               helperText="How often to check for delayed tickets"
               inputProps={{ min: 1, max: 1440 }}
             />
-            
             <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
               Reminders will show tickets that are overdue or haven't been updated within the specified interval.
             </Typography>

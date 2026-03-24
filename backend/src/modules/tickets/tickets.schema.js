@@ -10,7 +10,7 @@ export const ticketStatusEnum = pgEnum('ticket_status', ['OPEN', 'IN_PROGRESS', 
 export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 
 // Activity action enum
-export const activityActionEnum = pgEnum('activity_action', ['CREATED', 'UPDATED', 'ASSIGNED', 'COMMENTED', 'STATUS_CHANGED', 'PRIORITY_CHANGED']);
+export const activityActionEnum = pgEnum('activity_action', ['CREATED', 'UPDATED', 'ASSIGNED', 'COMMENTED', 'STATUS_CHANGED', 'PRIORITY_CHANGED', 'DELETED', 'RESTORED', 'COMMENT_DELETED']);
 
 // Tickets table
 export const tickets = pgTable('tickets', {

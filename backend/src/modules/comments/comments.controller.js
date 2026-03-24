@@ -128,3 +128,54 @@ export const createComment = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// Delete a comment (owner only)
+export const deleteComment = async (req, res) => {
+  try {
+    const { id: ticketId, commentId } = req.params;
+
+    const [comment] = await db
+      .select({ id: comments.id, userId: comments.userId, ticketId: comments.ticketId })
+      .from(comments)
+      .where(eq(comments.id, commentId))
+      .limit(1);
+
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+    if (comment.userId !== req.user.userId) return res.status(403).json({ error: 'Access denied' });
+
+    await db.delete(comments).where(eq(comments.id, commentId));
+
+    const [ticket] = await db.select({ title: tickets.title }).from(tickets).where(eq(tickets.id, ticketId)).limit(1);
+    const [actor] = await db.select({ name: users.name, tenantId: users.tenantId }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+
+    await logActivity({
+      ticketId,
+      userId: req.user.userId,
+      action: 'COMMENT_DELETED',
+      description: 'Deleted a comment',
+    });
+
+    const notificationPayload = {
+      type: 'COMMENT_DELETED',
+      data: {
+        ticket: { id: ticketId, title: ticket?.title },
+        commentBy: actor?.name,
+      },
+    };
+
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const tenantId = isTenantScopedRole ? (req.user?.tenantId ?? null) : null;
+
+    if (tenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
+
+    res.json({ message: 'Comment deleted' });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

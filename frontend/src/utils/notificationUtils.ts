@@ -29,8 +29,16 @@ export const createNotificationFromSocketData = (
       message = `${safeTicket.title || "Untitled ticket"} - Created by ${safeData.createdBy || "Someone"}`;
       break;
     case "TICKET_UPDATED":
-      title = "Ticket Updated";
-      message = `${safeTicket.title || "Untitled ticket"} - Updated by ${safeData.updatedBy || "Someone"}`;
+      if (safeData.newStatus === "DELETED") {
+        title = "Ticket Deleted";
+        message = `${safeTicket.title || "Untitled ticket"} - Deleted by ${safeData.updatedBy || "Someone"}`;
+      } else if (safeData.newStatus === "RESTORED") {
+        title = "Ticket Restored";
+        message = `${safeTicket.title || "Untitled ticket"} - Restored by ${safeData.updatedBy || "Someone"}`;
+      } else {
+        title = "Ticket Updated";
+        message = `${safeTicket.title || "Untitled ticket"} - Updated by ${safeData.updatedBy || "Someone"}`;
+      }
       break;
     case "TICKET_ASSIGNED":
       title = "Ticket Assigned";
@@ -39,6 +47,10 @@ export const createNotificationFromSocketData = (
     case "COMMENT_ADDED":
       title = "New Comment";
       message = `${safeData.commentBy || "Someone"} commented: "${safeData.comment?.content || "No content"}" on ${safeTicket.title || "Untitled ticket"}`;
+      break;
+    case "COMMENT_DELETED":
+      title = "Comment Deleted";
+      message = `${safeData.commentBy || "Someone"} deleted a comment on ${safeTicket.title || "Untitled ticket"}`;
       break;
     case "TICKET_DUE_SOON":
       title = "Ticket Due Soon";

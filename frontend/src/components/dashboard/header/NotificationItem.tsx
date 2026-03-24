@@ -19,6 +19,8 @@ import {
   Notifications as NotificationsIcon,
   Schedule as ScheduleIcon,
   Error as ErrorIcon,
+  Delete as DeleteIcon,
+  RestoreFromTrash as RestoreIcon,
 } from "@mui/icons-material";
 import { type Notification } from "../../../types/header";
 
@@ -35,11 +37,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onRemove,
   formatTime,
 }) => {
+  const newStatus = notification.data?.newStatus;
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "TICKET_CREATED":
         return <AssignmentIcon sx={{ color: "#10b981" }} />;
       case "TICKET_UPDATED":
+        if (newStatus === "DELETED") return <DeleteIcon sx={{ color: "#ef4444" }} />;
+        if (newStatus === "RESTORED") return <RestoreIcon sx={{ color: "#10b981" }} />;
         return <UpdateIcon sx={{ color: "#f59e0b" }} />;
       case "TICKET_ASSIGNED":
         return <AssignmentIcon sx={{ color: "#3b82f6" }} />;
@@ -61,6 +67,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       case "TICKET_CREATED":
         return "#10b981";
       case "TICKET_UPDATED":
+        if (newStatus === "DELETED") return "#ef4444";
+        if (newStatus === "RESTORED") return "#10b981";
         return "#f59e0b";
       case "TICKET_ASSIGNED":
         return "#3b82f6";

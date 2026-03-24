@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { ticketsApi, usersApi, customersApi, applicationsApi, type Ticket, type CreateTicketData } from '../../../services/api';
 import { useAuthStore } from '../../../stores/authStore';
@@ -45,6 +45,7 @@ export const useTicketsQuery = (filters: {
       deleted: deletedFilter === 'deleted',
     }),
     staleTime: 0,
+    placeholderData: keepPreviousData,
     select: selectFn,
   });
 };

@@ -8,11 +8,13 @@ interface SocketNotification {
   id?: string;
   type?: ActivityItem['type'];
   data?: {
-    ticket?: {
-      id: string;
-      title: string;
-    };
+    ticket?: { id: string; title: string; priority?: string; status?: string };
+    createdBy?: string;
+    updatedBy?: string;
+    assignedTo?: string;
     assigneeName?: string;
+    commentBy?: string;
+    newStatus?: string;
   };
   ticketId?: string;
   title?: string;
@@ -41,8 +43,11 @@ export const useActivitySocket = (
             id: notification.ticketId,
             title: notification.title || "New Ticket"
           } : undefined),
-          assignedTo: notification.data?.assigneeName || user?.name,
-          createdBy: "Admin"
+          createdBy: notification.data?.createdBy,
+          updatedBy: notification.data?.updatedBy,
+          assignedTo: notification.data?.assignedTo || notification.data?.assigneeName,
+          commentBy: notification.data?.commentBy,
+          newStatus: notification.data?.newStatus,
         },
         timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),
         read: false

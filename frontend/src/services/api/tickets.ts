@@ -42,6 +42,10 @@ export class TicketsApiService extends BaseApiService {
     return this.post<Comment>(`/tickets/${ticketId}/comments`, { content });
   }
 
+  async deleteComment(ticketId: string, commentId: string): Promise<{ message: string }> {
+    return this.delete<{ message: string }>(`/tickets/${ticketId}/comments/${commentId}`);
+  }
+
   async getDelayedTickets(): Promise<Ticket[]> {
     return this.get<Ticket[]>("/reminders/delayed-tickets");
   }

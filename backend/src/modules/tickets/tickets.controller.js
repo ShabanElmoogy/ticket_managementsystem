@@ -465,7 +465,92 @@ export const createTicket = async (req, res) => {
 // Update ticket
 export const updateTicket = async (req, res) => {
   try {
-    res.json({ message: 'Update ticket not implemented yet' });
+    const { id } = req.params;
+    const { status, priority, assignedToId, title, description, dueDate, estimatedHours } = req.body;
+
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+
+    if (isTenantScopedRole) {
+      if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+
+      const [row] = await db
+        .select({ id: tickets.id, assignedToId: tickets.assignedToId, status: tickets.status })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
+        .limit(1);
+
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+
+      // EMPLOYEE can only update tickets assigned to them
+      if (req.user.role === 'EMPLOYEE' && row.assignedToId !== req.user.userId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
+    const updateData = {};
+    const oldTicket = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+    if (!oldTicket.length) return res.status(404).json({ error: 'Ticket not found' });
+
+    if (status !== undefined) updateData.status = status;
+    if (priority !== undefined) updateData.priority = priority;
+    if (assignedToId !== undefined) updateData.assignedToId = assignedToId;
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours;
+    updateData.updatedAt = new Date();
+
+    const [updated] = await db.update(tickets).set(updateData).where(eq(tickets.id, id)).returning();
+
+    // Log activity
+    if (status && status !== oldTicket[0].status) {
+      await logActivity({
+        ticketId: id,
+        userId: req.user.userId,
+        action: 'STATUS_CHANGED',
+        description: `Status changed to ${status}`,
+        oldValue: oldTicket[0].status,
+        newValue: status,
+      });
+    } else if (priority && priority !== oldTicket[0].priority) {
+      await logActivity({
+        ticketId: id,
+        userId: req.user.userId,
+        action: 'PRIORITY_CHANGED',
+        description: `Priority changed to ${priority}`,
+        oldValue: oldTicket[0].priority,
+        newValue: priority,
+      });
+    } else {
+      await logActivity({
+        ticketId: id,
+        userId: req.user.userId,
+        action: 'UPDATED',
+        description: `Ticket updated`,
+      });
+    }
+
+    // Emit notification so activity feed refreshes
+    const [updaterUser] = await db.select({ name: users.name, tenantId: users.tenantId }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+    const notificationPayload = {
+      type: 'TICKET_UPDATED',
+      data: {
+        ticket: { id: updated.id, title: updated.title, priority: updated.priority, status: updated.status },
+        updatedBy: updaterUser?.name,
+        newStatus: status || undefined,
+      },
+    };
+    if (tenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
+
+    res.json(updated);
   } catch (error) {
     console.error('Update ticket error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -495,6 +580,33 @@ export const deleteTicket = async (req, res) => {
     }
 
     await db.update(tickets).set({ deletedAt: new Date() }).where(eq(tickets.id, id));
+
+    const [ticket] = await db.select({ title: tickets.title }).from(tickets).where(eq(tickets.id, id)).limit(1);
+    const [actor] = await db.select({ name: users.name, tenantId: users.tenantId }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+
+    await logActivity({
+      ticketId: id,
+      userId: req.user.userId,
+      action: 'DELETED',
+      description: `Ticket deleted`,
+    });
+
+    const notificationPayload = {
+      type: 'TICKET_UPDATED',
+      data: {
+        ticket: { id, title: ticket?.title },
+        updatedBy: actor?.name,
+        newStatus: 'DELETED',
+      },
+    };
+    const notifyTenantId = tenantId || actor?.tenantId;
+    if (notifyTenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, notifyTenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
+
     res.json({ message: 'Ticket deleted successfully' });
   } catch (error) {
     console.error('Delete ticket error:', error);
@@ -525,6 +637,33 @@ export const restoreTicket = async (req, res) => {
     }
 
     await db.update(tickets).set({ deletedAt: null }).where(eq(tickets.id, id));
+
+    const [ticket] = await db.select({ title: tickets.title }).from(tickets).where(eq(tickets.id, id)).limit(1);
+    const [actor] = await db.select({ name: users.name, tenantId: users.tenantId }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+
+    await logActivity({
+      ticketId: id,
+      userId: req.user.userId,
+      action: 'RESTORED',
+      description: `Ticket restored`,
+    });
+
+    const notificationPayload = {
+      type: 'TICKET_UPDATED',
+      data: {
+        ticket: { id, title: ticket?.title },
+        updatedBy: actor?.name,
+        newStatus: 'RESTORED',
+      },
+    };
+    const notifyTenantId = tenantId || actor?.tenantId;
+    if (notifyTenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, notifyTenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
+
     res.json({ message: 'Ticket restored successfully' });
   } catch (error) {
     console.error('Restore ticket error:', error);
@@ -569,6 +708,14 @@ export const takeTicket = async (req, res) => {
       .set({ assignedToId: req.user.userId, status: 'IN_PROGRESS' })
       .where(eq(tickets.id, id))
       .returning();
+
+    await logActivity({
+      ticketId: id,
+      userId: req.user.userId,
+      action: 'ASSIGNED',
+      description: `Ticket taken and assigned to self`,
+      newValue: req.user.userId,
+    });
 
     res.json(updatedTicket);
   } catch (error) {

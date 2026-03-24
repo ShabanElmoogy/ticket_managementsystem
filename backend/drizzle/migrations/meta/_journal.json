@@ -64,6 +64,20 @@
       "when": 1774300294441,
       "tag": "0008_square_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774371282886,
+      "tag": "0009_big_george_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774372772335,
+      "tag": "0010_spotty_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

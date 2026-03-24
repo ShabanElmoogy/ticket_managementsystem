@@ -77,6 +77,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const isDeleted = !!ticket.deletedAt;
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
 
@@ -120,6 +121,15 @@ const TicketPost: React.FC<TicketPostProps> = ({
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await ticketsApi.deleteComment(ticket.id, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
   const handleShowComments = () => {
     const next = !showComments;
     setShowComments(next);
@@ -142,7 +152,16 @@ const TicketPost: React.FC<TicketPostProps> = ({
       fetchComments();
       setShowComments(true);
     }
-  }, [ticket.id]); // only re-run if ticket ID changes, not on every prop update
+  }, [ticket.id]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.ticketId === ticket.id) fetchComments();
+    };
+    window.addEventListener('commentDeleted', handler);
+    return () => window.removeEventListener('commentDeleted', handler);
+  }, [ticket.id]);
 
   const getInitials = (name: string) => {
     return name
@@ -201,7 +220,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   };
 
   const canUpdateStatus =
-    user?.role === "ADMIN" || ticket.assignedTo?.id === user?.id;
+    user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN" || ticket.assignedTo?.id === user?.id;
   const canTakeTicket = !ticket.assignedTo && user?.role === "EMPLOYEE";
   const canDelete = user?.role === "TENANT_ADMIN";
 
@@ -244,7 +263,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
         mx: { xs: 0, sm: 0 },
         overflow: "hidden",
         position: "relative",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "none",
         backdropFilter: "blur(10px)",
       }}
     >
@@ -632,7 +651,6 @@ const TicketPost: React.FC<TicketPostProps> = ({
                 "&:hover": {
                   backgroundColor: "primary.main",
                   color: "primary.contrastText",
-                  transform: "translateY(-1px)",
                   boxShadow: (theme) =>
                     theme.palette.mode === "dark"
                       ? "0 4px 12px rgba(59, 130, 246, 0.3)"
@@ -694,7 +712,6 @@ const TicketPost: React.FC<TicketPostProps> = ({
                   theme.palette.mode === "dark"
                     ? "rgba(255, 255, 255, 0.1)"
                     : "rgba(0, 0, 0, 0.08)",
-                transform: "translateY(-1px)",
                 boxShadow: (theme) =>
                   theme.palette.mode === "dark"
                     ? "0 4px 12px rgba(0, 0, 0, 0.3)"
@@ -764,16 +781,26 @@ const TicketPost: React.FC<TicketPostProps> = ({
                         maxWidth: "100%",
                       }}
                     >
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                        }}
-                      >
-                        {comment.user.name}
-                      </Typography>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          }}
+                        >
+                          {comment.user.name}
+                        </Typography>
+                        {(comment.userId === user?.id || comment.user?.id === user?.id) && (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            sx={{ ml: 1, p: 0.25, color: 'error.main', opacity: 0.7, '&:hover': { opacity: 1 } }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        )}
+                      </Box>
                       <Typography
                         variant="body2"
                         sx={{

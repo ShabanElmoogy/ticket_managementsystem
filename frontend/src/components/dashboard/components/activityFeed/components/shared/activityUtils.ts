@@ -28,6 +28,7 @@ export const useActivityUtils = () => {
       : type === "TICKET_UPDATED" ? "UPDATED"
       : type === "TICKET_ASSIGNED" ? "ASSIGNED"
       : type === "COMMENT_ADDED" ? "COMMENT"
+      : type === "COMMENT_DELETED" ? "COMMENT"
       : "MUTED";
 
     const accent = map[key].accent;
@@ -50,7 +51,11 @@ export const useActivityUtils = () => {
       case "TICKET_UPDATED":
         return {
           primary: `Ticket updated: ${ticket.title || "Untitled ticket"}`,
-          secondary: `Updated by ${data.updatedBy || "Someone"}`,
+          secondary: data.newStatus === 'DELETED'
+            ? `Deleted by ${data.updatedBy || "Someone"}`
+            : data.newStatus === 'RESTORED'
+            ? `Restored by ${data.updatedBy || "Someone"}`
+            : `${data.newStatus ? `Status → ${data.newStatus.replace('_', ' ')}` : 'Updated'} by ${data.updatedBy || "Someone"}`,
         };
       case "TICKET_ASSIGNED":
         return {
@@ -61,6 +66,11 @@ export const useActivityUtils = () => {
         return {
           primary: `New comment on: ${ticket.title || "Untitled ticket"}`,
           secondary: `Comment by ${data.commentBy || "Someone"}`,
+        };
+      case "COMMENT_DELETED":
+        return {
+          primary: `Comment deleted on: ${ticket.title || "Untitled ticket"}`,
+          secondary: `Deleted by ${data.commentBy || "Someone"}`,
         };
       default:
         return { primary: "New activity", secondary: "" };

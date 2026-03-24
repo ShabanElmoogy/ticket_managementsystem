@@ -23,13 +23,14 @@ import {
 import { useTheme } from "@mui/material";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
     updatedBy?: string;
     assignedTo?: string;
     commentBy?: string;
+    newStatus?: string;
   };
   timestamp: string;
   read?: boolean;
@@ -56,7 +57,7 @@ const useActivityUtils = () => {
       },
     } as const;
     const map = accents[mode === "dark" ? "dark" : "light"];
-    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : type === "COMMENT_ADDED" ? "COMMENT" : "MUTED";
+    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED") ? "COMMENT" : "MUTED";
     const accent = map[key].accent;
     const iconOnAccent = theme.palette.getContrastText(accent);
     const iconInline = map[key].iconInline;
@@ -75,7 +76,11 @@ const useActivityUtils = () => {
       case "TICKET_UPDATED":
         return {
           primary: `Ticket updated: ${ticket.title || "Untitled ticket"}`,
-          secondary: `Updated by ${data.updatedBy || "Someone"}`,
+          secondary: data.newStatus === 'DELETED'
+            ? `Deleted by ${data.updatedBy || "Someone"}`
+            : data.newStatus === 'RESTORED'
+            ? `Restored by ${data.updatedBy || "Someone"}`
+            : `${data.newStatus ? `Status → ${data.newStatus.replace('_', ' ')}` : 'Updated'} by ${data.updatedBy || "Someone"}`,
         };
       case "TICKET_ASSIGNED":
         return {
@@ -86,6 +91,11 @@ const useActivityUtils = () => {
         return {
           primary: `New comment on: ${ticket.title || "Untitled ticket"}`,
           secondary: `Comment by ${data.commentBy || "Someone"}`,
+        };
+      case "COMMENT_DELETED":
+        return {
+          primary: `Comment deleted on: ${ticket.title || "Untitled ticket"}`,
+          secondary: `Deleted by ${data.commentBy || "Someone"}`,
         };
       default:
         return { primary: "New activity", secondary: "" };

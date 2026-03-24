@@ -30,5 +30,6 @@ const router = express.Router();
  *         $ref: '#/components/responses/BadRequest'
  */
 router.post('/:id/comments', authenticateToken, validate(createCommentSchema), commentsController.createComment);
+router.delete('/:id/comments/:commentId', authenticateToken, commentsController.deleteComment);
 
 export default router;
