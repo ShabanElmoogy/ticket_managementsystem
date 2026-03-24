@@ -969,7 +969,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
           sx: { borderRadius: 2, minWidth: 200 },
         }}
       >
-        <MenuItem onClick={() => onTicketClick(ticket)}>
+        <MenuItem onClick={() => { onTicketClick(ticket); handleMenuClose(); }}>
           <CommentIcon sx={{ mr: 2 }} />
           View Details
         </MenuItem>

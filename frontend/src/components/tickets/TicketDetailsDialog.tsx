@@ -169,10 +169,56 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>{ticket.title}</Typography>
-          <Tooltip title={`Activity log (${activities.length})`}>
-            <IconButton size="small" onClick={() => setActivityDialogOpen(true)}>
-              <HistoryIcon fontSize="small" />
-            </IconButton>
+          <Tooltip title="View activity log">
+            <Box
+              onClick={() => setActivityDialogOpen(true)}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                px: 1.5,
+                py: 0.6,
+                borderRadius: 2,
+                cursor: 'pointer',
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(79,70,229,0.25) 100%)'
+                    : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                border: '1px solid',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'transparent',
+                boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 14px rgba(99,102,241,0.45)',
+                },
+                '&:active': { transform: 'translateY(0)' },
+              }}
+            >
+              <HistoryIcon sx={{ fontSize: 16, color: '#fff' }} />
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                Activity
+              </Typography>
+              {activities.length > 0 && (
+                <Box
+                  sx={{
+                    minWidth: 18,
+                    height: 18,
+                    borderRadius: '9px',
+                    bgcolor: 'rgba(255,255,255,0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    px: 0.5,
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.6rem', color: '#fff', fontWeight: 800, lineHeight: 1 }}>
+                    {activities.length}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Tooltip>
         </Box>
       </DialogTitle>
