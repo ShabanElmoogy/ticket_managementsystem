@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Tooltip,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -40,6 +41,7 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
+import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/dateUtils";
 import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
@@ -62,7 +64,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   onUpdateStatus,
   onAddComment,
   onTicketClick,
-  onDeleteTicket,
+  onDeleteTicket: _onDeleteTicket,
 }) => {
   const { user, token } = useAuthStore();
   const queryClient = useQueryClient();
@@ -670,7 +672,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
                     color: new Date(ticket.dueDate) < new Date() ? "error.main" : "text.primary"
                   }}
                 >
-                  {new Date(ticket.dueDate).toLocaleDateString()}
+                  {formatDate(ticket.dueDate)}
                 </Typography>
               </Box>
             )}
@@ -1219,9 +1221,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{activity.user.name}</Typography>
                           <Chip label={activity.action.replace('_', ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }} />
                         </Box>
-                        <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
-                          {new Date(activity.createdAt).toLocaleString()}
-                        </Typography>
+                        <Tooltip title={formatDateTime(activity.createdAt)}>
+                          <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1, cursor: 'default' }}>
+                            {formatRelativeDuration(activity.createdAt)}
+                          </Typography>
+                        </Tooltip>
                       </Box>
                       <Typography variant="body2" color="text.secondary">{getActivityLabel(activity)}</Typography>
                     </Paper>

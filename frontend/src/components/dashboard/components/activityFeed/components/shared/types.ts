@@ -17,4 +17,4 @@ export interface ActivityFeedProps {
   onTicketClick: (ticket: any) => void;
 }
 
-export type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
+export type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "TICKET_DELETED" | "TICKET_RESTORED";

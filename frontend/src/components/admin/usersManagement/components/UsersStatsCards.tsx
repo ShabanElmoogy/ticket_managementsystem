@@ -37,13 +37,13 @@ const createUserStatItems = (stats: UserStats): StatItem[] => {
     },
     {
       title: "Administrators",
-      value: stats.byRole?.ADMIN || 0,
+      value: stats.byRole?.TENANT_ADMIN || 0,
       icon: AdminsIcon,
       color: "#7c3aed",
       bgColor: "rgba(124, 58, 237, 0.1)",
       gradient: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
       percentage:
-        total > 0 ? ((stats.byRole?.ADMIN || 0) / total) * 100 : 0,
+        total > 0 ? ((stats.byRole?.TENANT_ADMIN || 0) / total) * 100 : 0,
     },
     {
       title: "Employees",

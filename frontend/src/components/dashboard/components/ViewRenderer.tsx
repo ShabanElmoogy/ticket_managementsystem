@@ -50,6 +50,8 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         onTakeTicket={dashboardProps.handleTakeTicket}
         onUpdateStatus={dashboardProps.handleUpdateTicketStatus}
         onAddComment={dashboardProps.handleAddComment}
+        overdueFilter={dashboardProps.overdueFilter}
+        setOverdueFilter={dashboardProps.setOverdueFilter}
         onDeleteTicket={dashboardProps.handleDeleteTicket}
       />
 
@@ -77,7 +79,7 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         onOpenSort={() => {
           dashboardProps.showSnackbar("Sort functionality coming soon!", "info");
         }}
-        showCreateButton={dashboardProps.user?.role === "ADMIN"}
+        showCreateButton={dashboardProps.user?.role === "TENANT_ADMIN" || dashboardProps.user?.role === "SUPER_ADMIN"}
         onCreateTicket={() => {
           const createElement = document.querySelector('[data-testid="create-ticket"]');
           if (createElement) createElement.scrollIntoView({ behavior: "smooth" });

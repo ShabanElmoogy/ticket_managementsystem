@@ -20,13 +20,14 @@ import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
     updatedBy?: string;
     assignedTo?: string;
     commentBy?: string;
+    newStatus?: string;
   };
   timestamp: string;
   read?: boolean;
@@ -36,7 +37,7 @@ type ActivityFeedProps = {
   onTicketClick?: (ticket: Ticket) => void;
 };
 
-type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
+type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "TICKET_DELETED" | "TICKET_RESTORED";
 
 const useActivitySocket = (
   onNotification: () => void
@@ -192,7 +193,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
     let filtered = activities;
 
     // Filter by type
-    if (typeFilter !== "ALL") {
+    if (typeFilter === "TICKET_DELETED") {
+      filtered = filtered.filter((a) => a.type === "TICKET_UPDATED" && (a as any).data?.newStatus === "DELETED");
+    } else if (typeFilter === "TICKET_RESTORED") {
+      filtered = filtered.filter((a) => a.type === "TICKET_UPDATED" && (a as any).data?.newStatus === "RESTORED");
+    } else if (typeFilter === "TICKET_UPDATED") {
+      filtered = filtered.filter((a) => a.type === "TICKET_UPDATED" && (a as any).data?.newStatus !== "DELETED" && (a as any).data?.newStatus !== "RESTORED");
+    } else if (typeFilter !== "ALL") {
       filtered = filtered.filter((a: ActivityItemType) => a.type === typeFilter);
     }
 
@@ -231,6 +238,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
         expanded={expanded}
         unreadCount={unreadCount}
         typeFilter={typeFilter}
+        activities={activities}
         onToggleExpanded={handleToggleExpanded}
         onClearAll={handleClearAll}
         onTypeFilterChange={(filter) => setTypeFilter(filter as ActivityTypeFilter)}

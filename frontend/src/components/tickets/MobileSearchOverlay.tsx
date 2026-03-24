@@ -218,7 +218,7 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({
                     <ListItemAvatar>
                       <Avatar
                         sx={{
-                          backgroundColor: ticket.createdBy?.role === 'ADMIN' ? '#ef4444' : '#10b981',
+                          backgroundColor: (ticket.createdBy?.role === 'TENANT_ADMIN' || ticket.createdBy?.role === 'SUPER_ADMIN') ? '#ef4444' : '#10b981',
                           width: 40,
                           height: 40,
                         }}

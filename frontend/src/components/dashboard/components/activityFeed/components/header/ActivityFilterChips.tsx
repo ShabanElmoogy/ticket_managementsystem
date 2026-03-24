@@ -5,70 +5,124 @@ import {
   Chip,
   Fade,
 } from "@mui/material";
-import {
-  FilterList as FilterIcon,
-} from "@mui/icons-material";
 
 interface ActivityFilterChipsProps {
   typeFilter: string;
   onTypeFilterChange: (filter: string) => void;
+  activities?: any[];
 }
 
 export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
   typeFilter,
   onTypeFilterChange,
+  activities = [],
 }) => {
+  const counts = {
+    ALL: activities.length,
+    TICKET_ASSIGNED: activities.filter((a) => a.type === "TICKET_ASSIGNED").length,
+    TICKET_CREATED: activities.filter((a) => a.type === "TICKET_CREATED").length,
+    COMMENT_ADDED: activities.filter((a) => a.type === "COMMENT_ADDED").length,
+    COMMENT_DELETED: activities.filter((a) => a.type === "COMMENT_DELETED").length,
+    TICKET_UPDATED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus !== "DELETED" && a.data?.newStatus !== "RESTORED").length,
+    TICKET_DELETED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus === "DELETED").length,
+    TICKET_RESTORED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus === "RESTORED").length,
+  };
+
   const filterConfigs = [
     {
       key: "ALL",
       label: "All Activities",
-      color: "default",
       icon: "📋",
       bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.grey[50]} 0%, ${theme.palette.grey[1000]} 100%)`,
-      hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.grey[100]} 0%, ${theme.palette.grey[200]} 100%)`,
+      hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}15)`,
+      badgeColor: '#6b7280',
     },
     {
       key: "TICKET_ASSIGNED",
       label: "Assignments",
-      color: "primary",
       icon: "👤",
       bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}10)`,
       hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.primary.light}30, ${theme.palette.primary.main}20)`,
+      badgeColor: '#3b82f6',
     },
     {
       key: "TICKET_CREATED",
       label: "New Tickets",
-      color: "success",
       icon: "🎫",
       bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.success.light}20, ${theme.palette.success.main}10)`,
       hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.success.light}30, ${theme.palette.success.main}20)`,
+      badgeColor: '#10b981',
     },
     {
       key: "COMMENT_ADDED",
       label: "Comments",
-      color: "secondary",
       icon: "💬",
       bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.secondary.light}20, ${theme.palette.secondary.main}10)`,
       hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.secondary.light}30, ${theme.palette.secondary.main}20)`,
+      badgeColor: '#8b5cf6',
+    },
+    {
+      key: "COMMENT_DELETED",
+      label: "Comment Deleted",
+      icon: "🗨️",
+      bgColor: () => `linear-gradient(135deg, rgba(239,68,68,0.08), rgba(220,38,38,0.05))`,
+      hoverColor: () => `linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.1))`,
+      badgeColor: '#f87171',
+    },
+    {
+      key: "TICKET_UPDATED",
+      label: "Updated Tickets",
+      icon: "✏️",
+      bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.warning.light}20, ${theme.palette.warning.main}10)`,
+      hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.warning.light}30, ${theme.palette.warning.main}20)`,
+      badgeColor: '#f59e0b',
+    },
+    {
+      key: "TICKET_DELETED",
+      label: "Deleted Tickets",
+      icon: "🗑️",
+      bgColor: () => `linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.08))`,
+      hoverColor: () => `linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.15))`,
+      badgeColor: '#ef4444',
+    },
+    {
+      key: "TICKET_RESTORED",
+      label: "Restored Tickets",
+      icon: "♻️",
+      bgColor: () => `linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.08))`,
+      hoverColor: () => `linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.15))`,
+      badgeColor: '#10b981',
     },
   ];
 
   return (
-    <>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-        <FilterIcon sx={{ fontSize: 20, color: "primary.main" }} />
-        <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>
-          Filter by Activity Type
-        </Typography>
-      </Box>
-      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
         {filterConfigs.map((filter, index) => (
           <Fade in key={filter.key} timeout={300 + index * 100}>
             <Chip
               label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
                   <span style={{ fontSize: "14px" }}>{filter.icon}</span>
                   {filter.label}
+                  {counts[filter.key as keyof typeof counts] > 0 && (
+                    <Box
+                      sx={{
+                        minWidth: 18,
+                        height: 18,
+                        borderRadius: '9px',
+                        bgcolor: filter.badgeColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        px: 0.5,
+                        ml: 0.25,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '0.6rem', color: '#fff', fontWeight: 800, lineHeight: 1 }}>
+                        {counts[filter.key as keyof typeof counts]}
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               }
               size="small"
@@ -80,6 +134,7 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
                 px: 1.5,
                 py: 0.75,
                 borderRadius: "20px",
+                width: filter.key === 'ALL' || filter.key === 'COMMENT_DELETED' || filter.key === 'COMMENT_ADDED' || filter.key === 'TICKET_UPDATED' || filter.key === 'TICKET_DELETED' || filter.key === 'TICKET_RESTORED' ? '100%' : 'calc(50% - 4px)',
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 background: typeFilter === filter.key
                   ? (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.light}25)`
@@ -92,7 +147,7 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
                   : "divider",
                 color: typeFilter === filter.key
                   ? (theme) => theme.palette.primary.contrastText || "white"
-                  : "text.primary",
+                  : (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111827',
                 boxShadow: typeFilter === filter.key
                   ? (theme) => `0 2px 8px ${theme.palette.primary.main}30`
                   : "none",
@@ -104,17 +159,19 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
                   background: typeFilter === filter.key
                     ? (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.primary.light}30)`
                     : filter.hoverColor,
+                  color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111827',
+                  '& .MuiChip-label': { color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#111827' },
                 },
                 "& .MuiChip-label": {
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
+                  color: (theme: any) => theme.palette.mode === 'dark' ? '#fff' : '#111827',
                 },
               }}
             />
           </Fade>
         ))}
       </Box>
-    </>
   );
 };

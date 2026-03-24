@@ -1,6 +1,6 @@
 import React, { type Dispatch, type SetStateAction } from "react";
 import { Box, Container } from "@mui/material";
-import type { DashboardStats } from "../../../services/api";
+import type { DashboardStats } from "../../../types/dashboard";
 import { type Ticket, type User, type Customer, type Application, type CreateTicketData } from "../../../services/api";
 import StatsCards from "./StatsCards";
 import CreateTicketPost from "../../tickets/CreateTicketPost";

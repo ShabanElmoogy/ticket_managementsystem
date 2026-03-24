@@ -20,6 +20,7 @@ import { ExpandMore as ExpandMoreIcon, Delete as DeleteIcon, History as HistoryI
 import { ticketsApi, type Ticket, type Comment, type TicketActivity } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
 
 interface TicketDetailsDialogProps {
   open: boolean;
@@ -112,7 +113,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 
   if (!ticket) return null;
 
-  const canUpdateStatus = user?.role === 'ADMIN' || ticket.assignedTo?.id === user?.id;
+  const canUpdateStatus = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN' || ticket.assignedTo?.id === user?.id;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -311,7 +312,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                   <Typography variant="subtitle2">{comment.user.name}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="caption" color="textSecondary">
-                      {new Date(comment.createdAt).toLocaleString()}
+                      {formatDateTime(comment.createdAt)}
                     </Typography>
                     {(comment.userId === user?.id || comment.user?.id === user?.id) && (
                       <Tooltip title="Delete comment">
@@ -319,6 +320,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                           size="small"
                           onClick={() => handleDeleteComment(comment.id)}
                           disabled={deletingCommentId === comment.id}
+                          sx={{ color: 'error.main' }}
                         >
                           {deletingCommentId === comment.id
                             ? <CircularProgress size={14} />
@@ -572,9 +574,11 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                           }}
                         />
                       </Box>
-                      <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </Typography>
+                      <Tooltip title={formatDateTime(activity.createdAt)}>
+                        <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1, cursor: 'default' }}>
+                          {formatRelativeDuration(activity.createdAt)}
+                        </Typography>
+                      </Tooltip>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
                       {getActivityLabel(activity)}

@@ -236,7 +236,7 @@ const DesktopFilters: React.FC<Props> = memo(({
                         width: 20,
                         height: 20,
                         borderRadius: "50%",
-                        backgroundColor: user.role === "ADMIN" ? "#ef4444" : "#10b981",
+                        backgroundColor: (user.role === "TENANT_ADMIN" || user.role === "SUPER_ADMIN") ? "#ef4444" : "#10b981",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",

@@ -1,0 +1,183 @@
+# 🚀 Feature Suggestions — Ticket Management System
+
+## 🔴 High Impact — Core Lifecycle
+
+These features directly improve how tickets are created, tracked, and resolved.
+
+---
+
+### 1. ⏱️ Actual Hours Tracking
+**What:** Allow employees to log actual hours spent on a ticket (separate from estimated hours).
+
+**Why:** Enables comparison between estimated vs actual effort, useful for billing and planning.
+
+**Implementation:**
+- Add `actualHours` field to ticket (already exists in schema)
+- Add input in `TicketDetailsDialog` and `TicketPost` for employees to update it
+- Show `Est: Xh / Actual: Yh` side by side in ticket cards
+- Add to dashboard KPIs: average estimation accuracy
+
+---
+
+### 2. 🔁 Ticket Re-assignment
+**What:** Allow admins to reassign a ticket from one employee to another.
+
+**Why:** Workload balancing, employee absence, or escalation scenarios.
+
+**Implementation:**
+- Add "Reassign" option in ticket menu (admin only)
+- Open a dialog with a user selector (dropdown of employees)
+- Call `PATCH /tickets/:id` with new `assignedToId`
+- Log `ASSIGNED` activity with old and new assignee
+- Send notification to new assignee
+
+---
+
+### 3. 📅 Due Date Editing
+**What:** Allow admins/employees to edit the due date of an existing ticket.
+
+**Why:** Deadlines change — tickets need to reflect reality.
+
+**Implementation:**
+- Add "Edit Due Date" option in ticket menu
+- Use a MUI `DatePicker` in a small dialog
+- Call `PATCH /tickets/:id` with new `dueDate`
+- Log `UPDATED` activity
+- Re-evaluate overdue badge after update
+
+---
+
+### 4. 📦 Bulk Status Update
+**What:** Select multiple tickets and update their status at once.
+
+**Why:** Saves time when closing/resolving a batch of tickets after a release or sprint.
+
+**Implementation:**
+- Add checkbox selection mode to ticket list
+- Show floating action bar when tickets are selected
+- "Mark as Resolved", "Mark as Closed", "Delete" bulk actions
+- Backend: `PATCH /tickets/bulk` endpoint accepting array of IDs + status
+
+---
+
+### 5. 🔍 Backend Search
+**What:** Full-text search across ticket title and description from the backend.
+
+**Why:** Current search is client-side and limited to loaded tickets. Backend search covers all tickets.
+
+**Implementation:**
+- Add `search` query param to `GET /tickets`
+- Use PostgreSQL `ILIKE` or `tsvector` full-text search
+- Debounced search input in dashboard filters
+- Replace client-side filter with API call
+
+---
+
+### 6. ⏰ Priority Auto-Escalation
+**What:** Automatically escalate ticket priority if it remains unresolved past its due date.
+
+**Why:** Ensures overdue tickets get attention without manual intervention.
+
+**Implementation:**
+- Backend cron job (e.g. every hour) checks tickets where `dueDate < now` and `status IN (OPEN, IN_PROGRESS)`
+- Escalate: LOW → MEDIUM → HIGH → URGENT
+- Log `PRIORITY_CHANGED` activity with reason `"Auto-escalated: overdue"`
+- Send notification to assigned employee and admin
+
+---
+
+### 7. 📎 File Attachments
+**What:** Allow users to attach files (screenshots, logs, documents) to tickets or comments.
+
+**Why:** Context is critical for technical support — attachments reduce back-and-forth.
+
+**Implementation:**
+- Add file upload to ticket creation and comment forms
+- Store files in S3 / local storage
+- Show attachment thumbnails/links in ticket detail view
+- Backend: `POST /tickets/:id/attachments` endpoint
+
+---
+
+### 8. 🏷️ Ticket Templates
+**What:** Pre-defined ticket templates for common issue types (e.g. "Bug Report", "Feature Request", "Access Issue").
+
+**Why:** Speeds up ticket creation and ensures consistent information is captured.
+
+**Implementation:**
+- Admin creates templates with pre-filled title, description, priority, labels
+- "Use Template" button in ticket creation dialog
+- Store templates in DB: `ticketTemplates` table
+- Frontend: template selector dropdown in create dialog
+
+---
+
+### 9. 👥 Ticket Watchers
+**What:** Allow users to "watch" a ticket and receive notifications on updates without being the assignee.
+
+**Why:** Managers, QA, or stakeholders may need visibility without owning the ticket.
+
+**Implementation:**
+- Add `ticketWatchers` join table (`ticketId`, `userId`)
+- "Watch / Unwatch" button in ticket detail
+- Include watchers in notification dispatch on ticket updates
+- Show watcher count/avatars in ticket card
+
+---
+
+### 10. 💬 Comment Mentions
+**What:** `@mention` users in comments to notify them directly.
+
+**Why:** Speeds up collaboration and ensures the right person sees a comment.
+
+**Implementation:**
+- Parse `@username` in comment content on submit
+- Highlight mentions in rendered comment text
+- Send targeted notification to mentioned users
+- Backend: extract mentions before saving comment
+
+---
+
+### 11. 📊 Resolution Time KPI
+**What:** Track and display average time from ticket creation to resolution.
+
+**Why:** Key metric for support team performance and SLA compliance.
+
+**Implementation:**
+- Compute `resolvedAt - createdAt` when status changes to `RESOLVED`
+- Store `resolvedAt` timestamp on ticket
+- Dashboard KPI card: "Avg Resolution Time"
+- Breakdown by priority, employee, or customer in reports
+
+---
+
+### 12. 📤 Export Tickets
+**What:** Export filtered ticket list to CSV or PDF.
+
+**Why:** Reporting, auditing, and sharing with stakeholders outside the system.
+
+**Implementation:**
+- "Export" button in dashboard filters bar
+- Exports currently filtered/visible tickets
+- CSV: raw data for spreadsheets
+- PDF: formatted report with logo, date range, summary stats
+- Backend: `GET /tickets/export?format=csv|pdf`
+
+---
+
+## 📋 Summary Table
+
+| # | Feature | Impact | Effort | Priority |
+|---|---------|--------|--------|----------|
+| 1 | Actual Hours Tracking | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
+| 2 | Ticket Re-assignment | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
+| 3 | Due Date Editing | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
+| 4 | Bulk Status Update | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
+| 5 | Backend Search | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
+| 6 | Priority Auto-Escalation | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
+| 7 | File Attachments | 🟡 Medium | 🔴 High | ⭐⭐⭐ |
+| 8 | Ticket Templates | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
+| 9 | Ticket Watchers | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
+| 10 | Comment Mentions | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
+| 11 | Resolution Time KPI | 🟡 Medium | 🟢 Low | ⭐⭐⭐⭐ |
+| 12 | Export Tickets | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |

@@ -217,7 +217,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                             width: 16,
                             height: 16,
                             borderRadius: '50%',
-                            backgroundColor: user.role === 'ADMIN' ? '#ef4444' : '#10b981',
+                            backgroundColor: (user.role === 'TENANT_ADMIN' || user.role === 'SUPER_ADMIN') ? '#ef4444' : '#10b981',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

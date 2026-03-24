@@ -45,7 +45,6 @@ function UsersPageComponent(props: UsersPageProps) {
   const {
     entities: users,
     loading,
-    create,
     update,
     remove,
     refetch,
@@ -228,7 +227,7 @@ function UsersPageComponent(props: UsersPageProps) {
         addButtonText="Add User"
         addTooltip="Add User"
         icon={PeopleIcon}
-        extraActions={
+        rightActions={
           isTenantAdmin ? null : (
             <>
               <button

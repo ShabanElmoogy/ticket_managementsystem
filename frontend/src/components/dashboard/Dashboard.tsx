@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
     <Box>
       <Header onTicketClick={handleTicketClick} />
       <Toolbar sx={{ minHeight: { xs: 56, sm: 64, md: 70 } }} />
-      <DashboardContent {...dashboardProps} onAddComment={dashboardProps.handleAddComment} onCreateTicket={dashboardProps.handleCreateTicket} onRefresh={dashboardProps.fetchData} onTicketClick={dashboardProps.handleTicketClick} onTakeTicket={dashboardProps.handleTakeTicket} onUpdateStatus={dashboardProps.handleUpdateTicketStatus} />
+      <DashboardContent {...dashboardProps} onAddComment={dashboardProps.handleAddComment} onCreateTicket={dashboardProps.handleCreateTicket} onRefresh={dashboardProps.fetchData} onTicketClick={dashboardProps.handleTicketClick} onTakeTicket={dashboardProps.handleTakeTicket} onUpdateStatus={dashboardProps.handleUpdateTicketStatus} onDeleteTicket={dashboardProps.handleDeleteTicket} />
       <TicketDetailsDialog
         open={dashboardProps.detailsDialogOpen}
         onClose={() => dashboardProps.setDetailsDialogOpen(false)}

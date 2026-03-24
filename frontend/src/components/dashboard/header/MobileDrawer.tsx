@@ -65,7 +65,7 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
             sx={{
               width: 48,
               height: 48,
-              backgroundColor: user?.role === "ADMIN" ? "#ef4444" : "#10b981",
+              backgroundColor: (user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN") ? "#ef4444" : "#10b981",
               fontSize: "1rem",
               fontWeight: 600,
             }}
@@ -81,14 +81,14 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
               size="small"
               sx={{
                 backgroundColor:
-                  user?.role === "ADMIN"
+                  (user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN")
                     ? "rgba(239, 68, 68, 0.3)"
                     : "rgba(16, 185, 129, 0.3)",
                 color: "white",
                 fontWeight: 500,
                 fontSize: "0.75rem",
                 border: `1px solid ${
-                  user?.role === "ADMIN"
+                  (user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN")
                     ? "rgba(239, 68, 68, 0.5)"
                     : "rgba(16, 185, 129, 0.5)"
                 }`,

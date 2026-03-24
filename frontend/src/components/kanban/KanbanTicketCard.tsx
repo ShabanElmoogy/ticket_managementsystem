@@ -21,7 +21,8 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
-import { format, isBefore, addDays } from 'date-fns';
+import { isBefore, addDays } from 'date-fns';
+import { formatDate } from '../../utils/dateUtils';
 import type { KanbanTicket, Priority } from '../../types/kanban';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
 import WhatsAppButton from '../WhatsAppButton';
@@ -286,7 +287,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
 
             {/* Due date */}
             {ticket.dueDate && (
-              <Tooltip title={`Due: ${format(new Date(ticket.dueDate), 'MMM dd, yyyy')}`}>
+              <Tooltip title={`Due: ${formatDate(ticket.dueDate)}`}>
                 <Box 
                   display="flex" 
                   alignItems="center" 
@@ -316,9 +317,7 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
                       fontSize: '0.7rem'
                     }}
                   >
-                    {format(new Date(ticket.dueDate), 'MMM dd')}
-                    {dueDateStatus?.status === 'overdue' && ' (Overdue)'}
-                    {dueDateStatus?.status === 'due-soon' && ' (Due Soon)'}
+                    {formatDate(ticket.dueDate)}
                   </Typography>
                 </Box>
               </Tooltip>
