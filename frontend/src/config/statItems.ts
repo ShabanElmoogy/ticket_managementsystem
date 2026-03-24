@@ -4,6 +4,7 @@ import {
   FiberNew as OpenIcon,
   Autorenew as ProgressIcon,
   CheckCircle as ResolvedIcon,
+  Cancel as ClosedIcon,
 } from "@mui/icons-material";
 import { type StatItem, type DashboardStats } from "../types/dashboard";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -54,6 +55,18 @@ export const CreateStatItems = (stats: DashboardStats): StatItem[] => {
       percentage:
         stats.totalTickets > 0
           ? (stats.resolvedTickets / stats.totalTickets) * 100
+          : 0,
+    },
+    {
+      title: "Closed",
+      value: stats.closedTickets,
+      icon: ClosedIcon,
+      color: "#6b7280",
+      bgColor: "rgba(107, 114, 128, 0.1)",
+      gradient: "linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)",
+      percentage:
+        stats.totalTickets > 0
+          ? (stats.closedTickets / stats.totalTickets) * 100
           : 0,
     },
   ];

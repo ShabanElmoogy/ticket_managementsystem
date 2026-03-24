@@ -4,6 +4,7 @@ export interface DashboardStats {
   openTickets: number;
   inProgressTickets: number;
   resolvedTickets: number;
+  closedTickets: number;
 }
 
 export interface ActiveFilters {

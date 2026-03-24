@@ -14,6 +14,8 @@ import {
   TextField,
   Badge,
   Paper,
+  Chip,
+  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,6 +34,10 @@ import {
   Send as SendIcon,
   Delete as DeleteIcon,
   RestoreFromTrash as RestoreIcon,
+  History as HistoryIcon,
+  OpenInFull as MaximizeIcon,
+  CloseFullscreen as MinimizeIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import type { Ticket, Comment } from "../../services/api";
@@ -39,6 +45,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
 import { useQueryClient } from "@tanstack/react-query";
 import MyChip from "../common/MyChip";
+import { type TicketActivity } from '../../services/api';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -73,6 +80,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityMaximized, setActivityMaximized] = useState(false);
+  const [activities, setActivities] = useState<TicketActivity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesFetched, setActivitiesFetched] = useState(false);
 
   const isDeleted = !!ticket.deletedAt;
 
@@ -237,6 +249,50 @@ const TicketPost: React.FC<TicketPostProps> = ({
     }
   };
 
+  const handleOpenActivityDialog = async () => {
+    setActivityDialogOpen(true);
+    if (activitiesFetched) return;
+    setActivitiesLoading(true);
+    try {
+      const data = await ticketsApi.getTicket(ticket.id);
+      setActivities(data.activities || []);
+      setActivitiesFetched(true);
+    } catch (e) {
+      console.error('Error fetching activities:', e);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  const getActivityColor = (action: string) => {
+    switch (action) {
+      case 'CREATED': return '#10b981';
+      case 'STATUS_CHANGED': return '#3b82f6';
+      case 'PRIORITY_CHANGED': return '#f59e0b';
+      case 'ASSIGNED': return '#8b5cf6';
+      case 'COMMENTED': return '#6366f1';
+      case 'COMMENT_DELETED': return '#ef4444';
+      case 'DELETED': return '#ef4444';
+      case 'RESTORED': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+  const getActivityLabel = (activity: TicketActivity) => {
+    switch (activity.action) {
+      case 'CREATED': return 'created this ticket';
+      case 'STATUS_CHANGED': return `changed status to ${activity.newValue?.replace('_', ' ')}`;
+      case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
+      case 'ASSIGNED': return 'took this ticket';
+      case 'COMMENTED': return 'added a comment';
+      case 'COMMENT_DELETED': return 'deleted a comment';
+      case 'UPDATED': return 'updated this ticket';
+      case 'DELETED': return 'deleted this ticket';
+      case 'RESTORED': return 'restored this ticket';
+      default: return activity.description;
+    }
+  };
+
   const handleRestore = async () => {
     setRestoring(true);
     try {
@@ -248,6 +304,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
       setRestoring(false);
     }
   };
+
+  const isOverdue = !!ticket.dueDate
+    && new Date(ticket.dueDate) < new Date()
+    && !['RESOLVED', 'CLOSED'].includes(ticket.status)
+    && !isDeleted;
 
   const shouldTruncate = ticket.description.length > 200;
   const displayDescription =
@@ -445,6 +506,37 @@ const TicketPost: React.FC<TicketPostProps> = ({
               }
               statusColor={getStatusColor(ticket.status)}
             />
+
+            {isOverdue && (
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1,
+                  py: 0.4,
+                  borderRadius: 2,
+                  background: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(220,38,38,0.2))'
+                      : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  border: '1px solid',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(239,68,68,0.5)' : 'transparent',
+                  boxShadow: '0 2px 6px rgba(239,68,68,0.35)',
+                  animation: 'overduePulse 2s ease-in-out infinite',
+                  '@keyframes overduePulse': {
+                    '0%, 100%': { boxShadow: '0 2px 6px rgba(239,68,68,0.35)' },
+                    '50%': { boxShadow: '0 2px 12px rgba(239,68,68,0.6)' },
+                  },
+                }}
+              >
+                <ScheduleIcon sx={{ fontSize: 12, color: '#fff' }} />
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: '0.05em' }}>
+                  OVERDUE
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
 
@@ -741,6 +833,42 @@ const TicketPost: React.FC<TicketPostProps> = ({
               "Comment"
             )}
           </Button>
+
+          {/* Activity Log Button */}
+          <Box
+            onClick={handleOpenActivityDialog}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 1.5,
+              py: 0.6,
+              borderRadius: 2,
+              cursor: 'pointer',
+              background: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(79,70,229,0.25) 100%)'
+                  : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              border: '1px solid',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'transparent',
+              boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+              transition: 'all 0.2s',
+              flexShrink: 0,
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 14px rgba(99,102,241,0.45)',
+              },
+              '&:active': { transform: 'translateY(0)' },
+            }}
+          >
+            <HistoryIcon sx={{ fontSize: 16, color: '#fff' }} />
+            {!isMobile && (
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                Activity
+              </Typography>
+            )}
+          </Box>
         </Box>
       </CardActions>
 
@@ -1018,6 +1146,92 @@ const TicketPost: React.FC<TicketPostProps> = ({
           ),
         ]}
       </Menu>
+
+      {/* Activity Log Dialog */}
+      <Dialog
+        open={activityDialogOpen}
+        onClose={() => { setActivityDialogOpen(false); setActivityMaximized(false); }}
+        maxWidth={activityMaximized ? false : 'sm'}
+        fullWidth
+        fullScreen={activityMaximized}
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            borderRadius: activityMaximized ? 0 : 3,
+            overflow: 'hidden',
+            ...(activityMaximized ? {} : { maxHeight: '80vh' }),
+          },
+        }}
+      >
+        <Box
+          sx={{
+            px: 3, py: 2,
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+                : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            display: 'flex', alignItems: 'center', gap: 1.5,
+          }}
+        >
+          <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <HistoryIcon sx={{ color: '#fff', fontSize: 20 }} />
+          </Box>
+          <Box flex={1}>
+            <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2 }}>Activity Log</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{ticket.title}</Typography>
+          </Box>
+          <Chip label={`${activities.length} event${activities.length !== 1 ? 's' : ''}`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600, border: 'none' }} />
+          <IconButton size="small" onClick={() => setActivityMaximized((v) => !v)} sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}>
+            {activityMaximized ? <MinimizeIcon fontSize="small" /> : <MaximizeIcon fontSize="small" />}
+          </IconButton>
+          <IconButton size="small" onClick={() => { setActivityDialogOpen(false); setActivityMaximized(false); }} sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0f172a' : '#f8fafc' }}>
+          {activitiesLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" py={6}>
+              <CircularProgress size={32} sx={{ color: '#6366f1' }} />
+            </Box>
+          ) : activities.length === 0 ? (
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={8} gap={2}>
+              <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <HistoryIcon sx={{ fontSize: 32, color: '#6366f1', opacity: 0.6 }} />
+              </Box>
+              <Typography variant="body2" color="text.secondary">No activity recorded yet</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ overflowY: 'auto', flex: 1, px: 3, py: 2 }}>
+              {activities.map((activity, index) => (
+                <Box key={activity.id} display="flex" gap={2}>
+                  <Box display="flex" flexDirection="column" alignItems="center" sx={{ minWidth: 40 }}>
+                    <Avatar sx={{ width: 36, height: 36, fontSize: '0.8rem', fontWeight: 700, bgcolor: getActivityColor(activity.action), boxShadow: `0 0 0 3px ${getActivityColor(activity.action)}33` }}>
+                      {activity.user.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                    {index < activities.length - 1 && (
+                      <Box sx={{ width: 2, flex: 1, minHeight: 20, my: 0.5, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.03))' : 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.03))', borderRadius: 1 }} />
+                    )}
+                  </Box>
+                  <Box pb={index < activities.length - 1 ? 2 : 0} flex={1} sx={{ minWidth: 0 }}>
+                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 12px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)' } }}>
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{activity.user.name}</Typography>
+                          <Chip label={activity.action.replace('_', ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }} />
+                        </Box>
+                        <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1 }}>
+                          {new Date(activity.createdAt).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">{getActivityLabel(activity)}</Typography>
+                    </Paper>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} disableScrollLock>

@@ -19,6 +19,7 @@ interface Props {
   applicationFilter: string;
   searchQuery: string;
   deletedFilter: 'active' | 'deleted';
+  overdueFilter: boolean;
   setStatusFilter: Dispatch<SetStateAction<Ticket['status'] | "">>;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
@@ -26,6 +27,7 @@ interface Props {
   setApplicationFilter: (v: string) => void;
   setSearchQuery: (v: string) => void;
   setDeletedFilter: (v: 'active' | 'deleted') => void;
+  setOverdueFilter: (v: boolean) => void;
   allUsers: User[];
   employees: User[];
   customers: Customer[];
@@ -52,6 +54,7 @@ const DashboardContent: React.FC<Props> = ({
   applicationFilter,
   searchQuery,
   deletedFilter,
+  overdueFilter,
   setStatusFilter,
   setPriorityFilter,
   setUserFilter,
@@ -59,6 +62,7 @@ const DashboardContent: React.FC<Props> = ({
   setApplicationFilter,
   setSearchQuery,
   setDeletedFilter,
+  setOverdueFilter,
   allUsers,
   employees,
   customers,
@@ -124,12 +128,14 @@ const DashboardContent: React.FC<Props> = ({
                     customerFilter={customerFilter}
                     applicationFilter={applicationFilter}
                     searchQuery={searchQuery}
+                    overdueFilter={overdueFilter}
                     setStatusFilter={setStatusFilter}
                     setPriorityFilter={setPriorityFilter}
                     setUserFilter={setUserFilter}
                     setCustomerFilter={setCustomerFilter}
                     setApplicationFilter={setApplicationFilter}
                     setSearchQuery={setSearchQuery}
+                    setOverdueFilter={setOverdueFilter}
                     allUsers={allUsers}
                     customers={customers}
                     applications={applications}
@@ -148,6 +154,7 @@ const DashboardContent: React.FC<Props> = ({
                   applicationFilter={applicationFilter}
                   searchQuery={searchQuery}
                   deletedFilter={deletedFilter}
+                  overdueFilter={overdueFilter}
                   setStatusFilter={setStatusFilter}
                   setPriorityFilter={setPriorityFilter}
                   setUserFilter={setUserFilter}
@@ -155,6 +162,7 @@ const DashboardContent: React.FC<Props> = ({
                   setApplicationFilter={setApplicationFilter}
                   setSearchQuery={setSearchQuery}
                   setDeletedFilter={setDeletedFilter}
+                  setOverdueFilter={setOverdueFilter}
                   allUsers={allUsers}
                   customers={customers}
                   applications={applications}

@@ -162,6 +162,31 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
             {ticket.title}
           </Typography>
 
+          {/* Overdue Badge */}
+          {dueDateStatus?.status === 'overdue' && !['RESOLVED', 'CLOSED'].includes(ticket.status) && (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.4,
+                px: 0.75,
+                py: 0.25,
+                mb: 1,
+                borderRadius: 1,
+                background: isDarkMode
+                  ? 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))'
+                  : 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.08))',
+                border: '1px solid',
+                borderColor: isDarkMode ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.3)',
+              }}
+            >
+              <ScheduleIcon sx={{ fontSize: 11, color: isDarkMode ? '#f87171' : '#ef4444' }} />
+              <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: isDarkMode ? '#f87171' : '#ef4444', lineHeight: 1 }}>
+                OVERDUE
+              </Typography>
+            </Box>
+          )}
+
           {/* Labels */}
           {ticket.labels && ticket.labels.length > 0 && (
             <Box display="flex" flexWrap="wrap" gap={0.5} mb={1}>

@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Button, TextField, InputAdornment } from "@mui/material";
-import { Refresh as RefreshIcon, Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
+import { Refresh as RefreshIcon, Search as SearchIcon, Clear as ClearIcon, Schedule as ScheduleIcon } from "@mui/icons-material";
 import { type User, type Customer, type Application, type Ticket } from "../../../services/api";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   applicationFilter: string;
   searchQuery: string;
   deletedFilter: 'active' | 'deleted';
+  overdueFilter: boolean;
   setStatusFilter: (v: Ticket['status'] | "") => void;
   setPriorityFilter: (v: string) => void;
   setUserFilter: (v: string) => void;
@@ -18,6 +19,7 @@ type Props = {
   setApplicationFilter: (v: string) => void;
   setSearchQuery: (v: string) => void;
   setDeletedFilter: (v: 'active' | 'deleted') => void;
+  setOverdueFilter: (v: boolean) => void;
   allUsers: User[];
   customers: Customer[];
   applications: Application[];
@@ -33,6 +35,7 @@ const DesktopFilters: React.FC<Props> = memo(({
   applicationFilter,
   searchQuery,
   deletedFilter,
+  overdueFilter,
   setStatusFilter,
   setPriorityFilter,
   setUserFilter,
@@ -40,6 +43,7 @@ const DesktopFilters: React.FC<Props> = memo(({
   setApplicationFilter,
   setSearchQuery,
   setDeletedFilter,
+  setOverdueFilter,
   allUsers,
   customers,
   applications,
@@ -349,6 +353,39 @@ const DesktopFilters: React.FC<Props> = memo(({
               ))}
             </Select>
           </FormControl>
+
+          <Button
+            onClick={() => setOverdueFilter(!overdueFilter)}
+            size="small"
+            startIcon={<ScheduleIcon sx={{ fontSize: '16px !important', color: overdueFilter ? '#fff' : '#ef4444' }} />}
+            sx={{
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.75,
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              textTransform: 'none',
+              border: '1px solid',
+              transition: 'all 0.2s',
+              color: overdueFilter ? '#fff' : '#ef4444',
+              borderColor: overdueFilter ? 'transparent' : 'rgba(239,68,68,0.4)',
+              background: overdueFilter
+                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                : 'rgba(239,68,68,0.06)',
+              boxShadow: overdueFilter ? '0 2px 8px rgba(239,68,68,0.4)' : 'none',
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(239,68,68,0.35)',
+                background: overdueFilter
+                  ? 'linear-gradient(135deg, #f87171, #ef4444)'
+                  : 'rgba(239,68,68,0.12)',
+                borderColor: overdueFilter ? 'transparent' : 'rgba(239,68,68,0.5)',
+              },
+              '&:active': { transform: 'translateY(0)' },
+            }}
+          >
+            Overdue
+          </Button>
 
           <Button
             variant="outlined"

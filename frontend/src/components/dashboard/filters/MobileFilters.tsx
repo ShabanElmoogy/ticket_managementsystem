@@ -14,6 +14,7 @@ import {
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { type User, type Customer, type Application, type Ticket } from '../../../services/api';
 
@@ -24,12 +25,14 @@ interface MobileFiltersProps {
   customerFilter: string;
   applicationFilter: string;
   searchQuery: string;
+  overdueFilter: boolean;
   setStatusFilter: (value: Ticket['status'] | "") => void;
   setPriorityFilter: (value: string) => void;
   setUserFilter: (value: string) => void;
   setCustomerFilter: (value: string) => void;
   setApplicationFilter: (value: string) => void;
   setSearchQuery: (value: string) => void;
+  setOverdueFilter: (value: boolean) => void;
   allUsers: User[];
   customers: Customer[];
   applications: Application[];
@@ -46,12 +49,14 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   customerFilter,
   applicationFilter,
   searchQuery,
+  overdueFilter,
   setStatusFilter,
   setPriorityFilter,
   setUserFilter,
   setCustomerFilter,
   setApplicationFilter,
   setSearchQuery,
+  setOverdueFilter,
   allUsers,
   customers,
   applications,
@@ -60,7 +65,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   loading,
   onRefresh,
 }) => {
-  const hasActiveFilters = !!(statusFilter || priorityFilter || userFilter || customerFilter || applicationFilter || searchQuery);
+  const hasActiveFilters = !!(statusFilter || priorityFilter || userFilter || customerFilter || applicationFilter || searchQuery || overdueFilter);
 
   const clearAllFilters = () => {
     setStatusFilter('');
@@ -69,6 +74,7 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
     setCustomerFilter('');
     setApplicationFilter('');
     setSearchQuery('');
+    setOverdueFilter(false);
   };
 
   return (
@@ -411,6 +417,34 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
                 {filter.label}
               </Button>
             ))}
+            {/* Overdue quick filter */}
+            <Box
+              onClick={() => setOverdueFilter(!overdueFilter)}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 2,
+                cursor: 'pointer',
+                border: '1px solid',
+                transition: 'all 0.2s',
+                ...(overdueFilter ? {
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  borderColor: 'transparent',
+                  boxShadow: '0 2px 6px rgba(239,68,68,0.4)',
+                } : {
+                  borderColor: 'rgba(239,68,68,0.35)',
+                  background: 'rgba(239,68,68,0.06)',
+                }),
+              }}
+            >
+              <ScheduleIcon sx={{ fontSize: 13, color: overdueFilter ? '#fff' : '#ef4444' }} />
+              <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: overdueFilter ? '#fff' : '#ef4444', lineHeight: 1 }}>
+                Overdue
+              </Typography>
+            </Box>
           </Box>
         )}
       </Box>

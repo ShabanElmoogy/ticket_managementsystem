@@ -39,6 +39,7 @@ export const useDashboard = () => {
   const [customerFilter, setCustomerFilter] = useState("");
   const [applicationFilter, setApplicationFilter] = useState("");
   const [deletedFilter, setDeletedFilter] = useState<'active' | 'deleted'>('active');
+  const [overdueFilter, setOverdueFilter] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -56,22 +57,23 @@ export const useDashboard = () => {
   
   // Deferred search to prevent UI blocking
   const tickets = useMemo(() => {
-    if (!searchQuery) return rawTickets;
-    
-    // Limit search to first 100 tickets for instant response
-    const searchLimit = Math.min(rawTickets.length, 100);
-    const q = searchQuery.toLowerCase();
-    const results = [];
-    
-    for (let i = 0; i < searchLimit; i++) {
-      const t: Ticket = rawTickets[i];
-      if (t.title.toLowerCase().includes(q) || t.id.includes(q)) {
-        results.push(t);
-      }
+    let result = rawTickets;
+
+    if (overdueFilter) {
+      const now = new Date();
+      result = result.filter((t) =>
+        t.dueDate &&
+        new Date(t.dueDate) < now &&
+        !['RESOLVED', 'CLOSED'].includes(t.status)
+      );
     }
-    
-    return results;
-  }, [rawTickets, searchQuery]);
+
+    if (!searchQuery) return result;
+    const q = searchQuery.toLowerCase();
+    return result.filter((t) =>
+      t.title.toLowerCase().includes(q) || t.id.includes(q)
+    );
+  }, [rawTickets, searchQuery, overdueFilter]);
   
   const { data: allUsers = [] } = useUsersQuery();
   const { data: employees = [] } = useEmployeesQuery();
@@ -97,7 +99,8 @@ export const useDashboard = () => {
     const openTickets = tickets.filter((t) => t.status === "OPEN").length;
     const inProgressTickets = tickets.filter((t) => t.status === "IN_PROGRESS").length;
     const resolvedTickets = tickets.filter((t) => t.status === "RESOLVED").length;
-    return { totalTickets, openTickets, inProgressTickets, resolvedTickets };
+    const closedTickets = tickets.filter((t) => t.status === "CLOSED").length;
+    return { totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets };
   }, [tickets]);
 
   const getOrCreateDefaultBoard = async (): Promise<KanbanBoard | null> => {
@@ -194,7 +197,8 @@ export const useDashboard = () => {
     application: applicationFilter,
     deleted: deletedFilter,
     search: searchInput,
-  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchQuery]);
+    overdue: overdueFilter,
+  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchQuery, overdueFilter]);
 
   return {
     // env
@@ -219,6 +223,7 @@ export const useDashboard = () => {
     customerFilter,
     applicationFilter,
     deletedFilter,
+    overdueFilter,
     searchQuery: searchInput,
     showMobileSearch,
     allUsers,
@@ -233,6 +238,7 @@ export const useDashboard = () => {
     setCustomerFilter,
     setApplicationFilter,
     setDeletedFilter,
+    setOverdueFilter,
     setSearchQuery: setSearchInput,
     setShowMobileSearch,
     setSnackbar,
