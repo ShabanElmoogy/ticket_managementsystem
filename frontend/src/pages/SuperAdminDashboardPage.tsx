@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
+import { useNavigate } from "react-router-dom";
 import { AdminDataGrid } from "../components/common";
 import Header from "../components/dashboard/Header";
 import SuperAdminCharts from "../components/superadmin/SuperAdminCharts";
@@ -24,6 +25,8 @@ const SuperAdminDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("overview");
+
+  const navigate = useNavigate();
 
   const columns = useMemo<GridColDef<TenantRow>[]>(
     () => [
@@ -78,7 +81,7 @@ const SuperAdminDashboardPage: React.FC = () => {
               <Button variant="outlined" onClick={load} disabled={loading}>
                 Refresh
               </Button>
-              <Button variant="contained" href="/admin">
+              <Button variant="contained" onClick={() => navigate('/admin')}>
                 Open Management
               </Button>
             </Stack>
@@ -117,10 +120,10 @@ const SuperAdminDashboardPage: React.FC = () => {
                 Quick Actions
               </Typography>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 1 }}>
-                <Button variant="contained" href="/admin">
+                <Button variant="contained" onClick={() => navigate('/admin')}>
                   Create / Manage Tenants
                 </Button>
-                <Button variant="outlined" href="/admin">
+                <Button variant="outlined" onClick={() => navigate('/admin')}>
                   Manage Users
                 </Button>
               </Stack>

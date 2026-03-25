@@ -379,9 +379,8 @@ const LoginForm: React.FC = () => {
                     const found = tenants.find((t) => t.slug === slug);
                     if (found?.adminEmail) setEmail(found.adminEmail);
                   }}
-                  displayEmpty
+                  displayEmpty={false}
                 >
-                  <MenuItem value=""><em>— select tenant —</em></MenuItem>
                   {tenants.map((t) => (
                     <MenuItem key={t.id} value={t.slug}>
                       {t.name}
