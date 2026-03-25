@@ -16,4 +16,5 @@ export { profileApi } from "./profile";
 export { kanbanApi } from "./kanban";
 export { docsApi } from "./docs";
 export { tenantsApi } from "./tenants";
+export { programmingApi } from "./programming";
 export type { Tenant } from "./tenants";

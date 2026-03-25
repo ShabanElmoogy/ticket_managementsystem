@@ -1,9 +1,8 @@
 import { extractBearerToken, verifyAccessToken } from '../utils/tokenService.js';
-import { Role } from '../constants/roles.js';
+import { Role, ADMIN_ROLES, TENANT_SCOPED_ROLES } from '../constants/roles.js';
 
 /**
  * Authenticate token middleware
- * Extracts and verifies JWT from Authorization header
  */
 export const authenticateToken = async (req, res, next) => {
   try {
@@ -26,7 +25,6 @@ export const authenticateToken = async (req, res, next) => {
 
 /**
  * Require tenant admin role middleware.
- * Cross-tenant header validation is handled by getTenantScope in tenantUtils.
  */
 export const requireTenantAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== Role.TENANT_ADMIN) {
@@ -42,11 +40,9 @@ export const requireTenantAdmin = (req, res, next) => {
 
 /**
  * Require admin role middleware (super admin OR tenant admin)
- *
- * Note: Prefer using requireTenantAdmin / requireSuperAdmin for stricter access.
  */
 export const requireAdmin = (req, res, next) => {
-  if (!req.user || (req.user.role !== Role.SUPER_ADMIN && req.user.role !== Role.TENANT_ADMIN)) {
+  if (!req.user || !ADMIN_ROLES.includes(req.user.role)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
@@ -61,3 +57,18 @@ export const requireSuperAdmin = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Require programmer or admin role middleware
+ */
+export const requireProgrammerOrAdmin = (req, res, next) => {
+  if (!req.user || !([...ADMIN_ROLES, Role.PROGRAMMER].includes(req.user.role))) {
+    return res.status(403).json({ error: 'Programmer or admin access required' });
+  }
+  next();
+};
+
+/**
+ * Helper: is the role tenant-scoped?
+ */
+export const isTenantScopedRole = (role) => TENANT_SCOPED_ROLES.includes(role);

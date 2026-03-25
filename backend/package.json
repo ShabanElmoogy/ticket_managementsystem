@@ -19,7 +19,8 @@
     "migrate:tickets": "node migrate-tickets-to-board.js",
     "quick-setup": "npm install && drizzle-kit push && node drizzle/seed.js",
     "script:check-superadmin": "node scripts/check-superadmin.js",
-    "script:reset-password": "node scripts/reset-password.js"
+    "script:reset-password": "node scripts/reset-password.js",
+    "script:add-programmer": "node scripts/add-programmer.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",

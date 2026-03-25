@@ -8,6 +8,7 @@ import {
   VerifiedUser as ActiveIcon,
   AdminPanelSettings as AdminsIcon,
   Group as EmployeesIcon,
+  Code as ProgrammerIcon,
 } from "@mui/icons-material";
 
 interface UsersStatsCardsProps {
@@ -54,6 +55,16 @@ const createUserStatItems = (stats: UserStats): StatItem[] => {
       gradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
       percentage:
         total > 0 ? ((stats.byRole?.EMPLOYEE || 0) / total) * 100 : 0,
+    },
+    {
+      title: "Programmers",
+      value: stats.byRole?.PROGRAMMER || 0,
+      icon: ProgrammerIcon,
+      color: "#8b5cf6",
+      bgColor: "rgba(139, 92, 246, 0.1)",
+      gradient: "linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)",
+      percentage:
+        total > 0 ? ((stats.byRole?.PROGRAMMER || 0) / total) * 100 : 0,
     },
   ];
 };

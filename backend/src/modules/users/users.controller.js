@@ -405,6 +405,33 @@ export const getEmployees = async (req, res) => {
   }
 };
 
+// Get all programmers in the resolved tenant
+export const getProgrammers = async (req, res) => {
+  try {
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
+
+    const whereClause = tenantId
+      ? and(eq(users.role, Role.PROGRAMMER), eq(users.tenantId, tenantId))
+      : eq(users.role, Role.PROGRAMMER);
+
+    const programmers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+      })
+      .from(users)
+      .where(whereClause);
+
+    res.json(programmers);
+  } catch (error) {
+    console.error('Get programmers error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // ============================================================================
 // Tenant-scoped endpoints (TENANT_ADMIN)
 // ============================================================================

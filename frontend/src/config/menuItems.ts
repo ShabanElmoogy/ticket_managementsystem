@@ -2,15 +2,14 @@
 import React from "react";
 import {
   Logout as LogoutIcon,
-
   Person as PersonIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
   ViewColumn as KanbanIcon,
   Description as DocumentIcon,
-
-  } from "@mui/icons-material";
+  Code as CodeIcon,
+} from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
 
 interface CreateMenuItemsProps {
@@ -54,7 +53,20 @@ export const createMenuItems = ({
       },
     },
 
-    ...(user?.role === "EMPLOYEE" || user?.role === "TENANT_ADMIN"
+    ...(user?.role === "PROGRAMMER"
+      ? [
+          {
+            label: "Programming",
+            icon: React.createElement(CodeIcon),
+            onClick: () => {
+              navigate('/programming');
+              onClose();
+              onMobileMenuClose();
+            },
+          },
+        ]
+      : []),
+    ...(user?.role === "EMPLOYEE" || user?.role === "TENANT_ADMIN" || user?.role === "PROGRAMMER"
       ? [
           {
             label: "Documents",

@@ -142,10 +142,11 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
               name="role"
               value={roleValue}
               onChange={(e) =>
-                setValue("role", e.target.value as "TENANT_ADMIN" | "EMPLOYEE", { shouldValidate: true })
+                setValue("role", e.target.value as "TENANT_ADMIN" | "EMPLOYEE" | "PROGRAMMER", { shouldValidate: true })
               }
             >
               <MenuItem value="EMPLOYEE">Employee</MenuItem>
+              <MenuItem value="PROGRAMMER">Programmer</MenuItem>
               {canCreateTenantAdmin && (
                 <MenuItem value="TENANT_ADMIN">Tenant Admin</MenuItem>
               )}

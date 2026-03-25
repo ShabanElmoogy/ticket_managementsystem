@@ -1,9 +1,16 @@
 // API Types
+export type UserRole = 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE' | 'PROGRAMMER';
+
+export type TicketStatus =
+  | 'OPEN' | 'IN_PROGRESS' | 'PROGRAMMING'
+  | 'UNDER_DEVELOPMENT' | 'CODE_REVIEW'
+  | 'TESTING' | 'RESOLVED' | 'CLOSED';
+
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
+  role: UserRole;
   phone?: string;
   whatsappNotifications?: boolean;
   reminderEnabled?: boolean;
@@ -61,7 +68,7 @@ export interface Ticket {
   id: string;
   title: string;
   description: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  status: TicketStatus;
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate?: string;
   estimatedHours?: number;
@@ -76,6 +83,8 @@ export interface Ticket {
   createdById: string;
   customerId?: string;
   applicationId?: string;
+  programmerId?: string;
+  programmer?: User;
   _count?: {
     comments: number;
   };
@@ -147,7 +156,7 @@ export interface CreateUserData {
   email: string;
   name: string;
   password: string;
-  role?: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
+  role?: UserRole;
   phone?: string;
   whatsappNotifications?: boolean;
 }
@@ -156,7 +165,7 @@ export interface UpdateUserData {
   email?: string;
   name?: string;
   password?: string;
-  role?: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
+  role?: UserRole;
   phone?: string;
   whatsappNotifications?: boolean;
   reminderEnabled?: boolean;
@@ -175,6 +184,7 @@ export interface UserStats {
     SUPER_ADMIN?: number;
     TENANT_ADMIN?: number;
     EMPLOYEE?: number;
+    PROGRAMMER?: number;
   };
 }
 
@@ -187,6 +197,35 @@ export interface LoginResponse {
   user: User;
   token: string;
   refreshToken: string;
+}
+
+export interface SolutionStep {
+  order: number;
+  text: string;
+  done: boolean;
+}
+
+export interface CodeSnippet {
+  language: string;
+  code: string;
+  label?: string;
+}
+
+export interface ProgrammingDetails {
+  id: string;
+  ticketId: string;
+  tenantId: string;
+  programmerId?: string;
+  technicalDescription?: string;
+  rootCause?: string;
+  stepsToReproduce?: string;
+  solutionSteps: SolutionStep[];
+  codeSnippets: CodeSnippet[];
+  attachments: { url: string; filename: string; size: number }[];
+  estimatedHours?: number;
+  actualHours?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ActivityItem {

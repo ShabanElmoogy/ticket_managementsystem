@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './auth/auth.routes.js';
 import ticketRoutes from './tickets/tickets.routes.js';
+import programmingRoutes from './programming/programming.routes.js';
 import applicationRoutes from './applications/applications.routes.js';
 import commentRoutes from './comments/comments.routes.js';
 import customerRoutes from './customers/customers.routes.js';
@@ -19,6 +20,7 @@ const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/tickets', ticketRoutes);
+router.use('/tickets', programmingRoutes);
 router.use('/tickets', commentRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/customers', customerRoutes);

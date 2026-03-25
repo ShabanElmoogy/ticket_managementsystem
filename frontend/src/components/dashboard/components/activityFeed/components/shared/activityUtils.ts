@@ -55,12 +55,16 @@ export const useActivityUtils = () => {
             ? `Deleted by ${data.updatedBy || "Someone"}`
             : data.newStatus === 'RESTORED'
             ? `Restored by ${data.updatedBy || "Someone"}`
-            : `${data.newStatus ? `Status → ${data.newStatus.replace('_', ' ')}` : 'Updated'} by ${data.updatedBy || "Someone"}`,
+            : data.newStatus
+            ? `Status → ${data.newStatus.replace(/_/g, ' ')} by ${data.updatedBy || "Someone"}`
+            : `Updated by ${data.updatedBy || "Someone"}`,
         };
       case "TICKET_ASSIGNED":
         return {
           primary: `Ticket assigned: ${ticket.title || "Untitled ticket"}`,
-          secondary: `Assigned to ${data.assignedTo || "a user"}`,
+          secondary: data.assignedTo
+            ? `Assigned to programmer: ${data.assignedTo}`
+            : `Assigned to ${data.assignedTo || "a user"}`,
         };
       case "COMMENT_ADDED":
         return {

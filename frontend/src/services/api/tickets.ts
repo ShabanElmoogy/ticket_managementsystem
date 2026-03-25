@@ -49,6 +49,10 @@ export class TicketsApiService extends BaseApiService {
   async getDelayedTickets(): Promise<Ticket[]> {
     return this.get<Ticket[]>("/reminders/delayed-tickets");
   }
+
+  async getProgrammers(): Promise<{ id: string; name: string; email: string; role: string }[]> {
+    return this.get("/users/programmers");
+  }
 }
 
 export const ticketsApi = new TicketsApiService();

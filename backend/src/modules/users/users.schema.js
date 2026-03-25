@@ -2,7 +2,7 @@ import { pgTable, text, timestamp, pgEnum, boolean, integer, uuid } from 'drizzl
 import { tenants } from '../tenants/tenants.schema.js';
 
 // User role enum
-export const userRoleEnum = pgEnum('user_role', ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE']);
+export const userRoleEnum = pgEnum('user_role', ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER']);
 
 // Users table
 export const users = pgTable('users', {

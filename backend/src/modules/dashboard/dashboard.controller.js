@@ -142,6 +142,7 @@ export const getActivities = async (req, res) => {
     const actionTypeMap = {
       CREATED: 'TICKET_CREATED',
       ASSIGNED: 'TICKET_ASSIGNED',
+      PROGRAMMER_ASSIGNED: 'TICKET_ASSIGNED',
       STATUS_CHANGED: 'TICKET_UPDATED',
       PRIORITY_CHANGED: 'TICKET_UPDATED',
       UPDATED: 'TICKET_UPDATED',
@@ -149,6 +150,7 @@ export const getActivities = async (req, res) => {
       COMMENT_DELETED: 'COMMENT_DELETED',
       DELETED: 'TICKET_UPDATED',
       RESTORED: 'TICKET_UPDATED',
+      PROGRAMMING_UPDATED: 'TICKET_UPDATED',
     };
 
     const activities = rows.map((row) => ({
@@ -158,7 +160,7 @@ export const getActivities = async (req, res) => {
         ticket: { id: row.ticketId, title: row.ticketTitle, priority: row.ticketPriority, status: row.ticketStatus },
         createdBy: row.action === 'CREATED' ? row.userName : undefined,
         updatedBy: row.action !== 'CREATED' && row.action !== 'ASSIGNED' && row.action !== 'COMMENTED' ? row.userName : undefined,
-        assignedTo: row.action === 'ASSIGNED' ? row.userName : undefined,
+        assignedTo: (row.action === 'ASSIGNED' || row.action === 'PROGRAMMER_ASSIGNED') ? row.userName : undefined,
         commentBy: row.action === 'COMMENTED' || row.action === 'COMMENT_DELETED' ? row.userName : undefined,
         newStatus: (row.action === 'STATUS_CHANGED' || row.action === 'UPDATED') ? row.newValue : row.action === 'DELETED' ? 'DELETED' : row.action === 'RESTORED' ? 'RESTORED' : undefined,
       },

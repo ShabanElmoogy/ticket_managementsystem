@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const ticketStatus = z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']);
+const ticketStatus = z.enum(['OPEN', 'IN_PROGRESS', 'PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING', 'RESOLVED', 'CLOSED']);
 const ticketPriority = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 
 export const createTicketSchema = z.object({

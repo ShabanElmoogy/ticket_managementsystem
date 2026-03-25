@@ -9,6 +9,7 @@ import ProfilePage from '../pages/ProfilePage';
 import KanbanPage from '../pages/KanbanPage';
 import DocumentsPage from '../pages/DocumentsPage';
 import AdminPage from '../pages/AdminPage';
+import ProgrammingPage from '../pages/ProgrammingPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ children, requiredRole }) => {
   const { user } = useAuthStore();
@@ -93,6 +94,17 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/programming"
+          element={
+            <ProtectedRoute>
+              {(user?.role === 'PROGRAMMER' || user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN')
+                ? <ProgrammingPage />
+                : <Navigate to="/dashboard" replace />}
             </ProtectedRoute>
           }
         />

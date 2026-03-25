@@ -39,6 +39,7 @@ import {
   OpenInFull as MaximizeIcon,
   CloseFullscreen as MinimizeIcon,
   Close as CloseIcon,
+  Code as CodeIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/dateUtils";
@@ -48,6 +49,7 @@ import { ticketsApi } from "../../services/api";
 import { useQueryClient } from "@tanstack/react-query";
 import MyChip from "../common/MyChip";
 import { type TicketActivity } from '../../services/api';
+import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -87,7 +89,9 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesFetched, setActivitiesFetched] = useState(false);
+  const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
 
+  const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isDeleted = !!ticket.deletedAt;
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -233,8 +237,10 @@ const TicketPost: React.FC<TicketPostProps> = ({
     }
   };
 
+  const PROGRAMMING_STATUSES_CHECK = ['PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING'];
   const canUpdateStatus =
-    user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN" || ticket.assignedTo?.id === user?.id;
+    user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN" ||
+    (ticket.assignedTo?.id === user?.id && !PROGRAMMING_STATUSES_CHECK.includes(ticket.status));
   const canTakeTicket = !ticket.assignedTo && user?.role === "EMPLOYEE";
   const canDelete = user?.role === "TENANT_ADMIN";
 
@@ -1124,6 +1130,17 @@ const TicketPost: React.FC<TicketPostProps> = ({
             ⚫ Mark as Closed
           </MenuItem>,
         ]}
+        {isAdmin && [
+          <Divider key="programmer-divider" />,
+          <MenuItem
+            key="assign-programmer"
+            onClick={() => { setAssignProgrammerOpen(true); handleMenuClose(); }}
+            sx={{ color: '#8b5cf6' }}
+          >
+            <CodeIcon sx={{ mr: 2, fontSize: 20, color: '#8b5cf6' }} />
+            {ticket.programmerId ? 'Reassign Programmer' : 'Send to Programmer'}
+          </MenuItem>,
+        ]}
         {canDelete && [
           <Divider key="delete-divider" />,
           isDeleted ? (
@@ -1236,6 +1253,13 @@ const TicketPost: React.FC<TicketPostProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      <AssignProgrammerDialog
+        open={assignProgrammerOpen}
+        ticketId={ticket.id}
+        onClose={() => setAssignProgrammerOpen(false)}
+        onAssigned={() => { setAssignProgrammerOpen(false); queryClient.invalidateQueries({ queryKey: ['tickets'] }); }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} disableScrollLock>

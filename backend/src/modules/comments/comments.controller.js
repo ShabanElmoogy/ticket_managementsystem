@@ -19,7 +19,7 @@ export const createComment = async (req, res) => {
     // Tickets table has no tenantId, so we scope via the ticket creator's user.tenantId.
     // - SUPER_ADMIN: no tenant restriction
     // - TENANT_ADMIN / EMPLOYEE: must have tenantId and ticket must belong to that tenant
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE' || req.user?.role === 'PROGRAMMER';
     const tenantId = isTenantScopedRole ? (req.user?.tenantId ?? null) : null;
 
     if (isTenantScopedRole && !tenantId) {
@@ -48,13 +48,15 @@ export const createComment = async (req, res) => {
 
     // Authorization:
     // - SUPER_ADMIN: always allowed
-    // - TENANT_ADMIN: allowed for any ticket in tenant (already scoped above)
+    // - TENANT_ADMIN: allowed for any ticket in tenant
     // - EMPLOYEE: only if assigned to them or created by them
+    // - PROGRAMMER: only if assigned as programmer
     if (
       req.user.role !== 'SUPER_ADMIN' &&
       req.user.role !== 'TENANT_ADMIN' &&
       ticket.assignedToId !== req.user.userId &&
-      ticket.createdById !== req.user.userId
+      ticket.createdById !== req.user.userId &&
+      ticket.programmerId !== req.user.userId
     ) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -163,7 +165,7 @@ export const deleteComment = async (req, res) => {
       },
     };
 
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE' || req.user?.role === 'PROGRAMMER';
     const tenantId = isTenantScopedRole ? (req.user?.tenantId ?? null) : null;
 
     if (tenantId) {

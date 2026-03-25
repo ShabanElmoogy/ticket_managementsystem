@@ -50,6 +50,8 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [activityMaximized, setActivityMaximized] = useState(false);
 
+  const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
+
   useEffect(() => {
     if (ticket && open) {
       fetchTicketDetails();
@@ -113,12 +115,25 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 
   if (!ticket) return null;
 
-  const canUpdateStatus = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN' || ticket.assignedTo?.id === user?.id;
+  const PROGRAMMING_STATUSES = ['PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING'];
+  const isInProgrammingPhase = PROGRAMMING_STATUSES.includes(ticket.status);
+
+  // Employee cannot update status while ticket is in programmer's hands
+  const canUpdateStatus = isAdmin || (!isInProgrammingPhase && ticket.assignedTo?.id === user?.id);
+
+  const getAllowedStatuses = (): Ticket['status'][] => {
+    if (isAdmin) return ['OPEN', 'IN_PROGRESS', 'PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING', 'RESOLVED', 'CLOSED'];
+    return ['OPEN', 'IN_PROGRESS', 'RESOLVED'];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'OPEN': return 'primary';
       case 'IN_PROGRESS': return 'warning';
+      case 'PROGRAMMING': return 'secondary';
+      case 'UNDER_DEVELOPMENT': return 'info';
+      case 'CODE_REVIEW': return 'info';
+      case 'TESTING': return 'warning';
       case 'RESOLVED': return 'success';
       case 'CLOSED': return 'default';
       default: return 'default';
@@ -281,7 +296,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
               Update Status
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
-              {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map((status) => (
+              {getAllowedStatuses().map((status) => (
                 <Button
                   key={status}
                   variant={ticket.status === status ? 'contained' : 'outlined'}
@@ -289,13 +304,21 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                   onClick={() => onUpdateStatus(ticket.id, status)}
                   disabled={ticket.status === status}
                 >
-                  {status.replace('_', ' ')}
+                  {status.replace(/_/g, ' ')}
                 </Button>
               ))}
             </Box>
           </Box>
         )}
-        
+
+        {isAdmin && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="caption" color="text.secondary">
+              {ticket.programmer ? `Programmer: ${ticket.programmer.name}` : 'No programmer assigned'}
+            </Typography>
+          </Box>
+        )}
+
         <Typography variant="h6" gutterBottom>
           Comments ({comments.length})
         </Typography>
@@ -591,6 +614,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
         )}
       </DialogContent>
     </Dialog>
+
     </>
   );
 };

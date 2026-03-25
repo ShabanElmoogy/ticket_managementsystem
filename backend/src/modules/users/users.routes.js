@@ -1,6 +1,6 @@
 import express from 'express';
 import * as usersController from './users.controller.js';
-import { authenticateToken, requireSuperAdmin, requireTenantAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireSuperAdmin, requireTenantAdmin, requireAdmin } from '../../middleware/auth.js';
 import { resolveTenant } from '../../middleware/tenant.js';
 import { validate } from '../../middleware/validate.js';
 import { createUserSchema, updateUserSchema, updateOwnProfileSchema } from './users.validation.js';
@@ -118,6 +118,7 @@ router.put('/profile', authenticateToken, validate(updateOwnProfileSchema), user
  *         $ref: '#/components/responses/UserList'
  */
 router.get('/employees', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getEmployees);
+router.get('/programmers', authenticateToken, resolveTenant, requireAdmin, usersController.getProgrammers);
 
 /**
  * @swagger

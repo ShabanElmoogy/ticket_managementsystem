@@ -2,10 +2,14 @@
 export { Role, TENANT_SCOPED_ROLES } from './roles.js';
 
 export const TICKET_STATUS = {
-  OPEN: 'OPEN',
-  IN_PROGRESS: 'IN_PROGRESS',
-  RESOLVED: 'RESOLVED',
-  CLOSED: 'CLOSED',
+  OPEN:              'OPEN',
+  IN_PROGRESS:       'IN_PROGRESS',
+  PROGRAMMING:       'PROGRAMMING',
+  UNDER_DEVELOPMENT: 'UNDER_DEVELOPMENT',
+  CODE_REVIEW:       'CODE_REVIEW',
+  TESTING:           'TESTING',
+  RESOLVED:          'RESOLVED',
+  CLOSED:            'CLOSED',
 };
 
 export const TICKET_PRIORITY = {

@@ -8,6 +8,7 @@ import { comments } from '../comments/comments.schema.js';
 import { eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt } from 'drizzle-orm';
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
+import { isTenantScopedRole } from '../../middleware/auth.js';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
@@ -31,9 +32,9 @@ export const getAllTickets = async (req, res) => {
     // Tickets table has no tenantId column, so we scope via createdBy user.tenantId.
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole) {
+    if (isTenantScoped) {
       if (!tenantId) {
         return res.status(403).json({ error: 'Tenant context required' });
       }
@@ -41,9 +42,13 @@ export const getAllTickets = async (req, res) => {
       conditions.push(eq(users.tenantId, tenantId));
     }
 
-    // If user is not admin, only show tickets assigned to them or unassigned
+    // Scope non-admin roles to their own tickets
     if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'TENANT_ADMIN') {
-      conditions.push(or(eq(tickets.assignedToId, req.user.userId), isNull(tickets.assignedToId)));
+      if (req.user.role === 'PROGRAMMER') {
+        conditions.push(eq(tickets.programmerId, req.user.userId));
+      } else {
+        conditions.push(or(eq(tickets.assignedToId, req.user.userId), isNull(tickets.assignedToId)));
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -64,6 +69,7 @@ export const getAllTickets = async (req, res) => {
         applicationId: tickets.applicationId,
         createdById: tickets.createdById,
         assignedToId: tickets.assignedToId,
+        programmerId: tickets.programmerId,
         boardId: tickets.boardId,
         deletedAt: tickets.deletedAt,
       })
@@ -90,6 +96,7 @@ export const getAllTickets = async (req, res) => {
       applicationId: r.applicationId,
       createdById: r.createdById,
       assignedToId: r.assignedToId,
+      programmerId: r.programmerId,
       boardId: r.boardId,
       deletedAt: r.deletedAt,
     }));
@@ -107,6 +114,7 @@ export const getAllTickets = async (req, res) => {
     if (ticketIds.length > 0) {
       const assignedUserIds = ticketsData.filter((t) => t.assignedToId).map((t) => t.assignedToId);
       const createdUserIds = ticketsData.map((t) => t.createdById);
+      const programmerIds = ticketsData.filter((t) => t.programmerId).map((t) => t.programmerId);
       const customerIds = ticketsData.filter((t) => t.customerId).map((t) => t.customerId);
       const applicationIds = ticketsData.filter((t) => t.applicationId).map((t) => t.applicationId);
 
@@ -137,20 +145,28 @@ export const getAllTickets = async (req, res) => {
           .where(inArray(comments.ticketId, ticketIds))
           .groupBy(comments.ticketId),
       ]);
+
+      // Fetch programmer users separately to avoid Promise.all index shift
+      const programmerUsers = programmerIds.length > 0
+        ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, programmerIds))
+        : [];
+
+      // Combine data
+      const ticketsWithRelations = ticketsData.map((ticket) => ({
+        ...ticket,
+        assignedTo: assignedUsers.find((u) => u.id === ticket.assignedToId) || null,
+        createdBy: createdUsers.find((u) => u.id === ticket.createdById) || null,
+        programmer: programmerUsers.find((u) => u.id === ticket.programmerId) || null,
+        customer: ticketCustomers.find((c) => c.id === ticket.customerId) || null,
+        application: ticketApplications.find((a) => a.id === ticket.applicationId) || null,
+        labels: labelsData.filter((l) => l.ticketId === ticket.id).map((l) => ({ label: l.label })),
+        _count: { comments: commentCounts.find((c) => c.ticketId === ticket.id)?.count || 0 },
+      }));
+
+      return res.json(ticketsWithRelations);
     }
 
-    // Combine data
-    const ticketsWithRelations = ticketsData.map((ticket) => ({
-      ...ticket,
-      assignedTo: assignedUsers.find((u) => u.id === ticket.assignedToId) || null,
-      createdBy: createdUsers.find((u) => u.id === ticket.createdById) || null,
-      customer: ticketCustomers.find((c) => c.id === ticket.customerId) || null,
-      application: ticketApplications.find((a) => a.id === ticket.applicationId) || null,
-      labels: labelsData.filter((l) => l.ticketId === ticket.id).map((l) => ({ label: l.label })),
-      _count: { comments: commentCounts.find((c) => c.ticketId === ticket.id)?.count || 0 },
-    }));
-
-    res.json(ticketsWithRelations);
+    res.json([]);
   } catch (error) {
     console.error('Get tickets error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -164,10 +180,10 @@ export const getTicketById = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
     // Tenant-scoped roles: ensure ticket belongs to their tenant (via createdBy user)
-    if (isTenantScopedRole) {
+    if (isTenantScoped) {
       if (!tenantId) {
         return res.status(403).json({ error: 'Tenant context required' });
       }
@@ -246,8 +262,11 @@ export const getTicketById = async (req, res) => {
         activities: activitiesData,
       };
 
-      // EMPLOYEE access check (tenant-scoped but not tenant-wide)
-      if (req.user.role === 'EMPLOYEE' && fullTicket.assignedToId !== req.user.userId && fullTicket.createdById !== req.user.userId) {
+      // EMPLOYEE/PROGRAMMER access check
+      if ((req.user.role === 'EMPLOYEE' || req.user.role === 'PROGRAMMER') &&
+          fullTicket.assignedToId !== req.user.userId &&
+          fullTicket.programmerId !== req.user.userId &&
+          fullTicket.createdById !== req.user.userId) {
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -328,6 +347,7 @@ export const getTicketById = async (req, res) => {
       req.user.role !== 'SUPER_ADMIN' &&
       req.user.role !== 'TENANT_ADMIN' &&
       fullTicket.assignedToId !== req.user.userId &&
+      fullTicket.programmerId !== req.user.userId &&
       fullTicket.createdById !== req.user.userId
     ) {
       return res.status(403).json({ error: 'Access denied' });
@@ -357,7 +377,7 @@ export const createTicket = async (req, res) => {
     } = req.body;
 
     // Require tenant context for all tenant-scoped roles
-    if (req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE') {
+    if (isTenantScopedRole(req.user?.role)) {
       const tenantId = requireTenantScope(req);
       req.tenantId = tenantId;
 
@@ -470,9 +490,9 @@ export const updateTicket = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole) {
+    if (isTenantScoped) {
       if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
 
       const [row] = await db
@@ -484,9 +504,19 @@ export const updateTicket = async (req, res) => {
 
       if (!row) return res.status(404).json({ error: 'Ticket not found' });
 
-      // EMPLOYEE can only update tickets assigned to them
-      if (req.user.role === 'EMPLOYEE' && row.assignedToId !== req.user.userId) {
-        return res.status(403).json({ error: 'Access denied' });
+      // EMPLOYEE can only update tickets assigned to them; cannot touch programming-phase tickets
+      if (req.user.role === 'EMPLOYEE') {
+        if (row.assignedToId !== req.user.userId) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        const programmingStatuses = ['PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING'];
+        if (programmingStatuses.includes(row.status) && status) {
+          return res.status(403).json({ error: 'Ticket is currently handled by a programmer' });
+        }
+      }
+      if (req.user.role === 'PROGRAMMER') {
+        const [progRow] = await db.select({ programmerId: tickets.programmerId }).from(tickets).where(eq(tickets.id, id)).limit(1);
+        if (progRow?.programmerId !== req.user.userId) return res.status(403).json({ error: 'Access denied' });
       }
     }
 
@@ -564,9 +594,9 @@ export const deleteTicket = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole) {
+    if (isTenantScoped) {
       if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
 
       const [row] = await db
@@ -621,9 +651,9 @@ export const restoreTicket = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole) {
+    if (isTenantScoped) {
       if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
 
       const [row] = await db
@@ -678,15 +708,15 @@ export const takeTicket = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole && !tenantId) {
+    if (isTenantScoped && !tenantId) {
       return res.status(403).json({ error: 'Tenant context required' });
     }
 
     const ticketQuery = db.select({ ticket: tickets }).from(tickets);
 
-    const ticket = isTenantScopedRole
+    const ticket = isTenantScoped
       ? await ticketQuery
           .innerJoin(users, eq(tickets.createdById, users.id))
           .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
@@ -731,9 +761,9 @@ export const getDelayedTickets = async (req, res) => {
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-    const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE';
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
 
-    if (isTenantScopedRole && !tenantId) {
+    if (isTenantScoped && !tenantId) {
       return res.status(403).json({ error: 'Tenant context required' });
     }
 
@@ -761,7 +791,7 @@ export const getDelayedTickets = async (req, res) => {
       )
       .orderBy(asc(tickets.dueDate));
 
-    const delayedTickets = isTenantScopedRole
+    const delayedTickets = isTenantScoped
       ? await delayedTicketsQuery
           .innerJoin(users, eq(tickets.createdById, users.id))
           .where(

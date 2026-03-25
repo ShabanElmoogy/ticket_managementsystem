@@ -12,6 +12,13 @@ interface UserAvatarProps {
 }
 
 const isAdmin = (role?: string) => role === "TENANT_ADMIN" || role === "SUPER_ADMIN";
+const isProgrammer = (role?: string) => role === "PROGRAMMER";
+
+const getRoleColor = (role?: string) => {
+  if (isAdmin(role)) return "#ef4444";
+  if (isProgrammer(role)) return "#8b5cf6";
+  return "#10b981";
+};
 
 const UserAvatar: React.FC<UserAvatarProps> = ({
   user,
@@ -37,7 +44,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         sx={{
           width: { xs: 32, sm: 36 },
           height: { xs: 32, sm: 36 },
-          backgroundColor: isAdmin(user?.role) ? "#ef4444" : "#10b981",
+          backgroundColor: getRoleColor(user?.role),
           fontSize: "0.875rem",
           fontWeight: 600,
           cursor: isAdmin(user?.role) ? "pointer" : "default",
@@ -79,7 +86,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       <Avatar
         sx={{
           ...buttonSize,
-          backgroundColor: isAdmin(user?.role) ? "#ef4444" : "#10b981",
+          backgroundColor: getRoleColor(user?.role),
           fontSize: "0.875rem",
           fontWeight: 600,
         }}
@@ -97,12 +104,12 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
           label={isAdmin(user?.role) ? `${user?.role} - Click to manage` : user?.role}
           size="small"
           sx={{
-            backgroundColor: isAdmin(user?.role) ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)",
-            color: isAdmin(user?.role) ? "#fecaca" : "#a7f3d0",
+            backgroundColor: isAdmin(user?.role) ? "rgba(239, 68, 68, 0.2)" : isProgrammer(user?.role) ? "rgba(139, 92, 246, 0.2)" : "rgba(16, 185, 129, 0.2)",
+            color: isAdmin(user?.role) ? "#fecaca" : isProgrammer(user?.role) ? "#ddd6fe" : "#a7f3d0",
             fontWeight: 500,
             fontSize: "0.75rem",
             height: 20,
-            border: `1px solid ${isAdmin(user?.role) ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+            border: `1px solid ${isAdmin(user?.role) ? "rgba(239, 68, 68, 0.3)" : isProgrammer(user?.role) ? "rgba(139, 92, 246, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
           }}
         />
       </Box>

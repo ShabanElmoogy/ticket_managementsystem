@@ -19,7 +19,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE';
+  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE' | 'PROGRAMMER';
   phone?: string;
 }
 
@@ -27,7 +27,7 @@ interface TokenPayload {
   userId: string;
   email: string;
   name?: string;
-  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE';
+  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE' | 'PROGRAMMER';
   exp: number;
   iat: number;
   iss?: string;
