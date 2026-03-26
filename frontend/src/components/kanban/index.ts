@@ -9,4 +9,4 @@ export { default as BoardSettingsDialog } from './BoardSettingsDialog';
 export { default as BoardAnalyticsDialog } from './BoardAnalyticsDialog';
 
 // Re-export types
-export * from '../../types/kanban';
+export * from './types/types';

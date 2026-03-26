@@ -15,7 +15,7 @@ import type {
   KanbanColumn as KanbanColumnType,
   KanbanTicket,
   TicketStatus,
-} from '../../../types/kanban';
+} from '../types/types';
 
 import BoardHeader from './BoardHeader';
 import BoardControls from './BoardControls';

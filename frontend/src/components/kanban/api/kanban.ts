@@ -8,7 +8,7 @@ import type {
   BoardAnalytics,
   TicketStatus,
   TaskStatus,
-} from "../../../types/kanban";
+} from "../types/types";
 
 export class KanbanApiService extends BaseApiService {
   async getAllBoards(): Promise<KanbanBoard[]> {

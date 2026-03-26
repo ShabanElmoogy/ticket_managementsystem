@@ -1,5 +1,5 @@
 import React from "react";
-import type { KanbanTask } from "../../../../types/kanban";
+import type { KanbanTask } from "../../../kanban/types/types";
 import getTasksColumns from "./TasksColumns";
 import { AdminDataGrid } from "../../../common";
 

@@ -42,7 +42,7 @@ import type {
   KanbanColumn as KanbanColumnType,
   KanbanTicket,
   TicketStatus,
-} from "../../types/kanban";
+} from "./types/types";
 import KanbanColumn from "./KanbanColumn";
 import CreateTicketDialog from "./CreateTicketDialog";
 import BoardSettingsDialog from "./BoardSettingsDialog";

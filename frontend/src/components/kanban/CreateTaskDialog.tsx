@@ -17,7 +17,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useKanbanStore } from '../../stores/kanbanStore';
-import type { TaskStatus } from '../../types/kanban';
+import type { TaskStatus } from './types/types';
 
 interface CreateTaskDialogProps {
   open: boolean;

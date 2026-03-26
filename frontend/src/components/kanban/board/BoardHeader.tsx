@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@mui/material';
-import type { KanbanBoard } from '../../../types/kanban';
+import type { KanbanBoard } from '../types/types';
 
 interface BoardHeaderProps {
   currentBoard: KanbanBoard;

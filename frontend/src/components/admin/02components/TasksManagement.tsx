@@ -15,7 +15,7 @@ import {
 import { DeleteConfirmDialog, MyGridHeader } from "../../common";
 import { TasksTable, TaskFormDialog } from "../tasksManagement";
 import { tasksApi } from "../tasksManagement/api/tasks";
-import type { KanbanTask, KanbanBoard, User, TaskStatus } from "../../../types/kanban";
+import type { KanbanTask, KanbanBoard, User, TaskStatus } from "../../kanban/types/types";
 import type { TaskFormValues } from "../tasksManagement/types/types";
 import AddTaskIcon from "@mui/icons-material/AddTask";
 

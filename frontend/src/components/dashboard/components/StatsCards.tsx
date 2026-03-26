@@ -1,7 +1,7 @@
 // StatsCards.tsx - Mobile Optimized Container
 import React from "react";
 import { Card, CardContent, Box, Fade, useTheme } from "@mui/material";
-import { type StatsCardsProps } from "../../../types/dashboard";
+import { type StatsCardsProps } from "../types/types";
 import { CreateStatItems } from "../../../config/statItems";
 import DashboardHeader from "../../common/DashboardHeader";
 import ActiveFiltersDisplay from "../statscards/ActiveFiltersDisplay";

@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import { isBefore, addDays } from 'date-fns';
 import { formatDate } from '../../utils/dateUtils';
-import type { KanbanTicket, Priority } from '../../types/kanban';
+import type { KanbanTicket, Priority } from './types/types';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
 import WhatsAppButton from '../WhatsAppButton';
 

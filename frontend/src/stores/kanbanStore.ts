@@ -8,7 +8,7 @@ import type {
   BoardAnalytics,
   TicketStatus,
   TaskStatus 
-} from '../types/kanban';
+} from '../components/kanban/types/types';
 import { kanbanApi } from '../components/kanban/api/kanban';
 import { useAuthStore } from './authStore';
 

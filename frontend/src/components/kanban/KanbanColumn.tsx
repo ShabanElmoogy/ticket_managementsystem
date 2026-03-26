@@ -8,7 +8,7 @@ import {
   Chip,
   Alert
 } from '@mui/material';
-import type { KanbanColumn as KanbanColumnType, KanbanTicket, TicketStatus } from '../../types/kanban';
+import type { KanbanColumn as KanbanColumnType, KanbanTicket, TicketStatus } from './types/types';
 import KanbanTicketCard from './KanbanTicketCard';
 
 interface KanbanColumnProps {

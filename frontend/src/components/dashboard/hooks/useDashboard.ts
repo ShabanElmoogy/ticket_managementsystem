@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useAuthStore } from "../../../stores/authStore";
 import { kanbanApi, type Ticket, type CreateTicketData } from "../../../services/api";
-import type { KanbanBoard } from "../../../types/kanban";
+import type { KanbanBoard } from "../../kanban/types/types";
 import { 
   useTicketsQuery, 
   useUsersQuery, 

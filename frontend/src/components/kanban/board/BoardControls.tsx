@@ -29,7 +29,7 @@ import {
   Speed as SpeedIcon,
   PlaylistAdd as PlaylistAddIcon,
 } from "@mui/icons-material";
-import type { KanbanBoard } from "../../../types/kanban";
+import type { KanbanBoard } from "../types/types";
 
 interface BoardControlsProps {
   boards: KanbanBoard[];

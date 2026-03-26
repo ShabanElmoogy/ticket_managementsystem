@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Chip, useTheme } from '@mui/material';
-import type { KanbanColumn as KanbanColumnType, TicketStatus } from '../../../types/kanban';
+import type { KanbanColumn as KanbanColumnType, TicketStatus } from '../types/types';
 
 interface BoardStatsProps {
   statusColumns: TicketStatus[];

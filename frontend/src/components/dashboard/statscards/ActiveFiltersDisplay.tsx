@@ -1,7 +1,7 @@
 // components/ActiveFiltersDisplay.tsx
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { type ActiveFilters } from "../../../types/dashboard";
+import { type ActiveFilters } from "../types/types";
 import FilterChip from "../../common/FilterChip";
 
 interface ActiveFiltersDisplayProps {

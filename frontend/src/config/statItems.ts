@@ -6,7 +6,7 @@ import {
   CheckCircle as ResolvedIcon,
   Cancel as ClosedIcon,
 } from "@mui/icons-material";
-import { type StatItem, type DashboardStats } from "../types/dashboard";
+import { type StatItem, type DashboardStats } from "../components/dashboard/types/types";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 export const CreateStatItems = (stats: DashboardStats): StatItem[] => {

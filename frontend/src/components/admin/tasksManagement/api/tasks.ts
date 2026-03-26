@@ -1,5 +1,5 @@
 import { BaseApiService } from "../../../../services/api/base";
-import type { KanbanTask, KanbanBoard, User } from "../../../../types/kanban";
+import type { KanbanTask, KanbanBoard, User } from "../../../kanban/types/types";
 
 export class TasksApiService extends BaseApiService {
   async getTasks(): Promise<KanbanTask[]> {

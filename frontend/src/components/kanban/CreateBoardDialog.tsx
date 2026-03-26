@@ -25,7 +25,7 @@ import {
 import { HexColorPicker } from 'react-colorful';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import { getColorPair } from '../../utils/colorContrast';
-import type { BoardType } from '../../types/kanban';
+import type { BoardType } from './types/types';
 
 interface CreateBoardDialogProps {
   open: boolean;

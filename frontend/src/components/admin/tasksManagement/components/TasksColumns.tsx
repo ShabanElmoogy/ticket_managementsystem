@@ -2,7 +2,7 @@ import type { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
 import dayjs from "dayjs";
 import { buildActionsColumn } from "../../../common";
-import type { KanbanTask, TaskStatus } from "../../../../types/kanban";
+import type { KanbanTask, TaskStatus } from "../../../kanban/types/types";
 
 function getStatusColor(status: TaskStatus): "default" | "success" | "warning" | "info" | "secondary" {
   switch (status) {
