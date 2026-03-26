@@ -5,7 +5,7 @@ import {
   CircularProgress, Typography,
 } from '@mui/material';
 import { ticketsApi } from '../../../services/api';
-import { programmingApi } from '../../../services/api/programming';
+import { programmingApi } from '../api/programming';
 
 interface Programmer { id: string; name: string; email: string; }
 

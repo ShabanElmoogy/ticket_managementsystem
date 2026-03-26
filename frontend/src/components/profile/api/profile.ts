@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { User, ReminderSettings } from "./types";
+import { BaseApiService } from "../../../services/api/base";
+import type { User, ReminderSettings } from "../../../services/api/types";
 
 export class ProfileApiService extends BaseApiService {
   async getProfile(): Promise<User> {

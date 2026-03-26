@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { DashboardStats, ActivityItem } from "./types";
+import { BaseApiService } from "../../../services/api/base";
+import type { DashboardStats, ActivityItem } from "../../../services/api/types";
 
 export class DashboardApiService extends BaseApiService {
   async getDashboardStats(): Promise<DashboardStats> {

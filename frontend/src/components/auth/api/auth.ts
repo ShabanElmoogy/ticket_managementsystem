@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { LoginData, LoginResponse } from "./types";
+import { BaseApiService } from "../../../services/api/base";
+import type { LoginData, LoginResponse } from "../../../services/api/types";
 
 export class AuthApiService extends BaseApiService {
   async login(data: LoginData): Promise<LoginResponse> {

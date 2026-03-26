@@ -1,5 +1,5 @@
-import { api } from "./base";
-import type { ProgrammingDetails } from "./types";
+import { api } from "../../../services/api/base";
+import type { ProgrammingDetails } from "../../../services/api/types";
 
 export const programmingApi = {
   get: (ticketId: string): Promise<ProgrammingDetails | null> =>

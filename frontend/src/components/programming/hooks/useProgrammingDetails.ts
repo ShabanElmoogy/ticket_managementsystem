@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { programmingApi } from '../../../services/api/programming';
+import { programmingApi } from '../api/programming';
 import type { ProgrammingDetails } from '../../../services/api/types';
 
 export function useProgrammingDetails(ticketId: string) {

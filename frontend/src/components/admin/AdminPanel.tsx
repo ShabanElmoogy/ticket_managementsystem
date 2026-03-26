@@ -11,18 +11,18 @@ import {
   Apartment as TenantsIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
-import CustomersManagement from "./components/CustomersManagement";
-import ApplicationsPageWithHOC from "./components/ApplicationsPageWithHOC";
-import TicketsManagement from "./components/TicketsManagement";
-import TasksManagement from "./components/TasksManagement";
-import UserManagement from "./components/UserManagement";
-import AdminDashboard from "./components/AdminDashboard";
-import ReportsManagement from "./components/ReportsManagement";
-import AdminTopBar from "./layout/AdminTopBar";
-import AdminSidebar from "./layout/AdminSidebar";
+import CustomersManagement from "./02components/CustomersManagement";
+import ApplicationsPageWithHOC from "./02components/ApplicationsPageWithHOC";
+import TicketsManagement from "./02components/TicketsManagement";
+import TasksManagement from "./02components/TasksManagement";
+import UserManagement from "./02components/UserManagement";
+import AdminDashboard from "./02components/AdminDashboard";
+import ReportsManagement from "./02components/ReportsManagement";
+import AdminTopBar from "./01layout/AdminTopBar";
+import AdminSidebar from "./01layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
-import TenantsManagement from "./tenantsManagement/TenantsManagement";
+import TenantsPageWithHOC from './02components/TenantsPageWithHOC';
 
 const drawerWidth = 240;
 
@@ -63,7 +63,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
   const renderContent = () => {
     switch (selectedView) {
       case "tenants":
-        return <TenantsManagement />;
+        return <TenantsPageWithHOC />;
       case "users":
         return <UserManagement />;
       case "customers":

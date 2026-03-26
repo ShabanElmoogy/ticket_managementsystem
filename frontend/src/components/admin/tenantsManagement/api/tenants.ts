@@ -46,6 +46,8 @@ export const tenantsApi = {
     }>
   ) => api.patch<Tenant>(`/tenants/${encodeURIComponent(id)}`, payload),
 
+  delete: (id: string) => api.delete<{ message: string }>(`/tenants/${encodeURIComponent(id)}`),
+
   // Public-ish
   getBySlug: (slug: string) => api.get<Tenant>(`/tenants/by-slug/${encodeURIComponent(slug)}`),
 };
