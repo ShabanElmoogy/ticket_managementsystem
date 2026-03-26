@@ -28,6 +28,7 @@ export interface Tenant {
   subscriptionSeats?: number;
   createdAt?: string;
   updatedAt?: string;
+  _stats?: { userCount: number; ticketCount: number };
 }
 
 export type SnackbarState = {

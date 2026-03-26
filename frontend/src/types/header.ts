@@ -28,10 +28,12 @@ export interface MenuItem {
   color?: string;
 }
 
+import type { UserRole } from './roles';
+
 export interface UserInfo {
   id: string;
   name: string;
-  role: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE";
+  role: UserRole;
 }
 
 export interface NotificationComponentProps {

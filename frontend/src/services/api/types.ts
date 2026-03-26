@@ -11,6 +11,8 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  tenantId?: string | null;
+  tenantName?: string | null;
   phone?: string;
   whatsappNotifications?: boolean;
   reminderEnabled?: boolean;
@@ -197,6 +199,7 @@ export interface LoginResponse {
   user: User;
   token: string;
   refreshToken: string;
+  tenantSuspended?: boolean;
 }
 
 export interface SolutionStep {

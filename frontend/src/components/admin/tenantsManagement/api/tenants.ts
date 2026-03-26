@@ -15,6 +15,14 @@ export type Tenant = {
 
   createdAt?: string;
   updatedAt?: string;
+
+  // Stats (loaded separately)
+  _stats?: TenantStats;
+};
+
+export type TenantStats = {
+  userCount: number;
+  ticketCount: number;
 };
 
 export const tenantsApi = {
@@ -47,6 +55,12 @@ export const tenantsApi = {
   ) => api.patch<Tenant>(`/tenants/${encodeURIComponent(id)}`, payload),
 
   delete: (id: string) => api.delete<{ message: string }>(`/tenants/${encodeURIComponent(id)}`),
+
+  deactivate: (id: string) => api.patch<Tenant>(`/tenants/${encodeURIComponent(id)}/deactivate`, {}),
+
+  activate: (id: string) => api.patch<Tenant>(`/tenants/${encodeURIComponent(id)}/activate`, {}),
+
+  getStats: (id: string) => api.get<TenantStats>(`/tenants/${encodeURIComponent(id)}/stats`),
 
   // Public-ish
   getBySlug: (slug: string) => api.get<Tenant>(`/tenants/by-slug/${encodeURIComponent(slug)}`),

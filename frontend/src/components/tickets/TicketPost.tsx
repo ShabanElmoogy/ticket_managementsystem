@@ -68,7 +68,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   onTicketClick,
   onDeleteTicket: _onDeleteTicket,
 }) => {
-  const { user, token } = useAuthStore();
+  const { user, token, tenantSuspended } = useAuthStore();
   const queryClient = useQueryClient();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -93,6 +93,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isDeleted = !!ticket.deletedAt;
+  const readonly = !!tenantSuspended;
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -238,11 +239,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
   };
 
   const PROGRAMMING_STATUSES_CHECK = ['PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING'];
-  const canUpdateStatus =
-    user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN" ||
-    (ticket.assignedTo?.id === user?.id && !PROGRAMMING_STATUSES_CHECK.includes(ticket.status));
-  const canTakeTicket = !ticket.assignedTo && user?.role === "EMPLOYEE";
-  const canDelete = user?.role === "TENANT_ADMIN";
+  const canUpdateStatus = !readonly &&
+    (user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN" ||
+    (ticket.assignedTo?.id === user?.id && !PROGRAMMING_STATUSES_CHECK.includes(ticket.status)));
+  const canTakeTicket = !readonly && !ticket.assignedTo && user?.role === "EMPLOYEE";
+  const canDelete = !readonly && user?.role === "TENANT_ADMIN";
 
   const handleDeleteConfirmed = async () => {
     setDeleting(true);
@@ -1050,13 +1051,14 @@ const TicketPost: React.FC<TicketPostProps> = ({
               <Box flexGrow={1}>
                 <TextField
                   fullWidth
-                  placeholder="Write a comment..."
+                  placeholder={readonly ? "Subscription ended — read only" : "Write a comment..."}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   variant="outlined"
                   size="small"
                   multiline
                   maxRows={3}
+                  disabled={readonly}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: { xs: 2, sm: 3 },
@@ -1080,7 +1082,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
                     endAdornment: (
                       <IconButton
                         onClick={handleAddComment}
-                        disabled={!newComment.trim() || submitting}
+                        disabled={!newComment.trim() || submitting || readonly}
                         size="small"
                         sx={{ p: { xs: 0.5, sm: 1 } }}
                       >
@@ -1130,7 +1132,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
             ⚫ Mark as Closed
           </MenuItem>,
         ]}
-        {isAdmin && [
+        {isAdmin && !readonly && [
           <Divider key="programmer-divider" />,
           <MenuItem
             key="assign-programmer"

@@ -1,6 +1,10 @@
 import React from "react";
-import { AppBar, Toolbar, Typography, IconButton } from "@mui/material";
+import { AppBar, Toolbar, Typography, IconButton, Chip, Tooltip } from "@mui/material";
 import { Menu as MenuIcon, Home as HomeIcon } from "@mui/icons-material";
+import BlockIcon from "@mui/icons-material/Block";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { useTenantStatus } from "../../../stores";
 
 export interface AdminTopBarProps {
   title: string;
@@ -12,7 +16,17 @@ export interface AdminTopBarProps {
   onHome?: () => void;
 }
 
-const DEFAULT_DRAWER_WIDTH = 240;
+const STATUS_BADGE: Record<string, { label: string; color: 'error' | 'warning'; icon: React.ReactElement; tooltip: string }> = {
+  SUSPENDED: { label: 'Suspended',   color: 'error',   icon: <BlockIcon sx={{ fontSize: '16px !important' }} />,       tooltip: 'Account suspended — read-only mode. Contact your administrator.' },
+  PAST_DUE:  { label: 'Payment Due', color: 'warning', icon: <ErrorOutlineIcon sx={{ fontSize: '16px !important' }} />, tooltip: 'Payment past due — read-only mode. Please update your billing.' },
+  EXPIRED:   { label: 'Expired',     color: 'warning', icon: <AccessTimeIcon sx={{ fontSize: '16px !important' }} />,   tooltip: 'Subscription expired — read-only mode. Contact your administrator.' },
+};
+
+const STATUS_MESSAGES: Record<string, string> = {
+  PAST_DUE: 'Your subscription is past due. You can view data but cannot create, edit, or delete anything.',
+  EXPIRED:  'Your subscription has expired. You can view data but cannot create, edit, or delete anything.',
+};
+
 
 const AdminTopBar: React.FC<AdminTopBarProps> = ({
   title,
@@ -23,6 +37,10 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
   onDesktopToggle,
   onHome,
 }) => {
+  const tenantStatus = useTenantStatus();
+  const badge = tenantStatus ? STATUS_BADGE[tenantStatus] : null;
+  const centerMessage = tenantStatus ? STATUS_MESSAGES[tenantStatus] ?? null : null;
+
   return (
     <AppBar
       position="fixed"
@@ -32,38 +50,53 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
       }}
     >
       <Toolbar>
-        {/* Mobile menu toggle */}
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={onMobileToggle}
-          sx={{ mr: 2, display: { md: "none" } }}
-        >
+        <IconButton color="inherit" edge="start" onClick={onMobileToggle} sx={{ mr: 2, display: { md: "none" } }}>
           <MenuIcon />
         </IconButton>
 
-        {/* Desktop drawer toggle */}
-        <IconButton
-          color="inherit"
-          aria-label="toggle drawer"
-          edge="start"
-          onClick={onDesktopToggle}
-          sx={{ mr: 2, display: { xs: "none", md: "inline-flex" } }}
-        >
+        <IconButton color="inherit" edge="start" onClick={onDesktopToggle} sx={{ mr: 2, display: { xs: "none", md: "inline-flex" } }}>
           <MenuIcon />
         </IconButton>
 
-        {/* Title */}
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
           {title}
         </Typography>
 
-        {/* Email + Home */}
+        {/* Centered status message for PAST_DUE / EXPIRED */}
+        {centerMessage && (
+          <Typography
+            variant="caption"
+            sx={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              color: 'warning.light',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+            }}
+          >
+            {centerMessage}
+          </Typography>
+        )}
+
+        {/* Status badge */}
+        {badge && (
+          <Tooltip title={badge.tooltip}>
+            <Chip
+              icon={badge.icon}
+              label={badge.label}
+              color={badge.color}
+              size="small"
+              sx={{ fontWeight: 700, cursor: 'default', mr: 1 }}
+            />
+          </Tooltip>
+        )}
+
         <Typography variant="body2" sx={{ mr: 1 }}>
           {userEmail ? `Welcome, ${userEmail}` : ""}
         </Typography>
-        <IconButton color="inherit" aria-label="home" onClick={onHome}>
+        <IconButton color="inherit" onClick={onHome}>
           <HomeIcon />
         </IconButton>
       </Toolbar>

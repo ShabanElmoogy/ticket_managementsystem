@@ -41,6 +41,7 @@ interface BoardControlsProps {
   onCreateTicket: () => void;
   onToggleFilters: () => void;
   onMenuClick: (event: React.MouseEvent<HTMLElement>) => void;
+  tenantSuspended?: boolean;
 }
 
 const BoardControls: React.FC<BoardControlsProps> = ({
@@ -53,6 +54,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
   onCreateTicket,
   onToggleFilters,
   onMenuClick,
+  tenantSuspended = false,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -213,6 +215,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
             startIcon={<PlaylistAddIcon />}
             onClick={onCreateBoard}
             size="large"
+            disabled={tenantSuspended}
             sx={{
               py: 1.5,
               background:
@@ -259,6 +262,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
             startIcon={<AddIcon />}
             onClick={onCreateTicket}
             size="large"
+            disabled={tenantSuspended}
             sx={{
               py: 1.5,
               background:
@@ -588,6 +592,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
             variant="contained"
             startIcon={<PlaylistAddIcon />}
             onClick={onCreateBoard}
+            disabled={tenantSuspended}
             sx={{
               px: 3,
               py: 1,
@@ -612,6 +617,7 @@ const BoardControls: React.FC<BoardControlsProps> = ({
             variant="contained"
             startIcon={<AddIcon />}
             onClick={onCreateTicket}
+            disabled={tenantSuspended}
             sx={{
               px: 3,
               py: 1,

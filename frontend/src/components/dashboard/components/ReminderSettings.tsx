@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from '../../../stores/authStore';
 import { profileApi } from '../../../services/api';
 import type { ReminderSettings as ReminderSettingsType } from '../../../services/api';
+import { Role } from '../../../types/roles';
 
 const ReminderSettings: React.FC = () => {
   const { user, token } = useAuthStore();
@@ -40,7 +41,7 @@ const ReminderSettings: React.FC = () => {
   ];
 
   useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE') return;
+    if (!token || user?.role !== Role.EMPLOYEE) return;
 
     const loadSettings = async () => {
       try {
@@ -74,7 +75,7 @@ const ReminderSettings: React.FC = () => {
 
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(tempSettings);
 
-  if (user?.role !== 'EMPLOYEE') return null;
+  if (user?.role !== Role.EMPLOYEE) return null;
 
   return (
     <Card sx={{ mb: 2 }}>

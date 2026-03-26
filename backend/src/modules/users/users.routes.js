@@ -46,12 +46,12 @@ router.post('/', authenticateToken, requireSuperAdmin, resolveTenant, validate(c
  * /users/stats:
  *   get:
  *     tags: [Users]
- *     summary: User statistics by role (SUPER_ADMIN)
+ *     summary: User statistics by role (TENANT_ADMIN)
  *     responses:
  *       200:
  *         description: Stats object
  */
-router.get('/stats', authenticateToken, requireSuperAdmin, usersController.getUserStats);
+router.get('/stats', authenticateToken, requireTenantAdmin, usersController.getUserStats);
 
 /**
  * @swagger
@@ -81,6 +81,7 @@ router.get('/stats', authenticateToken, requireSuperAdmin, usersController.getUs
  */
 router.get('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantUsers);
 router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, validate(createUserSchema), usersController.createTenantUser);
+router.get('/tenant/seats', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantSeats);
 
 /**
  * @swagger
@@ -104,6 +105,7 @@ router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, val
  */
 router.get('/profile', authenticateToken, usersController.getCurrentProfile);
 router.put('/profile', authenticateToken, validate(updateOwnProfileSchema), usersController.updateOwnProfile);
+router.get('/profile/tenant-status', authenticateToken, usersController.getTenantStatus);
 
 /**
  * @swagger
@@ -159,5 +161,6 @@ router.get('/programmers', authenticateToken, resolveTenant, requireAdmin, users
 router.get('/:id', authenticateToken, requireSuperAdmin, usersController.getUserById);
 router.put('/:id', authenticateToken, requireSuperAdmin, validate(updateUserSchema), usersController.updateUser);
 router.delete('/:id', authenticateToken, requireSuperAdmin, usersController.deleteUser);
+router.post('/:id/reset-password', authenticateToken, requireSuperAdmin, usersController.resetUserPassword);
 
 export default router;

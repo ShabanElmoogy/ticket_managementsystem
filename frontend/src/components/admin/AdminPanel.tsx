@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { Box, useTheme, useMediaQuery } from "@mui/material";
+import { Box, useTheme, useMediaQuery, Alert } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Apps as AppsIcon,
   ConfirmationNumber as TicketIcon,
   Assignment as TaskIcon,
-  SupervisorAccount as UsersIcon,
   BarChart as ReportsIcon,
+  SupervisorAccount as UsersIcon,
   Apartment as TenantsIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
+import { isSuperAdmin } from "../../types/roles";
+import { useTenantSuspended, useTenantStatus } from "../../stores";
 import CustomersManagement from "./02components/CustomersManagement";
 import ApplicationsPageWithHOC from "./02components/ApplicationsPageWithHOC";
 import TicketsManagement from "./02components/TicketsManagement";
@@ -34,52 +36,65 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
   const { user } = useAuthStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSuperAdminUser = isSuperAdmin(user?.role);
+  const suspended = useTenantSuspended();
+  const tenantStatus = useTenantStatus();
+  // SUSPENDED = fully blocked (no view, no actions)
+  // PAST_DUE / EXPIRED = read-only (can view, actions disabled via useAdminReadonly)
+  const fullyBlocked = tenantStatus === 'SUSPENDED';
+  const readOnly = suspended && !fullyBlocked; // PAST_DUE or EXPIRED
 
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
-
+  // Items that make API calls which fail when tenant is suspended
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(true);
-  const [selectedView, setSelectedView] = useState(isSuperAdmin ? "tenants" : "dashboard");
+  const [selectedView, setSelectedView] = useState(
+    isSuperAdminUser ? 'tenants' : 'dashboard'
+  );
 
   const handleMobileDrawerToggle = () => setMobileOpen((v) => !v);
   const handleDesktopDrawerToggle = () => setDesktopOpen((v) => !v);
 
-  const menuItems = isSuperAdmin
+  const menuItems = isSuperAdminUser
     ? [
         { id: "tenants", label: "Tenants", icon: <TenantsIcon /> },
         { id: "users", label: "Users", icon: <UsersIcon /> },
       ]
     : [
-        { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-        { id: "users", label: "Users", icon: <UsersIcon /> },
-        { id: "customers", label: "Customers", icon: <PeopleIcon /> },
-        { id: "applications", label: "Applications", icon: <AppsIcon /> },
-        { id: "tickets", label: "Tickets", icon: <TicketIcon /> },
-        { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
-        { id: "reports", label: "Reports", icon: <ReportsIcon /> },
-        { id: "docs", label: "Docs", icon: <NotesIcon /> },
+        { id: "dashboard",    label: "Dashboard",    icon: <DashboardIcon />,  disabled: fullyBlocked },
+        { id: "users",        label: "Users",        icon: <UsersIcon />,      disabled: fullyBlocked },
+        { id: "customers",    label: "Customers",    icon: <PeopleIcon />,     disabled: fullyBlocked },
+        { id: "applications", label: "Applications", icon: <AppsIcon />,       disabled: fullyBlocked },
+        { id: "tickets",      label: "Tickets",      icon: <TicketIcon />,     disabled: fullyBlocked },
+        { id: "tasks",        label: "Tasks",        icon: <TaskIcon />,       disabled: fullyBlocked },
+        { id: "reports",      label: "Reports",      icon: <ReportsIcon />,    disabled: fullyBlocked },
+        { id: "docs",         label: "Docs",         icon: <NotesIcon />,      disabled: fullyBlocked },
       ];
 
   const renderContent = () => {
+    if (fullyBlocked) {
+      return (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Your account is suspended. All admin actions are disabled. Contact your administrator to reactivate.
+        </Alert>
+      );
+    }
+    if (readOnly) {
+      return renderView();
+    }
+    return renderView();
+  };
+
+  const renderView = () => {
     switch (selectedView) {
-      case "tenants":
-        return <TenantsPageWithHOC />;
-      case "users":
-        return <UserManagement />;
-      case "customers":
-        return <CustomersManagement />;
-      case "applications":
-        return <ApplicationsPageWithHOC />;
-      case "tickets":
-        return <TicketsManagement />;
-      case "tasks":
-        return <TasksManagement />;
-      case "reports":
-        return <ReportsManagement />;
-      case "docs":
-        return <DocsManagement />;
-      default:
-        return <AdminDashboard />;
+      case "tenants":   return <TenantsPageWithHOC />;
+      case "users":     return <UserManagement />;
+      case "customers": return <CustomersManagement />;
+      case "applications": return <ApplicationsPageWithHOC />;
+      case "tickets":   return <TicketsManagement />;
+      case "tasks":     return <TasksManagement />;
+      case "reports":   return <ReportsManagement />;
+      case "docs":      return <DocsManagement />;
+      default:          return <AdminDashboard />;
     }
   };
 
@@ -113,7 +128,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         sx={{
           flexGrow: 1,
           p: 3,
-          mt:10,
+          mt: 10,
           width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : "100%" },
         }}
       >

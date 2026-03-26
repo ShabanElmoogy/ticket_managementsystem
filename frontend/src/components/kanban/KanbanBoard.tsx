@@ -38,6 +38,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { isAfter, isBefore, parseISO } from "date-fns";
 import { useKanbanStore } from "../../stores/kanbanStore";
+import { useTenantSuspended } from "../../stores";
 import type {
   KanbanColumn as KanbanColumnType,
   KanbanTicket,
@@ -83,6 +84,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const { currentBoard, loading, error, fetchBoard, moveTicket, clearError } =
     useKanbanStore();
+  const tenantSuspended = useTenantSuspended();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [createTicketOpen, setCreateTicketOpen] = useState(false);
@@ -117,6 +119,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   }, [boardId, fetchBoard]);
 
   const handleDragEnd = async (result: DropResult) => {
+    if (tenantSuspended) return;
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -674,6 +677,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Suspended Banner */}
+        {tenantSuspended && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Your subscription is suspended. Board actions are disabled.
+          </Alert>
+        )}
+
         {/* Board Header */}
         <BoardHeader currentBoard={currentBoard}>
           <BoardControls
@@ -686,6 +696,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             onCreateTicket={() => setCreateTicketOpen(true)}
             onToggleFilters={() => setFiltersOpen(!filtersOpen)}
             onMenuClick={handleMenuClick}
+            tenantSuspended={tenantSuspended}
           />
 
           {!isMobile && (
@@ -768,6 +779,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         status={status}
                         tickets={tickets}
                         boardId={boardId}
+                        tenantSuspended={tenantSuspended}
                       />
                     </Box>
                   );
@@ -797,6 +809,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       status={status}
                       tickets={tickets}
                       boardId={boardId}
+                      tenantSuspended={tenantSuspended}
                     />
                   );
                 })}

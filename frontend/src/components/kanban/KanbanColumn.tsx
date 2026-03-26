@@ -16,13 +16,15 @@ interface KanbanColumnProps {
   status: TicketStatus;
   tickets: KanbanTicket[];
   boardId: string;
+  tenantSuspended?: boolean;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
   column,
   status,
   tickets,
-  boardId
+  boardId,
+  tenantSuspended = false
 }) => {
   const getColumnTitle = () => {
     if (column) return column.name;
@@ -127,6 +129,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 key={ticket.id}
                 draggableId={ticket.id}
                 index={index}
+                isDragDisabled={tenantSuspended}
               >
                 {(provided, snapshot) => (
                   <div

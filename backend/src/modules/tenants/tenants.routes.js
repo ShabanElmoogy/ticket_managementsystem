@@ -3,6 +3,10 @@ import { authenticateToken, requireSuperAdmin } from '../../middleware/auth.js';
 import {
   createTenant,
   getTenantBySlug,
+  getTenantStats,
+  activateTenant,
+  deactivateTenant,
+  deleteTenant,
   listTenants,
   listTenantsPublic,
   updateTenant,
@@ -61,6 +65,23 @@ router.post('/', authenticateToken, requireSuperAdmin, validate(createTenantSche
  *         $ref: '#/components/responses/Forbidden'
  */
 router.patch('/:id', authenticateToken, requireSuperAdmin, validate(updateTenantSchema), updateTenant);
+router.patch('/:id/deactivate', authenticateToken, requireSuperAdmin, deactivateTenant);
+router.patch('/:id/activate', authenticateToken, requireSuperAdmin, activateTenant);
+router.delete('/:id', authenticateToken, requireSuperAdmin, deleteTenant);
+
+/**
+ * @swagger
+ * /tenants/{id}/stats:
+ *   get:
+ *     tags: [Tenants]
+ *     summary: Get tenant stats (user count, ticket count) (SUPER_ADMIN)
+ *     parameters:
+ *       - $ref: '#/components/parameters/PathId'
+ *     responses:
+ *       200:
+ *         description: Tenant stats
+ */
+router.get('/:id/stats', authenticateToken, requireSuperAdmin, getTenantStats);
 
 /**
  * @swagger

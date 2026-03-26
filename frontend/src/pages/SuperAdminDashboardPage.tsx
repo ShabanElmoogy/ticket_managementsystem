@@ -123,9 +123,6 @@ const SuperAdminDashboardPage: React.FC = () => {
                 <Button variant="contained" onClick={() => navigate('/admin')}>
                   Create / Manage Tenants
                 </Button>
-                <Button variant="outlined" onClick={() => navigate('/admin')}>
-                  Manage Users
-                </Button>
               </Stack>
             </Box>
           </Stack>

@@ -95,9 +95,9 @@ const LoginForm: React.FC = () => {
         localStorage.setItem('tenantSlug', String(responseTenantSlug));
       }
 
-      login(response.user, response.token, response.refreshToken);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed');
+      login(response.user, response.token, response.refreshToken,
+        !!(response as any).tenantSuspended,
+        (response as any).tenantStatus ?? null);
     } finally {
       setLoading(false);
     }
@@ -131,9 +131,9 @@ const LoginForm: React.FC = () => {
         localStorage.setItem('tenantSlug', String(responseTenantSlug));
       }
 
-      login(response.user, response.token, response.refreshToken);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed');
+      login(response.user, response.token, response.refreshToken,
+        !!(response as any).tenantSuspended,
+        (response as any).tenantStatus ?? null);
     } finally {
       setLoading(false);
     }

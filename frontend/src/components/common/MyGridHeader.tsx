@@ -3,6 +3,7 @@ import { Card, CardContent, Box, Typography, Tooltip, Button } from '@mui/materi
 import { alpha } from '@mui/material/styles';
 import AddCircleIcon from '@mui/icons-material/Add';
 import type { ReactNode, ElementType } from 'react';
+import { useAdminReadonly } from '../admin/AdminReadonlyContext';
 
 interface MyGridHeaderProps {
   title: ReactNode;
@@ -23,6 +24,7 @@ const MyGridHeader = ({
   rightActions,
   icon: Icon 
 }: MyGridHeaderProps) => {
+  const readonly = useAdminReadonly();
   return (
     <Card 
       elevation={2} 
@@ -66,13 +68,15 @@ const MyGridHeader = ({
             {leftActions}
             {rightActions}
             {onAdd && (
-              <Tooltip title={addTooltip}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddCircleIcon />}
-                  onClick={onAdd}
-                  size="large"
+              <Tooltip title={readonly ? 'View only — subscription ended' : addTooltip}>
+                <span>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddCircleIcon />}
+                    onClick={onAdd}
+                    size="large"
+                    disabled={readonly}
                   sx={{ 
                   borderRadius: 2,
                   fontWeight: 600,
@@ -88,6 +92,7 @@ const MyGridHeader = ({
                   >
                   {addButtonText}
                 </Button>
+                </span>
               </Tooltip>
             )}
           </Box>

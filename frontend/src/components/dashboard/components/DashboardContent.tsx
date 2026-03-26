@@ -8,6 +8,8 @@ import { MobileFilters, DesktopFilters } from "../filters";
 import TicketFeed from "../../tickets/TicketFeed";
 import { ActivityFeed } from "./activityFeed"
 import ReminderSettings from "./ReminderSettings";
+import { Role } from "../../../types/roles";
+import { useAuthStore } from "../../../stores/authStore";
 
 interface Props {
   isMobile: boolean;
@@ -78,6 +80,8 @@ const DashboardContent: React.FC<Props> = ({
   onAddComment,
   onDeleteTicket,
 }) => {
+  const { tenantSuspended } = useAuthStore();
+
   return (
     <Box>
       <Box
@@ -108,7 +112,7 @@ const DashboardContent: React.FC<Props> = ({
                 }}
               />
 
-              {userRole === "TENANT_ADMIN" && (
+              {userRole === Role.TENANT_ADMIN && !tenantSuspended && (
                 <div data-testid="create-ticket">
                   <CreateTicketPost
                     onSubmit={onCreateTicket || (() => {})}
@@ -171,7 +175,7 @@ const DashboardContent: React.FC<Props> = ({
                 />
               )}
 
-              {userRole === "EMPLOYEE" && <ReminderSettings />}
+              {userRole === Role.EMPLOYEE && <ReminderSettings />}
 
               <TicketFeed
                 tickets={tickets}

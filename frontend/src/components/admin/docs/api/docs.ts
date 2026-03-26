@@ -24,9 +24,15 @@ export class DocsApiService extends BaseApiService {
    */
   async loadDocs(): Promise<Doc[] | null> {
     try {
-      const result = await this.get<Doc[]>('/docs');
-      console.log('API response:', result);
-      return result;
+      const result = await this.get<unknown>('/docs');
+      if (Array.isArray(result)) return result as Doc[];
+      // Handle wrapped responses e.g. { data: [...] } or { docs: [...] }
+      if (result && typeof result === 'object') {
+        const r = result as Record<string, unknown>;
+        if (Array.isArray(r.data)) return r.data as Doc[];
+        if (Array.isArray(r.docs)) return r.docs as Doc[];
+      }
+      return [];
     } catch (error) {
       console.error('Failed to load documents:', error);
       return null;

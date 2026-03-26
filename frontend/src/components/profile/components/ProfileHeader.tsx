@@ -1,12 +1,13 @@
 import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
+import type { UserRole } from '../../../types/roles';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'EMPLOYEE';
+  role: UserRole;
   phone?: string;
 }
 

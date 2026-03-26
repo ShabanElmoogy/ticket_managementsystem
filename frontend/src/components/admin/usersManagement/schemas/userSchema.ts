@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Role } from "../../../../types/roles";
 
 export const userFormSchema = z.object({
   name: z
@@ -17,7 +18,7 @@ export const userFormSchema = z.object({
     .max(100, "Password must be at most 100 characters")
     .optional()
     .or(z.literal("")),
-  role: z.enum(["SUPER_ADMIN", "TENANT_ADMIN", "EMPLOYEE", "PROGRAMMER"]),
+  role: z.enum([Role.SUPER_ADMIN, Role.TENANT_ADMIN, Role.EMPLOYEE, Role.PROGRAMMER]),
   tenantSlug: z.string().trim().min(1, "Tenant is required").optional().or(z.literal("")),
   phone: z
     .string()

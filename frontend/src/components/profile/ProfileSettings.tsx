@@ -5,6 +5,8 @@ import ProfileHeader from "./components/ProfileHeader";
 import ProfileForm from "./components/ProfileForm";
 import ReminderSettings from "./components/ReminderSettings";
 
+import { Role } from "../../types/roles";
+
 const ProfileSettings: React.FC = () => {
   const {
     user,
@@ -32,7 +34,7 @@ const ProfileSettings: React.FC = () => {
         </CardContent>
       </Card>
 
-      {user?.role === "EMPLOYEE" && (
+      {user?.role === Role.EMPLOYEE && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <ReminderSettings

@@ -1,6 +1,7 @@
 import { db } from '../../config/database.js';
 import bcrypt from 'bcryptjs';
 import { users } from './users.schema.js';
+import { tenants } from '../tenants/tenants.schema.js';
 import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import { eq, count, desc, inArray, or, and } from 'drizzle-orm';
@@ -15,6 +16,7 @@ export const getAllUsers = async (req, res) => {
       .select({
         id: users.id,
         tenantId: users.tenantId,
+        tenantName: tenants.name,
         email: users.email,
         name: users.name,
         role: users.role,
@@ -26,7 +28,7 @@ export const getAllUsers = async (req, res) => {
         updatedAt: users.updatedAt,
       })
       .from(users)
-      // SUPER_ADMIN should see only tenant admins in the admin grid
+      .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .where(eq(users.role, Role.TENANT_ADMIN))
       .orderBy(desc(users.createdAt));
 
@@ -120,10 +122,11 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Create new user (super admin only)
+// Create new user (super admin only — role locked to TENANT_ADMIN)
 export const createUser = async (req, res) => {
   try {
-    const { email, name, password, role = Role.EMPLOYEE, phone, whatsappNotifications = false } = req.body;
+    const { email, name, password, phone, whatsappNotifications = false } = req.body;
+    const role = Role.TENANT_ADMIN; // SUPER_ADMIN can only create tenant admins
 
     if (!email || !name || !password) {
       return res.status(400).json({ error: 'Email, name, and password are required' });
@@ -180,6 +183,38 @@ export const createUser = async (req, res) => {
     res.status(201).json(user);
   } catch (error) {
     console.error('Create user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get tenant suspension status for the current user (tenant-scoped users only)
+export const getTenantStatus = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+    const [user] = await db
+      .select({ tenantId: users.tenantId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user?.tenantId) return res.json({ suspended: false });
+
+    const [tenant] = await db
+      .select({ subscriptionStatus: tenants.subscriptionStatus, subscriptionEnd: tenants.subscriptionEnd })
+      .from(tenants)
+      .where(eq(tenants.id, user.tenantId))
+      .limit(1);
+
+    if (!tenant) return res.json({ suspended: false });
+
+    const expired = tenant.subscriptionEnd && new Date(tenant.subscriptionEnd) < new Date();
+    const suspended = tenant.subscriptionStatus === 'CANCELED' || !!expired;
+
+    return res.json({ suspended });
+  } catch (error) {
+    console.error('Get tenant status error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -377,6 +412,29 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+// Reset user password (super admin only)
+export const resetUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, id)).limit(1);
+    if (!existing.length) return res.status(404).json({ error: 'User not found' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    await db.update(users).set({ password: hashed, updatedAt: new Date() }).where(eq(users.id, id));
+
+    return res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Get all employees
 // - SUPER_ADMIN: sees all employees
 // - TENANT_ADMIN/EMPLOYEE: sees employees only within resolved tenant
@@ -436,6 +494,27 @@ export const getProgrammers = async (req, res) => {
 // Tenant-scoped endpoints (TENANT_ADMIN)
 // ============================================================================
 
+export const getTenantSeats = async (req, res) => {
+  try {
+    const tenantId = requireTenantScope(req);
+    const [tenant] = await db
+      .select({ subscriptionSeats: tenants.subscriptionSeats })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    const [{ count: used }] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.tenantId, tenantId));
+
+    return res.json({ used: Number(used), total: tenant?.subscriptionSeats ?? 0 });
+  } catch (error) {
+    console.error('Get tenant seats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const getTenantUsers = async (req, res) => {
   try {
     const tenantId = requireTenantScope(req);
@@ -476,6 +555,26 @@ export const createTenantUser = async (req, res) => {
 
     if (role === Role.SUPER_ADMIN) {
       return res.status(403).json({ error: 'Not allowed to create SUPER_ADMIN' });
+    }
+
+    // Enforce seat limit
+    const [tenant] = await db
+      .select({ subscriptionSeats: tenants.subscriptionSeats })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    if (tenant?.subscriptionSeats > 0) {
+      const [{ count: currentCount }] = await db
+        .select({ count: count() })
+        .from(users)
+        .where(eq(users.tenantId, tenantId));
+
+      if (currentCount >= tenant.subscriptionSeats) {
+        return res.status(403).json({
+          error: `Seat limit reached. Your plan allows ${tenant.subscriptionSeats} user(s). Please upgrade your subscription to add more users.`,
+        });
+      }
     }
 
     const existingUser = await db

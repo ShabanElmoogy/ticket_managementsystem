@@ -33,8 +33,20 @@ export class UsersApiService extends BaseApiService {
     return this.delete<{ message: string }>(`/users/${id}`, { params });
   }
 
+  async resetPassword(id: string, password: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(`/users/${id}/reset-password`, { password });
+  }
+
   async getUserStats(): Promise<UserStats> {
     return this.get<UserStats>("/users/stats");
+  }
+
+  async getTenantStatus(): Promise<{ suspended: boolean }> {
+    return this.get<{ suspended: boolean }>("/users/profile/tenant-status");
+  }
+
+  async getTenantSeats(): Promise<{ used: number; total: number }> {
+    return this.get<{ used: number; total: number }>("/users/tenant/seats");
   }
 
   async getEmployees(): Promise<User[]> {

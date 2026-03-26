@@ -262,7 +262,7 @@ export const login = async (req, res) => {
     }
 
     const [tenant] = await db
-      .select({ id: tenants.id, slug: tenants.slug })
+      .select({ id: tenants.id, slug: tenants.slug, subscriptionStatus: tenants.subscriptionStatus, subscriptionEnd: tenants.subscriptionEnd })
       .from(tenants)
       .where(eq(tenants.slug, tenantSlug))
       .limit(1);
@@ -273,6 +273,11 @@ export const login = async (req, res) => {
         details: 'X-Tenant-Slug does not match any tenant.'
       });
     }
+
+    // Flag restricted tenants but allow login (read-only mode)
+    const isExpired = tenant.subscriptionEnd && new Date(tenant.subscriptionEnd) < new Date();
+    const tenantStatus = isExpired ? 'EXPIRED' : tenant.subscriptionStatus; // ACTIVE | TRIAL | PAST_DUE | SUSPENDED | EXPIRED
+    const tenantSuspended = tenantStatus === 'SUSPENDED' || tenantStatus === 'PAST_DUE' || tenantStatus === 'EXPIRED';
 
     const tenantId = tenant.id;
 
@@ -329,6 +334,8 @@ export const login = async (req, res) => {
       },
       token: accessToken,
       refreshToken: refreshTokenValue,
+      tenantSuspended,
+      tenantStatus,
       tenant: {
         id: tenantId,
         slug: tenant.slug,

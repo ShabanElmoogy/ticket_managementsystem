@@ -17,6 +17,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: React.ReactNode;
+  disabled?: boolean;
 }
 
 export interface AdminSidebarProps {
@@ -60,6 +61,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <ListItem key={item.id} disablePadding>
             <ListItemButton
               selected={selectedId === item.id}
+              disabled={item.disabled}
               onClick={() => {
                 onSelect(item.id);
                 if (isMobile && onMobileClose) onMobileClose();

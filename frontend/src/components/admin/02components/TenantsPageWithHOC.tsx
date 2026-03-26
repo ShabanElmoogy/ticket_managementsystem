@@ -6,9 +6,7 @@ import {
 } from '../../../shared';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import { TenantsTable, TenantFormDialog } from '../tenantsManagement';
-import { tenantsApi } from '../tenantsManagement/api/tenants';
-import type { Tenant, TenantFormValues } from '../tenantsManagement/types/types';
-import ApartmentIcon from '@mui/icons-material/Apartment';
+import { tenantsApi } from '../tenantsManagement/api/tenants';import type { Tenant, TenantFormValues } from '../tenantsManagement/types/types';import ApartmentIcon from '@mui/icons-material/Apartment';
 
 const tenantsKeys = { all: ['tenants'] as const };
 
@@ -19,12 +17,39 @@ type TenantsPageProps = CRUDProps<Tenant, TenantFormValues> &
 
 function TenantsPageComponent(props: TenantsPageProps) {
   const {
-    entities: tenants, loading, create, update, remove,
+    entities: tenants, loading, create, update, remove, refetch,
     uiState, openDialog, closeDialog,
     showSnackbar, closeSnackbar,
     openDeleteDialog, closeDeleteDialog,
     setSubmitting, messages, handleError, logError,
   } = props;
+
+  const [statsMap, setStatsMap] = React.useState<Record<string, { userCount: number; ticketCount: number }>>({});
+
+  React.useEffect(() => {
+    if (!tenants.length) return;
+    tenants.forEach((t) => {
+      tenantsApi.getStats(t.id)
+        .then((s) => setStatsMap((prev) => ({ ...prev, [t.id]: s })))
+        .catch(() => {});
+    });
+  }, [tenants]);
+
+  const tenantsWithStats = tenants.map((t) => ({ ...t, _stats: statsMap[t.id] }));
+
+  const handleStatusChange = async (tenant: Tenant, status: string) => {
+    try {
+      if (status === 'ACTIVE') {
+        await tenantsApi.activate(tenant.id);
+      } else {
+        await tenantsApi.update(tenant.id, { subscriptionStatus: status });
+      }
+      showSnackbar(`"${tenant.name}" status changed to ${status}`, 'success');
+      refetch();
+    } catch (error) {
+      showSnackbar(handleError(error, 'Error updating tenant status'), 'error');
+    }
+  };
 
   const handleSubmit = async (values: TenantFormValues) => {
     setSubmitting(true);
@@ -61,6 +86,7 @@ function TenantsPageComponent(props: TenantsPageProps) {
       await remove((uiState.deleteDialog.item as Tenant).id);
       showSnackbar(messages.success.deleted, 'success');
       closeDeleteDialog();
+      refetch();
     } catch (error) {
       showSnackbar(handleError(error, messages.error.delete), 'error');
       logError('Delete', error);
@@ -84,10 +110,11 @@ function TenantsPageComponent(props: TenantsPageProps) {
       />
 
       <TenantsTable
-        tenants={tenants}
+        tenants={tenantsWithStats}
         loading={loading}
         onEdit={openDialog}
         onDelete={openDeleteDialog}
+        onStatusChange={handleStatusChange}
       />
 
       <TenantFormDialog

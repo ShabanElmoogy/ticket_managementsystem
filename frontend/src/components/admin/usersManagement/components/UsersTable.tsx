@@ -8,10 +8,11 @@ export interface UsersTableProps {
   loading: boolean;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  onResetPassword?: (user: User) => void;
 }
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, loading, onEdit, onDelete }) => {
-  const columns = getUsersColumns({ onEdit, onDelete });
+const UsersTable: React.FC<UsersTableProps> = ({ users, loading, onEdit, onDelete, onResetPassword }) => {
+  const columns = getUsersColumns({ onEdit, onDelete, onResetPassword });
   return <AdminDataGrid rows={users} columns={columns} loading={loading} />;
 };
 

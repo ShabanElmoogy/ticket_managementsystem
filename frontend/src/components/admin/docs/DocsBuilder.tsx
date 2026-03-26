@@ -400,9 +400,6 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
             ) : null}
 
             {(() => {
-              console.log('currentDoc:', currentDoc);
-              console.log('currentDoc.blocks:', currentDoc?.blocks);
-              console.log('blocks type:', typeof currentDoc?.blocks);
               return currentDoc?.blocks && Array.isArray(currentDoc.blocks) && currentDoc.blocks.map((block, idx) => {
               const commonActions = {
                 onMoveUp: idx > 0 ? () => moveBlock(block.id, -1) : undefined,

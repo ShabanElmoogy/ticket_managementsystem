@@ -11,6 +11,7 @@ import {
   Code as CodeIcon,
 } from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
+import { isSuperAdmin, isProgrammerRole, isTenantAdmin, Role } from "../types/roles";
 
 interface CreateMenuItemsProps {
   user: UserInfo;
@@ -53,7 +54,7 @@ export const createMenuItems = ({
       },
     },
 
-    ...(user?.role === "PROGRAMMER"
+    ...(isProgrammerRole(user?.role)
       ? [
           {
             label: "Programming",
@@ -66,7 +67,7 @@ export const createMenuItems = ({
           },
         ]
       : []),
-    ...(user?.role === "EMPLOYEE" || user?.role === "TENANT_ADMIN" || user?.role === "PROGRAMMER"
+    ...(isTenantAdmin(user?.role) || isProgrammerRole(user?.role) || user?.role === Role.EMPLOYEE
       ? [
           {
             label: "Documents",
@@ -79,10 +80,10 @@ export const createMenuItems = ({
           },
         ]
       : []),
-    ...(user?.role === "TENANT_ADMIN" || user?.role === "SUPER_ADMIN"
+    ...(isTenantAdmin(user?.role) || isSuperAdmin(user?.role)
       ? [
           {
-            label: user?.role === "SUPER_ADMIN" ? "System Management" : "Admin Panel",
+            label: isSuperAdmin(user?.role) ? "System Management" : "Admin Panel",
             icon: React.createElement(AdminPanelSettingsIcon),
             onClick: () => {
               navigate('/admin');

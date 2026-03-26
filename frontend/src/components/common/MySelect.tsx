@@ -26,25 +26,9 @@ const MySelect: React.FC<MySelectProps> = (props) => {
       (Array.isArray(value) ? value.length > 0 : true)
   );
 
-  // Debug logging
-  console.log("MySelect Debug:", {
-    value,
-    hasValue,
-    isArray: Array.isArray(value),
-    showClearButton,
-    valueType: typeof value,
-  });
-
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-
-    console.log("Clear button clicked!", {
-      multiple: props.multiple,
-      currentValue: value,
-      hasOnClear: !!onClear,
-      hasOnChange: !!onChange,
-    });
 
     if (onClear) {
       onClear();
@@ -56,7 +40,6 @@ const MySelect: React.FC<MySelectProps> = (props) => {
           name: props.name,
         },
       } as any;
-      console.log("Calling onChange with:", newValue);
       onChange(event, null);
     }
   };

@@ -21,6 +21,7 @@ import {
 import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import { useAuthStore } from '../../../stores/authStore';
 import { profileApi, ticketsApi, type Ticket, type ReminderSettings } from '../../../services/api';
+import { Role } from '../../../types/roles';
 
 interface TicketReminderProps {
   onTicketClick: (ticket: Ticket) => void;
@@ -36,7 +37,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
 
   // Load settings on mount + listen for external changes (from ReminderSettings card)
   useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE') return;
+    if (!token || user?.role !== Role.EMPLOYEE) return;
 
     profileApi.getReminderSettings().then((s) => {
       setSettings(s);
@@ -66,14 +67,14 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
 
   // Initial fetch on mount
   useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) return;
+    if (!token || user?.role !== Role.EMPLOYEE || !settings.reminderEnabled) return;
     fetchDelayedTickets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user]);
 
   // Restart interval whenever settings change
   useEffect(() => {
-    if (!token || user?.role !== 'EMPLOYEE' || !settings.reminderEnabled) return;
+    if (!token || user?.role !== Role.EMPLOYEE || !settings.reminderEnabled) return;
     const interval = setInterval(fetchDelayedTickets, settings.reminderInterval * 60 * 1000);
     return () => clearInterval(interval);
   }, [token, user, settings, fetchDelayedTickets]);

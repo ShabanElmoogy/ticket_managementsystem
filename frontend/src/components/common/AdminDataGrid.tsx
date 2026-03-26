@@ -8,6 +8,7 @@ import type {
   GridValidRowModel,
 } from "@mui/x-data-grid";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { useAdminReadonly } from '../admin/AdminReadonlyContext';
 
 export interface AdminDataGridProps<T extends GridValidRowModel = GridValidRowModel>
   extends Omit<DataGridProps, "rows" | "columns"> {
@@ -114,36 +115,39 @@ export function ActionsCell<R extends GridValidRowModel = GridValidRowModel>({
   actions = [],
   size = "small",
 }: ActionsCellProps<R>) {
+  const readonly = useAdminReadonly();
   return (
     <Box sx={{ display: "flex", justifyContent: "center", gap: 1, alignItems: "center", width: "100%" }}>
       {onEdit && (
         <Tooltip title="Edit">
-          <IconButton size={size} onClick={() => onEdit(row)}>
-            <EditIcon />
-          </IconButton>
+          <span>
+            <IconButton size={size} onClick={() => onEdit(row)} disabled={readonly}>
+              <EditIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       )}
       {onDelete && (
         <Tooltip title="Delete">
-          <IconButton
-            size={size}
-            color="error"
-            onClick={() => onDelete(row)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          <span>
+            <IconButton size={size} color="error" onClick={() => onDelete(row)} disabled={readonly}>
+              <DeleteIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       )}
       {actions.map((a, idx) => (
         <Tooltip key={idx} title={a.title}>
-          <IconButton
-            size={size}
-            color={a.color}
-            onClick={() => a.onClick(row)}
-            disabled={a.disabled}
-          >
-            {a.icon}
-          </IconButton>
+          <span>
+            <IconButton
+              size={size}
+              color={a.color}
+              onClick={() => a.onClick(row)}
+              disabled={a.disabled || readonly}
+            >
+              {a.icon}
+            </IconButton>
+          </span>
         </Tooltip>
       ))}
     </Box>

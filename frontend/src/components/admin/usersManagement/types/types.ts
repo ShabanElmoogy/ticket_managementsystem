@@ -1,16 +1,11 @@
 import type { User } from "../../../../services/api";
+import type { UserRole } from "../../../../types/roles";
 
-// Form values for creating/updating a user
 export interface UserFormValues {
   email: string;
   name: string;
-  // Optional in edit mode; required in create mode (enforced outside schema)
   password?: string;
-  role: "SUPER_ADMIN" | "TENANT_ADMIN" | "EMPLOYEE" | "PROGRAMMER";
-  /**
-   * Tenant slug to create/update the user under.
-   * Used by SUPER_ADMIN when managing users across tenants.
-   */
+  role: UserRole;
   tenantSlug?: string;
   phone?: string;
   whatsappNotifications?: boolean;

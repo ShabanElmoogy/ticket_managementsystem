@@ -29,8 +29,9 @@ export const useDocsBuilder = () => {
   useEffect(() => {
     (async () => {
       const serverDocs = await loadDocsServer();
-      setDocs(serverDocs || []);
-      setCurrentDocId(serverDocs && serverDocs.length ? serverDocs[0].id : null);
+      const docsArray = Array.isArray(serverDocs) ? serverDocs : [];
+      setDocs(docsArray);
+      setCurrentDocId(docsArray.length ? docsArray[0].id : null);
 
       const serverNodes = await loadTreeServer();
       setTree(serverNodes ? buildTree(serverNodes) : []);

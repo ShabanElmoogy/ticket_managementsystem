@@ -1,7 +1,8 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 import { db } from '../../config/database.js';
 import { tenants } from './tenants.schema.js';
 import { users } from '../users/users.schema.js';
+import { tickets } from '../tickets/tickets.schema.js';
 import { Role } from '../../constants/roles.js';
 
 const toSlug = (value) =>
@@ -117,4 +118,76 @@ export const getTenantBySlug = async (req, res) => {
   const rows = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
   if (!rows.length) return res.status(404).json({ error: 'Tenant not found' });
   return res.json(rows[0]);
+};
+
+export const getTenantStats = async (req, res) => {
+  const { id } = req.params;
+  const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.id, id)).limit(1);
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+  const [userCount] = await db.select({ count: count() }).from(users).where(eq(users.tenantId, id));
+  const [ticketCount] = await db.select({ count: count() }).from(tickets).where(
+    and(eq(tickets.createdById, id), eq(tickets.deletedAt, null))
+  );
+
+  // Count tickets via users belonging to this tenant
+  const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, id));
+  const userIds = tenantUsers.map(u => u.id);
+  const [tenantTicketCount] = userIds.length > 0
+    ? await db.select({ count: count() }).from(tickets)
+        .where(and(
+          eq(tickets.deletedAt, null),
+        ))
+    : [{ count: 0 }];
+
+  return res.json({
+    userCount: userCount.count,
+    ticketCount: tenantTicketCount.count,
+  });
+};
+
+export const activateTenant = async (req, res) => {
+  const { id } = req.params;
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+  const [updated] = await db
+    .update(tenants)
+    .set({ subscriptionStatus: 'ACTIVE', updatedAt: new Date() })
+    .where(eq(tenants.id, id))
+    .returning();
+
+  return res.json(updated);
+};
+
+export const deactivateTenant = async (req, res) => {
+  const { id } = req.params;
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+  if (tenant.subscriptionStatus === 'SUSPENDED') {
+    return res.status(400).json({ error: 'Tenant is already deactivated' });
+  }
+
+  const [updated] = await db
+    .update(tenants)
+    .set({ subscriptionStatus: 'SUSPENDED', updatedAt: new Date() })
+    .where(eq(tenants.id, id))
+    .returning();
+
+  return res.json(updated);
+};
+
+export const deleteTenant = async (req, res) => {
+  const { id } = req.params;
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+  // Soft-delete: mark subscription as SUSPENDED
+  await db.transaction(async (tx) => {
+    await tx.update(tenants)
+      .set({ subscriptionStatus: 'SUSPENDED', updatedAt: new Date() })
+      .where(eq(tenants.id, id));
+  });
+
+  return res.json({ message: 'Tenant deactivated successfully' });
 };

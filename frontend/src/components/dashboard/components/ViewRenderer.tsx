@@ -6,6 +6,7 @@ import ErrorBoundary from '../../common/ErrorBoundary';
 import DashboardContent from './DashboardContent';
 import DashboardOverlays from './DashboardOverlays';
 import type { UseDashboardReturn } from '../hooks';
+import { isTenantAdmin } from '../../../types/roles';
 
 interface ViewRendererProps {
   currentView: string;
@@ -79,7 +80,7 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         onOpenSort={() => {
           dashboardProps.showSnackbar("Sort functionality coming soon!", "info");
         }}
-        showCreateButton={dashboardProps.user?.role === "TENANT_ADMIN" || dashboardProps.user?.role === "SUPER_ADMIN"}
+        showCreateButton={isTenantAdmin(dashboardProps.user?.role)}
         onCreateTicket={() => {
           const createElement = document.querySelector('[data-testid="create-ticket"]');
           if (createElement) createElement.scrollIntoView({ behavior: "smooth" });

@@ -27,6 +27,8 @@ import type { KanbanTicket, Priority } from './types/types';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
 import WhatsAppButton from '../WhatsAppButton';
 
+import { useTenantSuspended } from '../../stores';
+
 interface KanbanTicketCardProps {
   ticket: KanbanTicket;
   isDragging: boolean;
@@ -39,8 +41,10 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const tenantSuspended = useTenantSuspended();
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (tenantSuspended) return;
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -336,13 +340,13 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
         <MenuItem onClick={() => { setDetailsOpen(true); handleMenuClose(); }}>
           View Details
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={handleMenuClose} disabled={tenantSuspended}>
           Edit Ticket
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={handleMenuClose} disabled={tenantSuspended}>
           Add Label
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={handleMenuClose} disabled={tenantSuspended}>
           Set Due Date
         </MenuItem>
       </Menu>

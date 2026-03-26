@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { Box, Button, Stack } from '@mui/material';
+import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { ViewAgenda as GalleryIcon, Edit as EditIcon } from '@mui/icons-material';
 import DocsBuilder from './DocsBuilder';
 import DocsGallery from './DocsGallery';
+import { useAdminReadonly } from '../AdminReadonlyContext';
 
 type DocsView = 'gallery' | 'builder';
 
 const DocsManagement: React.FC = () => {
   const [currentView, setCurrentView] = useState<DocsView>('gallery');
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const readonly = useAdminReadonly();
 
   const handleEditDoc = (docId: string) => {
+    if (readonly) return;
     setEditingDocId(docId);
     setCurrentView('builder');
   };
@@ -31,13 +34,18 @@ const DocsManagement: React.FC = () => {
         >
           Gallery
         </Button>
-        <Button
-          variant={currentView === 'builder' ? 'contained' : 'outlined'}
-          startIcon={<EditIcon />}
-          onClick={() => setCurrentView('builder')}
-        >
-          Builder
-        </Button>
+        <Tooltip title={readonly ? 'Read-only — subscription inactive' : ''} disableHoverListener={!readonly}>
+          <span>
+            <Button
+              variant={currentView === 'builder' ? 'contained' : 'outlined'}
+              startIcon={<EditIcon />}
+              onClick={() => !readonly && setCurrentView('builder')}
+              disabled={readonly}
+            >
+              Builder
+            </Button>
+          </span>
+        </Tooltip>
       </Stack>
 
       {/* Content */}

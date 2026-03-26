@@ -1,36 +1,31 @@
 import { CountChip, buildActionsColumn } from "../../../common";
 import type { GridColDef } from "@mui/x-data-grid";
-import { Chip, Box, Typography } from "@mui/material";
+import { Chip, Box, Typography, IconButton, Tooltip } from "@mui/material";
 import {
   AdminPanelSettings as AdminIcon,
   Person as PersonIcon,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
+  LockReset as LockResetIcon,
 } from "@mui/icons-material";
 import type { User } from "../../../../services/api";
 
-// Columns factory
 export const getUsersColumns = (handlers: {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  onResetPassword?: (user: User) => void;
 }): GridColDef[] => {
-  const { onEdit, onDelete } = handlers;
+  const { onEdit, onDelete, onResetPassword } = handlers;
 
   return [
+    { field: "name", headerName: "Name", flex: 1, minWidth: 200, headerAlign: "left", align: "left" },
+    { field: "email", headerName: "Email", headerAlign: "center", align: "center", width: 240, renderCell: (params) => params.value || "-" },
     {
-      field: "name",
-      headerName: "Name",
-      flex: 1,
-      minWidth: 200,
-      headerAlign: "left",
-      align: "left",
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      headerAlign: "center",
+      field: "tenantName",
+      headerName: "Tenant",
+      width: 160,
       align: "center",
-      width: 240,
-      renderCell: (params) => params.value || "-",
+      headerAlign: "center",
+      renderCell: (params) => params.value ?? "—",
     },
     {
       field: "role",
@@ -40,9 +35,9 @@ export const getUsersColumns = (handlers: {
       headerAlign: "center",
       renderCell: (params) => (
         <Chip
-          icon={params.value === "ADMIN" ? <AdminIcon /> : <PersonIcon />}
+          icon={params.value === "TENANT_ADMIN" ? <AdminIcon /> : <PersonIcon />}
           label={params.value}
-          color={params.value === "ADMIN" ? "primary" : "default"}
+          color={params.value === "TENANT_ADMIN" ? "primary" : "default"}
           size="small"
         />
       ),
@@ -56,14 +51,9 @@ export const getUsersColumns = (handlers: {
       renderCell: (params) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {params.value ? (
-            <>
-              <PhoneIcon fontSize="small" color="action" />
-              {params.value}
-            </>
+            <><PhoneIcon fontSize="small" color="action" />{params.value}</>
           ) : (
-            <Typography variant="body2" color="text.secondary">
-              -
-            </Typography>
+            <Typography variant="body2" color="text.secondary">-</Typography>
           )}
         </Box>
       ),
@@ -74,12 +64,7 @@ export const getUsersColumns = (handlers: {
       width: 110,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (
-        <CountChip
-          count={params.row._count?.assignedTickets || 0}
-          color="primary"
-        />
-      ),
+      renderCell: (params) => <CountChip count={params.row._count?.assignedTickets || 0} color="primary" />,
     },
     {
       field: "createdTickets",
@@ -87,12 +72,7 @@ export const getUsersColumns = (handlers: {
       width: 110,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (
-        <CountChip
-          count={params.row._count?.createdTickets || 0}
-          color="primary"
-        />
-      ),
+      renderCell: (params) => <CountChip count={params.row._count?.createdTickets || 0} color="primary" />,
     },
     {
       field: "comments",
@@ -100,9 +80,7 @@ export const getUsersColumns = (handlers: {
       width: 110,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => (
-        <CountChip count={params.row._count?.comments || 0} color="success" />
-      ),
+      renderCell: (params) => <CountChip count={params.row._count?.comments || 0} color="success" />,
     },
     {
       field: "createdAt",
@@ -112,12 +90,24 @@ export const getUsersColumns = (handlers: {
       width: 130,
       renderCell: (params) => new Date(params.value).toLocaleDateString(),
     },
-    buildActionsColumn<User>({
-      headerName: "Actions",
-      width: 140,
-      onEdit,
-      onDelete,
-    }),
+    ...(onResetPassword
+      ? [{
+          field: "_resetPwd",
+          headerName: "Password",
+          width: 90,
+          align: "center" as const,
+          headerAlign: "center" as const,
+          sortable: false,
+          renderCell: (params: any) => (
+            <Tooltip title="Reset Password">
+              <IconButton size="small" onClick={() => onResetPassword(params.row)}>
+                <LockResetIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ),
+        }]
+      : []),
+    buildActionsColumn<User>({ headerName: "Actions", width: 140, onEdit, onDelete }),
   ];
 };
 

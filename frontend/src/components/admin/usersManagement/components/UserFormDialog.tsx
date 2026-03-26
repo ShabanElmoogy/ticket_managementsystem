@@ -9,7 +9,7 @@ import {
   Box,
   FormControl,
   InputLabel,
-  MenuItem
+  MenuItem,
 } from "@mui/material";
 import { useAuthStore } from "../../../../stores/authStore";
 import { tenantsApi, type Tenant } from "../../../../services/api";
@@ -18,6 +18,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { UserFormDialogProps } from "../types/types";
 import { userFormSchema } from "../schemas/userSchema";
 import MySelect from "../../../common/MySelect";
+import { Role } from "../../../../types/roles";
+import type { UserRole } from "../../../../types/roles";
 
 const UserFormDialog: React.FC<UserFormDialogProps> = ({
   open,
@@ -27,7 +29,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   onSubmit,
 }) => {
   const { user } = useAuthStore();
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
 
   const [tenants, setTenants] = React.useState<Tenant[]>([]);
 
@@ -41,34 +43,41 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   } = useForm({
     resolver: zodResolver(userFormSchema),
     mode: "onChange",
-    defaultValues: initialValues || {
-      name: "",
-      email: "",
-      password: "",
-      role: "EMPLOYEE" as const,
-      tenantSlug: "",
-      phone: "",
-      whatsappNotifications: false,
-    },
-  });
-
-  useEffect(() => {
-    if (open) {
-      reset(initialValues || {
+    defaultValues:
+      initialValues ||
+      ({
         name: "",
         email: "",
         password: "",
-        role: "EMPLOYEE" as const,
+        role: Role.EMPLOYEE,
         tenantSlug: "",
         phone: "",
         whatsappNotifications: false,
-      });
-      // Focus first field after dialog opens
-      setTimeout(() => {
-        const firstInput = document.querySelector('input[name="name"]') as HTMLInputElement;
-        if (firstInput) firstInput.focus();
-      }, 100);
-    }
+      } as const),
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    reset(
+      initialValues || {
+        name: "",
+        email: "",
+        password: "",
+        role: Role.EMPLOYEE as UserRole,
+        tenantSlug: "",
+        phone: "",
+        whatsappNotifications: false,
+      }
+    );
+
+    // Focus first field after dialog opens
+    setTimeout(() => {
+      const firstInput = document.querySelector(
+        'input[name="name"]'
+      ) as HTMLInputElement;
+      if (firstInput) firstInput.focus();
+    }, 100);
   }, [open, initialValues, reset]);
 
   useEffect(() => {
@@ -96,8 +105,8 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   const roleValue = watch("role");
   const tenantSlugValue = watch("tenantSlug");
 
-  // Super admin can create tenant admins; tenant admins can only create employees.
-  const canCreateTenantAdmin = !editing;
+  // Only super admin can create tenant admins.
+  const canCreateTenantAdmin = isSuperAdmin && !editing;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -142,14 +151,16 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
               name="role"
               value={roleValue}
               onChange={(e) =>
-                setValue("role", e.target.value as "TENANT_ADMIN" | "EMPLOYEE" | "PROGRAMMER", { shouldValidate: true })
+                setValue("role", e.target.value as UserRole, {
+                  shouldValidate: true,
+                })
               }
             >
-              <MenuItem value="EMPLOYEE">Employee</MenuItem>
-              <MenuItem value="PROGRAMMER">Programmer</MenuItem>
               {canCreateTenantAdmin && (
-                <MenuItem value="TENANT_ADMIN">Tenant Admin</MenuItem>
+                <MenuItem value={Role.TENANT_ADMIN}>Tenant Admin</MenuItem>
               )}
+              <MenuItem value={Role.EMPLOYEE}>Employee</MenuItem>
+              <MenuItem value={Role.PROGRAMMER}>Programmer</MenuItem>
             </MySelect>
           </FormControl>
 
@@ -161,7 +172,11 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
                 label="Tenant"
                 name="tenantSlug"
                 value={tenantSlugValue || ""}
-                onChange={(e) => setValue("tenantSlug", String(e.target.value), { shouldValidate: true })}
+                onChange={(e) =>
+                  setValue("tenantSlug", String(e.target.value), {
+                    shouldValidate: true,
+                  })
+                }
               >
                 <MenuItem value="">Select tenant</MenuItem>
                 {tenants.map((t) => (
@@ -184,7 +199,9 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
             fullWidth
             autoComplete="off"
             error={!!errors.phone}
-            helperText={errors.phone?.message || "Include country code (e.g., +1234567890)"}
+            helperText={
+              errors.phone?.message || "Include country code (e.g., +1234567890)"
+            }
           />
         </Box>
       </DialogContent>

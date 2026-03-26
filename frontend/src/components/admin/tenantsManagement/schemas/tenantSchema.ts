@@ -10,7 +10,7 @@ export const tenantFormSchema = z.object({
     .optional()
     .or(z.literal('')),
   subscriptionPlan: z.enum(['FREE', 'PRO', 'ENTERPRISE']).default('FREE'),
-  subscriptionStatus: z.enum(['ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED']).default('ACTIVE'),
+  subscriptionStatus: z.enum(['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED']).default('ACTIVE'),
   subscriptionSeats: z.coerce.number().int().min(0).default(0),
   subscriptionStart: z.string().optional().or(z.literal('')),
   subscriptionEnd: z.string().optional().or(z.literal('')),

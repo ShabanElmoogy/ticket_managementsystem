@@ -9,7 +9,7 @@ import { tenantFormSchema } from '../schemas/tenantSchema';
 import type { TenantFormDialogProps, TenantFormValues } from '../types/types';
 
 const PLANS = ['FREE', 'PRO', 'ENTERPRISE'];
-const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED'];
+const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'];
 
 const DEFAULT: TenantFormValues = {
   name: '', slug: '', subscriptionPlan: 'FREE',

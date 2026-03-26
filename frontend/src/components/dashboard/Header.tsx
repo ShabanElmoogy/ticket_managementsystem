@@ -1,9 +1,15 @@
 // components/Header.tsx - Main Header Component
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Box, useTheme, useMediaQuery } from '@mui/material';
+import { AppBar, Toolbar, Box, useTheme, useMediaQuery, Chip, Tooltip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
+import { useTenantStatus } from '../../stores';
+import { isTenantAdmin } from '../../types/roles';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import BlockIcon from '@mui/icons-material/Block';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 import { type HeaderProps } from '../../types/header';
 import { createMenuItems } from '../../config/menuItems';
@@ -23,6 +29,15 @@ import MobileDrawer from './header/MobileDrawer';
 
 const Header: React.FC<HeaderProps> = () => {
   const { user, logout } = useAuthStore();
+  const tenantStatus = useTenantStatus();
+  const showStatusBadge = !!tenantStatus && ['SUSPENDED','PAST_DUE','EXPIRED'].includes(tenantStatus) && isTenantAdmin(user?.role);
+
+  const STATUS_BADGE: Record<string, { label: string; color: 'error' | 'warning'; icon: React.ReactElement; tooltip: string }> = {
+    SUSPENDED: { label: 'Suspended',    color: 'error',   icon: <BlockIcon sx={{ fontSize: '16px !important' }} />,       tooltip: 'Account suspended — read-only mode. Contact your administrator.' },
+    PAST_DUE:  { label: 'Payment Due',  color: 'warning', icon: <ErrorOutlineIcon sx={{ fontSize: '16px !important' }} />, tooltip: 'Payment past due — read-only mode. Please update your billing.' },
+    EXPIRED:   { label: 'Expired',      color: 'warning', icon: <AccessTimeIcon sx={{ fontSize: '16px !important' }} />,   tooltip: 'Subscription expired — read-only mode. Contact your administrator.' },
+  };
+  const badge = tenantStatus ? STATUS_BADGE[tenantStatus] : null;
   const { mode, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -117,6 +132,19 @@ const Header: React.FC<HeaderProps> = () => {
           />
 
 
+
+          {/* Status badge */}
+          {showStatusBadge && badge && (
+            <Tooltip title={badge.tooltip}>
+              <Chip
+                icon={badge.icon}
+                label={badge.label}
+                color={badge.color}
+                size="small"
+                sx={{ fontWeight: 700, cursor: 'default' }}
+              />
+            </Tooltip>
+          )}
 
           {/* Language Selector */}
           <LanguageSelector />
