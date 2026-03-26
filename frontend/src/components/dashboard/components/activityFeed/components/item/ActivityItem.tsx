@@ -30,6 +30,7 @@ type ActivityItemType = {
     updatedBy?: string;
     assignedTo?: string;
     reassignedTo?: string;
+    description?: string;
     commentBy?: string;
     newStatus?: string;
   };
@@ -76,12 +77,14 @@ const useActivityUtils = () => {
         };
       case "TICKET_UPDATED":
         return {
-          primary: `Ticket updated: ${ticket.title || "Untitled ticket"}`,
+          primary: data.description?.startsWith('Due date')
+            ? `📅 ${data.description}`
+            : `Ticket updated: ${ticket.title || "Untitled ticket"}`,
           secondary: data.newStatus === 'DELETED'
             ? `Deleted by ${data.updatedBy || "Someone"}`
             : data.newStatus === 'RESTORED'
             ? `Restored by ${data.updatedBy || "Someone"}`
-            : `${data.newStatus ? `Status → ${data.newStatus.replace('_', ' ')}` : 'Updated'} by ${data.updatedBy || "Someone"}`,
+            : `by ${data.updatedBy || "Someone"}`,
         };
       case "TICKET_ASSIGNED":
         return {

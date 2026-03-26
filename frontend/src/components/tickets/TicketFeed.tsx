@@ -8,6 +8,8 @@ import {
   useMediaQuery,
   Button,
   Collapse,
+  Checkbox,
+  Tooltip,
 } from '@mui/material';
 import {
   Assignment as AssignmentIcon,
@@ -16,6 +18,7 @@ import {
 } from '@mui/icons-material';
 import { type Ticket } from '../../services/api';
 import TicketPost from './TicketPost';
+import BulkActionBar from './BulkActionBar';
 
 interface TicketFeedProps {
   tickets: Ticket[];
@@ -24,6 +27,8 @@ interface TicketFeedProps {
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
   onDeleteTicket?: (ticketId: string) => void;
+  onBulkUpdateStatus?: (ids: string[], status: Ticket['status']) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 const TicketFeed: React.FC<TicketFeedProps> = ({
@@ -33,10 +38,26 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   onAddComment,
   onTicketClick,
   onDeleteTicket,
+  onBulkUpdateStatus,
+  isAdmin = false,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [showAllTickets, setShowAllTickets] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const allSelected = tickets.length > 0 && selectedIds.length === tickets.length;
+  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : tickets.map((t) => t.id));
+
+  const handleBulkStatus = async (status: Ticket['status']) => {
+    if (onBulkUpdateStatus) {
+      await onBulkUpdateStatus(selectedIds, status);
+      setSelectedIds([]);
+    }
+  };
   
   // For mobile, show only first 5 tickets initially
   const ticketsToShow = isMobile && !showAllTickets ? tickets.slice(0, 5) : tickets;
@@ -86,19 +107,56 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
 
   return (
     <Box>
+      {/* Select all row — only for admins */}
+      {isAdmin && onBulkUpdateStatus && tickets.length > 0 && (
+        <Box display="flex" alignItems="center" sx={{ mb: 1, px: 1 }}>
+          <Tooltip title={allSelected ? 'Deselect all' : 'Select all'}>
+            <Checkbox
+              checked={allSelected}
+              indeterminate={selectedIds.length > 0 && !allSelected}
+              onChange={toggleSelectAll}
+              size="small"
+            />
+          </Tooltip>
+          <Typography variant="caption" color="text.secondary">
+            {selectedIds.length > 0 ? `${selectedIds.length} of ${tickets.length} selected` : 'Select all'}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Bulk action bar */}
+      {isAdmin && onBulkUpdateStatus && (
+        <BulkActionBar
+          selectedIds={selectedIds}
+          onBulkStatus={handleBulkStatus}
+          onClear={() => setSelectedIds([])}
+        />
+      )}
+
       {/* Show initial tickets */}
       {ticketsToShow.map((ticket, index) => (
         <Fade key={ticket.id} in={true} timeout={300 + index * 100}>
-          <div>
-            <TicketPost
-              ticket={ticket}
-              onTakeTicket={onTakeTicket}
-              onUpdateStatus={onUpdateStatus}
-              onAddComment={onAddComment}
-              onTicketClick={onTicketClick}
-              onDeleteTicket={onDeleteTicket}
-            />
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            {isAdmin && onBulkUpdateStatus && (
+              <Checkbox
+                checked={selectedIds.includes(ticket.id)}
+                onChange={() => toggleSelect(ticket.id)}
+                onClick={(e) => e.stopPropagation()}
+                size="small"
+                sx={{ mt: 2 }}
+              />
+            )}
+            <Box sx={{ flex: 1 }}>
+              <TicketPost
+                ticket={ticket}
+                onTakeTicket={onTakeTicket}
+                onUpdateStatus={onUpdateStatus}
+                onAddComment={onAddComment}
+                onTicketClick={onTicketClick}
+                onDeleteTicket={onDeleteTicket}
+              />
+            </Box>
+          </Box>
         </Fade>
       ))}
 
@@ -109,16 +167,27 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
             <Box>
               {tickets.slice(5).map((ticket, index) => (
                 <Fade key={ticket.id} in={showAllTickets} timeout={300 + index * 100}>
-                  <div>
-                    <TicketPost
-                      ticket={ticket}
-                      onTakeTicket={onTakeTicket}
-                      onUpdateStatus={onUpdateStatus}
-                      onAddComment={onAddComment}
-                      onTicketClick={onTicketClick}
-                      onDeleteTicket={onDeleteTicket}
-                    />
-                  </div>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                    {isAdmin && onBulkUpdateStatus && (
+                      <Checkbox
+                        checked={selectedIds.includes(ticket.id)}
+                        onChange={() => toggleSelect(ticket.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        size="small"
+                        sx={{ mt: 2 }}
+                      />
+                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <TicketPost
+                        ticket={ticket}
+                        onTakeTicket={onTakeTicket}
+                        onUpdateStatus={onUpdateStatus}
+                        onAddComment={onAddComment}
+                        onTicketClick={onTicketClick}
+                        onDeleteTicket={onDeleteTicket}
+                      />
+                    </Box>
+                  </Box>
                 </Fade>
               ))}
             </Box>

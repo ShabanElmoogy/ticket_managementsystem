@@ -7,6 +7,15 @@ import { logActivity } from '../../utils/activityUtils.js';
 import { getTenantScope } from '../../utils/tenantUtils.js';
 import { Role } from '../../constants/roles.js';
 
+function toCamel(row) {
+  if (!row) return row;
+  return Object.fromEntries(
+    Object.entries(row).map(([k, v]) => [
+      k.replace(/_([a-z])/g, (_, c) => c.toUpperCase()), v
+    ])
+  );
+}
+
 function resolveTenantId(req) {
   const scope = getTenantScope(req);
   const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
@@ -32,12 +41,13 @@ export const getProgrammingDetails = async (req, res) => {
 
     if (!detail) return res.json(null);
 
+    const camel = toCamel(detail);
     // Programmer can only see their own ticket's details
-    if (req.user.role === Role.PROGRAMMER && detail.programmerId !== req.user.userId) {
+    if (req.user.role === Role.PROGRAMMER && camel.programmerId !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    res.json(detail);
+    res.json(camel);
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
     console.error('Get programming details error:', err);
@@ -85,7 +95,7 @@ export const upsertProgrammingDetails = async (req, res) => {
       description: 'Programming details updated',
     });
 
-    res.json(result);
+    res.json(toCamel(result));
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
     console.error('Upsert programming details error:', err);

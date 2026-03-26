@@ -9,7 +9,7 @@ import TicketFeed from "../../tickets/TicketFeed";
 import { ActivityFeed } from "./activityFeed"
 import ReminderSettings from "./ReminderSettings";
 import { Role } from "../../../types/roles";
-import { useAuthStore } from "../../../stores/authStore";
+import { useAuthStore, useIsAdmin } from "../../../stores/authStore";
 
 interface Props {
   isMobile: boolean;
@@ -44,6 +44,7 @@ interface Props {
   onUpdateStatus: (id: string, status: Ticket['status']) => Promise<void> | void;
   onAddComment: (id: string, content: string) => Promise<void> | void;
   onDeleteTicket: (id: string) => Promise<void> | void;
+  onBulkUpdateStatus: (ids: string[], status: Ticket['status']) => Promise<void>;
 }
 
 const DashboardContent: React.FC<Props> = ({
@@ -79,8 +80,10 @@ const DashboardContent: React.FC<Props> = ({
   onUpdateStatus,
   onAddComment,
   onDeleteTicket,
+  onBulkUpdateStatus,
 }) => {
   const { tenantSuspended } = useAuthStore();
+  const isAdmin = useIsAdmin();
 
   return (
     <Box>
@@ -184,6 +187,8 @@ const DashboardContent: React.FC<Props> = ({
                 onUpdateStatus={onUpdateStatus}
                 onAddComment={onAddComment}
                 onDeleteTicket={onDeleteTicket}
+                onBulkUpdateStatus={onBulkUpdateStatus}
+                isAdmin={isAdmin}
               />
             </Container>
           </Box>

@@ -17,7 +17,9 @@ const SolutionChecklist: React.FC<Props> = ({ steps: initialSteps, canEdit, onSa
   const [newText, setNewText] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setSteps(initialSteps); }, [initialSteps]);
+  useEffect(() => {
+    setSteps(initialSteps.map(s => ({ ...s, done: Boolean(s.done) })));
+  }, [initialSteps]);
 
   const toggle = (order: number) => {
     setSteps(prev => prev.map(s => s.order === order ? { ...s, done: !s.done } : s));

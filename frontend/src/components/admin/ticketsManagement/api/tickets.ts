@@ -50,6 +50,10 @@ export class TicketsApiService extends BaseApiService {
     return this.patch<Ticket>(`/tickets/${id}/reassign`, { assignedToId });
   }
 
+  async bulkUpdateStatus(ids: string[], status: string): Promise<{ updated: number }> {
+    return this.patch<{ updated: number }>('/tickets/bulk', { ids, status });
+  }
+
   async getDelayedTickets(): Promise<Ticket[]> {
     return this.get<Ticket[]>("/reminders/delayed-tickets");
   }

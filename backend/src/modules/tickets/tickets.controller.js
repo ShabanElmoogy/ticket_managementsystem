@@ -555,6 +555,17 @@ export const updateTicket = async (req, res) => {
         oldValue: oldTicket[0].priority,
         newValue: priority,
       });
+    } else if (dueDate !== undefined) {
+      const oldDate = oldTicket[0].dueDate ? new Date(oldTicket[0].dueDate).toLocaleDateString('en-GB') : 'none';
+      const newDate = dueDate ? new Date(dueDate).toLocaleDateString('en-GB') : 'none';
+      await logActivity({
+        ticketId: id,
+        userId: req.user.userId,
+        action: 'UPDATED',
+        description: `Due date changed from ${oldDate} to ${newDate}`,
+        oldValue: oldTicket[0].dueDate ? oldTicket[0].dueDate.toISOString() : null,
+        newValue: dueDate || null,
+      });
     } else {
       await logActivity({
         ticketId: id,
@@ -751,6 +762,56 @@ export const takeTicket = async (req, res) => {
     res.json(updatedTicket);
   } catch (error) {
     console.error('Take ticket error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Bulk update ticket status
+export const bulkUpdateStatus = async (req, res) => {
+  try {
+    const { ids, status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || !status) {
+      return res.status(400).json({ error: 'ids and status are required' });
+    }
+
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
+
+    if (isTenantScoped && !tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
+
+    await db.update(tickets)
+      .set({ status, updatedAt: new Date() })
+      .where(inArray(tickets.id, ids));
+
+    await Promise.all(ids.map((id) =>
+      logActivity({
+        ticketId: id,
+        userId: req.user.userId,
+        action: 'STATUS_CHANGED',
+        description: `Status changed to ${status}`,
+        newValue: status,
+      })
+    ));
+
+    const [actor] = await db.select({ name: users.name, tenantId: users.tenantId }).from(users).where(eq(users.id, req.user.userId)).limit(1);
+    const notificationPayload = {
+      type: 'TICKET_UPDATED',
+      data: { updatedBy: actor?.name, newStatus: status },
+    };
+    const notifyTenantId = tenantId || actor?.tenantId;
+    if (notifyTenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, notifyTenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification('broadcast', notificationPayload);
+    }
+
+    res.json({ updated: ids.length });
+  } catch (error) {
+    console.error('Bulk update error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

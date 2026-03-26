@@ -51,6 +51,7 @@ import MyChip from "../common/MyChip";
 import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
 import ReassignDialog from './ReassignDialog';
+import EditDueDateDialog from './EditDueDateDialog';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -92,12 +93,13 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [activitiesFetched, setActivitiesFetched] = useState(false);
   const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
+  const [editDueDateOpen, setEditDueDateOpen] = useState(false);
 
-  // Reset activities cache when ticket changes (e.g. after reassign)
+  // Reset activities cache when ticket changes (e.g. after reassign or due date edit)
   useEffect(() => {
     setActivitiesFetched(false);
     setActivities([]);
-  }, [ticket.id, ticket.assignedToId]);
+  }, [ticket.id, ticket.updatedAt]);
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isDeleted = !!ticket.deletedAt;
@@ -305,7 +307,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
       case 'REASSIGNED': return activity.description;
       case 'COMMENTED': return 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
-      case 'UPDATED': return 'updated this ticket';
+      case 'UPDATED': return activity.description || 'updated this ticket';
       case 'DELETED': return 'deleted this ticket';
       case 'RESTORED': return 'restored this ticket';
       default: return activity.description;
@@ -1140,6 +1142,14 @@ const TicketPost: React.FC<TicketPostProps> = ({
         {isAdmin && !readonly && [
           <Divider key="programmer-divider" />,
           <MenuItem
+            key="edit-due-date"
+            onClick={() => { setEditDueDateOpen(true); handleMenuClose(); }}
+            sx={{ color: 'text.primary' }}
+          >
+            <ScheduleIcon sx={{ mr: 2, fontSize: 20 }} />
+            Edit Due Date
+          </MenuItem>,
+          <MenuItem
             key="reassign"
             onClick={() => { setReassignOpen(true); handleMenuClose(); }}
             sx={{ color: 'primary.main' }}
@@ -1279,6 +1289,12 @@ const TicketPost: React.FC<TicketPostProps> = ({
       <ReassignDialog
         open={reassignOpen}
         onClose={() => setReassignOpen(false)}
+        ticket={ticket}
+      />
+
+      <EditDueDateDialog
+        open={editDueDateOpen}
+        onClose={() => setEditDueDateOpen(false)}
         ticket={ticket}
       />
 

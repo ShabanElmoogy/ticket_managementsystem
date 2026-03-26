@@ -54,6 +54,7 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         overdueFilter={dashboardProps.overdueFilter}
         setOverdueFilter={dashboardProps.setOverdueFilter}
         onDeleteTicket={dashboardProps.handleDeleteTicket}
+        onBulkUpdateStatus={dashboardProps.handleBulkUpdateStatus}
       />
 
       <DashboardOverlays

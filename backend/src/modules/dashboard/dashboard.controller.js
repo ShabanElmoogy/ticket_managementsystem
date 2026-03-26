@@ -179,6 +179,7 @@ export const getActivities = async (req, res) => {
         ticket: { id: row.ticketId, title: row.ticketTitle, priority: row.ticketPriority, status: row.ticketStatus },
         createdBy: row.action === 'CREATED' ? row.userName : undefined,
         updatedBy: !['CREATED', 'ASSIGNED', 'REASSIGNED', 'PROGRAMMER_ASSIGNED', 'COMMENTED', 'COMMENT_DELETED'].includes(row.action) ? row.userName : undefined,
+        description: row.action === 'UPDATED' ? row.description : undefined,
         assignedTo: (row.action === 'ASSIGNED' || row.action === 'PROGRAMMER_ASSIGNED') ? (row.assignedToName || row.userName) : undefined,
         reassignedTo: row.action === 'REASSIGNED' ? row.description : undefined,
         commentBy: row.action === 'COMMENTED' || row.action === 'COMMENT_DELETED' ? row.userName : undefined,

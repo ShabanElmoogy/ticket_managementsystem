@@ -6,20 +6,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 ---
 
-### 3. 📅 Due Date Editing
-**What:** Allow admins/employees to edit the due date of an existing ticket.
-
-**Why:** Deadlines change — tickets need to reflect reality.
-
-**Implementation:**
-- Add "Edit Due Date" option in ticket menu
-- Use a MUI `DatePicker` in a small dialog
-- Call `PATCH /tickets/:id` with new `dueDate`
-- Log `UPDATED` activity
-- Re-evaluate overdue badge after update
-
----
-
 ### 4. 📦 Bulk Status Update
 **What:** Select multiple tickets and update their status at once.
 
@@ -142,7 +128,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 | # | Feature | Impact | Effort | Priority |
 |---|---------|--------|--------|----------|
-| 3 | Due Date Editing | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
 | 4 | Bulk Status Update | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 5 | Backend Search | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 6 | Priority Auto-Escalation | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |

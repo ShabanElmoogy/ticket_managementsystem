@@ -241,6 +241,7 @@ export interface ActivityItem {
     updatedBy?: string;
     assignedTo?: string;
     reassignedTo?: string;
+    description?: string;
     commentBy?: string;
     newStatus?: string;
   };

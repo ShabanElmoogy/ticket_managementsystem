@@ -1,6 +1,6 @@
 import express from 'express';
 import * as ticketController from './tickets.controller.js';
-import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
+import { authenticateToken, requireTenantAdmin, requireAdmin } from '../../middleware/auth.js';
 import { resolveTenant } from '../../middleware/tenant.js';
 import { validate } from '../../middleware/validate.js';
 import { createTicketSchema, updateTicketSchema, ticketQuerySchema } from './tickets.validation.js';
@@ -129,6 +129,7 @@ router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketContro
  */
 router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.deleteTicket);
 
+router.patch('/bulk', authenticateToken, requireAdmin, ticketController.bulkUpdateStatus);
 router.patch('/:id/restore', authenticateToken, requireTenantAdmin, ticketController.restoreTicket);
 router.patch('/:id/reassign', authenticateToken, requireTenantAdmin, ticketController.reassignTicket);
 

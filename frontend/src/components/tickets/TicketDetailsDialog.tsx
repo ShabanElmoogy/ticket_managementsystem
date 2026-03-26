@@ -70,6 +70,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
     try {
       await ticketsApi.updateTicket(ticket.id, { actualHours: val });
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      await fetchTicketDetails();
     } catch (e) {
       console.error('Error saving actual hours:', e);
     } finally {
@@ -192,7 +193,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       case 'REASSIGNED': return activity.description;
       case 'COMMENTED': return 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
-      case 'UPDATED': return 'updated this ticket';
+      case 'UPDATED': return activity.description || 'updated this ticket';
       case 'DELETED': return 'deleted this ticket';
       case 'RESTORED': return 'restored this ticket';
       default: return activity.description;

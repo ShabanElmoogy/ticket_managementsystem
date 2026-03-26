@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useAuthStore } from "../../../stores/authStore";
-import { kanbanApi, type Ticket, type CreateTicketData } from "../../../services/api";
+import { kanbanApi, ticketsApi, type Ticket, type CreateTicketData } from "../../../services/api";
 import type { KanbanBoard } from "../../kanban/types/types";
 import { 
   useTicketsQuery, 
@@ -16,6 +16,7 @@ import {
   useDeleteTicketMutation,
 } from "./useTicketsQuery";
 import { useSocketQuery } from "../../../hooks/useSocketQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type SnackbarState = {
   open: boolean;
@@ -29,6 +30,7 @@ export const useDashboard = () => {
   const { user, token } = useAuthStore();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("xl"));
+  const queryClient = useQueryClient();
 
   const [defaultBoard, setDefaultBoard] = useState<KanbanBoard | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -175,6 +177,16 @@ export const useDashboard = () => {
     }
   };
 
+  const handleBulkUpdateStatus = async (ids: string[], status: Ticket['status']) => {
+    try {
+      await ticketsApi.bulkUpdateStatus(ids, status);
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      showSnackbar(`${ids.length} ticket${ids.length > 1 ? 's' : ''} updated to ${status.replace('_', ' ')}`, 'success');
+    } catch (_error) {
+      showSnackbar(_error instanceof Error ? _error.message : 'Error updating tickets', 'error');
+    }
+  };
+
   const handleDeleteTicket = async (ticketId: string) => {
     try {
       await deleteTicketMutation.mutateAsync(ticketId);
@@ -252,6 +264,7 @@ export const useDashboard = () => {
     handleAddComment,
     handleTakeTicket,
     handleUpdateTicketStatus,
+    handleBulkUpdateStatus,
     handleDeleteTicket,
     handleTicketClick,
 
