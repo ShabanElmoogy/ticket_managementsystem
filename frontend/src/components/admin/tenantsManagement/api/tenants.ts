@@ -1,4 +1,4 @@
-import { api } from "./base";
+import { api } from "../../../../services/api/base";
 
 export type Tenant = {
   id: string;

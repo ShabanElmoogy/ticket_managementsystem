@@ -1,5 +1,5 @@
-import { BaseApiService } from './base';
-import type { Doc, DocBlock, ServerDocNode } from '../../components/admin/docs/types';
+import { BaseApiService } from '../../../../services/api/base';
+import type { Doc, DocBlock, ServerDocNode } from '../types';
 
 /**
  * Docs API Service - Handles all documentation-related API calls

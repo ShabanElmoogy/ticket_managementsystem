@@ -9,7 +9,7 @@ import type {
   TicketStatus,
   TaskStatus 
 } from '../types/kanban';
-import { kanbanApi } from '../services/api/kanban';
+import { kanbanApi } from '../components/kanban/api/kanban';
 import { useAuthStore } from './authStore';
 
 interface KanbanState {

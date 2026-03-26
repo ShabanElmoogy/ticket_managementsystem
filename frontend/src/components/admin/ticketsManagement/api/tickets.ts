@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { Ticket, TicketWithComments, CreateTicketData, Comment } from "./types";
+import { BaseApiService } from "../../../../services/api/base";
+import type { Ticket, TicketWithComments, CreateTicketData, Comment } from "../../../../services/api/types";
 
 export class TicketsApiService extends BaseApiService {
   async getTickets(

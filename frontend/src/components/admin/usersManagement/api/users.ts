@@ -1,5 +1,5 @@
-import { BaseApiService } from "./base";
-import type { User, CreateUserData, UpdateUserData, UserStats } from "./types";
+import { BaseApiService } from "../../../../services/api/base";
+import type { User, CreateUserData, UpdateUserData, UserStats } from "../../../../services/api/types";
 
 export class UsersApiService extends BaseApiService {
   async getUsers(): Promise<User[]> {

@@ -1,7 +1,7 @@
 import type { Doc, DocBlock, ServerDocNode } from '../types';
 
 // Import the docsApi service directly
-import { DocsApiService } from '../../../../services/api/docs';
+import { DocsApiService } from '../api/docs';
 
 // Create singleton instance
 const docsApi = new DocsApiService();

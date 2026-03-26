@@ -1,4 +1,4 @@
-import { BaseApiService } from "./base";
+import { BaseApiService } from "../../../services/api/base";
 import type {
   KanbanBoard,
   KanbanTicket,
@@ -8,7 +8,7 @@ import type {
   BoardAnalytics,
   TicketStatus,
   TaskStatus,
-} from "../../types/kanban";
+} from "../../../types/kanban";
 
 export class KanbanApiService extends BaseApiService {
   async getAllBoards(): Promise<KanbanBoard[]> {
