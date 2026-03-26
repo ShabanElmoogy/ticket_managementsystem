@@ -46,6 +46,10 @@ export class TicketsApiService extends BaseApiService {
     return this.delete<{ message: string }>(`/tickets/${ticketId}/comments/${commentId}`);
   }
 
+  async reassignTicket(id: string, assignedToId: string): Promise<Ticket> {
+    return this.patch<Ticket>(`/tickets/${id}/reassign`, { assignedToId });
+  }
+
   async getDelayedTickets(): Promise<Ticket[]> {
     return this.get<Ticket[]>("/reminders/delayed-tickets");
   }

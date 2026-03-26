@@ -6,33 +6,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 ---
 
-### 1. ⏱️ Actual Hours Tracking
-**What:** Allow employees to log actual hours spent on a ticket (separate from estimated hours).
-
-**Why:** Enables comparison between estimated vs actual effort, useful for billing and planning.
-
-**Implementation:**
-- Add `actualHours` field to ticket (already exists in schema)
-- Add input in `TicketDetailsDialog` and `TicketPost` for employees to update it
-- Show `Est: Xh / Actual: Yh` side by side in ticket cards
-- Add to dashboard KPIs: average estimation accuracy
-
----
-
-### 2. 🔁 Ticket Re-assignment
-**What:** Allow admins to reassign a ticket from one employee to another.
-
-**Why:** Workload balancing, employee absence, or escalation scenarios.
-
-**Implementation:**
-- Add "Reassign" option in ticket menu (admin only)
-- Open a dialog with a user selector (dropdown of employees)
-- Call `PATCH /tickets/:id` with new `assignedToId`
-- Log `ASSIGNED` activity with old and new assignee
-- Send notification to new assignee
-
----
-
 ### 3. 📅 Due Date Editing
 **What:** Allow admins/employees to edit the due date of an existing ticket.
 
@@ -169,8 +142,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 | # | Feature | Impact | Effort | Priority |
 |---|---------|--------|--------|----------|
-| 1 | Actual Hours Tracking | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
-| 2 | Ticket Re-assignment | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
 | 3 | Due Date Editing | 🔴 High | 🟢 Low | ⭐⭐⭐⭐⭐ |
 | 4 | Bulk Status Update | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 5 | Backend Search | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |

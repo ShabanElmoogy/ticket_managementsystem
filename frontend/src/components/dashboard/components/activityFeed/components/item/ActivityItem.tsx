@@ -29,6 +29,7 @@ type ActivityItemType = {
     createdBy?: string;
     updatedBy?: string;
     assignedTo?: string;
+    reassignedTo?: string;
     commentBy?: string;
     newStatus?: string;
   };
@@ -85,7 +86,9 @@ const useActivityUtils = () => {
       case "TICKET_ASSIGNED":
         return {
           primary: `Ticket assigned: ${ticket.title || "Untitled ticket"}`,
-          secondary: `Assigned to ${data.assignedTo || "a user"}`,
+          secondary: data.reassignedTo
+            ? data.reassignedTo
+            : `Assigned to ${data.assignedTo || "a user"}`,
         };
       case "COMMENT_ADDED":
         return {

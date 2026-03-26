@@ -17,7 +17,7 @@ export const ticketPriorityEnum = pgEnum('ticket_priority', ['LOW', 'MEDIUM', 'H
 export const activityActionEnum = pgEnum('activity_action', [
   'CREATED', 'UPDATED', 'ASSIGNED', 'COMMENTED', 'STATUS_CHANGED',
   'PRIORITY_CHANGED', 'DELETED', 'RESTORED', 'COMMENT_DELETED',
-  'PROGRAMMER_ASSIGNED', 'PROGRAMMING_UPDATED'
+  'PROGRAMMER_ASSIGNED', 'PROGRAMMING_UPDATED', 'REASSIGNED'
 ]);
 
 // Tickets table

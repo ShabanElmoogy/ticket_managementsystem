@@ -1,7 +1,7 @@
 import { db } from '../../config/database.js';
 import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, and, count, desc, inArray } from 'drizzle-orm';
+import { eq, and, count, desc, isNotNull, avg } from 'drizzle-orm';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
@@ -87,18 +87,30 @@ export const getStats = async (req, res) => {
             .from(tickets)
             .where(and(eq(tickets.assignedToId, req.user.userId), eq(tickets.status, 'RESOLVED')));
 
-    const [totalTickets, openTickets, inProgressTickets, resolvedTickets] = await Promise.all([
+    // Avg estimation accuracy: avg(actualHours / estimatedHours) for tickets with both set
+    const accuracyBaseQuery = db
+      .select({ avgActual: avg(tickets.actualHours), avgEstimated: avg(tickets.estimatedHours) })
+      .from(tickets)
+      .where(and(isNotNull(tickets.actualHours), isNotNull(tickets.estimatedHours)));
+
+    const [totalTickets, openTickets, inProgressTickets, resolvedTickets, accuracyResult] = await Promise.all([
       totalTicketsQuery,
       openTicketsQuery,
       inProgressTicketsQuery,
       resolvedTicketsQuery,
+      accuracyBaseQuery,
     ]);
+
+    const avgActual = parseFloat(accuracyResult[0]?.avgActual || 0);
+    const avgEstimated = parseFloat(accuracyResult[0]?.avgEstimated || 0);
+    const avgEstimationAccuracy = avgEstimated > 0 ? Math.round((avgActual / avgEstimated) * 100) : null;
 
     res.json({
       totalTickets: totalTickets[0].count,
       openTickets: openTickets[0].count,
       inProgressTickets: inProgressTickets[0].count,
       resolvedTickets: resolvedTickets[0].count,
+      avgEstimationAccuracy,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -114,7 +126,11 @@ export const getActivities = async (req, res) => {
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
 
-    // Build base query for ticket activities joined with ticket and user
+    // actor = user who performed the action; assignee = user the ticket is assigned to
+    const actorUsers = db.select({ id: users.id, name: users.name, tenantId: users.tenantId }).from(users).as('actor_users');
+    const assigneeUsers = db.select({ id: users.id, name: users.name }).from(users).as('assignee_users');
+
+    // Build base query for ticket activities joined with ticket, actor user, and assignee user
     const baseQuery = db
       .select({
         id: ticketActivities.id,
@@ -127,21 +143,24 @@ export const getActivities = async (req, res) => {
         ticketPriority: tickets.priority,
         ticketStatus: tickets.status,
         ticketAssignedToId: tickets.assignedToId,
-        userName: users.name,
-        userTenantId: users.tenantId,
+        userName: actorUsers.name,
+        userTenantId: actorUsers.tenantId,
+        assignedToName: assigneeUsers.name,
       })
       .from(ticketActivities)
       .innerJoin(tickets, eq(ticketActivities.ticketId, tickets.id))
-      .innerJoin(users, eq(ticketActivities.userId, users.id));
+      .innerJoin(actorUsers, eq(ticketActivities.userId, actorUsers.id))
+      .leftJoin(assigneeUsers, eq(tickets.assignedToId, assigneeUsers.id));
 
     const rows = tenantId
-      ? await baseQuery.where(eq(users.tenantId, tenantId)).orderBy(desc(ticketActivities.createdAt)).limit(limit)
+      ? await baseQuery.where(eq(actorUsers.tenantId, tenantId)).orderBy(desc(ticketActivities.createdAt)).limit(limit)
       : await baseQuery.orderBy(desc(ticketActivities.createdAt)).limit(limit);
 
     // Map action → activity type
     const actionTypeMap = {
       CREATED: 'TICKET_CREATED',
       ASSIGNED: 'TICKET_ASSIGNED',
+      REASSIGNED: 'TICKET_ASSIGNED',
       PROGRAMMER_ASSIGNED: 'TICKET_ASSIGNED',
       STATUS_CHANGED: 'TICKET_UPDATED',
       PRIORITY_CHANGED: 'TICKET_UPDATED',
@@ -159,8 +178,9 @@ export const getActivities = async (req, res) => {
       data: {
         ticket: { id: row.ticketId, title: row.ticketTitle, priority: row.ticketPriority, status: row.ticketStatus },
         createdBy: row.action === 'CREATED' ? row.userName : undefined,
-        updatedBy: row.action !== 'CREATED' && row.action !== 'ASSIGNED' && row.action !== 'COMMENTED' ? row.userName : undefined,
-        assignedTo: (row.action === 'ASSIGNED' || row.action === 'PROGRAMMER_ASSIGNED') ? row.userName : undefined,
+        updatedBy: !['CREATED', 'ASSIGNED', 'REASSIGNED', 'PROGRAMMER_ASSIGNED', 'COMMENTED', 'COMMENT_DELETED'].includes(row.action) ? row.userName : undefined,
+        assignedTo: (row.action === 'ASSIGNED' || row.action === 'PROGRAMMER_ASSIGNED') ? (row.assignedToName || row.userName) : undefined,
+        reassignedTo: row.action === 'REASSIGNED' ? row.description : undefined,
         commentBy: row.action === 'COMMENTED' || row.action === 'COMMENT_DELETED' ? row.userName : undefined,
         newStatus: (row.action === 'STATUS_CHANGED' || row.action === 'UPDATED') ? row.newValue : row.action === 'DELETED' ? 'DELETED' : row.action === 'RESTORED' ? 'RESTORED' : undefined,
       },

@@ -486,7 +486,7 @@ export const createTicket = async (req, res) => {
 export const updateTicket = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, priority, assignedToId, title, description, dueDate, estimatedHours } = req.body;
+    const { status, priority, assignedToId, title, description, dueDate, estimatedHours, actualHours } = req.body;
 
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
@@ -531,6 +531,7 @@ export const updateTicket = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours;
+    if (actualHours !== undefined) updateData.actualHours = actualHours;
     updateData.updatedAt = new Date();
 
     const [updated] = await db.update(tickets).set(updateData).where(eq(tickets.id, id)).returning();
@@ -750,6 +751,78 @@ export const takeTicket = async (req, res) => {
     res.json(updatedTicket);
   } catch (error) {
     console.error('Take ticket error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Reassign ticket (admin only)
+export const reassignTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assignedToId } = req.body;
+
+    if (!assignedToId) return res.status(400).json({ error: 'assignedToId is required' });
+
+    const scope = getTenantScope(req);
+    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
+    const isTenantScoped = isTenantScopedRole(req.user?.role);
+
+    let oldTicket;
+    if (isTenantScoped) {
+      if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+      const [row] = await db
+        .select({ id: tickets.id, assignedToId: tickets.assignedToId, title: tickets.title })
+        .from(tickets)
+        .innerJoin(users, eq(tickets.createdById, users.id))
+        .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
+        .limit(1);
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+      oldTicket = row;
+    } else {
+      const [row] = await db.select({ id: tickets.id, assignedToId: tickets.assignedToId, title: tickets.title }).from(tickets).where(eq(tickets.id, id)).limit(1);
+      if (!row) return res.status(404).json({ error: 'Ticket not found' });
+      oldTicket = row;
+    }
+
+    const [updated] = await db
+      .update(tickets)
+      .set({ assignedToId, status: 'IN_PROGRESS', updatedAt: new Date() })
+      .where(eq(tickets.id, id))
+      .returning();
+
+    const [oldAssignee, newAssignee] = await Promise.all([
+      oldTicket.assignedToId
+        ? db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, oldTicket.assignedToId)).limit(1)
+        : Promise.resolve([]),
+      db.select({ id: users.id, name: users.name }).from(users).where(eq(users.id, assignedToId)).limit(1),
+    ]);
+
+    await logActivity({
+      ticketId: id,
+      userId: req.user.userId,
+      action: 'REASSIGNED',
+      description: `Reassigned from ${oldAssignee[0]?.name ?? 'unassigned'} to ${newAssignee[0]?.name}`,
+      oldValue: oldTicket.assignedToId ?? null,
+      newValue: assignedToId,
+    });
+
+    const notificationPayload = {
+      type: 'TICKET_ASSIGNED',
+      data: {
+        ticket: { id: updated.id, title: updated.title, priority: updated.priority, status: updated.status },
+        assignedTo: newAssignee[0]?.name,
+      },
+    };
+    if (tenantId) {
+      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
+      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+    } else {
+      req.emitNotification(assignedToId, notificationPayload);
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Reassign ticket error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

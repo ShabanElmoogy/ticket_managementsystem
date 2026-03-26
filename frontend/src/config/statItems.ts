@@ -5,6 +5,7 @@ import {
   Autorenew as ProgressIcon,
   CheckCircle as ResolvedIcon,
   Cancel as ClosedIcon,
+  QueryBuilder as AccuracyIcon,
 } from "@mui/icons-material";
 import { type StatItem, type DashboardStats } from "../components/dashboard/types/types";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -69,5 +70,19 @@ export const CreateStatItems = (stats: DashboardStats): StatItem[] => {
           ? (stats.closedTickets / stats.totalTickets) * 100
           : 0,
     },
+    ...(stats.avgEstimationAccuracy != null
+      ? [{
+          title: "Est. Accuracy",
+          value: stats.avgEstimationAccuracy,
+          icon: AccuracyIcon,
+          color: stats.avgEstimationAccuracy <= 110 ? "#10b981" : "#ef4444",
+          bgColor: stats.avgEstimationAccuracy <= 110 ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+          gradient: stats.avgEstimationAccuracy <= 110
+            ? "linear-gradient(135deg, #34d399 0%, #10b981 100%)"
+            : "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
+          percentage: Math.min(stats.avgEstimationAccuracy, 100),
+          suffix: "%",
+        }]
+      : []),
   ];
 };

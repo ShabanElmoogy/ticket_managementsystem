@@ -62,9 +62,11 @@ export const useActivityUtils = () => {
       case "TICKET_ASSIGNED":
         return {
           primary: `Ticket assigned: ${ticket.title || "Untitled ticket"}`,
-          secondary: data.assignedTo
-            ? `Assigned to programmer: ${data.assignedTo}`
-            : `Assigned to ${data.assignedTo || "a user"}`,
+          secondary: data.reassignedTo
+            ? data.reassignedTo
+            : data.assignedTo
+            ? `Assigned to ${data.assignedTo}`
+            : `Assigned to a user`,
         };
       case "COMMENT_ADDED":
         return {

@@ -50,6 +50,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import MyChip from "../common/MyChip";
 import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
+import ReassignDialog from './ReassignDialog';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -90,6 +91,13 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesFetched, setActivitiesFetched] = useState(false);
   const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
+
+  // Reset activities cache when ticket changes (e.g. after reassign)
+  useEffect(() => {
+    setActivitiesFetched(false);
+    setActivities([]);
+  }, [ticket.id, ticket.assignedToId]);
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isDeleted = !!ticket.deletedAt;
@@ -279,6 +287,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
       case 'STATUS_CHANGED': return '#3b82f6';
       case 'PRIORITY_CHANGED': return '#f59e0b';
       case 'ASSIGNED': return '#8b5cf6';
+      case 'REASSIGNED': return '#0ea5e9';
       case 'COMMENTED': return '#6366f1';
       case 'COMMENT_DELETED': return '#ef4444';
       case 'DELETED': return '#ef4444';
@@ -293,6 +302,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
       case 'STATUS_CHANGED': return `changed status to ${activity.newValue?.replace('_', ' ')}`;
       case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
       case 'ASSIGNED': return 'took this ticket';
+      case 'REASSIGNED': return activity.description;
       case 'COMMENTED': return 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
       case 'UPDATED': return 'updated this ticket';
@@ -644,7 +654,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
         )}
 
         {/* Due Date and Estimated Hours Info */}
-        {(ticket.dueDate || ticket.estimatedHours) && (
+        {(ticket.dueDate || ticket.estimatedHours || ticket.actualHours) && (
           <Box
             display="flex"
             alignItems="center"
@@ -684,7 +694,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
               </Box>
             )}
             
-            {ticket.estimatedHours && (
+            {(ticket.estimatedHours || ticket.actualHours) && (
               <Box display="flex" alignItems="center" gap={1}>
                 <ScheduleIcon
                   sx={{ fontSize: { xs: 14, sm: 16 }, color: "text.secondary" }}
@@ -694,16 +704,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
                   color="textSecondary"
                   sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
                 >
-                  Est:
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                  }}
-                >
-                  {ticket.estimatedHours}h
+                  {ticket.estimatedHours && ticket.actualHours
+                    ? `Est: ${ticket.estimatedHours}h / Actual: ${ticket.actualHours}h`
+                    : ticket.estimatedHours
+                    ? `Est: ${ticket.estimatedHours}h`
+                    : `Actual: ${ticket.actualHours}h`}
                 </Typography>
               </Box>
             )}
@@ -1135,6 +1140,14 @@ const TicketPost: React.FC<TicketPostProps> = ({
         {isAdmin && !readonly && [
           <Divider key="programmer-divider" />,
           <MenuItem
+            key="reassign"
+            onClick={() => { setReassignOpen(true); handleMenuClose(); }}
+            sx={{ color: 'primary.main' }}
+          >
+            <PersonIcon sx={{ mr: 2, fontSize: 20, color: 'primary.main' }} />
+            Reassign Ticket
+          </MenuItem>,
+          <MenuItem
             key="assign-programmer"
             onClick={() => { setAssignProgrammerOpen(true); handleMenuClose(); }}
             sx={{ color: '#8b5cf6' }}
@@ -1238,7 +1251,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
                         <Box display="flex" alignItems="center" gap={1}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{activity.user.name}</Typography>
-                          <Chip label={activity.action.replace('_', ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }} />
+                          <Chip label={activity.action.replaceAll('_', ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }} />
                         </Box>
                         <Tooltip title={formatDateTime(activity.createdAt)}>
                           <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1, cursor: 'default' }}>
@@ -1261,6 +1274,12 @@ const TicketPost: React.FC<TicketPostProps> = ({
         ticketId={ticket.id}
         onClose={() => setAssignProgrammerOpen(false)}
         onAssigned={() => { setAssignProgrammerOpen(false); queryClient.invalidateQueries({ queryKey: ['tickets'] }); }}
+      />
+
+      <ReassignDialog
+        open={reassignOpen}
+        onClose={() => setReassignOpen(false)}
+        ticket={ticket}
       />
 
       {/* Delete Confirmation Dialog */}

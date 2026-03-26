@@ -5,6 +5,7 @@ export interface DashboardStats {
   inProgressTickets: number;
   resolvedTickets: number;
   closedTickets: number;
+  avgEstimationAccuracy?: number | null;
 }
 
 export interface ActiveFilters {
@@ -27,6 +28,7 @@ export interface StatItem {
   bgColor: string;
   gradient: string;
   percentage?: number;
+  suffix?: string;
 }
 
 export interface StatsCardsProps {

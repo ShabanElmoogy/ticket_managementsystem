@@ -44,6 +44,8 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
+  const [actualHoursInput, setActualHoursInput] = useState('');
+  const [savingHours, setSavingHours] = useState(false);
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
@@ -55,12 +57,28 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   useEffect(() => {
     if (ticket && open) {
       fetchTicketDetails();
-      setVisibleCommentsCount(3); // Reset visible comments when dialog opens
+      setVisibleCommentsCount(3);
+      setActualHoursInput(ticket.actualHours != null ? String(ticket.actualHours) : '');
     }
   }, [ticket, open]);
 
+  const handleSaveActualHours = async () => {
+    if (!ticket) return;
+    const val = parseFloat(actualHoursInput);
+    if (isNaN(val) || val < 0) return;
+    setSavingHours(true);
+    try {
+      await ticketsApi.updateTicket(ticket.id, { actualHours: val });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    } catch (e) {
+      console.error('Error saving actual hours:', e);
+    } finally {
+      setSavingHours(false);
+    }
+  };
+
   const fetchTicketDetails = async () => {
-    if (!ticket || !token) return;
+    if (!ticket) return;
 
     setLoading(true);
     try {
@@ -75,7 +93,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || !ticket || !token) return;
+    if (!newComment.trim() || !ticket) return;
 
     setAddingComment(true);
     try {
@@ -156,6 +174,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       case 'STATUS_CHANGED': return '#3b82f6';
       case 'PRIORITY_CHANGED': return '#f59e0b';
       case 'ASSIGNED': return '#8b5cf6';
+      case 'REASSIGNED': return '#0ea5e9';
       case 'COMMENTED': return '#6366f1';
       case 'COMMENT_DELETED': return '#ef4444';
       case 'DELETED': return '#ef4444';
@@ -170,6 +189,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       case 'STATUS_CHANGED': return `changed status to ${activity.newValue?.replace('_', ' ')}`;
       case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
       case 'ASSIGNED': return 'took this ticket';
+      case 'REASSIGNED': return activity.description;
       case 'COMMENTED': return 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
       case 'UPDATED': return 'updated this ticket';
@@ -316,6 +336,37 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             <Typography variant="caption" color="text.secondary">
               {ticket.programmer ? `Programmer: ${ticket.programmer.name}` : 'No programmer assigned'}
             </Typography>
+          </Box>
+        )}
+
+        {/* Actual Hours Tracking */}
+        {(isAdmin || ticket.assignedTo?.id === user?.id) && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>Hours Tracking</Typography>
+            <Box display="flex" alignItems="center" gap={2}>
+              {ticket.estimatedHours != null && (
+                <Typography variant="body2" color="text.secondary">
+                  Est: <strong>{ticket.estimatedHours}h</strong>
+                </Typography>
+              )}
+              <TextField
+                label="Actual Hours"
+                type="number"
+                size="small"
+                value={actualHoursInput}
+                onChange={(e) => setActualHoursInput(e.target.value)}
+                inputProps={{ min: 0, step: 0.5 }}
+                sx={{ width: 140 }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleSaveActualHours}
+                disabled={savingHours || actualHoursInput === ''}
+              >
+                {savingHours ? <CircularProgress size={16} /> : 'Save'}
+              </Button>
+            </Box>
           </Box>
         )}
 
@@ -585,7 +636,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                           {activity.user.name}
                         </Typography>
                         <Chip
-                          label={activity.action.replace('_', ' ')}
+                          label={activity.action.replaceAll('_', ' ')}
                           size="small"
                           sx={{
                             height: 18,

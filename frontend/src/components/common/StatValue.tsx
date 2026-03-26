@@ -6,9 +6,10 @@ interface StatValueProps {
   value: number;
   title: string;
   color: string;
+  suffix?: string;
 }
 
-const StatValue: React.FC<StatValueProps> = ({ value, title, color }) => {
+const StatValue: React.FC<StatValueProps> = ({ value, title, color, suffix }) => {
   return (
     <Box
       sx={{
@@ -28,7 +29,7 @@ const StatValue: React.FC<StatValueProps> = ({ value, title, color }) => {
           fontSize: { xs: "1rem", sm: "2.125rem" }, // Smaller font on mobile
         }}
       >
-        {value}
+        {value}{suffix ?? ''}
       </Typography>
 
       <Typography

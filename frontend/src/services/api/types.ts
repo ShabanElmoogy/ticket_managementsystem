@@ -124,6 +124,7 @@ export interface DashboardStats {
   openTickets: number;
   inProgressTickets: number;
   resolvedTickets: number;
+  avgEstimationAccuracy?: number | null;
 }
 
 // Create/Update Types
@@ -239,7 +240,9 @@ export interface ActivityItem {
     createdBy?: string;
     updatedBy?: string;
     assignedTo?: string;
+    reassignedTo?: string;
     commentBy?: string;
+    newStatus?: string;
   };
   timestamp: string;
   read?: boolean;

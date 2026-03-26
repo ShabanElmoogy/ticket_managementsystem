@@ -130,6 +130,7 @@ router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketContro
 router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.deleteTicket);
 
 router.patch('/:id/restore', authenticateToken, requireTenantAdmin, ticketController.restoreTicket);
+router.patch('/:id/reassign', authenticateToken, requireTenantAdmin, ticketController.reassignTicket);
 
 /**
  * @swagger

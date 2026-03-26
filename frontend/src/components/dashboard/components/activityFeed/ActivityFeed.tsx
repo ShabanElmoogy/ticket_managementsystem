@@ -26,6 +26,7 @@ type ActivityItemType = {
     createdBy?: string;
     updatedBy?: string;
     assignedTo?: string;
+    reassignedTo?: string;
     commentBy?: string;
     newStatus?: string;
   };

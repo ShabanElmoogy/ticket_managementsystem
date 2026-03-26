@@ -37,7 +37,7 @@ const StatCard: React.FC<StatCardProps> = ({ item, isDarkMode = false }) => {
     >
       <StatIcon icon={item.icon} gradient={item.gradient} color={item.color} />
 
-      <StatValue value={item.value} title={item.title} color={item.color} />
+      <StatValue value={item.value} title={item.title} color={item.color} suffix={item.suffix} />
 
       <StatProgress
         percentage={item.percentage}
