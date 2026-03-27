@@ -1,7 +1,7 @@
 import { db } from '../../config/database.js';
 import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, and, count, desc, isNotNull, avg } from 'drizzle-orm';
+import { eq, and, count, desc, isNotNull, avg, sql } from 'drizzle-orm';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
@@ -93,14 +93,22 @@ export const getStats = async (req, res) => {
       .from(tickets)
       .where(and(isNotNull(tickets.actualHours), isNotNull(tickets.estimatedHours)));
 
-    const [totalTickets, openTickets, inProgressTickets, resolvedTickets, accuracyResult] = await Promise.all([
+    const [totalTickets, openTickets, inProgressTickets, resolvedTickets, accuracyResult, resolutionResult] = await Promise.all([
       totalTicketsQuery,
       openTicketsQuery,
       inProgressTicketsQuery,
       resolvedTicketsQuery,
       accuracyBaseQuery,
+      db
+        .select({
+          avgMs: sql`AVG(EXTRACT(EPOCH FROM (${tickets.resolvedAt} - ${tickets.createdAt})) * 1000)`,
+        })
+        .from(tickets)
+        .where(and(isNotNull(tickets.resolvedAt), isNotNull(tickets.createdAt))),
     ]);
 
+    const avgResolutionMs = parseFloat(resolutionResult[0]?.avgMs || 0);
+    const avgResolutionHours = avgResolutionMs > 0 ? Math.round(avgResolutionMs / 3600000 * 10) / 10 : null;
     const avgActual = parseFloat(accuracyResult[0]?.avgActual || 0);
     const avgEstimated = parseFloat(accuracyResult[0]?.avgEstimated || 0);
     const avgEstimationAccuracy = avgEstimated > 0 ? Math.round((avgActual / avgEstimated) * 100) : null;
@@ -111,6 +119,7 @@ export const getStats = async (req, res) => {
       inProgressTickets: inProgressTickets[0].count,
       resolvedTickets: resolvedTickets[0].count,
       avgEstimationAccuracy,
+      avgResolutionHours,
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);

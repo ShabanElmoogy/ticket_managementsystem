@@ -541,6 +541,8 @@ export const updateTicket = async (req, res) => {
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (estimatedHours !== undefined) updateData.estimatedHours = estimatedHours;
     if (actualHours !== undefined) updateData.actualHours = actualHours;
+    if (status === 'RESOLVED' && oldTicket[0].status !== 'RESOLVED') updateData.resolvedAt = new Date();
+    else if (status && status !== 'RESOLVED' && oldTicket[0].status === 'RESOLVED') updateData.resolvedAt = null;
     updateData.updatedAt = new Date();
 
     const [updated] = await db.update(tickets).set(updateData).where(eq(tickets.id, id)).returning();
@@ -795,7 +797,11 @@ export const bulkUpdateStatus = async (req, res) => {
     }
 
     await db.update(tickets)
-      .set({ status, updatedAt: new Date() })
+      .set({
+        status,
+        updatedAt: new Date(),
+        ...(status === 'RESOLVED' ? { resolvedAt: new Date() } : { resolvedAt: null }),
+      })
       .where(inArray(tickets.id, ids));
 
     await Promise.all(ids.map((id) =>

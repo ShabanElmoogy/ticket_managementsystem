@@ -6,6 +6,7 @@ import {
   CheckCircle as ResolvedIcon,
   Cancel as ClosedIcon,
   QueryBuilder as AccuracyIcon,
+  Timer as ResolutionIcon,
 } from "@mui/icons-material";
 import { type StatItem, type DashboardStats } from "../components/dashboard/types/types";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -82,6 +83,18 @@ export const CreateStatItems = (stats: DashboardStats): StatItem[] => {
             : "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
           percentage: Math.min(stats.avgEstimationAccuracy, 100),
           suffix: "%",
+        }]
+      : []),
+    ...(stats.avgResolutionHours != null
+      ? [{
+          title: "Avg Resolution",
+          value: stats.avgResolutionHours,
+          icon: ResolutionIcon,
+          color: "#0ea5e9",
+          bgColor: "rgba(14, 165, 233, 0.1)",
+          gradient: "linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)",
+          percentage: Math.min((stats.avgResolutionHours / 72) * 100, 100),
+          suffix: "h",
         }]
       : []),
   ];

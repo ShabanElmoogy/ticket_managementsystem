@@ -125,6 +125,7 @@ export interface DashboardStats {
   inProgressTickets: number;
   resolvedTickets: number;
   avgEstimationAccuracy?: number | null;
+  avgResolutionHours?: number | null;
 }
 
 // Create/Update Types

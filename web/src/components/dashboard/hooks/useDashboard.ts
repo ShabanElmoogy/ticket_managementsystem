@@ -100,7 +100,27 @@ export const useDashboard = () => {
     const inProgressTickets = tickets.filter((t) => t.status === "IN_PROGRESS").length;
     const resolvedTickets = tickets.filter((t) => t.status === "RESOLVED").length;
     const closedTickets = tickets.filter((t) => t.status === "CLOSED").length;
-    return { totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets };
+
+    const resolvedWithDates = tickets.filter(
+      (t) => (t.status === "RESOLVED" || t.status === "CLOSED") && t.createdAt
+    );
+    console.log('[ResolutionKPI] resolvedWithDates:', resolvedWithDates.length, resolvedWithDates.map(t => ({ id: t.id, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt })));
+    const avgResolutionHours =
+      resolvedWithDates.length > 0
+        ? Math.round(
+            (resolvedWithDates.reduce((sum, t) => {
+              const created = new Date(t.createdAt).getTime();
+              const resolved = new Date(t.updatedAt).getTime();
+              return sum + (resolved - created);
+            }, 0) /
+              resolvedWithDates.length /
+              3600000) *
+              10
+          ) / 10
+        : null;
+
+    console.log('[ResolutionKPI] stats:', { resolvedTickets, closedTickets, avgResolutionHours });
+    return { totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets, avgResolutionHours };
   }, [tickets]);
 
   const getOrCreateDefaultBoard = async (): Promise<KanbanBoard | null> => {

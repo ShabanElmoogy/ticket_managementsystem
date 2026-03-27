@@ -6,6 +6,7 @@ export interface DashboardStats {
   resolvedTickets: number;
   closedTickets: number;
   avgEstimationAccuracy?: number | null;
+  avgResolutionHours?: number | null;
 }
 
 export interface ActiveFilters {

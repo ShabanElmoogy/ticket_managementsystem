@@ -42,6 +42,7 @@ export const tickets = pgTable('tickets', {
   boardId: uuid('board_id'),
   deletedAt: timestamp('deleted_at'),
   lastEscalatedAt: timestamp('last_escalated_at'),
+  resolvedAt: timestamp('resolved_at'),
 });
 
 // Ticket activities table
