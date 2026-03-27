@@ -10,6 +10,7 @@ import {
   SupervisorAccount as UsersIcon,
   Apartment as TenantsIcon,
   Settings as SettingsIcon,
+  Label as TemplateIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
 import { isSuperAdmin } from "../../types/roles";
@@ -27,6 +28,7 @@ import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
 import TenantsPageWithHOC from './02components/TenantsPageWithHOC';
 import AdminSettings from './02components/AdminSettings';
+import TemplatesManagement from './templatesManagement/TemplatesManagement';
 
 const drawerWidth = 240;
 
@@ -67,8 +69,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         { id: "users",        label: "Users",        icon: <UsersIcon />,      disabled: fullyBlocked },
         { id: "customers",    label: "Customers",    icon: <PeopleIcon />,     disabled: fullyBlocked },
         { id: "applications", label: "Applications", icon: <AppsIcon />,       disabled: fullyBlocked },
-        { id: "tickets",      label: "Tickets",      icon: <TicketIcon />,     disabled: fullyBlocked },
-        { id: "tasks",        label: "Tasks",        icon: <TaskIcon />,       disabled: fullyBlocked },
+        { id: "tickets",      label: "Tickets",      icon: <TicketIcon />,      disabled: fullyBlocked },
+        { id: "templates",    label: "Templates",    icon: <TemplateIcon />,    disabled: fullyBlocked },
+        { id: "tasks",        label: "Tasks",        icon: <TaskIcon />,        disabled: fullyBlocked },
         { id: "reports",  label: "Reports",  icon: <ReportsIcon />,  disabled: fullyBlocked },
         { id: "docs",     label: "Docs",     icon: <NotesIcon />,    disabled: fullyBlocked },
         { id: "settings", label: "Settings", icon: <SettingsIcon />, disabled: fullyBlocked },
@@ -96,6 +99,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
       case "customers": return <CustomersManagement />;
       case "applications": return <ApplicationsPageWithHOC />;
       case "tickets":   return <TicketsManagement />;
+      case "templates":  return <TemplatesManagement />;
       case "tasks":     return <TasksManagement />;
       case "reports":   return <ReportsManagement />;
       case "docs":      return <DocsManagement />;

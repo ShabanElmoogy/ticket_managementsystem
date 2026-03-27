@@ -15,6 +15,7 @@ import reminderRoutes from './reminders/reminders.routes.js';
 import docRoutes from './docs/docs.routes.js';
 import docBuilderRoutes from './docs/docs.routes.js';
 import tenantRoutes from './tenants/tenants.routes.js';
+import templateRoutes from './templates/templates.routes.js';
 
 import attachmentRoutes from './attachments/attachments.routes.js';
 
@@ -34,6 +35,7 @@ router.use('/tasks', taskRoutes);
 router.use('/users', userRoutes);
 router.use('/reminders', reminderRoutes);
 router.use('/tenants', tenantRoutes);
+router.use('/templates', templateRoutes);
 router.use('/docs', docRoutes);
 router.use('/docsbuilder', docBuilderRoutes);
 

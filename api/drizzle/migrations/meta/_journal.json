@@ -99,6 +99,13 @@
       "when": 1774620308199,
       "tag": "0013_secret_wallop",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1774631058883,
+      "tag": "0014_steady_sersi",
+      "breakpoints": true
     }
   ]
 }

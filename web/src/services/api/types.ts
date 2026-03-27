@@ -244,6 +244,17 @@ export interface Attachment {
   uploadedBy: { id: string; name: string; email: string };
 }
 
+export interface TicketTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  estimatedHours?: number | null;
+  tenantId?: string | null;
+  createdAt: string;
+  createdBy: { id: string; name: string };
+}
+
 export interface ActivityItem {
   id: string;
   type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";

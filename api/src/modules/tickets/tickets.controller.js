@@ -9,6 +9,7 @@ import { eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt, ilike } 
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 import { isTenantScopedRole } from '../../middleware/auth.js';
+import { notifyWatchers } from './watchers.controller.js';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
@@ -599,6 +600,9 @@ export const updateTicket = async (req, res) => {
     } else {
       req.emitNotification('broadcast', notificationPayload);
     }
+
+    // Notify watchers
+    await notifyWatchers(id, req.user.userId, notificationPayload, req.emitNotification);
 
     res.json(updated);
   } catch (error) {

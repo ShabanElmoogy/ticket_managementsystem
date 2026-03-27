@@ -6,6 +6,7 @@ import { validate } from '../../middleware/validate.js';
 import { createTicketSchema, updateTicketSchema, ticketQuerySchema } from './tickets.validation.js';
 import { upload } from '../attachments/attachments.upload.js';
 import { uploadAttachments, getAttachments, deleteAttachment } from '../attachments/attachments.controller.js';
+import { getWatchers, watchTicket, unwatchTicket } from './watchers.controller.js';
 
 const router = express.Router();
 
@@ -55,6 +56,11 @@ router.get('/', authenticateToken, validate(ticketQuerySchema, 'query'), ticketC
  *         $ref: '#/components/responses/TicketList'
  */
 router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
+
+// Watchers — must be before /:id to avoid route conflict
+router.get('/:id/watchers',    authenticateToken, getWatchers);
+router.post('/:id/watch',      authenticateToken, watchTicket);
+router.delete('/:id/watch',    authenticateToken, unwatchTicket);
 
 /**
  * @swagger

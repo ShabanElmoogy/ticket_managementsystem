@@ -6,6 +6,8 @@ import TitleField from "./createTicketForm/TitleField";
 import DescriptionField from "./createTicketForm/DescriptionField";
 import PrioritySelect from "./createTicketForm/PrioritySelect";
 import AssignSelect from "./createTicketForm/AssignSelect";
+import TemplatePickerButton from "./TemplatePickerButton";
+import type { TicketTemplate } from "../../services/api/types";
 
 export interface CreateTicketFormProps {
   open?: boolean;
@@ -74,6 +76,13 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
     loadOptions();
   }, [token, open]);
 
+  const applyTemplate = (t: TicketTemplate) => {
+    setTitle(t.name);
+    if (t.description) setDescription(t.description);
+    setPriority(t.priority);
+    if (t.estimatedHours != null) setEstimatedHours(t.estimatedHours);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: CreateTicketData = {
@@ -103,6 +112,9 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <DialogContent>
+        <Box display="flex" justifyContent="flex-end" mb={1}>
+          <TemplatePickerButton onSelect={applyTemplate} />
+        </Box>
         <TitleField value={title} onChange={setTitle} />
         <DescriptionField value={description} onChange={setDescription} />
         <PrioritySelect value={priority} onChange={setPriority} />

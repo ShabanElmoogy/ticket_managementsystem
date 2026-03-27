@@ -23,6 +23,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
 import AttachmentsPanel from './AttachmentsPanel';
 import { useNavigate } from 'react-router-dom';
+import WatcherButton from './WatcherButton';
 
 interface TicketDetailsDialogProps {
   open: boolean;
@@ -318,6 +319,11 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
         }}>
           <Typography>{ticket.description}</Typography>
         </Paper>
+
+        {/* Watchers */}
+        <Box sx={{ mb: 3 }}>
+          <WatcherButton ticketId={ticket.id} />
+        </Box>
         
         {canUpdateStatus && (
           <Box sx={{ mb: 3 }}>

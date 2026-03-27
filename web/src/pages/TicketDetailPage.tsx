@@ -30,6 +30,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDateTime, formatDate, formatRelativeDuration } from '../utils/dateUtils';
 import AttachmentsPanel from '../components/tickets/AttachmentsPanel';
 import Header from '../components/dashboard/Header';
+import WatcherButton from '../components/tickets/WatcherButton';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -258,6 +259,7 @@ const TicketDetailPage: React.FC = () => {
                 <Typography variant="caption" color="text.secondary">#{ticket.id.slice(-8)}</Typography>
               </Box>
             </Box>
+            <WatcherButton ticketId={ticket.id} />
           </Box>
         </Box>
 

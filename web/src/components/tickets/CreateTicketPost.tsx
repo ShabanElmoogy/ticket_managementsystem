@@ -7,7 +7,9 @@ import Description from "./createTicketPost/Description";
 import OptionsBar from "./createTicketPost/OptionsBar";
 import AdvancedOptions from "./createTicketPost/AdvancedOptions";
 import FooterBar from "./createTicketPost/FooterBar";
+import TemplatePickerButton from "./TemplatePickerButton";
 import type { Priority } from "./createTicketPost/utils";
+import type { TicketTemplate } from "../../services/api/types";
 
 interface CreateTicketPostProps {
   onSubmit: (data: CreateTicketData) => void;
@@ -33,6 +35,14 @@ const CreateTicketPost: React.FC<CreateTicketPostProps> = ({
   const [estimatedHours, setEstimatedHours] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+
+  const applyTemplate = (t: TicketTemplate) => {
+    setTitle(t.name);
+    if (t.description) setDescription(t.description);
+    setPriority(t.priority as Priority);
+    if (t.estimatedHours != null) setEstimatedHours(String(t.estimatedHours));
+    setShowAdvanced(true);
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
@@ -69,12 +79,19 @@ const CreateTicketPost: React.FC<CreateTicketPostProps> = ({
   return (
     <Card sx={{ mb: 3, borderRadius: 3 }}>
       <CardContent sx={{ p: 3 }}>
-        <Header
-          userName={user?.name}
-          userRole={user?.role}
-          title={title}
-          onTitleChange={setTitle}
-        />
+        <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1}>
+          <Box flex={1}>
+            <Header
+              userName={user?.name}
+              userRole={user?.role}
+              title={title}
+              onTitleChange={setTitle}
+            />
+          </Box>
+          <Box pt={0.5}>
+            <TemplatePickerButton onSelect={applyTemplate} />
+          </Box>
+        </Box>
 
         <Description
           open={title.length > 0}

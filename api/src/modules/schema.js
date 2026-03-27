@@ -11,3 +11,5 @@ export * from './users/users.schema.js';
 export * from './docs/docs.schema.js';
 export * from './tenants/tenants.schema.js';
 export * from './attachments/attachments.schema.js';
+export * from './templates/templates.schema.js';
+export * from './tickets/watchers.schema.js';
