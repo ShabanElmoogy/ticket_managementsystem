@@ -232,6 +232,18 @@ export interface ProgrammingDetails {
   updatedAt: string;
 }
 
+export interface Attachment {
+  id: string;
+  ticketId: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+  uploadedBy: { id: string; name: string; email: string };
+}
+
 export interface ActivityItem {
   id: string;
   type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";

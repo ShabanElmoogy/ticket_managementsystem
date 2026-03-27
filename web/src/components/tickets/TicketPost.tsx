@@ -40,6 +40,7 @@ import {
   CloseFullscreen as MinimizeIcon,
   Close as CloseIcon,
   Code as CodeIcon,
+  OpenInNew as OpenInNewIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/dateUtils";
@@ -52,6 +53,7 @@ import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
 import ReassignDialog from './ReassignDialog';
 import EditDueDateDialog from './EditDueDateDialog';
+import { useNavigate } from 'react-router-dom';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -72,6 +74,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
 }) => {
   const { user, token, tenantSuspended } = useAuthStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -1117,6 +1120,10 @@ const TicketPost: React.FC<TicketPostProps> = ({
         <MenuItem onClick={() => { onTicketClick(ticket); handleMenuClose(); }}>
           <CommentIcon sx={{ mr: 2 }} />
           View Details
+        </MenuItem>
+        <MenuItem onClick={() => { navigate(`/tickets/${ticket.id}`); handleMenuClose(); }}>
+          <OpenInNewIcon sx={{ mr: 2 }} />
+          Open Full Page
         </MenuItem>
         {canUpdateStatus && [
           <Divider key="divider" />,

@@ -6,19 +6,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 ---
 
-### 7. 📎 File Attachments
-**What:** Allow users to attach files (screenshots, logs, documents) to tickets or comments.
-
-**Why:** Context is critical for technical support — attachments reduce back-and-forth.
-
-**Implementation:**
-- Add file upload to ticket creation and comment forms
-- Store files in S3 / local storage
-- Show attachment thumbnails/links in ticket detail view
-- Backend: `POST /tickets/:id/attachments` endpoint
-
----
-
 ### 8. 🏷️ Ticket Templates
 **What:** Pre-defined ticket templates for common issue types (e.g. "Bug Report", "Feature Request", "Access Issue").
 
@@ -89,7 +76,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 | # | Feature | Impact | Effort | Priority |
 |---|---------|--------|--------|----------|
-| 7 | File Attachments | 🟡 Medium | 🔴 High | ⭐⭐⭐ |
 | 8 | Ticket Templates | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
 | 9 | Ticket Watchers | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
 | 10 | Comment Mentions | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |

@@ -1,4 +1,3 @@
-// Export all schemas from modules
 export * from './auth/auth.schema.js';
 export * from './tickets/tickets.schema.js';
 export * from './customers/customers.schema.js';
@@ -11,3 +10,4 @@ export * from './tasks/tasks.schema.js';
 export * from './users/users.schema.js';
 export * from './docs/docs.schema.js';
 export * from './tenants/tenants.schema.js';
+export * from './attachments/attachments.schema.js';

@@ -16,6 +16,8 @@ import docRoutes from './docs/docs.routes.js';
 import docBuilderRoutes from './docs/docs.routes.js';
 import tenantRoutes from './tenants/tenants.routes.js';
 
+import attachmentRoutes from './attachments/attachments.routes.js';
+
 const router = express.Router();
 
 router.use('/auth', authRoutes);

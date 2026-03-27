@@ -15,6 +15,7 @@ import KanbanPage from '../pages/KanbanPage';
 import DocumentsPage from '../pages/DocumentsPage';
 import AdminPage from '../pages/AdminPage';
 import ProgrammingPage from '../pages/ProgrammingPage';
+import TicketDetailPage from '../pages/TicketDetailPage';
 
 // Per-status dialog content — only for statuses that restrict access
 const STATUS_CONTENT: Record<string, { icon: string; title: string; body: string; btnColor: 'error' | 'warning' }> = {
@@ -118,6 +119,7 @@ const AppRouter: React.FC = () => {
         <Route path="/kanban"    element={<ProtectedRoute><KanbanPage /></ProtectedRoute>} />
         <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
         <Route path="/admin"     element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+        <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
 
         <Route
           path="/programming"

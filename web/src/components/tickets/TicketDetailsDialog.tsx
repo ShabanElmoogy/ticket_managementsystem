@@ -16,11 +16,13 @@ import {
   Tooltip,
   Avatar,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Delete as DeleteIcon, History as HistoryIcon, OpenInFull as MaximizeIcon, CloseFullscreen as MinimizeIcon, Close as CloseIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Delete as DeleteIcon, History as HistoryIcon, OpenInFull as MaximizeIcon, CloseFullscreen as MinimizeIcon, Close as CloseIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { ticketsApi, type Ticket, type Comment, type TicketActivity } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
+import AttachmentsPanel from './AttachmentsPanel';
+import { useNavigate } from 'react-router-dom';
 
 interface TicketDetailsDialogProps {
   open: boolean;
@@ -39,6 +41,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 }) => {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -206,6 +209,11 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>{ticket.title}</Typography>
+          <Tooltip title="Open full page">
+            <IconButton size="small" onClick={() => { onClose(); navigate(`/tickets/${ticket.id}`); }} sx={{ mr: 1 }}>
+              <OpenInNewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="View activity log">
             <Box
               onClick={() => setActivityDialogOpen(true)}
@@ -370,6 +378,11 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             </Box>
           </Box>
         )}
+
+        {/* Attachments */}
+        <Box sx={{ mb: 3 }}>
+          <AttachmentsPanel ticketId={ticket.id} readonly={!canUpdateStatus && !isAdmin} />
+        </Box>
 
         <Typography variant="h6" gutterBottom>
           Comments ({comments.length})

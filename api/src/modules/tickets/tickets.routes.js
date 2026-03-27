@@ -4,6 +4,8 @@ import { authenticateToken, requireTenantAdmin, requireAdmin } from '../../middl
 import { resolveTenant } from '../../middleware/tenant.js';
 import { validate } from '../../middleware/validate.js';
 import { createTicketSchema, updateTicketSchema, ticketQuerySchema } from './tickets.validation.js';
+import { upload } from '../attachments/attachments.upload.js';
+import { uploadAttachments, getAttachments, deleteAttachment } from '../attachments/attachments.controller.js';
 
 const router = express.Router();
 
@@ -147,5 +149,10 @@ router.patch('/:id/reassign', authenticateToken, requireTenantAdmin, ticketContr
  *         $ref: '#/components/responses/Ticket'
  */
 router.post('/:id/take', authenticateToken, ticketController.takeTicket);
+
+// Attachments — mounted here so :id param is in scope
+router.get('/:id/attachments',                    authenticateToken, getAttachments);
+router.post('/:id/attachments',                   authenticateToken, upload.array('files', 5), uploadAttachments);
+router.delete('/:id/attachments/:attachmentId',   authenticateToken, deleteAttachment);
 
 export default router;
