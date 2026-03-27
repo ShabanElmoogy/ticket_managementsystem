@@ -6,19 +6,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 ---
 
-### 4. 📦 Bulk Status Update
-**What:** Select multiple tickets and update their status at once.
-
-**Why:** Saves time when closing/resolving a batch of tickets after a release or sprint.
-
-**Implementation:**
-- Add checkbox selection mode to ticket list
-- Show floating action bar when tickets are selected
-- "Mark as Resolved", "Mark as Closed", "Delete" bulk actions
-- Backend: `PATCH /tickets/bulk` endpoint accepting array of IDs + status
-
----
-
 ### 5. 🔍 Backend Search
 **What:** Full-text search across ticket title and description from the backend.
 
@@ -128,7 +115,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 | # | Feature | Impact | Effort | Priority |
 |---|---------|--------|--------|----------|
-| 4 | Bulk Status Update | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 5 | Backend Search | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 6 | Priority Auto-Escalation | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 7 | File Attachments | 🟡 Medium | 🔴 High | ⭐⭐⭐ |
