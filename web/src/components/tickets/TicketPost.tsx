@@ -54,6 +54,8 @@ import AssignProgrammerDialog from '../programming/components/AssignProgrammerDi
 import ReassignDialog from './ReassignDialog';
 import EditDueDateDialog from './EditDueDateDialog';
 import { useNavigate } from 'react-router-dom';
+import MentionTextField, { renderWithMentions, extractMentionedUsers, type MentionUser } from './MentionTextField';
+import { usersApi } from '../../services/api';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -97,6 +99,11 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [editDueDateOpen, setEditDueDateOpen] = useState(false);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+
+  useEffect(() => {
+    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
+  }, []);
 
   // Reset activities cache when ticket changes (e.g. after reassign or due date edit)
   useEffect(() => {
@@ -142,8 +149,13 @@ const TicketPost: React.FC<TicketPostProps> = ({
     setNewComment("");
     setSubmitting(true);
     try {
-      await onAddComment(ticket.id, content);
-      fetchComments();
+      const comment = await onAddComment(ticket.id, content) as any;
+      if (comment?.id) {
+        setComments((prev) => [comment, ...prev]);
+        setCommentsFetched(true);
+      } else {
+        fetchComments();
+      }
       setVisibleCommentsCount(3);
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -308,7 +320,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
       case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
       case 'ASSIGNED': return 'took this ticket';
       case 'REASSIGNED': return activity.description;
-      case 'COMMENTED': return 'added a comment';
+      case 'COMMENTED': return activity.newValue ? `commented: ${activity.newValue}` : 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
       case 'UPDATED': return activity.description || 'updated this ticket';
       case 'DELETED': return 'deleted this ticket';
@@ -955,7 +967,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
                           fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         }}
                       >
-                        {comment.content}
+                        {renderWithMentions(comment.content, mentionUsers)}
                       </Typography>
                     </Paper>
                     <Typography
@@ -1059,48 +1071,30 @@ const TicketPost: React.FC<TicketPostProps> = ({
                 {getInitials(user?.name || "U")}
               </Avatar>
               <Box flexGrow={1}>
-                <TextField
-                  fullWidth
-                  placeholder={readonly ? "Subscription ended — read only" : "Write a comment..."}
+                <MentionTextField
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  variant="outlined"
-                  size="small"
-                  multiline
+                  onChange={setNewComment}
+                  users={mentionUsers}
+                  placeholder={readonly ? 'Subscription ended — read only' : 'Write a comment... use @ to mention'}
+                  minRows={1}
                   maxRows={3}
                   disabled={readonly}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: { xs: 2, sm: 3 },
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "rgba(255, 255, 255, 0.05)"
-                          : "#f9fafb",
-                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    },
-                    "& .MuiInputBase-input": {
-                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    },
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleAddComment();
                     }
                   }}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={handleAddComment}
-                        disabled={!newComment.trim() || submitting || readonly}
-                        size="small"
-                        sx={{ p: { xs: 0.5, sm: 1 } }}
-                      >
-                        <SendIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
-                      </IconButton>
-                    ),
-                  }}
                 />
+                <Box display="flex" justifyContent="flex-end" mt={0.5}>
+                  <IconButton
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim() || submitting || readonly}
+                    size="small"
+                  >
+                    <SendIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
+                  </IconButton>
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -1253,7 +1247,12 @@ const TicketPost: React.FC<TicketPostProps> = ({
             </Box>
           ) : (
             <Box sx={{ overflowY: 'auto', flex: 1, px: 3, py: 2 }}>
-              {activities.map((activity, index) => (
+              {activities.map((activity, index) => {
+                  const isMentioned = activity.action === 'COMMENTED' &&
+                    !!activity.newValue &&
+                    !!user?.name &&
+                    activity.newValue.toLowerCase().includes(`@${user.name.toLowerCase()}`);
+                  return (
                 <Box key={activity.id} display="flex" gap={2}>
                   <Box display="flex" flexDirection="column" alignItems="center" sx={{ minWidth: 40 }}>
                     <Avatar sx={{ width: 36, height: 36, fontSize: '0.8rem', fontWeight: 700, bgcolor: getActivityColor(activity.action), boxShadow: `0 0 0 3px ${getActivityColor(activity.action)}33` }}>
@@ -1264,11 +1263,22 @@ const TicketPost: React.FC<TicketPostProps> = ({
                     )}
                   </Box>
                   <Box pb={index < activities.length - 1 ? 2 : 0} flex={1} sx={{ minWidth: 0 }}>
-                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 12px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)' } }}>
+                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: isMentioned ? 'primary.main' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', bgcolor: isMentioned ? (theme) => theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 12px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)' } }}>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
                         <Box display="flex" alignItems="center" gap={1}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{activity.user.name}</Typography>
-                          <Chip label={activity.action.replaceAll('_', ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }} />
+                          <Chip
+                            label={(() => {
+                              if (activity.action === 'COMMENTED' && activity.newValue) {
+                                const names = extractMentionedUsers(activity.newValue, mentionUsers).map((u) => `@${u.name}`);
+                                if (names.length) return `mentioned ${names.join(', ')}`;
+                              }
+                              return activity.action.replaceAll('_', ' ');
+                            })()}
+                            size="small"
+                            sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }}
+                          />
+                          {isMentioned && <Chip label="mentioned you" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff' }} />}
                         </Box>
                         <Tooltip title={formatDateTime(activity.createdAt)}>
                           <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1, cursor: 'default' }}>
@@ -1276,11 +1286,28 @@ const TicketPost: React.FC<TicketPostProps> = ({
                           </Typography>
                         </Tooltip>
                       </Box>
-                      <Typography variant="body2" color="text.secondary">{getActivityLabel(activity)}</Typography>
+                      <Typography variant="body2" color="text.secondary">{renderWithMentions(getActivityLabel(activity), mentionUsers)}</Typography>
+                      {activity.action === 'COMMENTED' && activity.newValue && (() => {
+                        const mentioned = extractMentionedUsers(activity.newValue, mentionUsers);
+                        if (!mentioned.length) return null;
+                        return (
+                          <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.75}>
+                            {mentioned.map((u) => (
+                              <Chip
+                                key={u.id}
+                                label={`@${u.name}`}
+                                size="small"
+                                sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff' }}
+                              />
+                            ))}
+                          </Box>
+                        );
+                      })()}
                     </Paper>
                   </Box>
                 </Box>
-              ))}
+                  );
+                })}
             </Box>
           )}
         </DialogContent>

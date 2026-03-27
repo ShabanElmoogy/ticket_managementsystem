@@ -132,14 +132,9 @@ export const useUpdateTicketMutation = () => {
 };
 
 export const useAddCommentMutation = () => {
-  const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: ({ ticketId, content }: { ticketId: string; content: string }) => 
       ticketsApi.addComment(ticketId, content),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    },
   });
 };
 

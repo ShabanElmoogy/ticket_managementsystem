@@ -24,6 +24,8 @@ import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
 import AttachmentsPanel from './AttachmentsPanel';
 import { useNavigate } from 'react-router-dom';
 import WatcherButton from './WatcherButton';
+import MentionTextField, { renderWithMentions, extractMentionedUsers, type MentionUser } from './MentionTextField';
+import { usersApi } from '../../services/api';
 
 interface TicketDetailsDialogProps {
   open: boolean;
@@ -55,6 +57,11 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [activityMaximized, setActivityMaximized] = useState(false);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+
+  useEffect(() => {
+    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
+  }, []);
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
 
@@ -195,7 +202,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
       case 'PRIORITY_CHANGED': return `changed priority to ${activity.newValue}`;
       case 'ASSIGNED': return 'took this ticket';
       case 'REASSIGNED': return activity.description;
-      case 'COMMENTED': return 'added a comment';
+      case 'COMMENTED': return activity.newValue ? `commented: ${activity.newValue}` : 'added a comment';
       case 'COMMENT_DELETED': return 'deleted a comment';
       case 'UPDATED': return activity.description || 'updated this ticket';
       case 'DELETED': return 'deleted this ticket';
@@ -424,7 +431,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                     )}
                   </Box>
                 </Box>
-                <Typography variant="body2">{comment.content}</Typography>
+                <Typography variant="body2">{renderWithMentions(comment.content, mentionUsers)}</Typography>
               </Paper>
             ))}
             
@@ -466,19 +473,19 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
         )}
         
         <Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Add a comment..."
+          <MentionTextField
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            sx={{ mb: 2 }}
+            onChange={setNewComment}
+            users={mentionUsers}
+            placeholder="Add a comment... use @ to mention someone"
+            minRows={3}
+            disabled={addingComment}
           />
           <Button
             variant="contained"
             onClick={handleAddComment}
             disabled={!newComment.trim() || addingComment}
+            sx={{ mt: 2 }}
           >
             {addingComment ? <CircularProgress size={20} /> : 'Add Comment'}
           </Button>
@@ -592,16 +599,15 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
           </Box>
         ) : (
           <Box sx={{ overflowY: 'auto', flex: 1, px: 3, py: 2 }}>
-            {activities.map((activity, index) => (
+            {activities.map((activity, index) => {
+                const isMentioned = activity.action === 'COMMENTED' && !!activity.newValue && !!user?.name && activity.newValue.toLowerCase().includes(`@${user.name.toLowerCase()}`);
+                return (
               <Box key={activity.id} display="flex" gap={2}>
                 {/* Left: avatar + connector */}
                 <Box display="flex" flexDirection="column" alignItems="center" sx={{ minWidth: 40 }}>
                   <Avatar
                     sx={{
-                      width: 36,
-                      height: 36,
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
+                      width: 36, height: 36, fontSize: '0.8rem', fontWeight: 700,
                       bgcolor: getActivityColor(activity.action),
                       boxShadow: `0 0 0 3px ${getActivityColor(activity.action)}33`,
                     }}
@@ -609,64 +615,27 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                     {activity.user.name.charAt(0).toUpperCase()}
                   </Avatar>
                   {index < activities.length - 1 && (
-                    <Box
-                      sx={{
-                        width: 2,
-                        flex: 1,
-                        minHeight: 20,
-                        my: 0.5,
-                        background: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.03))'
-                            : 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.03))',
-                        borderRadius: 1,
-                      }}
-                    />
+                    <Box sx={{ width: 2, flex: 1, minHeight: 20, my: 0.5, background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.03))' : 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.03))', borderRadius: 1 }} />
                   )}
                 </Box>
-
                 {/* Right: content card */}
-                <Box
-                  pb={index < activities.length - 1 ? 2 : 0}
-                  flex={1}
-                  sx={{ minWidth: 0 }}
-                >
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: (theme) =>
-                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-                      bgcolor: (theme) =>
-                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff',
-                      transition: 'box-shadow 0.2s',
-                      '&:hover': {
-                        boxShadow: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? '0 2px 12px rgba(0,0,0,0.4)'
-                            : '0 2px 12px rgba(0,0,0,0.08)',
-                      },
-                    }}
-                  >
+                <Box pb={index < activities.length - 1 ? 2 : 0} flex={1} sx={{ minWidth: 0 }}>
+                  <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: isMentioned ? 'primary.main' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', bgcolor: isMentioned ? (theme) => theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 12px rgba(0,0,0,0.4)' : '0 2px 12px rgba(0,0,0,0.08)' } }}>
                     <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
                       <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {activity.user.name}
-                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{activity.user.name}</Typography>
                         <Chip
-                          label={activity.action.replaceAll('_', ' ')}
+                          label={(() => {
+                            if (activity.action === 'COMMENTED' && activity.newValue) {
+                              const names = extractMentionedUsers(activity.newValue, mentionUsers).map((u) => `@${u.name}`);
+                              if (names.length) return `mentioned ${names.join(', ')}`;
+                            }
+                            return activity.action.replaceAll('_', ' ');
+                          })()}
                           size="small"
-                          sx={{
-                            height: 18,
-                            fontSize: '0.6rem',
-                            fontWeight: 700,
-                            bgcolor: `${getActivityColor(activity.action)}22`,
-                            color: getActivityColor(activity.action),
-                            border: `1px solid ${getActivityColor(activity.action)}44`,
-                          }}
+                          sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${getActivityColor(activity.action)}22`, color: getActivityColor(activity.action), border: `1px solid ${getActivityColor(activity.action)}44` }}
                         />
+                        {isMentioned && <Chip label="mentioned you" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff' }} />}
                       </Box>
                       <Tooltip title={formatDateTime(activity.createdAt)}>
                         <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap', ml: 1, cursor: 'default' }}>
@@ -675,12 +644,29 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                       </Tooltip>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {getActivityLabel(activity)}
+                      {renderWithMentions(getActivityLabel(activity), mentionUsers)}
                     </Typography>
+                    {activity.action === 'COMMENTED' && activity.newValue && (() => {
+                      const mentioned = extractMentionedUsers(activity.newValue, mentionUsers);
+                      if (!mentioned.length) return null;
+                      return (
+                        <Box display="flex" flexWrap="wrap" gap={0.5} mt={0.75}>
+                          {mentioned.map((u) => (
+                            <Chip
+                              key={u.id}
+                              label={`@${u.name}`}
+                              size="small"
+                              sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff' }}
+                            />
+                          ))}
+                        </Box>
+                      );
+                    })()}
                   </Paper>
                 </Box>
               </Box>
-            ))}
+                );
+              })}
           </Box>
         )}
       </DialogContent>

@@ -1,6 +1,6 @@
 export interface ActivityItem {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -9,6 +9,8 @@ export interface ActivityItem {
     reassignedTo?: string;
     description?: string;
     commentBy?: string;
+    mentionedBy?: string;
+    comment?: string;
     newStatus?: string;
   };
   timestamp: string;
@@ -19,4 +21,4 @@ export interface ActivityFeedProps {
   onTicketClick: (ticket: any) => void;
 }
 
-export type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "TICKET_DELETED" | "TICKET_RESTORED";
+export type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "TICKET_DELETED" | "TICKET_RESTORED";

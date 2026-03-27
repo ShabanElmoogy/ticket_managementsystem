@@ -2,10 +2,14 @@ import { db } from '../../config/database.js';
 import { comments } from './comments.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ilike } from 'drizzle-orm';
 import { logActivity } from '../../utils/activityUtils.js';
 
-// Create new comment on a ticket
+const extractMentions = (content) => {
+  const matches = content.match(/@(\w[\w\s]*?)(?=\s@|\s*$|[^\w\s])/g) ?? [];
+  return matches.map((m) => m.slice(1).trim());
+};
+
 export const createComment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -15,10 +19,6 @@ export const createComment = async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    // Tenant scoping:
-    // Tickets table has no tenantId, so we scope via the ticket creator's user.tenantId.
-    // - SUPER_ADMIN: no tenant restriction
-    // - TENANT_ADMIN / EMPLOYEE: must have tenantId and ticket must belong to that tenant
     const isTenantScopedRole = req.user?.role === 'TENANT_ADMIN' || req.user?.role === 'EMPLOYEE' || req.user?.role === 'PROGRAMMER';
     const tenantId = isTenantScopedRole ? (req.user?.tenantId ?? null) : null;
 
@@ -26,7 +26,6 @@ export const createComment = async (req, res) => {
       return res.status(403).json({ error: 'Tenant context required' });
     }
 
-    // Check if ticket exists and user has access
     let ticket;
     if (isTenantScopedRole) {
       const rows = await db
@@ -35,7 +34,6 @@ export const createComment = async (req, res) => {
         .innerJoin(users, eq(tickets.createdById, users.id))
         .where(and(eq(tickets.id, id), eq(users.tenantId, tenantId)))
         .limit(1);
-
       ticket = rows[0]?.ticket;
     } else {
       const rows = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
@@ -46,11 +44,6 @@ export const createComment = async (req, res) => {
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
-    // Authorization:
-    // - SUPER_ADMIN: always allowed
-    // - TENANT_ADMIN: allowed for any ticket in tenant
-    // - EMPLOYEE: only if assigned to them or created by them
-    // - PROGRAMMER: only if assigned as programmer
     if (
       req.user.role !== 'SUPER_ADMIN' &&
       req.user.role !== 'TENANT_ADMIN' &&
@@ -61,14 +54,12 @@ export const createComment = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Defense-in-depth: ensure commenting user belongs to tenant
     if (isTenantScopedRole) {
       const [commentingUser] = await db
         .select({ id: users.id })
         .from(users)
         .where(and(eq(users.id, req.user.userId), eq(users.tenantId, tenantId)))
         .limit(1);
-
       if (!commentingUser) {
         return res.status(403).json({ error: 'Access denied' });
       }
@@ -76,62 +67,79 @@ export const createComment = async (req, res) => {
 
     const [comment] = await db
       .insert(comments)
-      .values({
-        content: content.trim(),
-        ticketId: id,
-        userId: req.user.userId
-      })
+      .values({ content: content.trim(), ticketId: id, userId: req.user.userId })
       .returning();
 
-    // Get user data for the response
     const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email
-      })
+      .select({ id: users.id, name: users.name, email: users.email })
       .from(users)
       .where(eq(users.id, req.user.userId))
       .limit(1);
 
-    const commentWithUser = {
-      ...comment,
-      user
-    };
+    // Respond immediately — don't wait for notifications
+    res.status(201).json({ ...comment, user });
 
-    // Log activity so it appears in the activity feed
-    await logActivity({
-      ticketId: id,
-      userId: req.user.userId,
-      action: 'COMMENTED',
-      description: `Commented on ticket`,
-      newValue: content.trim().substring(0, 100),
-    });
+    // Fire notifications async after response
+    (async () => {
+      try {
+        const mentionedNames = extractMentions(content.trim());
 
-    // Emit notification to all tenant users so their activity feeds refresh
-    const notificationPayload = {
-      type: 'COMMENT_ADDED',
-      data: {
-        ticket: { id: ticket.id, title: ticket.title },
-        commentBy: user?.name
+        await logActivity({
+          ticketId: id,
+          userId: req.user.userId,
+          action: 'COMMENTED',
+          description: 'Commented on ticket',
+          newValue: content.trim().substring(0, 100),
+        });
+
+        const notificationPayload = {
+          type: 'COMMENT_ADDED',
+          data: {
+            ticket: { id: ticket.id, title: ticket.title },
+            commentBy: user?.name,
+            comment: content.trim().substring(0, 100),
+            mentionedUsers: mentionedNames,
+          },
+        };
+
+        if (tenantId) {
+          const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
+          tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
+        } else {
+          req.emitNotification('broadcast', notificationPayload);
+        }
+
+        if (mentionedNames.length > 0) {
+          const allTenantUsers = tenantId
+            ? await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.tenantId, tenantId))
+            : await db.select({ id: users.id, name: users.name }).from(users);
+          const mentionedIds = allTenantUsers
+            .filter((u) => mentionedNames.some((n) => u.name.toLowerCase() === n.toLowerCase()))
+            .map((u) => u.id)
+            .filter((uid) => uid !== req.user.userId);
+          if (mentionedIds.length > 0) {
+            const mentionPayload = {
+              type: 'COMMENT_MENTION',
+              data: {
+                ticket: { id: ticket.id, title: ticket.title },
+                mentionedBy: user?.name,
+                comment: content.trim().substring(0, 100),
+              },
+            };
+            mentionedIds.forEach((uid) => req.emitNotification(uid, mentionPayload));
+          }
+        }
+      } catch (e) {
+        console.error('Notification error after comment:', e);
       }
-    };
+    })();
 
-    if (tenantId) {
-      const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, tenantId));
-      tenantUsers.forEach(({ id: uid }) => req.emitNotification(uid, notificationPayload));
-    } else {
-      req.emitNotification('broadcast', notificationPayload);
-    }
-
-    res.status(201).json(commentWithUser);
   } catch (error) {
     console.error('Create comment error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// Delete a comment (owner only)
 export const deleteComment = async (req, res) => {
   try {
     const { id: ticketId, commentId } = req.params;

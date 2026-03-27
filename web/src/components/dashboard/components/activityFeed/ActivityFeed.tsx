@@ -20,7 +20,7 @@ import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -29,6 +29,9 @@ type ActivityItemType = {
     reassignedTo?: string;
     description?: string;
     commentBy?: string;
+    mentionedBy?: string;
+    mentionedUsers?: string[];
+    comment?: string;
     newStatus?: string;
   };
   timestamp: string;
@@ -39,10 +42,10 @@ type ActivityFeedProps = {
   onTicketClick?: (ticket: Ticket) => void;
 };
 
-type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "TICKET_DELETED" | "TICKET_RESTORED";
+type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "TICKET_DELETED" | "TICKET_RESTORED";
 
 const useActivitySocket = (
-  onNotification: () => void
+  onNotification: (raw?: any) => void
 ) => {
   const { user, token } = useAuthStore();
   const onNotificationRef = React.useRef(onNotification);
@@ -51,7 +54,7 @@ const useActivitySocket = (
   useEffect(() => {
     if (!user || !token) return;
     const socket = getSocket(user.id, token);
-    const handler = () => { onNotificationRef.current(); };
+    const handler = (raw: any) => { onNotificationRef.current(raw); };
     socket.on("notification", handler);
     return () => { socket.off("notification", handler); };
   }, [user?.id, token]);
@@ -91,7 +94,27 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
     }
   }, [token]);
 
-  useActivitySocket(() => loadActivities(true));
+  useActivitySocket((raw?: any) => {
+    if (raw?.type === 'COMMENT_MENTION' || raw?.type === 'COMMENT_ADDED') {
+      const item: ActivityItemType = {
+        id: `${raw.type}-${Date.now()}`,
+        type: raw.type,
+        data: {
+          ticket: raw.data?.ticket,
+          commentBy: raw.data?.commentBy,
+          mentionedUsers: raw.data?.mentionedUsers,
+          mentionedBy: raw.data?.mentionedBy,
+          comment: raw.data?.comment,
+        },
+        timestamp: new Date().toISOString(),
+        read: false,
+      };
+      setActivities((prev) => [item, ...prev.slice(0, 19)]);
+      setUnreadCount((c) => c + 1);
+    } else {
+      loadActivities(true);
+    }
+  });
 
   useEffect(() => {
     loadActivities(false);
@@ -210,7 +233,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((a: ActivityItemType) => {
         const ticketTitle = a.data.ticket?.title?.toLowerCase() || "";
-        const message = `${a.data.createdBy || ""} ${a.data.updatedBy || ""} ${a.data.assignedTo || ""} ${a.data.commentBy || ""}`.toLowerCase();
+        const message = `${a.data.createdBy || ""} ${a.data.updatedBy || ""} ${a.data.assignedTo || ""} ${a.data.commentBy || ""} ${a.data.mentionedBy || ""}`.toLowerCase();
         return ticketTitle.includes(query) || message.includes(query);
       });
     }

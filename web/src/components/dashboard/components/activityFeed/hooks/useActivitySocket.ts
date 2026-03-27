@@ -14,6 +14,9 @@ interface SocketNotification {
     assignedTo?: string;
     assigneeName?: string;
     commentBy?: string;
+    mentionedBy?: string;
+    mentionedUsers?: string[];
+    comment?: string;
     newStatus?: string;
   };
   ticketId?: string;
@@ -47,6 +50,9 @@ export const useActivitySocket = (
           updatedBy: notification.data?.updatedBy,
           assignedTo: notification.data?.assignedTo || notification.data?.assigneeName,
           commentBy: notification.data?.commentBy,
+          mentionedUsers: notification.data?.mentionedUsers,
+          mentionedBy: notification.data?.mentionedBy,
+          comment: notification.data?.comment,
           newStatus: notification.data?.newStatus,
         },
         timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),

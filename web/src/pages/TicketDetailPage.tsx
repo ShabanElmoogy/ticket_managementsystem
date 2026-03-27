@@ -31,6 +31,8 @@ import { formatDateTime, formatDate, formatRelativeDuration } from '../utils/dat
 import AttachmentsPanel from '../components/tickets/AttachmentsPanel';
 import Header from '../components/dashboard/Header';
 import WatcherButton from '../components/tickets/WatcherButton';
+import MentionTextField, { renderWithMentions, type MentionUser } from '../components/tickets/MentionTextField';
+import { usersApi } from '../services/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -54,7 +56,7 @@ function getActivityLabel(a: TicketActivity): string {
     case 'PRIORITY_CHANGED': return `changed priority to ${a.newValue}`;
     case 'ASSIGNED': return 'took this ticket';
     case 'REASSIGNED': return a.description;
-    case 'COMMENTED': return 'added a comment';
+    case 'COMMENTED': return a.newValue ? `commented: ${a.newValue}` : 'added a comment';
     case 'COMMENT_DELETED': return 'deleted a comment';
     case 'UPDATED': return a.description || 'updated this ticket';
     case 'DELETED': return 'deleted this ticket';
@@ -125,6 +127,7 @@ const TicketDetailPage: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
 
   // Status update
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -139,13 +142,17 @@ const TicketDetailPage: React.FC = () => {
     if (id) fetchTicket();
   }, [id]);
 
+  useEffect(() => {
+    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
+  }, []);
+
   const fetchTicket = async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
       const data = await ticketsApi.getTicket(id);
-      setTicket(data);
+      setTicket({ ...data, comments: [...(data.comments ?? [])].reverse() });
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load ticket');
     } finally {
@@ -169,9 +176,9 @@ const TicketDetailPage: React.FC = () => {
     if (!newComment.trim() || !ticket) return;
     setSubmittingComment(true);
     try {
-      await ticketsApi.addComment(ticket.id, newComment.trim());
+      const comment = await ticketsApi.addComment(ticket.id, newComment.trim());
       setNewComment('');
-      await fetchTicket();
+      setTicket((prev) => prev ? { ...prev, comments: [comment, ...(prev.comments ?? [])] } : prev);
     } finally {
       setSubmittingComment(false);
     }
@@ -577,16 +584,15 @@ const TicketDetailPage: React.FC = () => {
                     {user?.name?.charAt(0).toUpperCase()}
                   </Avatar>
                   <Box flex={1}>
-                    <TextField
-                      fullWidth
-                      multiline
+                    <MentionTextField
+                      value={newComment}
+                      onChange={setNewComment}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) handleAddComment(); }}
+                      users={mentionUsers}
+                      placeholder="Write a comment... use @ to mention someone"
                       minRows={2}
                       maxRows={6}
-                      placeholder="Write a comment..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) handleAddComment(); }}
-                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                      disabled={submittingComment}
                     />
                     <Box display="flex" justifyContent="flex-end" mt={1}>
                       <Button
@@ -612,7 +618,7 @@ const TicketDetailPage: React.FC = () => {
                 </Box>
               ) : (
                 <Box display="flex" flexDirection="column" gap={2}>
-                  {ticket.comments?.map((c) => (
+                  {(ticket.comments ?? []).map((c) => (
                     <Box key={c.id} display="flex" gap={2}>
                       <Avatar sx={{ width: 36, height: 36, fontSize: '0.85rem', flexShrink: 0 }}>
                         {c.user?.name?.charAt(0).toUpperCase()}
@@ -641,7 +647,7 @@ const TicketDetailPage: React.FC = () => {
                           </Box>
                         </Box>
                         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-                          {c.content}
+                          {renderWithMentions(c.content, mentionUsers)}
                         </Typography>
                       </Paper>
                     </Box>
@@ -665,7 +671,9 @@ const TicketDetailPage: React.FC = () => {
                 </Box>
               ) : (
                 <Box>
-                  {ticket.activities?.map((a, i) => (
+                  {ticket.activities?.map((a, i) => {
+                    const isMentioned = a.action === 'COMMENTED' && !!a.newValue && !!user?.name && a.newValue.toLowerCase().includes(`@${user.name.toLowerCase()}`);
+                    return (
                     <Box key={a.id} display="flex" gap={2}>
                       <Box display="flex" flexDirection="column" alignItems="center" sx={{ minWidth: 40 }}>
                         <Avatar sx={{ width: 36, height: 36, fontSize: '0.8rem', fontWeight: 700, bgcolor: ACTIVITY_COLORS[a.action] ?? '#6b7280', boxShadow: `0 0 0 3px ${(ACTIVITY_COLORS[a.action] ?? '#6b7280')}33` }}>
@@ -676,15 +684,12 @@ const TicketDetailPage: React.FC = () => {
                         )}
                       </Box>
                       <Box pb={i < (ticket.activities?.length ?? 0) - 1 ? 2 : 0} flex={1} minWidth={0}>
-                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, borderColor: isMentioned ? 'primary.main' : 'divider', bgcolor: isMentioned ? (t) => t.palette.mode === 'dark' ? 'rgba(99,102,241,0.12)' : 'rgba(99,102,241,0.06)' : 'transparent' }}>
                           <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5} flexWrap="wrap" gap={1}>
                             <Box display="flex" alignItems="center" gap={1}>
                               <Typography variant="body2" fontWeight={600}>{a.user?.name}</Typography>
-                              <Chip
-                                label={a.action.replace(/_/g, ' ')}
-                                size="small"
-                                sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${ACTIVITY_COLORS[a.action] ?? '#6b7280'}22`, color: ACTIVITY_COLORS[a.action] ?? '#6b7280', border: `1px solid ${ACTIVITY_COLORS[a.action] ?? '#6b7280'}44` }}
-                              />
+                              <Chip label={a.action.replace(/_/g, ' ')} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: `${ACTIVITY_COLORS[a.action] ?? '#6b7280'}22`, color: ACTIVITY_COLORS[a.action] ?? '#6b7280', border: `1px solid ${ACTIVITY_COLORS[a.action] ?? '#6b7280'}44` }} />
+                              {isMentioned && <Chip label="mentioned you" size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'primary.main', color: '#fff' }} />}
                             </Box>
                             <Tooltip title={formatDateTime(a.createdAt)}>
                               <Typography variant="caption" color="text.disabled" sx={{ cursor: 'default', whiteSpace: 'nowrap' }}>
@@ -692,11 +697,12 @@ const TicketDetailPage: React.FC = () => {
                               </Typography>
                             </Tooltip>
                           </Box>
-                          <Typography variant="body2" color="text.secondary">{getActivityLabel(a)}</Typography>
+                          <Typography variant="body2" color="text.secondary">{renderWithMentions(getActivityLabel(a), mentionUsers)}</Typography>
                         </Paper>
                       </Box>
                     </Box>
-                  ))}
+                    );
+                  })}
                 </Box>
               )}
             </TabPanel>

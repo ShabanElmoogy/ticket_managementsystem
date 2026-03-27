@@ -5,6 +5,7 @@ import {
   Person as PersonIcon,
   Update as UpdateIcon,
   Notifications as NotificationsIcon,
+  AlternateEmail as MentionIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";
 
@@ -57,6 +58,8 @@ export const ActivityIcon: React.FC<ActivityIconProps> = ({ type, inline = false
       return <PersonIcon sx={sx} />;
     case "COMMENT_ADDED":
       return <CommentIcon sx={sx} />;
+    case "COMMENT_MENTION":
+      return <MentionIcon sx={sx} />;
     default:
       return <NotificationsIcon sx={sx} />;
   }

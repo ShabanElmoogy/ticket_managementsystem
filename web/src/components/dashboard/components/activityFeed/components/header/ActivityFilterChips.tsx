@@ -23,6 +23,7 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
     TICKET_CREATED: activities.filter((a) => a.type === "TICKET_CREATED").length,
     COMMENT_ADDED: activities.filter((a) => a.type === "COMMENT_ADDED").length,
     COMMENT_DELETED: activities.filter((a) => a.type === "COMMENT_DELETED").length,
+    COMMENT_MENTION: activities.filter((a) => a.type === "COMMENT_MENTION").length,
     TICKET_UPDATED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus !== "DELETED" && a.data?.newStatus !== "RESTORED").length,
     TICKET_DELETED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus === "DELETED").length,
     TICKET_RESTORED: activities.filter((a) => a.type === "TICKET_UPDATED" && a.data?.newStatus === "RESTORED").length,
@@ -60,6 +61,14 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
       bgColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.secondary.light}20, ${theme.palette.secondary.main}10)`,
       hoverColor: (theme: any) => `linear-gradient(135deg, ${theme.palette.secondary.light}30, ${theme.palette.secondary.main}20)`,
       badgeColor: '#8b5cf6',
+    },
+    {
+      key: "COMMENT_MENTION",
+      label: "Mentions",
+      icon: "@",
+      bgColor: () => `linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08))`,
+      hoverColor: () => `linear-gradient(135deg, rgba(99,102,241,0.2), rgba(79,70,229,0.15))`,
+      badgeColor: '#6366f1',
     },
     {
       key: "COMMENT_DELETED",
@@ -134,7 +143,7 @@ export const ActivityFilterChips: React.FC<ActivityFilterChipsProps> = ({
                 px: 1.5,
                 py: 0.75,
                 borderRadius: "20px",
-                width: filter.key === 'ALL' || filter.key === 'COMMENT_DELETED' || filter.key === 'COMMENT_ADDED' || filter.key === 'TICKET_UPDATED' || filter.key === 'TICKET_DELETED' || filter.key === 'TICKET_RESTORED' ? '100%' : 'calc(50% - 4px)',
+                width: filter.key === 'ALL' || filter.key === 'COMMENT_DELETED' || filter.key === 'COMMENT_ADDED' || filter.key === 'COMMENT_MENTION' || filter.key === 'TICKET_UPDATED' || filter.key === 'TICKET_DELETED' || filter.key === 'TICKET_RESTORED' ? '100%' : 'calc(50% - 4px)',
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 background: typeFilter === filter.key
                   ? (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.light}25)`

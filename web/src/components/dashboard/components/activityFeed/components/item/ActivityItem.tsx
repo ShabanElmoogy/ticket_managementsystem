@@ -23,7 +23,7 @@ import {
 import { useTheme } from "@mui/material";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -32,6 +32,9 @@ type ActivityItemType = {
     reassignedTo?: string;
     description?: string;
     commentBy?: string;
+    comment?: string;
+    mentionedUsers?: string[];
+    mentionedBy?: string;
     newStatus?: string;
   };
   timestamp: string;
@@ -59,7 +62,7 @@ const useActivityUtils = () => {
       },
     } as const;
     const map = accents[mode === "dark" ? "dark" : "light"];
-    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED") ? "COMMENT" : "MUTED";
+    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT" : "MUTED";
     const accent = map[key].accent;
     const iconOnAccent = theme.palette.getContrastText(accent);
     const iconInline = map[key].iconInline;
@@ -93,15 +96,24 @@ const useActivityUtils = () => {
             ? data.reassignedTo
             : `Assigned to ${data.assignedTo || "a user"}`,
         };
-      case "COMMENT_ADDED":
+      case "COMMENT_ADDED": {
+        const mentions = data.mentionedUsers?.length
+          ? ` mentioned ${data.mentionedUsers.map((n) => `@${n}`).join(', ')}`
+          : '';
         return {
           primary: `New comment on: ${ticket.title || "Untitled ticket"}`,
-          secondary: `Comment by ${data.commentBy || "Someone"}`,
+          secondary: `${data.commentBy || "Someone"}${mentions}`,
         };
+      }
       case "COMMENT_DELETED":
         return {
           primary: `Comment deleted on: ${ticket.title || "Untitled ticket"}`,
           secondary: `Deleted by ${data.commentBy || "Someone"}`,
+        };
+      case "COMMENT_MENTION":
+        return {
+          primary: `${data.mentionedBy || "Someone"} mentioned you on: ${ticket.title || "Untitled ticket"}`,
+          secondary: data.comment ? `"${data.comment.substring(0, 60)}${data.comment.length > 60 ? '…' : ''}"` : "",
         };
       default:
         return { primary: "New activity", secondary: "" };
@@ -249,6 +261,13 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
                   {message.secondary} • {formatTime(activity.timestamp)}
                 </Box>
                 <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                  {activity.type === "COMMENT_MENTION" && (
+                    <Chip
+                      label="@ mentioned you"
+                      size="small"
+                      sx={{ height: 20, fontSize: "0.65rem", fontWeight: 700, bgcolor: "primary.main", color: "#fff" }}
+                    />
+                  )}
                   {activity.data.ticket?.priority && (
                     <Chip
                       label={activity.data.ticket.priority}
