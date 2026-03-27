@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Box, Typography, IconButton, Tooltip, CircularProgress,
-  Chip, LinearProgress, Alert, Paper, Dialog, DialogContent,
-  Fade, Backdrop, useTheme, useMediaQuery,
+  Chip, LinearProgress, Alert, Paper, useTheme, useMediaQuery, Divider,
 } from '@mui/material';
 import {
   AttachFile as AttachIcon,
@@ -13,7 +12,6 @@ import {
   Description as DocIcon,
   InsertDriveFile as FileIcon,
   CloudUpload as UploadIcon,
-  Close as CloseIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   ZoomOutMap as FitIcon,
@@ -26,60 +24,62 @@ import { attachmentsApi } from './api/attachments';
 import type { Attachment } from '../../services/api/types';
 import { useAuthStore } from '../../stores/authStore';
 
-interface Props {
-  ticketId: string;
-  readonly?: boolean;
-}
+interface Props { ticketId: string; readonly?: boolean; }
 
 const MAX_SIZE_MB = 10;
 const MAX_FILES = 5;
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatBytes(b: number) {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+}
+function isImage(m: string) { return m.startsWith('image/'); }
+function isPdf(m: string)   { return m === 'application/pdf'; }
+function isVideo(m: string) { return m.startsWith('video/'); }
+function isText(m: string)  { return m.startsWith('text/') || m === 'application/json'; }
+
+function getFileBg(m: string) {
+  if (isImage(m)) return 'rgba(59,130,246,0.10)';
+  if (isPdf(m))   return 'rgba(239,68,68,0.10)';
+  if (isVideo(m)) return 'rgba(139,92,246,0.10)';
+  return 'rgba(107,114,128,0.10)';
+}
+function getFileColor(m: string) {
+  if (isImage(m)) return '#3b82f6';
+  if (isPdf(m))   return '#ef4444';
+  if (isVideo(m)) return '#8b5cf6';
+  if (m.includes('word') || m.includes('document')) return '#0ea5e9';
+  return '#6b7280';
+}
+function getFileIcon(m: string, size: 'small' | 'medium' | 'large' = 'small') {
+  const c = getFileColor(m);
+  if (isImage(m)) return <ImageIcon fontSize={size} sx={{ color: c }} />;
+  if (isPdf(m))   return <PdfIcon   fontSize={size} sx={{ color: c }} />;
+  if (isVideo(m)) return <VideoIcon  fontSize={size} sx={{ color: c }} />;
+  if (m.includes('word') || m.includes('document')) return <DocIcon fontSize={size} sx={{ color: c }} />;
+  return <FileIcon fontSize={size} sx={{ color: c }} />;
+}
+function getExt(m: string) {
+  return m.split('/')[1]?.toUpperCase().slice(0, 6) ?? 'FILE';
 }
 
-function isImage(mime: string) { return mime.startsWith('image/'); }
-function isPdf(mime: string) { return mime === 'application/pdf'; }
-function isVideo(mime: string) { return mime.startsWith('video/'); }
-function isText(mime: string) { return mime.startsWith('text/') || mime === 'application/json'; }
-
-function getFileIcon(mime: string, size = 'small' as 'small' | 'medium' | 'large') {
-  if (isImage(mime)) return <ImageIcon fontSize={size} sx={{ color: '#3b82f6' }} />;
-  if (isPdf(mime))   return <PdfIcon   fontSize={size} sx={{ color: '#ef4444' }} />;
-  if (isVideo(mime)) return <VideoIcon  fontSize={size} sx={{ color: '#8b5cf6' }} />;
-  if (mime.includes('word') || mime.includes('document')) return <DocIcon fontSize={size} sx={{ color: '#0ea5e9' }} />;
-  return <FileIcon fontSize={size} sx={{ color: '#6b7280' }} />;
-}
-
-function getFileBg(mime: string) {
-  if (isImage(mime)) return 'rgba(59,130,246,0.08)';
-  if (isPdf(mime))   return 'rgba(239,68,68,0.08)';
-  if (isVideo(mime)) return 'rgba(139,92,246,0.08)';
-  return 'rgba(107,114,128,0.08)';
-}
-
-// ── Viewer ────────────────────────────────────────────────────────────────────
-interface ViewerProps {
+// ── Inline viewer pane ────────────────────────────────────────────────────────
+interface ViewerPaneProps {
   attachments: Attachment[];
   index: number;
-  onClose: () => void;
   onNavigate: (i: number) => void;
 }
 
-const FileViewer: React.FC<ViewerProps> = ({ attachments, index, onClose, onNavigate }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+const ViewerPane: React.FC<ViewerPaneProps> = ({ attachments, index, onNavigate }) => {
   const a = attachments[index];
   const [zoom, setZoom] = useState(1);
   const [textContent, setTextContent] = useState<string | null>(null);
   const [textLoading, setTextLoading] = useState(false);
 
-  // Reset zoom when attachment changes
   useEffect(() => { setZoom(1); setTextContent(null); }, [index]);
 
-  // Load text files
   useEffect(() => {
     if (!isText(a.mimeType)) return;
     setTextLoading(true);
@@ -90,283 +90,176 @@ const FileViewer: React.FC<ViewerProps> = ({ attachments, index, onClose, onNavi
       .finally(() => setTextLoading(false));
   }, [a.url, a.mimeType]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft' && index > 0) onNavigate(index - 1);
-    if (e.key === 'ArrowRight' && index < attachments.length - 1) onNavigate(index + 1);
-    if (e.key === 'Escape') onClose();
+  const handleKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowUp'   && index > 0)                    onNavigate(index - 1);
+    if (e.key === 'ArrowDown' && index < attachments.length - 1) onNavigate(index + 1);
     if (e.key === '+' || e.key === '=') setZoom((z) => Math.min(z + 0.25, 4));
-    if (e.key === '-') setZoom((z) => Math.max(z - 0.25, 0.25));
-  }, [index, attachments.length, onNavigate, onClose]);
+    if (e.key === '-')                  setZoom((z) => Math.max(z - 0.25, 0.25));
+  }, [index, attachments.length, onNavigate]);
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handleKey]);
 
   const renderContent = () => {
-    if (isImage(a.mimeType)) {
-      return (
+    if (isImage(a.mimeType)) return (
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', p: 2 }}>
         <Box
+          component="img"
+          src={a.url}
+          alt={a.originalName}
           sx={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'auto', cursor: zoom > 1 ? 'grab' : 'default',
+            maxWidth: zoom === 1 ? '100%' : 'none',
+            maxHeight: zoom === 1 ? '100%' : 'none',
+            width: zoom !== 1 ? `${zoom * 100}%` : 'auto',
+            objectFit: 'contain',
+            borderRadius: 2,
+            boxShadow: 4,
+            userSelect: 'none',
+            transition: 'width 0.15s',
           }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Box
-            component="img"
-            src={a.url}
-            alt={a.originalName}
-            sx={{
-              maxWidth: zoom === 1 ? '100%' : 'none',
-              maxHeight: zoom === 1 ? '100%' : 'none',
-              width: zoom !== 1 ? `${zoom * 100}%` : 'auto',
-              objectFit: 'contain',
-              borderRadius: 1,
-              transition: 'transform 0.2s',
-              userSelect: 'none',
-            }}
-          />
-        </Box>
-      );
-    }
+        />
+      </Box>
+    );
 
-    if (isPdf(a.mimeType)) {
-      return (
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
-          <Box
-            component="iframe"
-            src={`${a.url}#toolbar=1&navpanes=0`}
-            title={a.originalName}
-            sx={{ flex: 1, border: 'none', borderRadius: 1, minHeight: 0 }}
-          />
-        </Box>
-      );
-    }
+    if (isPdf(a.mimeType)) return (
+      <Box component="iframe"
+        src={`${a.url}#toolbar=1&navpanes=0`}
+        title={a.originalName}
+        sx={{ flex: 1, border: 'none', minHeight: 0 }}
+      />
+    );
 
-    if (isVideo(a.mimeType)) {
-      return (
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
-          <Box
-            component="video"
-            src={a.url}
-            controls
-            autoPlay={false}
-            sx={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 2 }}
-          />
-        </Box>
-      );
-    }
+    if (isVideo(a.mimeType)) return (
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+        <Box component="video" src={a.url} controls
+          sx={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 2, boxShadow: 4 }} />
+      </Box>
+    );
 
-    if (isText(a.mimeType)) {
-      return (
-        <Box sx={{ flex: 1, overflow: 'auto', p: 2 }} onClick={(e) => e.stopPropagation()}>
-          {textLoading ? (
-            <Box display="flex" justifyContent="center" pt={4}><CircularProgress /></Box>
-          ) : (
-            <Box
-              component="pre"
-              sx={{
-                m: 0, fontFamily: 'monospace', fontSize: '0.85rem',
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                color: 'text.primary', lineHeight: 1.7,
-              }}
-            >
+    if (isText(a.mimeType)) return (
+      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+        {textLoading
+          ? <Box display="flex" justifyContent="center" pt={6}><CircularProgress /></Box>
+          : <Box component="pre" sx={{ m: 0, fontFamily: 'monospace', fontSize: '0.82rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.7 }}>
               {textContent}
             </Box>
-          )}
-        </Box>
-      );
-    }
+        }
+      </Box>
+    );
 
-    // Unsupported — show download prompt
     return (
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, p: 4 }}>
         <Box sx={{ p: 3, borderRadius: '50%', bgcolor: getFileBg(a.mimeType) }}>
           {getFileIcon(a.mimeType, 'large')}
         </Box>
-        <Typography variant="h6" fontWeight={600}>{a.originalName}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Preview not available for this file type
-        </Typography>
-        <Box
-          component="a"
-          href={a.url}
-          download={a.originalName}
-          sx={{
-            display: 'inline-flex', alignItems: 'center', gap: 1,
-            px: 3, py: 1.5, borderRadius: 2,
-            bgcolor: 'primary.main', color: '#fff',
-            textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem',
-            '&:hover': { bgcolor: 'primary.dark' },
-          }}
-        >
-          <DownloadIcon fontSize="small" />
-          Download File
+        <Typography variant="h6" fontWeight={600} textAlign="center">{a.originalName}</Typography>
+        <Typography variant="body2" color="text.secondary">Preview not available for this file type</Typography>
+        <Box component="a" href={a.url} download={a.originalName}
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 3, py: 1.5, borderRadius: 2,
+            bgcolor: 'primary.main', color: '#fff', textDecoration: 'none', fontWeight: 600,
+            '&:hover': { bgcolor: 'primary.dark' } }}>
+          <DownloadIcon fontSize="small" /> Download File
         </Box>
       </Box>
     );
   };
 
   return (
-    <Dialog
-      open
-      onClose={onClose}
-      fullScreen
-      TransitionComponent={Fade}
-      PaperProps={{
-        sx: {
-          bgcolor: (t) => t.palette.mode === 'dark' ? '#0a0f1e' : '#1a1a2e',
-          display: 'flex', flexDirection: 'column',
-        },
-      }}
-    >
-      {/* ── Toolbar ── */}
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+
+      {/* Viewer toolbar */}
       <Box sx={{
-        display: 'flex', alignItems: 'center', gap: 1,
-        px: 2, py: 1, flexShrink: 0,
-        bgcolor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, flexShrink: 0,
+        borderBottom: '1px solid', borderColor: 'divider',
+        bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
       }}>
         {/* File info */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
-          <Box sx={{ p: 0.75, borderRadius: 1.5, bgcolor: getFileBg(a.mimeType), flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+          <Box sx={{ p: 0.5, borderRadius: 1, bgcolor: getFileBg(a.mimeType), flexShrink: 0 }}>
             {getFileIcon(a.mimeType)}
           </Box>
           <Box minWidth={0}>
-            <Typography variant="body2" fontWeight={600} noWrap sx={{ color: '#fff' }}>
-              {a.originalName}
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+            <Typography variant="body2" fontWeight={600} noWrap>{a.originalName}</Typography>
+            <Typography variant="caption" color="text.secondary">
               {formatBytes(a.size)} · {a.uploadedBy?.name}
               {attachments.length > 1 && ` · ${index + 1} / ${attachments.length}`}
             </Typography>
           </Box>
         </Box>
 
-        {/* Zoom controls — images only */}
-        {isImage(a.mimeType) && !isMobile && (
-          <Box display="flex" alignItems="center" gap={0.5}>
+        {/* Zoom — images only */}
+        {isImage(a.mimeType) && (
+          <Box display="flex" alignItems="center" gap={0.25}>
             <Tooltip title="Zoom out (-)">
-              <IconButton size="small" onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))} sx={{ color: 'rgba(255,255,255,0.7)' }}>
+              <IconButton size="small" onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}>
                 <ZoomOutIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Chip
-              label={`${Math.round(zoom * 100)}%`}
-              size="small"
-              onClick={() => setZoom(1)}
-              sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.7rem' }}
-            />
+            <Chip label={`${Math.round(zoom * 100)}%`} size="small" onClick={() => setZoom(1)}
+              sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer', minWidth: 48 }} />
             <Tooltip title="Zoom in (+)">
-              <IconButton size="small" onClick={() => setZoom((z) => Math.min(z + 0.25, 4))} sx={{ color: 'rgba(255,255,255,0.7)' }}>
+              <IconButton size="small" onClick={() => setZoom((z) => Math.min(z + 0.25, 4))}>
                 <ZoomInIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Fit to screen (0)">
-              <IconButton size="small" onClick={() => setZoom(1)} sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            <Tooltip title="Fit">
+              <IconButton size="small" onClick={() => setZoom(1)}>
                 <FitIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
         )}
 
-        {/* Download + open in new tab + close */}
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <Tooltip title="Open in new tab">
-            <IconButton size="small" component="a" href={a.url} target="_blank" rel="noopener" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Download">
-            <IconButton size="small" component="a" href={a.url} download={a.originalName} sx={{ color: 'rgba(255,255,255,0.7)' }}>
-              <DownloadIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Close (Esc)">
-            <IconButton size="small" onClick={onClose} sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        {/* Nav arrows */}
+        {attachments.length > 1 && (
+          <Box display="flex" gap={0.25}>
+            <Tooltip title="Previous (↑)">
+              <span>
+                <IconButton size="small" onClick={() => onNavigate(index - 1)} disabled={index === 0}>
+                  <PrevIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Next (↓)">
+              <span>
+                <IconButton size="small" onClick={() => onNavigate(index + 1)} disabled={index === attachments.length - 1}>
+                  <NextIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        )}
+
+        {/* Open + download */}
+        <Tooltip title="Open in new tab">
+          <IconButton size="small" component="a" href={a.url} target="_blank" rel="noopener">
+            <OpenInNewIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Download">
+          <IconButton size="small" component="a" href={a.url} download={a.originalName}>
+            <DownloadIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
 
-      {/* ── Content ── */}
-      <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, minHeight: 0, position: 'relative' }}>
+      {/* Content */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {renderContent()}
-
-        {/* Prev / Next navigation */}
-        {attachments.length > 1 && (
-          <>
-            <IconButton
-              onClick={() => onNavigate(index - 1)}
-              disabled={index === 0}
-              sx={{
-                position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
-                bgcolor: 'rgba(0,0,0,0.5)', color: '#fff',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
-                '&.Mui-disabled': { opacity: 0.2 },
-              }}
-            >
-              <PrevIcon />
-            </IconButton>
-            <IconButton
-              onClick={() => onNavigate(index + 1)}
-              disabled={index === attachments.length - 1}
-              sx={{
-                position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                bgcolor: 'rgba(0,0,0,0.5)', color: '#fff',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
-                '&.Mui-disabled': { opacity: 0.2 },
-              }}
-            >
-              <NextIcon />
-            </IconButton>
-          </>
-        )}
-      </DialogContent>
-
-      {/* ── Thumbnail strip ── */}
-      {attachments.length > 1 && (
-        <Box sx={{
-          display: 'flex', gap: 1, px: 2, py: 1.5, flexShrink: 0,
-          bgcolor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          overflowX: 'auto',
-        }}>
-          {attachments.map((att, i) => (
-            <Box
-              key={att.id}
-              onClick={() => onNavigate(i)}
-              sx={{
-                width: 52, height: 52, flexShrink: 0, borderRadius: 1.5,
-                overflow: 'hidden', cursor: 'pointer',
-                border: '2px solid',
-                borderColor: i === index ? 'primary.main' : 'rgba(255,255,255,0.15)',
-                transition: 'border-color 0.15s',
-                '&:hover': { borderColor: 'primary.light' },
-              }}
-            >
-              {isImage(att.mimeType) ? (
-                <Box component="img" src={att.url} alt={att.originalName}
-                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: getFileBg(att.mimeType) }}>
-                  {getFileIcon(att.mimeType)}
-                </Box>
-              )}
-            </Box>
-          ))}
-        </Box>
-      )}
-    </Dialog>
+      </Box>
+    </Box>
   );
 };
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
   const { user } = useAuthStore();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const inputRef = useRef<HTMLInputElement>(null);
+
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -374,11 +267,17 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN';
 
   useEffect(() => { fetchAttachments(); }, [ticketId]);
+
+  // Auto-select first attachment when list loads
+  useEffect(() => {
+    if (attachments.length > 0 && selectedIndex === null) setSelectedIndex(0);
+    if (attachments.length === 0) setSelectedIndex(null);
+  }, [attachments]);
 
   const fetchAttachments = async () => {
     setLoading(true);
@@ -407,6 +306,7 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
     try {
       const uploaded = await attachmentsApi.uploadAttachments(ticketId, fileArr);
       setAttachments((prev) => [...prev, ...uploaded]);
+      setSelectedIndex(attachments.length); // select first new file
       setUploadProgress(100);
     } catch (e: any) {
       setError(e?.response?.data?.error ?? 'Upload failed');
@@ -417,11 +317,13 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
     }
   };
 
-  const handleDelete = async (attachment: Attachment) => {
-    setDeletingId(attachment.id);
+  const handleDelete = async (a: Attachment, i: number) => {
+    setDeletingId(a.id);
     try {
-      await attachmentsApi.deleteAttachment(ticketId, attachment.id);
-      setAttachments((prev) => prev.filter((a) => a.id !== attachment.id));
+      await attachmentsApi.deleteAttachment(ticketId, a.id);
+      const next = attachments.filter((_, idx) => idx !== i);
+      setAttachments(next);
+      if (selectedIndex === i) setSelectedIndex(next.length > 0 ? Math.min(i, next.length - 1) : null);
     } catch {
       setError('Failed to delete attachment');
     } finally {
@@ -431,17 +333,31 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
 
   const canDelete = (a: Attachment) => isAdmin || a.uploadedBy?.id === user?.id;
 
-  return (
-    <Box>
-      {/* Header */}
-      <Box display="flex" alignItems="center" gap={1} mb={2}>
+  // ── Left panel: list + upload ──────────────────────────────────────────────
+  const listPanel = (
+    <Box sx={{
+      width: isMobile ? '100%' : 300,
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      borderRight: isMobile ? 'none' : '1px solid',
+      borderBottom: isMobile ? '1px solid' : 'none',
+      borderColor: 'divider',
+      minHeight: 0,
+    }}>
+      {/* List header */}
+      <Box sx={{
+        px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
+        borderBottom: '1px solid', borderColor: 'divider',
+        bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+      }}>
         <AttachIcon fontSize="small" color="action" />
-        <Typography variant="subtitle2" fontWeight={700}>Attachments</Typography>
-        <Chip label={attachments.length} size="small" variant="outlined" />
+        <Typography variant="subtitle2" fontWeight={700} flex={1}>Files</Typography>
+        <Chip label={attachments.length} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
       </Box>
 
       {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mx: 1.5, mt: 1.5, py: 0.5 }}>
           {error}
         </Alert>
       )}
@@ -455,130 +371,145 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
           onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
           onClick={() => !uploading && inputRef.current?.click()}
           sx={{
-            p: 2.5, mb: 3, textAlign: 'center', cursor: uploading ? 'default' : 'pointer',
-            borderStyle: 'dashed', borderWidth: 2,
+            mx: 1.5, mt: 1.5, p: 1.5, textAlign: 'center',
+            cursor: uploading ? 'default' : 'pointer',
+            borderStyle: 'dashed', borderWidth: 2, borderRadius: 2,
             borderColor: dragOver ? 'primary.main' : 'divider',
-            borderRadius: 3,
             bgcolor: dragOver
               ? (t) => t.palette.mode === 'dark' ? 'rgba(59,130,246,0.08)' : 'rgba(37,99,235,0.04)'
-              : 'background.default',
+              : 'transparent',
             transition: 'all 0.2s',
-            '&:hover': {
-              borderColor: 'primary.main',
-              bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.03)',
-            },
+            flexShrink: 0,
+            '&:hover': { borderColor: 'primary.main', bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.03)' },
           }}
         >
           <input ref={inputRef} type="file" multiple hidden onChange={(e) => handleFiles(e.target.files)} />
           {uploading ? (
             <Box>
-              <CircularProgress size={24} sx={{ mb: 1 }} />
-              <LinearProgress variant="determinate" value={uploadProgress} sx={{ borderRadius: 2, height: 6, mb: 0.5 }} />
+              <LinearProgress variant="determinate" value={uploadProgress} sx={{ borderRadius: 2, height: 4, mb: 0.5 }} />
               <Typography variant="caption" color="text.secondary">Uploading...</Typography>
             </Box>
           ) : (
-            <Box display="flex" flexDirection="column" alignItems="center" gap={0.75}>
-              <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: 'action.hover' }}>
-                <UploadIcon sx={{ color: 'primary.main', fontSize: 28 }} />
-              </Box>
-              <Typography variant="body2" fontWeight={500}>
-                Drop files here or <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>click to browse</Box>
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                Max {MAX_FILES} files · {MAX_SIZE_MB} MB each · Images, PDF, Video, Docs
+            <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+              <UploadIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+              <Typography variant="caption" fontWeight={500}>
+                Drop or <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>browse</Box>
               </Typography>
             </Box>
           )}
         </Paper>
       )}
 
-      {/* List */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" py={4}><CircularProgress size={24} /></Box>
-      ) : attachments.length === 0 ? (
-        <Box textAlign="center" py={6}>
-          <AttachIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-          <Typography variant="body2" color="text.secondary">No attachments yet</Typography>
-        </Box>
-      ) : (
-        <Box display="flex" flexDirection="column" gap={1}>
-          {attachments.map((a, i) => (
-            <Paper
-              key={a.id}
-              variant="outlined"
-              sx={{
-                p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
-                borderRadius: 2, cursor: 'pointer',
-                transition: 'all 0.15s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(59,130,246,0.06)' : 'rgba(37,99,235,0.03)',
-                  transform: 'translateX(2px)',
-                },
-              }}
-              onClick={() => setViewerIndex(i)}
-            >
-              {/* Thumbnail or icon */}
-              <Box sx={{
-                width: 48, height: 48, flexShrink: 0, borderRadius: 1.5,
-                overflow: 'hidden', bgcolor: getFileBg(a.mimeType),
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {isImage(a.mimeType) ? (
-                  <Box component="img" src={a.url} alt={a.originalName}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  getFileIcon(a.mimeType, 'medium')
-                )}
+      {/* File list */}
+      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+        {loading ? (
+          <Box display="flex" justifyContent="center" py={4}><CircularProgress size={20} /></Box>
+        ) : attachments.length === 0 ? (
+          <Box textAlign="center" py={4}>
+            <AttachIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
+            <Typography variant="caption" color="text.secondary" display="block">No files yet</Typography>
+          </Box>
+        ) : (
+          attachments.map((a, i) => {
+            const selected = selectedIndex === i;
+            return (
+              <Box
+                key={a.id}
+                onClick={() => setSelectedIndex(i)}
+                sx={{
+                  mx: 1, mb: 0.5, px: 1.5, py: 1,
+                  display: 'flex', alignItems: 'center', gap: 1.5,
+                  borderRadius: 2, cursor: 'pointer',
+                  bgcolor: selected
+                    ? (t) => t.palette.mode === 'dark' ? 'rgba(59,130,246,0.15)' : 'rgba(37,99,235,0.08)'
+                    : 'transparent',
+                  border: '1px solid',
+                  borderColor: selected ? 'primary.main' : 'transparent',
+                  transition: 'all 0.15s',
+                  '&:hover': {
+                    bgcolor: selected
+                      ? undefined
+                      : (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                  },
+                }}
+              >
+                {/* Thumbnail */}
+                <Box sx={{
+                  width: 36, height: 36, flexShrink: 0, borderRadius: 1.5,
+                  overflow: 'hidden', bgcolor: getFileBg(a.mimeType),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {isImage(a.mimeType)
+                    ? <Box component="img" src={a.url} alt={a.originalName} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : getFileIcon(a.mimeType)
+                  }
+                </Box>
+
+                {/* Info */}
+                <Box flex={1} minWidth={0}>
+                  <Typography variant="caption" fontWeight={selected ? 700 : 500} noWrap display="block"
+                    sx={{ color: selected ? 'primary.main' : 'text.primary' }}>
+                    {a.originalName}
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.65rem' }}>
+                    {formatBytes(a.size)}
+                  </Typography>
+                </Box>
+
+                {/* Actions */}
+                <Box display="flex" onClick={(e) => e.stopPropagation()}>
+                  {canDelete(a) && (
+                    <Tooltip title="Delete">
+                      <IconButton size="small" color="error" onClick={() => handleDelete(a, i)} disabled={deletingId === a.id}
+                        sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
+                        {deletingId === a.id ? <CircularProgress size={12} /> : <DeleteIcon sx={{ fontSize: 14 }} />}
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
               </Box>
+            );
+          })
+        )}
+      </Box>
+    </Box>
+  );
 
-              {/* Info */}
-              <Box flex={1} minWidth={0}>
-                <Typography variant="body2" fontWeight={600} noWrap sx={{ '&:hover': { color: 'primary.main' } }}>
-                  {a.originalName}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatBytes(a.size)} · {a.uploadedBy?.name}
-                </Typography>
-              </Box>
-
-              {/* Type badge */}
-              <Chip
-                label={a.mimeType.split('/')[1]?.toUpperCase().slice(0, 6) ?? 'FILE'}
-                size="small"
-                sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: getFileBg(a.mimeType), flexShrink: 0 }}
-              />
-
-              {/* Actions — stop propagation so row click doesn't open viewer */}
-              <Box display="flex" gap={0.5} onClick={(e) => e.stopPropagation()}>
-                <Tooltip title="Download">
-                  <IconButton size="small" component="a" href={a.url} download={a.originalName}>
-                    <DownloadIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                {canDelete(a) && (
-                  <Tooltip title="Delete">
-                    <IconButton size="small" color="error" onClick={() => handleDelete(a)} disabled={deletingId === a.id}>
-                      {deletingId === a.id ? <CircularProgress size={14} /> : <DeleteIcon fontSize="small" />}
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            </Paper>
-          ))}
-        </Box>
-      )}
-
-      {/* Viewer */}
-      {viewerIndex !== null && (
-        <FileViewer
+  // ── Right panel: viewer ────────────────────────────────────────────────────
+  const viewerPanel = (
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+      {selectedIndex !== null && attachments[selectedIndex] ? (
+        <ViewerPane
           attachments={attachments}
-          index={viewerIndex}
-          onClose={() => setViewerIndex(null)}
-          onNavigate={setViewerIndex}
+          index={selectedIndex}
+          onNavigate={setSelectedIndex}
         />
+      ) : (
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, opacity: 0.5 }}>
+          <AttachIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+          <Typography variant="body2" color="text.secondary">
+            {attachments.length === 0 ? 'No files attached' : 'Select a file to preview'}
+          </Typography>
+        </Box>
       )}
     </Box>
+  );
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        borderRadius: 3,
+        overflow: 'hidden',
+        height: isMobile ? 'auto' : 520,
+        minHeight: isMobile ? 400 : 520,
+      }}
+    >
+      {listPanel}
+      {viewerPanel}
+    </Paper>
   );
 };
 
