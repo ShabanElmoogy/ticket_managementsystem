@@ -4,8 +4,19 @@ import { tickets } from '../tickets/tickets.schema.js';
 import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { eq, and, or, not, lt, desc, asc, inArray } from 'drizzle-orm';
-
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
+import { escalatePriorities } from '../../utils/scheduler.js';
+
+// Manually trigger priority escalation (admin/test use)
+export const triggerEscalation = async (req, res) => {
+  try {
+    await escalatePriorities();
+    res.json({ message: 'Priority escalation completed. Check server logs for details.' });
+  } catch (error) {
+    console.error('Trigger escalation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 // Get user reminder settings
 export const getReminderSettings = async (req, res) => {

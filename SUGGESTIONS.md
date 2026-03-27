@@ -6,32 +6,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 ---
 
-### 5. 🔍 Backend Search
-**What:** Full-text search across ticket title and description from the backend.
-
-**Why:** Current search is client-side and limited to loaded tickets. Backend search covers all tickets.
-
-**Implementation:**
-- Add `search` query param to `GET /tickets`
-- Use PostgreSQL `ILIKE` or `tsvector` full-text search
-- Debounced search input in dashboard filters
-- Replace client-side filter with API call
-
----
-
-### 6. ⏰ Priority Auto-Escalation
-**What:** Automatically escalate ticket priority if it remains unresolved past its due date.
-
-**Why:** Ensures overdue tickets get attention without manual intervention.
-
-**Implementation:**
-- Backend cron job (e.g. every hour) checks tickets where `dueDate < now` and `status IN (OPEN, IN_PROGRESS)`
-- Escalate: LOW → MEDIUM → HIGH → URGENT
-- Log `PRIORITY_CHANGED` activity with reason `"Auto-escalated: overdue"`
-- Send notification to assigned employee and admin
-
----
-
 ### 7. 📎 File Attachments
 **What:** Allow users to attach files (screenshots, logs, documents) to tickets or comments.
 
@@ -115,8 +89,6 @@ These features directly improve how tickets are created, tracked, and resolved.
 
 | # | Feature | Impact | Effort | Priority |
 |---|---------|--------|--------|----------|
-| 5 | Backend Search | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
-| 6 | Priority Auto-Escalation | 🔴 High | 🟡 Medium | ⭐⭐⭐⭐ |
 | 7 | File Attachments | 🟡 Medium | 🔴 High | ⭐⭐⭐ |
 | 8 | Ticket Templates | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |
 | 9 | Ticket Watchers | 🟡 Medium | 🟡 Medium | ⭐⭐⭐ |

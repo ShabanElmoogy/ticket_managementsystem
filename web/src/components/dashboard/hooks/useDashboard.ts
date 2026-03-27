@@ -43,9 +43,15 @@ export const useDashboard = () => {
   const [deletedFilter, setDeletedFilter] = useState<'active' | 'deleted'>('active');
   const [overdueFilter, setOverdueFilter] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  // Debounce search input — fires API call 400ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchInput), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // TanStack Query hooks
   const { data: rawTickets = [], isLoading: ticketsLoading } = useTicketsQuery({
@@ -55,27 +61,19 @@ export const useDashboard = () => {
     customerFilter,
     applicationFilter,
     deletedFilter,
+    search: debouncedSearch,
   });
   
-  // Deferred search to prevent UI blocking
+  // Client-side overdue filter only (search is now backend-driven)
   const tickets = useMemo(() => {
-    let result = rawTickets;
-
-    if (overdueFilter) {
-      const now = new Date();
-      result = result.filter((t) =>
-        t.dueDate &&
-        new Date(t.dueDate) < now &&
-        !['RESOLVED', 'CLOSED'].includes(t.status)
-      );
-    }
-
-    if (!searchQuery) return result;
-    const q = searchQuery.toLowerCase();
-    return result.filter((t) =>
-      t.title.toLowerCase().includes(q) || t.id.includes(q)
+    if (!overdueFilter) return rawTickets;
+    const now = new Date();
+    return rawTickets.filter((t) =>
+      t.dueDate &&
+      new Date(t.dueDate) < now &&
+      !['RESOLVED', 'CLOSED'].includes(t.status)
     );
-  }, [rawTickets, searchQuery, overdueFilter]);
+  }, [rawTickets, overdueFilter]);
   
   const { data: allUsers = [] } = useUsersQuery();
   const { data: employees = [] } = useEmployeesQuery();
@@ -134,11 +132,6 @@ export const useDashboard = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Instant search - no debounce
-  useEffect(() => {
-    setSearchQuery(searchInput);
-  }, [searchInput]);
 
   const handleCreateTicket = async (ticketData: CreateTicketData) => {
     try {
@@ -210,7 +203,7 @@ export const useDashboard = () => {
     deleted: deletedFilter,
     search: searchInput,
     overdue: overdueFilter,
-  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchQuery, overdueFilter]);
+  }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchInput, overdueFilter]);
 
   return {
     // env

@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { ticketsApi, usersApi, customersApi, applicationsApi, type Ticket, type CreateTicketData } from '../../../services/api';
 import { useAuthStore } from '../../../stores/authStore';
 
@@ -10,43 +9,24 @@ export const useTicketsQuery = (filters: {
   customerFilter?: string;
   applicationFilter?: string;
   deletedFilter?: 'active' | 'deleted';
+  search?: string;
 }) => {
-  const { status, priority, userFilter, customerFilter, applicationFilter, deletedFilter } = filters;
-  
-  const selectFn = useMemo(() => (data: Ticket[]) => {
-    let ticketsData = data;
+  const { status, priority, userFilter, customerFilter, applicationFilter, deletedFilter, search } = filters;
 
-    if (userFilter) {
-      if (userFilter === 'NEW_TICKETS') {
-        ticketsData = ticketsData.filter((t) => !t.assignedTo);
-      } else {
-        ticketsData = ticketsData.filter((t) => 
-          t.createdBy?.id === userFilter || t.assignedTo?.id === userFilter
-        );
-      }
-    }
-    
-    if (customerFilter) {
-      ticketsData = ticketsData.filter((t) => t.customer?.id === customerFilter);
-    }
-    
-    if (applicationFilter) {
-      ticketsData = ticketsData.filter((t) => t.application?.id === applicationFilter);
-    }
-
-    return ticketsData;
-  }, [userFilter, customerFilter, applicationFilter]);
-  
   return useQuery({
-    queryKey: ['tickets', { status, priority, deletedFilter }],
+    queryKey: ['tickets', { status, priority, deletedFilter, search, customerFilter, applicationFilter, userFilter }],
     queryFn: () => ticketsApi.getTickets({
       status: status === '' ? undefined : status as Ticket['status'],
       priority: priority || undefined,
       deleted: deletedFilter === 'deleted',
+      search: search || undefined,
+      customerId: customerFilter || undefined,
+      applicationId: applicationFilter || undefined,
+      userId: userFilter && userFilter !== 'NEW_TICKETS' ? userFilter : undefined,
+      assignedTo: userFilter === 'NEW_TICKETS' ? 'none' : undefined,
     }),
     staleTime: 0,
     placeholderData: keepPreviousData,
-    select: selectFn,
   });
 };
 

@@ -5,7 +5,7 @@ import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { ticketLabels, labels } from '../labels/labels.schema.js';
 import { comments } from '../comments/comments.schema.js';
-import { eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt } from 'drizzle-orm';
+import { eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt, ilike } from 'drizzle-orm';
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 import { isTenantScopedRole } from '../../middleware/auth.js';
@@ -15,12 +15,20 @@ import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 // Get all tickets with filtering
 export const getAllTickets = async (req, res) => {
   try {
-    const { status, assignedTo, priority, deleted } = req.query;
+    const { status, assignedTo, priority, deleted, search, customerId, applicationId, userId } = req.query;
 
     const conditions = [];
     if (status) conditions.push(eq(tickets.status, status));
-    if (assignedTo) conditions.push(eq(tickets.assignedToId, assignedTo));
+    if (assignedTo === 'none') {
+      conditions.push(isNull(tickets.assignedToId));
+    } else if (assignedTo) {
+      conditions.push(eq(tickets.assignedToId, assignedTo));
+    }
     if (priority) conditions.push(eq(tickets.priority, priority));
+    if (search) conditions.push(or(ilike(tickets.title, `%${search}%`), ilike(tickets.description, `%${search}%`)));
+    if (customerId) conditions.push(eq(tickets.customerId, customerId));
+    if (applicationId) conditions.push(eq(tickets.applicationId, applicationId));
+    if (userId) conditions.push(or(eq(tickets.createdById, userId), eq(tickets.assignedToId, userId)));
     // deleted filter: 'true' = deleted only, 'false' = active only
     if (deleted === 'true') {
       conditions.push(isNotNull(tickets.deletedAt));

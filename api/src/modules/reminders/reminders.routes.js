@@ -1,6 +1,6 @@
 import express from 'express';
 import * as remindersController from './reminders.controller.js';
-import { authenticateToken } from '../../middleware/auth.js';
+import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { updateReminderSettingsSchema } from './reminders.validation.js';
 
@@ -53,5 +53,8 @@ router.put('/settings', authenticateToken, validate(updateReminderSettingsSchema
  *         $ref: '#/components/responses/TicketList'
  */
 router.get('/delayed-tickets', authenticateToken, remindersController.getDelayedTickets);
+
+// Manually trigger priority escalation — admin only
+router.post('/escalate-now', authenticateToken, requireAdmin, remindersController.triggerEscalation);
 
 export default router;

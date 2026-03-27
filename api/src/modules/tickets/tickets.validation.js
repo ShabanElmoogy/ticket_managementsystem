@@ -34,6 +34,10 @@ export const updateTicketSchema = z.object({
 export const ticketQuerySchema = z.object({
   status: ticketStatus.optional(),
   priority: ticketPriority.optional(),
-  assignedTo: z.string().uuid().optional(),
+  assignedTo: z.union([z.string().uuid(), z.literal('none')]).optional(),
   deleted: z.enum(['true', 'false']).optional(),
+  search: z.string().max(200).optional(),
+  customerId: z.string().uuid().optional(),
+  applicationId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
 });

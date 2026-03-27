@@ -62,15 +62,8 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const filtered = tickets.filter(ticket =>
-        ticket.title.toLowerCase().includes(query) ||
-        ticket.description.toLowerCase().includes(query) ||
-        ticket.createdBy?.name.toLowerCase().includes(query) ||
-        ticket.customer?.name.toLowerCase().includes(query) ||
-        ticket.application?.name.toLowerCase().includes(query)
-      ).slice(0, 10); // Limit to 10 results for performance
-      setFilteredTickets(filtered);
+      // tickets are already backend-filtered; just cap display to 10
+      setFilteredTickets(tickets.slice(0, 10));
     } else {
       setFilteredTickets([]);
     }

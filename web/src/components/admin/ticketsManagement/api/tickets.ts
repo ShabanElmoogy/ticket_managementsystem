@@ -3,12 +3,16 @@ import type { Ticket, TicketWithComments, CreateTicketData, Comment } from "../.
 
 export class TicketsApiService extends BaseApiService {
   async getTickets(
-    filters?: { status?: string; priority?: string; assignedTo?: string; deleted?: boolean }
+    filters?: { status?: string; priority?: string; assignedTo?: string; deleted?: boolean; search?: string; customerId?: string; applicationId?: string; userId?: string }
   ): Promise<Ticket[]> {
     const params: Record<string, string> = {};
     if (filters?.status) params.status = filters.status;
     if (filters?.priority) params.priority = filters.priority;
     if (filters?.assignedTo) params.assignedTo = filters.assignedTo;
+    if (filters?.search?.trim()) params.search = filters.search.trim();
+    if (filters?.customerId) params.customerId = filters.customerId;
+    if (filters?.applicationId) params.applicationId = filters.applicationId;
+    if (filters?.userId) params.userId = filters.userId;
     params.deleted = filters?.deleted === true ? 'true' : 'false';
 
     return this.get<Ticket[]>("/tickets", { params });
