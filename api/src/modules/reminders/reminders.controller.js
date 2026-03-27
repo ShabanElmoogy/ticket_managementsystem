@@ -1,11 +1,12 @@
 import { db } from '../../config/database.js';
 import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
+import { tenants } from '../tenants/tenants.schema.js';
 import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { eq, and, or, not, lt, desc, asc, inArray } from 'drizzle-orm';
-import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
-import { escalatePriorities } from '../../utils/scheduler.js';
+import { getTenantScope } from '../../utils/tenantUtils.js';
+import { escalatePriorities, getEscalationInterval, setEscalationInterval } from '../../utils/scheduler.js';
 
 // Manually trigger priority escalation (admin/test use)
 export const triggerEscalation = async (req, res) => {
@@ -14,6 +15,51 @@ export const triggerEscalation = async (req, res) => {
     res.json({ message: 'Priority escalation completed. Check server logs for details.' });
   } catch (error) {
     console.error('Trigger escalation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get escalation interval — SUPER_ADMIN gets global, TENANT_ADMIN gets their tenant's
+export const getEscalationSettings = async (req, res) => {
+  try {
+    if (req.user.role === 'SUPER_ADMIN') {
+      return res.json({ intervalMinutes: getEscalationInterval(), scope: 'global' });
+    }
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const [tenant] = await db
+      .select({ escalationIntervalMinutes: tenants.escalationIntervalMinutes })
+      .from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    res.json({ intervalMinutes: tenant.escalationIntervalMinutes, scope: 'tenant' });
+  } catch (error) {
+    console.error('Get escalation settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update escalation interval — SUPER_ADMIN updates global, TENANT_ADMIN updates their tenant
+export const updateEscalationSettings = async (req, res) => {
+  try {
+    const { intervalMinutes } = req.body;
+    const parsed = parseInt(intervalMinutes, 10);
+    if (isNaN(parsed) || parsed < 1) return res.status(400).json({ error: 'intervalMinutes must be a positive integer' });
+
+    if (req.user.role === 'SUPER_ADMIN') {
+      const updated = setEscalationInterval(parsed);
+      return res.json({ intervalMinutes: updated, scope: 'global' });
+    }
+
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const [updated] = await db
+      .update(tenants)
+      .set({ escalationIntervalMinutes: parsed, updatedAt: new Date() })
+      .where(eq(tenants.id, tenantId))
+      .returning({ escalationIntervalMinutes: tenants.escalationIntervalMinutes });
+    res.json({ intervalMinutes: updated.escalationIntervalMinutes, scope: 'tenant' });
+  } catch (error) {
+    console.error('Update escalation settings error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

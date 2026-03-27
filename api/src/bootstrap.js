@@ -21,7 +21,7 @@ export async function startServer() {
   registerCoreMiddleware(app, notificationEmitter);
   registerRoutes(app);
   registerErrorHandlers(app);
-  startNotificationScheduler();
+  startNotificationScheduler(notificationEmitter);
 
   try {
     server.listen(PORT, HOST, () => {

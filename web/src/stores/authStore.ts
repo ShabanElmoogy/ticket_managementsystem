@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
               try {
                 if (import.meta.env.DEV) console.log('⏰ Token expired, attempting refresh...');
                 const axios = (await import('axios')).default;
-                const apiUrl = import.meta.env.PROD ? '/api/auth/refresh' : 'https://localhost:3001/api/auth/refresh';
+                const apiUrl = import.meta.env.PROD ? '/api/auth/refresh' : '/api/auth/refresh';
                 const response = await axios.post(apiUrl, { refreshToken });
                 const data = response.data as any;
                 localStorage.setItem('token', data.token);

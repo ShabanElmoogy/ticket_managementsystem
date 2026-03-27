@@ -1,16 +1,41 @@
 import cron from 'node-cron';
 import { db } from '../config/database.js';
 import { tickets, notifications, users } from '../modules/schema.js';
-import { eq, and, lt, isNull, isNotNull, inArray, or } from 'drizzle-orm';
+import { tenants } from '../modules/tenants/tenants.schema.js';
+import { eq, and, lt, isNull, isNotNull, inArray, or, lte } from 'drizzle-orm';
 import { logActivity } from './activityUtils.js';
 
 const PRIORITY_LADDER = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
-const escalatePriorities = async () => {
+let _emitNotification = null;
+let _escalationTask = null;
+let _currentIntervalMinutes = parseInt(process.env.ESCALATION_INTERVAL_MINUTES || '60', 10);
+
+export const getEscalationInterval = () => _currentIntervalMinutes;
+
+export const setEscalationInterval = (minutes) => {
+  const parsed = parseInt(minutes, 10);
+  if (isNaN(parsed) || parsed < 1) throw new Error('Interval must be a positive integer (minutes)');
+  _currentIntervalMinutes = parsed;
+  console.log(`[Scheduler] Global fallback interval updated to ${_currentIntervalMinutes} min`);
+  return _currentIntervalMinutes;
+};
+
+export const escalatePriorities = async () => {
   try {
     const now = new Date();
 
-    // Find all overdue, non-escalated-to-URGENT tickets that are still active
+    // Load all tenants with their escalation interval
+    const allTenants = await db
+      .select({ id: tenants.id, escalationIntervalMinutes: tenants.escalationIntervalMinutes })
+      .from(tenants);
+
+    // Build a map: tenantId → intervalMinutes
+    const tenantIntervalMap = new Map(
+      allTenants.map((t) => [t.id, t.escalationIntervalMinutes ?? 60])
+    );
+
+    // Find all overdue active tickets
     const overdueTickets = await db
       .select({
         id: tickets.id,
@@ -18,6 +43,7 @@ const escalatePriorities = async () => {
         priority: tickets.priority,
         assignedToId: tickets.assignedToId,
         createdById: tickets.createdById,
+        lastEscalatedAt: tickets.lastEscalatedAt,
       })
       .from(tickets)
       .where(
@@ -31,18 +57,36 @@ const escalatePriorities = async () => {
 
     if (overdueTickets.length === 0) return;
 
+    // Fetch creator tenantIds to know which interval applies per ticket
+    const creatorIds = [...new Set(overdueTickets.map((t) => t.createdById))];
+    const creators = await db
+      .select({ id: users.id, tenantId: users.tenantId })
+      .from(users)
+      .where(inArray(users.id, creatorIds));
+    const creatorTenantMap = new Map(creators.map((u) => [u.id, u.tenantId]));
+
     const escalated = [];
 
     for (const ticket of overdueTickets) {
       const currentIndex = PRIORITY_LADDER.indexOf(ticket.priority);
-      // Already at URGENT — nothing to escalate
       if (currentIndex === -1 || currentIndex === PRIORITY_LADDER.length - 1) continue;
+
+      // Respect per-tenant interval: skip if escalated too recently
+      const tenantId = creatorTenantMap.get(ticket.createdById);
+      const intervalMinutes = tenantId
+        ? (tenantIntervalMap.get(tenantId) ?? _currentIntervalMinutes)
+        : _currentIntervalMinutes;
+
+      if (ticket.lastEscalatedAt) {
+        const minutesSinceLast = (now - new Date(ticket.lastEscalatedAt)) / 60000;
+        if (minutesSinceLast < intervalMinutes) continue;
+      }
 
       const newPriority = PRIORITY_LADDER[currentIndex + 1];
 
       await db
         .update(tickets)
-        .set({ priority: newPriority, updatedAt: now })
+        .set({ priority: newPriority, lastEscalatedAt: now, updatedAt: now })
         .where(eq(tickets.id, ticket.id));
 
       await logActivity({
@@ -54,40 +98,23 @@ const escalatePriorities = async () => {
         newValue: newPriority,
       });
 
-      escalated.push({ ...ticket, newPriority });
+      escalated.push({ ...ticket, newPriority, tenantId });
     }
 
     if (escalated.length === 0) return;
 
-    // Build notifications for assignees + all tenant admins
-    const notificationRows = [];
-
-    // Collect unique tenant IDs from the creators of escalated tickets
-    const creatorIds = [...new Set(escalated.map((t) => t.createdById))];
-    const creators = await db
-      .select({ id: users.id, tenantId: users.tenantId })
-      .from(users)
-      .where(inArray(users.id, creatorIds));
-
-    const tenantIds = [...new Set(creators.map((u) => u.tenantId).filter(Boolean))];
-
-    // Fetch all tenant admins for those tenants
+    // Notifications: assignee + tenant admins
+    const tenantIds = [...new Set(escalated.map((t) => t.tenantId).filter(Boolean))];
     const tenantAdmins = tenantIds.length > 0
       ? await db
           .select({ id: users.id, tenantId: users.tenantId })
           .from(users)
-          .where(
-            and(
-              inArray(users.tenantId, tenantIds),
-              eq(users.role, 'TENANT_ADMIN')
-            )
-          )
+          .where(and(inArray(users.tenantId, tenantIds), eq(users.role, 'TENANT_ADMIN')))
       : [];
 
+    const notificationRows = [];
     for (const ticket of escalated) {
-      const creator = creators.find((c) => c.id === ticket.createdById);
-      const adminsForTenant = tenantAdmins.filter((a) => a.tenantId === creator?.tenantId);
-
+      const adminsForTenant = tenantAdmins.filter((a) => a.tenantId === ticket.tenantId);
       const recipients = new Set();
       if (ticket.assignedToId) recipients.add(ticket.assignedToId);
       adminsForTenant.forEach((a) => recipients.add(a.id));
@@ -105,6 +132,18 @@ const escalatePriorities = async () => {
 
     if (notificationRows.length > 0) {
       await db.insert(notifications).values(notificationRows);
+      if (_emitNotification) {
+        for (const n of notificationRows) {
+          _emitNotification(n.userId, {
+            type: 'PRIORITY_ESCALATED',
+            data: {
+              ticket: { id: n.ticketId, title: n.message },
+              newPriority: escalated.find((t) => t.id === n.ticketId)?.newPriority,
+            },
+            timestamp: now.toISOString(),
+          });
+        }
+      }
     }
 
     console.log(`[Scheduler] Escalated ${escalated.length} ticket(s):`, escalated.map((t) => `${t.id} ${t.priority}→${t.newPriority}`));
@@ -113,32 +152,16 @@ const escalatePriorities = async () => {
   }
 };
 
-export { escalatePriorities };
+export const startNotificationScheduler = (emitNotification = null) => {
+  _emitNotification = emitNotification;
 
-export const startNotificationScheduler = () => {
-  // Check for overdue tickets every hour
   cron.schedule('0 * * * *', async () => {
     try {
       const now = new Date();
-      const overdueTickets = await db
-        .select()
-        .from(tickets)
-        .where(
-          and(
-            lt(tickets.dueDate, now),
-            eq(tickets.status, 'OPEN')
-          )
-        );
-
+      const overdueTickets = await db.select().from(tickets).where(and(lt(tickets.dueDate, now), eq(tickets.status, 'OPEN')));
       for (const ticket of overdueTickets) {
         if (ticket.assignedToId) {
-          await db.insert(notifications).values({
-            title: 'Ticket Overdue',
-            message: `Ticket "${ticket.title}" is overdue`,
-            type: 'TICKET_OVERDUE',
-            userId: ticket.assignedToId,
-            ticketId: ticket.id
-          });
+          await db.insert(notifications).values({ title: 'Ticket Overdue', message: `Ticket "${ticket.title}" is overdue`, type: 'TICKET_OVERDUE', userId: ticket.assignedToId, ticketId: ticket.id });
         }
       }
     } catch (error) {
@@ -146,8 +169,9 @@ export const startNotificationScheduler = () => {
     }
   });
 
-  // Auto-escalate priorities every hour
-  cron.schedule('0 * * * *', escalatePriorities);
+  // Run escalation every minute — each ticket respects its tenant's interval via lastEscalatedAt
+  _escalationTask = cron.schedule('* * * * *', escalatePriorities);
+  console.log(`[Scheduler] Escalation cron running every minute — per-tenant intervals enforced via lastEscalatedAt`);
 
   console.log('Notification scheduler started');
 };

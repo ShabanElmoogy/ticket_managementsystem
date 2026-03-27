@@ -15,8 +15,9 @@ import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "
 // Configuration
 // ============================================================================
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
-  (import.meta.env.PROD ? "/api" : "http://localhost:3001/api");
+const BASE_URL = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/api")
+  : "/api"; // Always use Vite proxy in dev — avoids HTTPS/CORS issues
 
 const REQUEST_TIMEOUT = 15000; // 15 seconds
 const MAX_RETRIES = 3;

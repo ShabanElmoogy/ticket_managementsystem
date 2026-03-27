@@ -9,6 +9,7 @@ import {
   BarChart as ReportsIcon,
   SupervisorAccount as UsersIcon,
   Apartment as TenantsIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
 import { isSuperAdmin } from "../../types/roles";
@@ -25,6 +26,7 @@ import AdminSidebar from "./01layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
 import TenantsPageWithHOC from './02components/TenantsPageWithHOC';
+import AdminSettings from './02components/AdminSettings';
 
 const drawerWidth = 240;
 
@@ -56,8 +58,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
 
   const menuItems = isSuperAdminUser
     ? [
-        { id: "tenants", label: "Tenants", icon: <TenantsIcon /> },
-        { id: "users", label: "Users", icon: <UsersIcon /> },
+        { id: "tenants",  label: "Tenants",  icon: <TenantsIcon /> },
+        { id: "users",    label: "Users",    icon: <UsersIcon /> },
+        { id: "settings", label: "Settings", icon: <SettingsIcon /> },
       ]
     : [
         { id: "dashboard",    label: "Dashboard",    icon: <DashboardIcon />,  disabled: fullyBlocked },
@@ -66,8 +69,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         { id: "applications", label: "Applications", icon: <AppsIcon />,       disabled: fullyBlocked },
         { id: "tickets",      label: "Tickets",      icon: <TicketIcon />,     disabled: fullyBlocked },
         { id: "tasks",        label: "Tasks",        icon: <TaskIcon />,       disabled: fullyBlocked },
-        { id: "reports",      label: "Reports",      icon: <ReportsIcon />,    disabled: fullyBlocked },
-        { id: "docs",         label: "Docs",         icon: <NotesIcon />,      disabled: fullyBlocked },
+        { id: "reports",  label: "Reports",  icon: <ReportsIcon />,  disabled: fullyBlocked },
+        { id: "docs",     label: "Docs",     icon: <NotesIcon />,    disabled: fullyBlocked },
+        { id: "settings", label: "Settings", icon: <SettingsIcon />, disabled: fullyBlocked },
       ];
 
   const renderContent = () => {
@@ -88,6 +92,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
     switch (selectedView) {
       case "tenants":   return <TenantsPageWithHOC />;
       case "users":     return <UserManagement />;
+      case "settings":  return <AdminSettings />;
       case "customers": return <CustomersManagement />;
       case "applications": return <ApplicationsPageWithHOC />;
       case "tickets":   return <TicketsManagement />;

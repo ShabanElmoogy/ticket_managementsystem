@@ -57,4 +57,8 @@ router.get('/delayed-tickets', authenticateToken, remindersController.getDelayed
 // Manually trigger priority escalation — admin only
 router.post('/escalate-now', authenticateToken, requireAdmin, remindersController.triggerEscalation);
 
+// Escalation interval settings — admin only
+router.get('/escalation-settings', authenticateToken, requireAdmin, remindersController.getEscalationSettings);
+router.put('/escalation-settings', authenticateToken, requireAdmin, remindersController.updateEscalationSettings);
+
 export default router;

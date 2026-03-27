@@ -41,6 +41,7 @@ export const tickets = pgTable('tickets', {
   programmerId: uuid('programmer_id').references(() => users.id),
   boardId: uuid('board_id'),
   deletedAt: timestamp('deleted_at'),
+  lastEscalatedAt: timestamp('last_escalated_at'),
 });
 
 // Ticket activities table
