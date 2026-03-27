@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Box, Typography, IconButton, Tooltip, CircularProgress,
   Chip, LinearProgress, Alert, Paper, useTheme, useMediaQuery, Divider,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button,
 } from '@mui/material';
 import {
   AttachFile as AttachIcon,
@@ -132,9 +133,9 @@ const ViewerPane: React.FC<ViewerPaneProps> = ({ attachments, index, onNavigate 
     );
 
     if (isVideo(a.mimeType)) return (
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, overflow: 'hidden', minWidth: 0 }}>
         <Box component="video" src={a.url} controls
-          sx={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 2, boxShadow: 4 }} />
+          sx={{ width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 2, boxShadow: 4, display: 'block' }} />
       </Box>
     );
 
@@ -246,7 +247,7 @@ const ViewerPane: React.FC<ViewerPaneProps> = ({ attachments, index, onNavigate 
       </Box>
 
       {/* Content */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', minWidth: 0 }}>
         {renderContent()}
       </Box>
     </Box>
@@ -268,6 +269,7 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ attachment: Attachment; index: number } | null>(null);
 
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN';
 
@@ -460,9 +462,10 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
                 <Box display="flex" onClick={(e) => e.stopPropagation()}>
                   {canDelete(a) && (
                     <Tooltip title="Delete">
-                      <IconButton size="small" color="error" onClick={() => handleDelete(a, i)} disabled={deletingId === a.id}
+                      <IconButton size="small" color="error"
+                        onClick={() => setConfirmDelete({ attachment: a, index: i })}
                         sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
-                        {deletingId === a.id ? <CircularProgress size={12} /> : <DeleteIcon sx={{ fontSize: 14 }} />}
+                        <DeleteIcon sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Tooltip>
                   )}
@@ -503,12 +506,38 @@ const AttachmentsPanel: React.FC<Props> = ({ ticketId, readonly = false }) => {
         flexDirection: isMobile ? 'column' : 'row',
         borderRadius: 3,
         overflow: 'hidden',
-        height: isMobile ? 'auto' : 520,
-        minHeight: isMobile ? 400 : 520,
+        height: isMobile ? 'auto' : '100%',
+        minHeight: isMobile ? 400 : 0,
+        flex: isMobile ? undefined : 1,
       }}
     >
       {listPanel}
       {viewerPanel}
+
+      {/* Confirm delete dialog */}
+      <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)} maxWidth="xs" fullWidth disableScrollLock>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete Attachment</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete <strong>{confirmDelete?.attachment.originalName}</strong>? This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDelete(null)} disabled={!!deletingId}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={!!deletingId}
+            onClick={async () => {
+              if (!confirmDelete) return;
+              await handleDelete(confirmDelete.attachment, confirmDelete.index);
+              setConfirmDelete(null);
+            }}
+          >
+            {deletingId ? <CircularProgress size={16} color="inherit" /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

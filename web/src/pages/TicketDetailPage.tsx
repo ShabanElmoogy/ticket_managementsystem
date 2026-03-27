@@ -64,7 +64,7 @@ function getActivityLabel(a: TicketActivity): string {
 
 // ── Tab panel ─────────────────────────────────────────────────────────────────
 const TabPanel: React.FC<{ value: number; index: number; children: React.ReactNode }> = ({ value, index, children }) => (
-  <Box role="tabpanel" hidden={value !== index} sx={{ pt: 3 }}>
+  <Box role="tabpanel" hidden={value !== index} sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: { xs: 2, md: 3 } }}>
     {value === index && children}
   </Box>
 );
@@ -218,66 +218,62 @@ const TicketDetailPage: React.FC = () => {
   const priorityColor = PRIORITY_COLORS[ticket.priority] ?? '#6b7280';
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
       <Header onTicketClick={() => {}} />
 
-      <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 10, md: 12 }, pb: 6 }}>
+      {/* ── Content area below fixed header ── */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, pt: { xs: '56px', sm: '64px', md: '70px' } }}>
 
-        {/* ── Back + title bar ── */}
-        <Box display="flex" alignItems="flex-start" gap={2} mb={3} flexWrap="wrap">
-          <Button
-            startIcon={<BackIcon />}
-            onClick={() => navigate(-1)}
-            variant="outlined"
-            size="small"
-            sx={{ flexShrink: 0 }}
-          >
-            Back
-          </Button>
-
-          <Box flex={1} minWidth={0}>
-            <Typography variant="h5" fontWeight={700} sx={{ wordBreak: 'break-word' }}>
-              {ticket.title}
-            </Typography>
-            <Box display="flex" gap={1} flexWrap="wrap" mt={1} alignItems="center">
-              <Chip
-                label={ticket.status.replace(/_/g, ' ')}
-                size="small"
-                sx={{ bgcolor: `${statusColor}22`, color: statusColor, fontWeight: 700, border: `1px solid ${statusColor}44` }}
-              />
-              <Chip
-                label={ticket.priority}
-                size="small"
-                variant="outlined"
-                sx={{ color: priorityColor, borderColor: priorityColor, fontWeight: 700 }}
-              />
-              {isOverdue && (
-                <Chip label="⏰ OVERDUE" size="small" color="error" sx={{ fontWeight: 700, animation: 'pulse 2s infinite' }} />
-              )}
-              <Typography variant="caption" color="text.secondary">
-                #{ticket.id.slice(-8)}
+        {/* ── Title bar ── */}
+        <Box sx={{ px: { xs: 2, md: 4 }, py: 2, flexShrink: 0, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Box display="flex" alignItems="flex-start" gap={2} flexWrap="wrap">
+            <Button
+              startIcon={<BackIcon />}
+              onClick={() => navigate(-1)}
+              variant="outlined"
+              size="small"
+              sx={{ flexShrink: 0, alignSelf: 'center' }}
+            >
+              Back
+            </Button>
+            <Box flex={1} minWidth={0}>
+              <Typography variant="h6" fontWeight={700} sx={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                {ticket.title}
               </Typography>
+              <Box display="flex" gap={1} flexWrap="wrap" mt={0.75} alignItems="center">
+                <Chip
+                  label={ticket.status.replace(/_/g, ' ')}
+                  size="small"
+                  sx={{ bgcolor: `${statusColor}22`, color: statusColor, fontWeight: 700, border: `1px solid ${statusColor}44` }}
+                />
+                <Chip
+                  label={ticket.priority}
+                  size="small"
+                  variant="outlined"
+                  sx={{ color: priorityColor, borderColor: priorityColor, fontWeight: 700 }}
+                />
+                {isOverdue && (
+                  <Chip label="⏰ OVERDUE" size="small" color="error" sx={{ fontWeight: 700 }} />
+                )}
+                <Typography variant="caption" color="text.secondary">#{ticket.id.slice(-8)}</Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* ── Tabs ── */}
-        <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
-            <Tabs
-              value={tab}
-              onChange={(_, v) => setTab(v)}
-              variant="scrollable"
-              scrollButtons="auto"
-            >
-              <Tab icon={<InfoIcon fontSize="small" />} iconPosition="start" label="Overview" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
-              <Tab icon={<CommentIcon fontSize="small" />} iconPosition="start" label={`Comments (${ticket.comments?.length ?? 0})`} sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
-              <Tab icon={<AttachIcon fontSize="small" />} iconPosition="start" label="Attachments" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
-              <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label={`Activity (${ticket.activities?.length ?? 0})`} sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
-            </Tabs>
-          </Box>
+        {/* ── Tabs + content ── */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, px: { xs: 2, md: 4 }, py: 2 }}>
+          <Paper sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 3, overflow: 'hidden' }}>
 
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
+            {/* Tab bar — fixed */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, flexShrink: 0 }}>
+              <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
+                <Tab icon={<InfoIcon fontSize="small" />} iconPosition="start" label="Overview" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
+                <Tab icon={<CommentIcon fontSize="small" />} iconPosition="start" label={`Comments (${ticket.comments?.length ?? 0})`} sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
+                <Tab icon={<AttachIcon fontSize="small" />} iconPosition="start" label="Attachments" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
+                <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label={`Activity (${ticket.activities?.length ?? 0})`} sx={{ textTransform: 'none', fontWeight: 600, minHeight: 52 }} />
+              </Tabs>
+            </Box>
 
             {/* ── Tab 0: Overview ── */}
             <TabPanel value={tab} index={0}>
@@ -654,9 +650,10 @@ const TicketDetailPage: React.FC = () => {
 
             {/* ── Tab 2: Attachments ── */}
             <TabPanel value={tab} index={2}>
-              <AttachmentsPanel ticketId={ticket.id} readonly={readonly} />
+              <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <AttachmentsPanel ticketId={ticket.id} readonly={readonly} />
+              </Box>
             </TabPanel>
-
             {/* ── Tab 3: Activity ── */}
             <TabPanel value={tab} index={3}>
               {ticket.activities?.length === 0 ? (
@@ -702,8 +699,8 @@ const TicketDetailPage: React.FC = () => {
               )}
             </TabPanel>
 
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
       </Box>
     </Box>
   );
