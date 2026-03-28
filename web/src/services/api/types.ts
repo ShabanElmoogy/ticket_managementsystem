@@ -26,6 +26,9 @@ export interface User {
   };
 }
 
+export type MaintenanceType = 'MONTHLY_SUBSCRIPTION' | 'FREE_TRIAL' | 'PAY_AS_YOU_GO';
+export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'PAY_AS_YOU_GO' | 'INACTIVE';
+
 export interface Customer {
   id: string;
   name: string;
@@ -33,7 +36,11 @@ export interface Customer {
   phone?: string;
   address?: string;
   description?: string;
-  isActive: boolean;
+  company?: string;
+  maintenanceType?: MaintenanceType | null;
+  subscriptionStartDate?: string | null;
+  subscriptionEndDate?: string | null;
+  subscriptionStatus?: SubscriptionStatus;
   createdAt: string;
   updatedAt: string;
   applications?: CustomerApplication[];
@@ -91,6 +98,9 @@ export interface Ticket {
     comments: number;
   };
   deletedAt?: string | null;
+  slaDeadline?: string | null;
+  emailMessageId?: string | null;
+  emailFrom?: string | null;
 }
 
 export interface Comment {
@@ -148,6 +158,9 @@ export interface CreateCustomerData {
   address?: string;
   description?: string;
   applicationIds?: string[];
+  maintenanceType?: MaintenanceType | null;
+  subscriptionStartDate?: string | Date | null;
+  subscriptionEndDate?: string | Date | null;
 }
 
 export interface CreateApplicationData {

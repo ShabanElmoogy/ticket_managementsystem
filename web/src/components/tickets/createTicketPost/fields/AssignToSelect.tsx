@@ -18,6 +18,7 @@ const AssignToSelect = memo(({ value, onChange, employees }: AssignToSelectProps
       onChange={(e) => onChange(e.target.value)}
       sx={{ borderRadius: 2 }}
       inputProps={{ autoComplete: "off" }}
+      MenuProps={{ disableScrollLock: true }}
     >
       <MenuItem value="">Unassigned</MenuItem>
       {employees.map((employee) => (

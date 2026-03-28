@@ -1,4 +1,4 @@
-import type { CreateCustomerData } from "../../../../services/api";
+import type { CreateCustomerData, MaintenanceType } from "../../../../services/api";
 import type { Application } from "../../applicationsManagement/types/types";
 
 export type CustomerFormValues = CreateCustomerData;
@@ -26,7 +26,11 @@ export interface Customer {
   phone?: string;
   address?: string;
   description?: string;
-  isActive: boolean;
+  company?: string;
+  maintenanceType?: MaintenanceType | null;
+  subscriptionStartDate?: string | null;
+  subscriptionEndDate?: string | null;
+  subscriptionStatus?: string;
   createdAt: string;
   updatedAt: string;
   applications?: CustomerApplication[];

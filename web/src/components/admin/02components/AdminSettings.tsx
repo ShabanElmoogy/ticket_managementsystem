@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { Box, Tabs, Tab, Typography } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
+  Timer as TimerIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import SchedulerSettings from './SchedulerSettings';
+import SlaSettings from './SlaSettings';
+import EmailIngestSettings from './EmailIngestSettings';
 
 interface TabPanelProps {
   children: React.ReactNode;
@@ -18,8 +22,9 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
 );
 
 const TABS = [
-  { label: 'Scheduler', icon: <ScheduleIcon fontSize="small" /> },
-  // Add more tabs here in the future
+  { label: 'Scheduler',    icon: <ScheduleIcon fontSize="small" /> },
+  { label: 'SLA Timers',   icon: <TimerIcon fontSize="small" /> },
+  { label: 'Email Ingest', icon: <EmailIcon fontSize="small" /> },
 ];
 
 const AdminSettings: React.FC = () => {
@@ -52,6 +57,12 @@ const AdminSettings: React.FC = () => {
 
       <TabPanel value={tab} index={0}>
         <SchedulerSettings />
+      </TabPanel>
+      <TabPanel value={tab} index={1}>
+        <SlaSettings />
+      </TabPanel>
+      <TabPanel value={tab} index={2}>
+        <EmailIngestSettings />
       </TabPanel>
     </Box>
   );

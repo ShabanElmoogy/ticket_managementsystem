@@ -64,7 +64,57 @@ export const updateEscalationSettings = async (req, res) => {
   }
 };
 
-// Get user reminder settings
+// Get SLA settings for current tenant
+export const getSlaSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const [tenant] = await db
+      .select({
+        slaUrgentHours: tenants.slaUrgentHours,
+        slaHighHours: tenants.slaHighHours,
+        slaMediumHours: tenants.slaMediumHours,
+        slaLowHours: tenants.slaLowHours,
+      })
+      .from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    res.json(tenant);
+  } catch (error) {
+    console.error('Get SLA settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update SLA settings for current tenant
+export const updateSlaSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const { slaUrgentHours, slaHighHours, slaMediumHours, slaLowHours } = req.body;
+    const [updated] = await db
+      .update(tenants)
+      .set({
+        ...(slaUrgentHours != null && { slaUrgentHours: parseInt(slaUrgentHours) }),
+        ...(slaHighHours != null && { slaHighHours: parseInt(slaHighHours) }),
+        ...(slaMediumHours != null && { slaMediumHours: parseInt(slaMediumHours) }),
+        ...(slaLowHours != null && { slaLowHours: parseInt(slaLowHours) }),
+        updatedAt: new Date(),
+      })
+      .where(eq(tenants.id, tenantId))
+      .returning({
+        slaUrgentHours: tenants.slaUrgentHours,
+        slaHighHours: tenants.slaHighHours,
+        slaMediumHours: tenants.slaMediumHours,
+        slaLowHours: tenants.slaLowHours,
+      });
+    res.json(updated);
+  } catch (error) {
+    console.error('Update SLA settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get reminder settings
 export const getReminderSettings = async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id;

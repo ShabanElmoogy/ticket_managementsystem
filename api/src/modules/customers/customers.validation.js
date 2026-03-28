@@ -7,6 +7,9 @@ export const createCustomerSchema = z.object({
   address: z.string().nullable().optional(),
   company: z.string().nullable().optional(),
   applicationIds: z.array(z.string().uuid()).optional(),
+  maintenanceType: z.enum(['MONTHLY_SUBSCRIPTION', 'FREE_TRIAL', 'PAY_AS_YOU_GO']).nullable().optional(),
+  subscriptionStartDate: z.string().nullable().optional(),
+  subscriptionEndDate: z.string().nullable().optional(),
 });
 
 export const updateCustomerSchema = z.object({
@@ -16,6 +19,9 @@ export const updateCustomerSchema = z.object({
   address: z.string().nullable().optional(),
   company: z.string().nullable().optional(),
   applicationIds: z.array(z.string().uuid()).optional(),
+  maintenanceType: z.enum(['MONTHLY_SUBSCRIPTION', 'FREE_TRIAL', 'PAY_AS_YOU_GO']).nullable().optional(),
+  subscriptionStartDate: z.string().nullable().optional(),
+  subscriptionEndDate: z.string().nullable().optional(),
 });
 
 export const assignApplicationSchema = z.object({

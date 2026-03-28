@@ -1,11 +1,12 @@
 export interface TenantFormValues {
   name: string;
-  slug: string;
-  subscriptionPlan: string;
-  subscriptionStatus: string;
+  slug?: string;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string;
   subscriptionSeats: number;
-  subscriptionStart: string;
-  subscriptionEnd: string;
+  subscriptionStart?: string;
+  subscriptionEnd?: string;
+  supportEmail?: string;
 }
 
 export interface TenantFormDialogProps {
@@ -26,6 +27,7 @@ export interface Tenant {
   subscriptionStart?: string | null;
   subscriptionEnd?: string | null;
   subscriptionSeats?: number;
+  supportEmail?: string | null;
   createdAt?: string;
   updatedAt?: string;
   _stats?: { userCount: number; ticketCount: number };

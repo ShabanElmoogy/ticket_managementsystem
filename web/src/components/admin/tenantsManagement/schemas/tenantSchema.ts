@@ -9,11 +9,12 @@ export const tenantFormSchema = z.object({
     .regex(/^[a-z0-9-]*$/, 'Slug may only contain lowercase letters, numbers and hyphens')
     .optional()
     .or(z.literal('')),
-  subscriptionPlan: z.enum(['FREE', 'PRO', 'ENTERPRISE']).default('FREE'),
-  subscriptionStatus: z.enum(['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED']).default('ACTIVE'),
+  subscriptionPlan: z.string().optional(),
+  subscriptionStatus: z.string().optional(),
   subscriptionSeats: z.coerce.number().int().min(0).default(0),
   subscriptionStart: z.string().optional().or(z.literal('')),
   subscriptionEnd: z.string().optional().or(z.literal('')),
+  supportEmail: z.string().trim().optional().or(z.literal('')),
 });
 
 export type TenantFormSchema = typeof tenantFormSchema;

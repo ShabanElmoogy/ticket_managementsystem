@@ -17,6 +17,7 @@ const PrioritySelect = memo(({ value, onChange }: PrioritySelectProps) => (
       onChange={(e) => onChange(e.target.value as Priority)}
       sx={{ borderRadius: 2 }}
       inputProps={{ autoComplete: "off" }}
+      MenuProps={{ disableScrollLock: true }}
     >
       <MenuItem value="LOW">🟢 Low</MenuItem>
       <MenuItem value="MEDIUM">🟡 Medium</MenuItem>

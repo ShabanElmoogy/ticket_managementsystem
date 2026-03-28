@@ -10,6 +10,7 @@ import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 import { isTenantScopedRole } from '../../middleware/auth.js';
 import { notifyWatchers } from './watchers.controller.js';
+import { getSlaHours, computeSlaDeadline } from '../../utils/slaUtils.js';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
@@ -81,6 +82,9 @@ export const getAllTickets = async (req, res) => {
         programmerId: tickets.programmerId,
         boardId: tickets.boardId,
         deletedAt: tickets.deletedAt,
+        slaDeadline: tickets.slaDeadline,
+        emailFrom: tickets.emailFrom,
+        emailMessageId: tickets.emailMessageId,
       })
       .from(tickets)
       // join createdBy user so we can tenant-scope
@@ -108,6 +112,9 @@ export const getAllTickets = async (req, res) => {
       programmerId: r.programmerId,
       boardId: r.boardId,
       deletedAt: r.deletedAt,
+      slaDeadline: r.slaDeadline,
+      emailFrom: r.emailFrom,
+      emailMessageId: r.emailMessageId,
     }));
 
     // Get related data
@@ -135,7 +142,7 @@ export const getAllTickets = async (req, res) => {
           ? db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, createdUserIds))
           : [],
         customerIds.length > 0
-          ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(inArray(customers.id, customerIds))
+          ? db.select({ id: customers.id, name: customers.name, email: customers.email, maintenanceType: customers.maintenanceType, subscriptionStartDate: customers.subscriptionStartDate, subscriptionEndDate: customers.subscriptionEndDate }).from(customers).where(inArray(customers.id, customerIds))
           : [],
         applicationIds.length > 0
           ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(inArray(applications.id, applicationIds))
@@ -218,7 +225,7 @@ export const getTicketById = async (req, res) => {
           : Promise.resolve([]),
         db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.createdById)).limit(1),
         ticket.customerId
-          ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
+          ? db.select({ id: customers.id, name: customers.name, email: customers.email, maintenanceType: customers.maintenanceType, subscriptionStartDate: customers.subscriptionStartDate, subscriptionEndDate: customers.subscriptionEndDate }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
           : Promise.resolve([]),
         ticket.applicationId
           ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1)
@@ -298,7 +305,7 @@ export const getTicketById = async (req, res) => {
         : Promise.resolve([]),
       db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, ticket.createdById)).limit(1),
       ticket.customerId
-        ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
+        ? db.select({ id: customers.id, name: customers.name, email: customers.email, maintenanceType: customers.maintenanceType, subscriptionStartDate: customers.subscriptionStartDate, subscriptionEndDate: customers.subscriptionEndDate }).from(customers).where(eq(customers.id, ticket.customerId)).limit(1)
         : Promise.resolve([]),
       ticket.applicationId
         ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, ticket.applicationId)).limit(1)
@@ -401,6 +408,10 @@ export const createTicket = async (req, res) => {
       }
     }
 
+    const creatorTenantId = req.tenantId || null;
+    const slaHours = await getSlaHours(creatorTenantId);
+    const slaDeadline = computeSlaDeadline(new Date(), priority, slaHours);
+
     const [ticket] = await db
       .insert(tickets)
       .values({
@@ -414,6 +425,7 @@ export const createTicket = async (req, res) => {
         dueDate: dueDate ? new Date(dueDate) : null,
         estimatedHours,
         createdById: req.user.userId,
+        slaDeadline,
       })
       .returning();
 
@@ -429,7 +441,7 @@ export const createTicket = async (req, res) => {
         : Promise.resolve([]),
       db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, req.user.userId)).limit(1),
       customerId
-        ? db.select({ id: customers.id, name: customers.name, email: customers.email }).from(customers).where(eq(customers.id, customerId)).limit(1)
+        ? db.select({ id: customers.id, name: customers.name, email: customers.email, maintenanceType: customers.maintenanceType, subscriptionStartDate: customers.subscriptionStartDate, subscriptionEndDate: customers.subscriptionEndDate }).from(customers).where(eq(customers.id, customerId)).limit(1)
         : Promise.resolve([]),
       applicationId
         ? db.select({ id: applications.id, name: applications.name, version: applications.version }).from(applications).where(eq(applications.id, applicationId)).limit(1)
@@ -471,7 +483,6 @@ export const createTicket = async (req, res) => {
       },
     };
 
-    const creatorTenantId = req.tenantId || null;
     if (creatorTenantId) {
       // Emit only to users belonging to the same tenant
       const tenantUsers = await db
@@ -543,6 +554,10 @@ export const updateTicket = async (req, res) => {
     if (actualHours !== undefined) updateData.actualHours = actualHours;
     if (status === 'RESOLVED' && oldTicket[0].status !== 'RESOLVED') updateData.resolvedAt = new Date();
     else if (status && status !== 'RESOLVED' && oldTicket[0].status === 'RESOLVED') updateData.resolvedAt = null;
+    if (priority && priority !== oldTicket[0].priority) {
+      const slaHours = await getSlaHours(tenantId);
+      updateData.slaDeadline = computeSlaDeadline(oldTicket[0].createdAt, priority, slaHours);
+    }
     updateData.updatedAt = new Date();
 
     const [updated] = await db.update(tickets).set(updateData).where(eq(tickets.id, id)).returning();

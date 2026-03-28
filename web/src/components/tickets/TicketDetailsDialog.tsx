@@ -213,7 +213,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
 
   return (
     <>
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>{ticket.title}</Typography>
@@ -406,7 +406,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
             <CircularProgress />
           </Box>
         ) : (
-          <Box sx={{ maxHeight: 400, overflowY: 'auto', mb: 2 }}>
+          <Box sx={{ maxHeight: 400, overflowY: 'auto', mb: 2, width: '100%' }}>
             {comments.slice(0, visibleCommentsCount).map((comment) => (
               <Paper key={comment.id} sx={{ p: 2, mb: 2 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>

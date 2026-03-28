@@ -5,18 +5,14 @@ export type Tenant = {
   name: string;
   slug: string;
   adminEmail?: string | null;
-
-  // Subscription
   subscriptionPlan?: string;
   subscriptionStatus?: string;
   subscriptionStart?: string;
   subscriptionEnd?: string;
   subscriptionSeats?: number;
-
+  supportEmail?: string | null;
   createdAt?: string;
   updatedAt?: string;
-
-  // Stats (loaded separately)
   _stats?: TenantStats;
 };
 
@@ -39,6 +35,7 @@ export const tenantsApi = {
     subscriptionStart?: string;
     subscriptionEnd?: string;
     subscriptionSeats?: number;
+    supportEmail?: string | null;
   }) => api.post<Tenant>("/tenants", payload),
 
   update: (
@@ -51,6 +48,7 @@ export const tenantsApi = {
       subscriptionStart: string | null;
       subscriptionEnd: string | null;
       subscriptionSeats: number;
+      supportEmail: string | null;
     }>
   ) => api.patch<Tenant>(`/tenants/${encodeURIComponent(id)}`, payload),
 

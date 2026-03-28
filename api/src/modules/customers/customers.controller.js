@@ -7,6 +7,44 @@ import { eq, and, count, desc } from 'drizzle-orm';
 
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
 
+// ── Subscription helpers ──────────────────────────────────────────────────────
+export const getCustomerStatus = (customer) => {
+  const now = new Date();
+  const { maintenanceType, subscriptionStartDate, subscriptionEndDate } = customer;
+
+  if (!maintenanceType) return 'INACTIVE';
+
+  if (maintenanceType === 'PAY_AS_YOU_GO') return 'PAY_AS_YOU_GO';
+
+  if (maintenanceType === 'FREE_TRIAL') {
+    if (!subscriptionStartDate || !subscriptionEndDate) return 'INACTIVE';
+    return now >= new Date(subscriptionStartDate) && now <= new Date(subscriptionEndDate)
+      ? 'TRIAL'
+      : 'EXPIRED';
+  }
+
+  if (maintenanceType === 'MONTHLY_SUBSCRIPTION') {
+    if (!subscriptionStartDate || !subscriptionEndDate) return 'INACTIVE';
+    return now >= new Date(subscriptionStartDate) && now <= new Date(subscriptionEndDate)
+      ? 'ACTIVE'
+      : 'EXPIRED';
+  }
+
+  return 'INACTIVE';
+};
+
+export const isCustomerActive = (customer) => {
+  const status = getCustomerStatus(customer);
+  return status === 'ACTIVE' || status === 'TRIAL';
+};
+
+const withSubscription = (customer) => ({
+  ...customer,
+  subscriptionStatus: getCustomerStatus(customer),
+  isActive: isCustomerActive(customer),
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Get all customers
 export const getAllCustomers = async (req, res) => {
   try {
@@ -23,6 +61,9 @@ export const getAllCustomers = async (req, res) => {
         phone: customers.phone,
         address: customers.address,
         company: customers.company,
+        maintenanceType: customers.maintenanceType,
+        subscriptionStartDate: customers.subscriptionStartDate,
+        subscriptionEndDate: customers.subscriptionEndDate,
         createdAt: customers.createdAt,
         updatedAt: customers.updatedAt,
       })
@@ -53,11 +94,9 @@ export const getAllCustomers = async (req, res) => {
           .where(eq(tickets.customerId, customer.id));
 
         return {
-          ...customer,
+          ...withSubscription(customer),
           applications: customerApps,
-          _count: {
-            tickets: ticketCount.count,
-          },
+          _count: { tickets: ticketCount.count },
         };
       })
     );
@@ -140,7 +179,8 @@ export const getCustomerById = async (req, res) => {
 // Create new customer
 export const createCustomer = async (req, res) => {
   try {
-    const { name, email, phone, address, company, applicationIds = [] } = req.body;
+    const { name, email, phone, address, company, applicationIds = [],
+      maintenanceType, subscriptionStartDate, subscriptionEndDate } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
@@ -168,6 +208,9 @@ export const createCustomer = async (req, res) => {
         phone,
         address,
         company,
+        maintenanceType: maintenanceType || null,
+        subscriptionStartDate: subscriptionStartDate ? new Date(subscriptionStartDate) : null,
+        subscriptionEndDate: subscriptionEndDate ? new Date(subscriptionEndDate) : null,
       })
       .returning();
 
@@ -195,7 +238,7 @@ export const createCustomer = async (req, res) => {
       .where(eq(customerApplications.customerId, customer.id));
 
     res.status(201).json({
-      ...customer,
+      ...withSubscription(customer),
       applications: customerApps,
     });
   } catch (error) {
@@ -208,7 +251,8 @@ export const createCustomer = async (req, res) => {
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, address, company, applicationIds } = req.body;
+    const { name, email, phone, address, company, applicationIds,
+      maintenanceType, subscriptionStartDate, subscriptionEndDate } = req.body;
 
     const tenantId = requireTenantScope(req);
 
@@ -240,6 +284,9 @@ export const updateCustomer = async (req, res) => {
     if (phone !== undefined) updateData.phone = phone;
     if (address !== undefined) updateData.address = address;
     if (company !== undefined) updateData.company = company;
+    if (maintenanceType !== undefined) updateData.maintenanceType = maintenanceType || null;
+    if (subscriptionStartDate !== undefined) updateData.subscriptionStartDate = subscriptionStartDate ? new Date(subscriptionStartDate) : null;
+    if (subscriptionEndDate !== undefined) updateData.subscriptionEndDate = subscriptionEndDate ? new Date(subscriptionEndDate) : null;
 
     const [customer] = await db
       .update(customers)
@@ -275,7 +322,7 @@ export const updateCustomer = async (req, res) => {
       .where(eq(customerApplications.customerId, id));
 
     res.json({
-      ...customer,
+      ...withSubscription(customer),
       applications: customerApps,
     });
   } catch (error) {

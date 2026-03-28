@@ -10,6 +10,7 @@ import { registerCoreMiddleware } from "./middleware/index.js";
 import { registerRoutes } from "./routes/index.js";
 import { registerErrorHandlers } from "./errors/index.js";
 import { startNotificationScheduler } from "./utils/scheduler.js";
+import { startEmailIngestScheduler } from "./utils/emailIngest.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ export async function startServer() {
   registerRoutes(app);
   registerErrorHandlers(app);
   startNotificationScheduler(notificationEmitter);
+  startEmailIngestScheduler(notificationEmitter);
 
   try {
     server.listen(PORT, HOST, () => {

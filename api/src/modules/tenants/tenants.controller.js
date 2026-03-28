@@ -48,13 +48,8 @@ export const listTenants = async (req, res) => {
 
 export const createTenant = async (req, res) => {
   const {
-    name,
-    slug,
-    subscriptionPlan,
-    subscriptionStatus,
-    subscriptionStart,
-    subscriptionEnd,
-    subscriptionSeats,
+    name, slug, subscriptionPlan, subscriptionStatus,
+    subscriptionStart, subscriptionEnd, subscriptionSeats, supportEmail,
   } = req.body || {};
 
   if (!name) return res.status(400).json({ error: 'name is required' });
@@ -65,13 +60,13 @@ export const createTenant = async (req, res) => {
   const inserted = await db
     .insert(tenants)
     .values({
-      name,
-      slug: finalSlug,
+      name, slug: finalSlug,
       subscriptionPlan: subscriptionPlan || undefined,
       subscriptionStatus: subscriptionStatus || undefined,
       subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : undefined,
       subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
       subscriptionSeats: typeof subscriptionSeats === 'number' ? subscriptionSeats : undefined,
+      supportEmail: supportEmail || null,
     })
     .returning();
 
@@ -83,13 +78,8 @@ export const updateTenant = async (req, res) => {
   if (!id) return res.status(400).json({ error: 'id is required' });
 
   const {
-    name,
-    slug,
-    subscriptionPlan,
-    subscriptionStatus,
-    subscriptionStart,
-    subscriptionEnd,
-    subscriptionSeats,
+    name, slug, subscriptionPlan, subscriptionStatus,
+    subscriptionStart, subscriptionEnd, subscriptionSeats, supportEmail,
   } = req.body || {};
 
   const patch = {
@@ -100,6 +90,7 @@ export const updateTenant = async (req, res) => {
     ...(subscriptionSeats !== undefined ? { subscriptionSeats } : {}),
     ...(subscriptionStart !== undefined ? { subscriptionStart: parseOptionalDate(subscriptionStart) } : {}),
     ...(subscriptionEnd !== undefined ? { subscriptionEnd: parseOptionalDate(subscriptionEnd) } : {}),
+    ...(supportEmail !== undefined ? { supportEmail: supportEmail || null } : {}),
     updatedAt: new Date(),
   };
 

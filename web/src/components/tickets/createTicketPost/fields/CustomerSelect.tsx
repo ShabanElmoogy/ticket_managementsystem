@@ -17,6 +17,7 @@ const CustomerSelect = memo(({ value, onChange, customers }: CustomerSelectProps
       onChange={(e) => onChange(e.target.value)}
       sx={{ borderRadius: 2 }}
       inputProps={{ autoComplete: "off" }}
+      MenuProps={{ disableScrollLock: true }}
     >
       <MenuItem value="">None</MenuItem>
       {customers.map((customer) => (

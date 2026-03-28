@@ -8,6 +8,7 @@ export const createTenantSchema = z.object({
   subscriptionStart: z.string().datetime().nullable().optional(),
   subscriptionEnd: z.string().datetime().nullable().optional(),
   subscriptionSeats: z.number().int().min(0).optional(),
+  supportEmail: z.string().email().nullable().optional(),
 });
 
 export const updateTenantSchema = z.object({
@@ -18,4 +19,5 @@ export const updateTenantSchema = z.object({
   subscriptionStart: z.string().datetime().nullable().optional(),
   subscriptionEnd: z.string().datetime().nullable().optional(),
   subscriptionSeats: z.number().int().min(0).optional(),
+  supportEmail: z.string().email().nullable().optional(),
 });

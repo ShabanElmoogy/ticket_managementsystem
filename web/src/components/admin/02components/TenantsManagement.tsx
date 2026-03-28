@@ -43,6 +43,7 @@ const TenantsManagement: React.FC = () => {
   const [subscriptionSeats, setSubscriptionSeats] = useState<number>(0);
   const [subscriptionStart, setSubscriptionStart] = useState<string>("");
   const [subscriptionEnd, setSubscriptionEnd] = useState<string>("");
+  const [supportEmail, setSupportEmail] = useState<string>("");
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -54,6 +55,7 @@ const TenantsManagement: React.FC = () => {
   const [editSeats, setEditSeats] = useState<number>(0);
   const [editStart, setEditStart] = useState<string>("");
   const [editEnd, setEditEnd] = useState<string>("");
+  const [editSupportEmail, setEditSupportEmail] = useState<string>("");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -85,6 +87,7 @@ const TenantsManagement: React.FC = () => {
         subscriptionSeats: subscriptionSeats || undefined,
         subscriptionStart: toISOOrUndefined(subscriptionStart),
         subscriptionEnd: toISOOrUndefined(subscriptionEnd),
+        supportEmail: supportEmail || undefined,
       });
 
       setCreateOpen(false);
@@ -95,6 +98,7 @@ const TenantsManagement: React.FC = () => {
       setSubscriptionSeats(0);
       setSubscriptionStart("");
       setSubscriptionEnd("");
+      setSupportEmail("");
 
       await load();
     } catch (e: any) {
@@ -111,6 +115,7 @@ const TenantsManagement: React.FC = () => {
     setEditSeats(typeof row.subscriptionSeats === "number" ? row.subscriptionSeats : 0);
     setEditStart(toDateInputValue(row.subscriptionStart));
     setEditEnd(toDateInputValue(row.subscriptionEnd));
+    setEditSupportEmail(row.supportEmail || "");
     setEditOpen(true);
   };
 
@@ -126,7 +131,8 @@ const TenantsManagement: React.FC = () => {
         subscriptionSeats: editSeats || undefined,
         subscriptionStart: toISOOrNull(editStart),
         subscriptionEnd: toISOOrNull(editEnd),
-      });
+        supportEmail: editSupportEmail || null,
+      } as any);
 
       setEditOpen(false);
       setEditing(null);
@@ -220,6 +226,14 @@ const TenantsManagement: React.FC = () => {
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
+            <TextField
+              label="Support Email (Email-to-Ticket)"
+              type="email"
+              value={supportEmail}
+              onChange={(e) => setSupportEmail(e.target.value)}
+              fullWidth
+              helperText="Emails sent to this address will auto-create tickets for this tenant"
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -276,6 +290,14 @@ const TenantsManagement: React.FC = () => {
               onChange={(e) => setEditEnd(e.target.value)}
               fullWidth
               InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Support Email (Email-to-Ticket)"
+              type="email"
+              value={editSupportEmail}
+              onChange={(e) => setEditSupportEmail(e.target.value)}
+              fullWidth
+              helperText="Emails sent to this address will auto-create tickets for this tenant"
             />
           </Stack>
         </DialogContent>

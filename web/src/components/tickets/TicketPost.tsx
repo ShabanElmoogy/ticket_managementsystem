@@ -41,6 +41,7 @@ import {
   Close as CloseIcon,
   Code as CodeIcon,
   OpenInNew as OpenInNewIcon,
+  Email as EmailIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/dateUtils";
@@ -56,6 +57,8 @@ import EditDueDateDialog from './EditDueDateDialog';
 import { useNavigate } from 'react-router-dom';
 import MentionTextField, { renderWithMentions, extractMentionedUsers, type MentionUser } from './MentionTextField';
 import { usersApi } from '../../services/api';
+import { MAINTENANCE_LABELS, STATUS_CONFIG, getCustomerStatus } from '../../utils/subscriptionUtils';
+import SlaTimer from './SlaTimer';
 
 interface TicketPostProps {
   ticket: Ticket;
@@ -573,6 +576,21 @@ const TicketPost: React.FC<TicketPostProps> = ({
                 </Typography>
               </Box>
             )}
+            {ticket.slaDeadline && (
+              <SlaTimer slaDeadline={ticket.slaDeadline} status={ticket.status} />
+            )}
+            {ticket.emailFrom && (
+              <Tooltip title={`Created from email: ${ticket.emailFrom}`}>
+                <Chip
+                  icon={<EmailIcon sx={{ fontSize: '14px !important' }} />}
+                  label="Email"
+                  size="small"
+                  variant="outlined"
+                  color="info"
+                  sx={{ fontWeight: 700, fontSize: '0.7rem', height: 28 }}
+                />
+              </Tooltip>
+            )}
           </Box>
         </Box>
 
@@ -622,6 +640,46 @@ const TicketPost: React.FC<TicketPostProps> = ({
             </Button>
           )}
         </Box>
+
+        {/* Customer Info */}
+        {ticket.customer && (
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1.5}
+            sx={{
+              p: { xs: 1.5, sm: 2 },
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.08)' : '#eff6ff',
+              borderRadius: 2,
+              mb: 2,
+              border: '1px solid',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.2)' : 'rgba(37,99,235,0.15)',
+            }}
+          >
+            <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, whiteSpace: 'nowrap' }}>
+              👤 Customer:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+              {ticket.customer.name}
+            </Typography>
+            {ticket.customer.maintenanceType && (() => {
+              const status = getCustomerStatus(ticket.customer!);
+              const cfg = STATUS_CONFIG[status];
+              const label = MAINTENANCE_LABELS[ticket.customer!.maintenanceType!];
+              return (
+                <Chip
+                  label={label}
+                  size="small"
+                  color={cfg.color}
+                  variant="outlined"
+                  sx={{ fontWeight: 700, fontSize: { xs: '0.6rem', sm: '0.7rem' }, height: { xs: 22, sm: 26 } }}
+                />
+              );
+            })()}
+          </Box>
+        )}
 
         {/* Assignment Info */}
         {ticket.assignedTo && (
@@ -910,7 +968,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
 
           {/* Existing Comments */}
           {comments.length > 0 && (
-            <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+            <Box sx={{ px: { xs: 1.5, sm: 2 }, py: 1, overflow: 'hidden' }}>
               {comments.slice(0, visibleCommentsCount).map((comment) => (
                 <Box
                   key={comment.id}

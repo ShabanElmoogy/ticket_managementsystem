@@ -61,4 +61,7 @@ router.post('/escalate-now', authenticateToken, requireAdmin, remindersControlle
 router.get('/escalation-settings', authenticateToken, requireAdmin, remindersController.getEscalationSettings);
 router.put('/escalation-settings', authenticateToken, requireAdmin, remindersController.updateEscalationSettings);
 
+router.get('/sla-settings', authenticateToken, requireAdmin, remindersController.getSlaSettings);
+router.put('/sla-settings', authenticateToken, requireAdmin, remindersController.updateSlaSettings);
+
 export default router;

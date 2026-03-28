@@ -43,6 +43,9 @@ export const tickets = pgTable('tickets', {
   deletedAt: timestamp('deleted_at'),
   lastEscalatedAt: timestamp('last_escalated_at'),
   resolvedAt: timestamp('resolved_at'),
+  slaDeadline: timestamp('sla_deadline'),
+  emailMessageId: text('email_message_id'),
+  emailFrom: text('email_from'),
 });
 
 // Ticket activities table

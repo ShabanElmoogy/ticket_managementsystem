@@ -60,8 +60,9 @@ function TenantsPageComponent(props: TenantsPageProps) {
         subscriptionPlan: values.subscriptionPlan,
         subscriptionStatus: values.subscriptionStatus,
         subscriptionSeats: values.subscriptionSeats || undefined,
-        subscriptionStart: toISO(values.subscriptionStart) ?? undefined,
-        subscriptionEnd: toISO(values.subscriptionEnd) ?? undefined,
+        subscriptionStart: values.subscriptionStart ? toISO(values.subscriptionStart) ?? undefined : undefined,
+        subscriptionEnd: values.subscriptionEnd ? toISO(values.subscriptionEnd) ?? undefined : undefined,
+        supportEmail: values.supportEmail || undefined,
       };
 
       if (uiState.editingItem) {
@@ -130,6 +131,7 @@ function TenantsPageComponent(props: TenantsPageProps) {
                 subscriptionSeats: (uiState.editingItem as Tenant).subscriptionSeats ?? 0,
                 subscriptionStart: toDateInput((uiState.editingItem as Tenant).subscriptionStart),
                 subscriptionEnd: toDateInput((uiState.editingItem as Tenant).subscriptionEnd),
+                supportEmail: (uiState.editingItem as Tenant).supportEmail ?? '',
               }
             : undefined
         }
@@ -190,6 +192,7 @@ const TenantsPageWithHOC = withCRUD(
           subscriptionSeats: data.subscriptionSeats || undefined,
           subscriptionStart: data.subscriptionStart ? new Date(data.subscriptionStart).toISOString() : null,
           subscriptionEnd: data.subscriptionEnd ? new Date(data.subscriptionEnd).toISOString() : null,
+          supportEmail: data.supportEmail || null,
         }),
       delete: (id: string) => tenantsApi.delete(id),
     },

@@ -17,6 +17,7 @@ const ApplicationSelect = memo(({ value, onChange, applications }: ApplicationSe
       onChange={(e) => onChange(e.target.value)}
       sx={{ borderRadius: 2 }}
       inputProps={{ autoComplete: "off" }}
+      MenuProps={{ disableScrollLock: true }}
     >
       <MenuItem value="">None</MenuItem>
       {applications.map((app) => (

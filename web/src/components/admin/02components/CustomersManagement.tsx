@@ -69,7 +69,7 @@ function CustomersPageComponent(props: CustomersPageProps) {
     fetchAuxData();
   }, []);
 
-  const handleSubmit = async (values: CreateCustomerData) => {
+const handleSubmit = async (values: CreateCustomerData) => {
     setSubmitting(true);
     try {
       if (uiState.editingItem) {
@@ -132,6 +132,13 @@ function CustomersPageComponent(props: CustomersPageProps) {
               address: (uiState.editingItem as Customer).address || "",
               description: (uiState.editingItem as Customer).description || "",
               applicationIds: (uiState.editingItem as Customer).applications?.map((ca) => ca.applicationId) || [],
+              maintenanceType: (uiState.editingItem as Customer).maintenanceType ?? null,
+              subscriptionStartDate: (uiState.editingItem as Customer).subscriptionStartDate
+                ? new Date((uiState.editingItem as Customer).subscriptionStartDate!)
+                : null,
+              subscriptionEndDate: (uiState.editingItem as Customer).subscriptionEndDate
+                ? new Date((uiState.editingItem as Customer).subscriptionEndDate!)
+                : null,
             }
             : undefined
         }

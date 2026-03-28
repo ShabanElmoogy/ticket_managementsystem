@@ -1,7 +1,12 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, pgEnum } from 'drizzle-orm/pg-core';
 import { tenants } from '../tenants/tenants.schema.js';
 
-// Customers table
+export const maintenanceTypeEnum = pgEnum('maintenance_type', [
+  'MONTHLY_SUBSCRIPTION',
+  'FREE_TRIAL',
+  'PAY_AS_YOU_GO',
+]);
+
 export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
@@ -10,6 +15,9 @@ export const customers = pgTable('customers', {
   phone: text('phone'),
   company: text('company'),
   address: text('address'),
+  maintenanceType: maintenanceTypeEnum('maintenance_type'),
+  subscriptionStartDate: timestamp('subscription_start_date'),
+  subscriptionEndDate: timestamp('subscription_end_date'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow()
 });

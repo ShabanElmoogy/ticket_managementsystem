@@ -113,6 +113,34 @@
       "when": 1774643577972,
       "tag": "0015_condemned_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1774644471510,
+      "tag": "0016_round_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1774644697256,
+      "tag": "0017_slimy_tarot",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1774724373436,
+      "tag": "0018_greedy_sumo",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1774725653933,
+      "tag": "0019_damp_pride",
+      "breakpoints": true
     }
   ]
 }

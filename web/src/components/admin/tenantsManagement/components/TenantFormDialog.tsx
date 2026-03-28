@@ -5,23 +5,28 @@ import {
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { tenantFormSchema } from '../schemas/tenantSchema';
+import { tenantFormSchema, type TenantFormSchemaValues } from '../schemas/tenantSchema';
 import type { TenantFormDialogProps, TenantFormValues } from '../types/types';
 
 const PLANS = ['FREE', 'PRO', 'ENTERPRISE'];
 const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'];
 
 const DEFAULT: TenantFormValues = {
-  name: '', slug: '', subscriptionPlan: 'FREE',
-  subscriptionStatus: 'ACTIVE', subscriptionSeats: 0,
-  subscriptionStart: '', subscriptionEnd: '',
+  name: '',
+  slug: '',
+  subscriptionPlan: 'FREE',
+  subscriptionStatus: 'ACTIVE',
+  subscriptionSeats: 0,
+  subscriptionStart: '',
+  subscriptionEnd: '',
+  supportEmail: '',
 };
 
 const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
   open, editing = false, initialValues, onClose, onSubmit, submitting = false,
 }) => {
-  const { register, handleSubmit, reset, control, formState: { errors, isValid } } = useForm<TenantFormValues>({
-    resolver: zodResolver(tenantFormSchema),
+  const { register, handleSubmit, reset, control, formState: { errors, isValid } } = useForm<TenantFormSchemaValues>({
+    resolver: zodResolver(tenantFormSchema) as any,
     mode: 'onChange',
     defaultValues: initialValues ?? DEFAULT,
   });
@@ -95,6 +100,14 @@ const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
             {...register('subscriptionEnd')}
             fullWidth
             InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Support Email (for Email-to-Ticket)"
+            type="email"
+            {...register('supportEmail')}
+            fullWidth
+            error={!!errors.supportEmail}
+            helperText={errors.supportEmail?.message ?? 'Incoming emails sent to this address will create tickets for this tenant'}
           />
         </Box>
       </DialogContent>
