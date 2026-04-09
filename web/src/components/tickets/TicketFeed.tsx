@@ -18,7 +18,10 @@ import {
 } from '@mui/icons-material';
 import { type Ticket } from '../../services/api';
 import TicketPost from './TicketPost';
+import TicketGrid from '../dashboard/components/TicketGrid';
+import TicketCompact from './TicketCompact';
 import BulkActionBar from './BulkActionBar';
+import type { TicketView } from '../../stores/themeStore';
 
 interface TicketFeedProps {
   tickets: Ticket[];
@@ -29,6 +32,7 @@ interface TicketFeedProps {
   onDeleteTicket?: (ticketId: string) => void;
   onBulkUpdateStatus?: (ids: string[], status: Ticket['status']) => Promise<void>;
   isAdmin?: boolean;
+  view?: TicketView;
 }
 
 const TicketFeed: React.FC<TicketFeedProps> = ({
@@ -40,6 +44,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   onDeleteTicket,
   onBulkUpdateStatus,
   isAdmin = false,
+  view = 'list',
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -102,6 +107,53 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
           </Typography>
         </Paper>
       </Fade>
+    );
+  }
+
+  // Grid view — delegate entirely to TicketGrid
+  if (view === 'grid') {
+    return (
+      <Box sx={{ mt: 2 }}>
+        <TicketGrid
+          tickets={tickets}
+          onTicketClick={onTicketClick}
+          onTakeTicket={onTakeTicket}
+          userRole={isAdmin ? 'TENANT_ADMIN' : 'EMPLOYEE'}
+        />
+      </Box>
+    );
+  }
+
+  // Compact view — dense rows
+  if (view === 'compact') {
+    if (tickets.length === 0) return null;
+    return (
+      <Paper sx={{ mt: 2, overflow: 'hidden', borderRadius: 2 }}>
+        {/* Header row */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            px: 2,
+            py: 0.75,
+            bgcolor: 'action.selected',
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Box sx={{ width: 4, flexShrink: 0 }} />
+          <Typography variant="caption" fontWeight={700} sx={{ flex: 1 }}>Title</Typography>
+          <Typography variant="caption" fontWeight={700} sx={{ minWidth: 80, textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>Assignee</Typography>
+          <Typography variant="caption" fontWeight={700} sx={{ minWidth: 80 }}>Status</Typography>
+          <Typography variant="caption" fontWeight={700} sx={{ minWidth: 64, display: { xs: 'none', md: 'block' } }}>Priority</Typography>
+          <Typography variant="caption" fontWeight={700} sx={{ minWidth: 72, textAlign: 'right', display: { xs: 'none', lg: 'block' } }}>Due</Typography>
+          <Box sx={{ width: 28, flexShrink: 0 }} />
+        </Box>
+        {tickets.map((ticket) => (
+          <TicketCompact key={ticket.id} ticket={ticket} onTicketClick={onTicketClick} />
+        ))}
+      </Paper>
     );
   }
 

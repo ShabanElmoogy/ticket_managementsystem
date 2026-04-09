@@ -119,8 +119,8 @@ router.get('/profile/tenant-status', authenticateToken, usersController.getTenan
  *       200:
  *         $ref: '#/components/responses/UserList'
  */
-router.get('/employees', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getEmployees);
-router.get('/programmers', authenticateToken, resolveTenant, requireAdmin, usersController.getProgrammers);
+router.get('/employees', authenticateToken, usersController.getEmployees);
+router.get('/programmers', authenticateToken, requireAdmin, usersController.getProgrammers);
 
 /**
  * @swagger

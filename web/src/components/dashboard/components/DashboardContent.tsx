@@ -10,6 +10,7 @@ import { ActivityFeed } from "./activityFeed"
 import ReminderSettings from "./ReminderSettings";
 import { Role } from "../../../types/roles";
 import { useAuthStore, useIsAdmin } from "../../../stores/authStore";
+import { useThemeStore } from "../../../stores/themeStore";
 
 interface Props {
   isMobile: boolean;
@@ -84,6 +85,7 @@ const DashboardContent: React.FC<Props> = ({
 }) => {
   const { tenantSuspended } = useAuthStore();
   const isAdmin = useIsAdmin();
+  const { ticketView } = useThemeStore();
 
   return (
     <Box>
@@ -189,6 +191,7 @@ const DashboardContent: React.FC<Props> = ({
                 onDeleteTicket={onDeleteTicket}
                 onBulkUpdateStatus={onBulkUpdateStatus}
                 isAdmin={isAdmin}
+                view={ticketView}
               />
             </Container>
           </Box>

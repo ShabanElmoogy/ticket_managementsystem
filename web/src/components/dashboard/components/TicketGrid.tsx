@@ -60,8 +60,8 @@ const TicketGrid: React.FC<TicketGridProps> = ({
           sx={{ 
             p: 6, 
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-            border: '2px dashed #cbd5e1',
+            border: '2px dashed',
+            borderColor: 'divider',
             borderRadius: 3,
           }}
         >
@@ -90,15 +90,13 @@ const TicketGrid: React.FC<TicketGridProps> = ({
                 flexDirection: 'column',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                border: '1px solid #e2e8f0',
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
                 '&:hover': { 
-                  boxShadow: '0px 12px 24px rgba(0, 0, 0, 0.15)',
+                  boxShadow: 6,
                   transform: 'translateY(-4px)',
                   transition: 'all 0.3s ease-in-out',
-                  '& .ticket-priority-bar': {
-                    height: 6,
-                  },
                 },
                 '&::before': {
                   content: '""',
@@ -110,7 +108,6 @@ const TicketGrid: React.FC<TicketGridProps> = ({
                   background: getPriorityColor(ticket.priority) === 'success' ? 'linear-gradient(90deg, #10b981, #34d399)' :
                              getPriorityColor(ticket.priority) === 'warning' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' :
                              'linear-gradient(90deg, #ef4444, #f87171)',
-                  className: 'ticket-priority-bar',
                   transition: 'height 0.3s ease-in-out',
                 },
               }}

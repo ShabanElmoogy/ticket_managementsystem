@@ -32,8 +32,8 @@ export const useTicketsQuery = (filters: {
 
 export const useUsersQuery = () => {
   return useQuery({
-    queryKey: ['users'],
-    queryFn: () => usersApi.getUsers(),
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
     staleTime: 300000, // 5 minutes
   });
 };

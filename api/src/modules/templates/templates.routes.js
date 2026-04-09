@@ -4,11 +4,11 @@ import { resolveTenant } from '../../middleware/tenant.js';
 import { listTemplates, createTemplate, updateTemplate, deleteTemplate } from './templates.controller.js';
 
 const router = express.Router();
-router.use(resolveTenant);
+router.use(authenticateToken, resolveTenant);
 
-router.get('/',     authenticateToken, listTemplates);
-router.post('/',    authenticateToken, requireTenantAdmin, createTemplate);
-router.put('/:id',  authenticateToken, requireTenantAdmin, updateTemplate);
-router.delete('/:id', authenticateToken, requireTenantAdmin, deleteTemplate);
+router.get('/',       listTemplates);
+router.post('/',      requireTenantAdmin, createTemplate);
+router.put('/:id',    requireTenantAdmin, updateTemplate);
+router.delete('/:id', requireTenantAdmin, deleteTemplate);
 
 export default router;

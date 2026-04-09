@@ -1,0 +1,31 @@
+(node:26592) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+    at urlParse (node:url:136:13)
+    at Object.urlResolve [as resolve] (node:url:725:10)
+    at SwaggerParser.parse (g:\Test\ticket_managementsystem\api\node_modules\@apidevtools\json-schema-ref-parser\lib\index.js:103:19)
+    at SwaggerParser.parse (g:\Test\ticket_managementsystem\api\node_modules\@apidevtools\swagger-parser\lib\index.js:60:51)
+    at SwaggerParser.parse (g:\Test\ticket_managementsystem\api\node_modules\@apidevtools\json-schema-ref-parser\lib\index.js:63:25)
+    at finalize (g:\Test\ticket_managementsystem\api\node_modules\swagger-jsdoc\src\specification.js:109:10)
+    at build (g:\Test\ticket_managementsystem\api\node_modules\swagger-jsdoc\src\specification.js:324:10)
+    at module.exports (g:\Test\ticket_managementsystem\api\node_modules\swagger-jsdoc\src\lib.js:32:10)
+    at file:///g:/Test/ticket_managementsystem/api/src/config/swagger.js:35:28
+    at ModuleJob.run (node:internal/modules/esm/module_job:430:25)
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use ::1:3001
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at GetAddrInfoReqWrap.callback (node:net:2206:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:134:8)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::1',
+  port: 3001
+}
+
+Node.js v24.13.1

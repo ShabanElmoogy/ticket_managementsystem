@@ -17,8 +17,8 @@ const router = express.Router();
  *   description: Ticket lifecycle management
  */
 
-// Resolve tenant context from headers/params (X-Tenant-Slug / X-Tenant-Id)
-router.use(resolveTenant);
+// authenticateToken must run before resolveTenant (which requires req.user)
+router.use(authenticateToken, resolveTenant);
 
 /**
  * @swagger
@@ -41,7 +41,7 @@ router.use(resolveTenant);
  *       200:
  *         $ref: '#/components/responses/TicketList'
  */
-router.get('/', authenticateToken, validate(ticketQuerySchema, 'query'), ticketController.getAllTickets);
+router.get('/', validate(ticketQuerySchema, 'query'), ticketController.getAllTickets);
 
 /**
  * @swagger
@@ -55,12 +55,12 @@ router.get('/', authenticateToken, validate(ticketQuerySchema, 'query'), ticketC
  *       200:
  *         $ref: '#/components/responses/TicketList'
  */
-router.get('/delayed', authenticateToken, ticketController.getDelayedTickets);
+router.get('/delayed', ticketController.getDelayedTickets);
 
 // Watchers — must be before /:id to avoid route conflict
-router.get('/:id/watchers',    authenticateToken, getWatchers);
-router.post('/:id/watch',      authenticateToken, watchTicket);
-router.delete('/:id/watch',    authenticateToken, unwatchTicket);
+router.get('/:id/watchers',    getWatchers);
+router.post('/:id/watch',      watchTicket);
+router.delete('/:id/watch',    unwatchTicket);
 
 /**
  * @swagger
@@ -77,7 +77,7 @@ router.delete('/:id/watch',    authenticateToken, unwatchTicket);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', authenticateToken, ticketController.getTicketById);
+router.get('/:id', ticketController.getTicketById);
 
 /**
  * @swagger
@@ -97,7 +97,7 @@ router.get('/:id', authenticateToken, ticketController.getTicketById);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/', authenticateToken, requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
+router.post('/', requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
 
 /**
  * @swagger
@@ -116,7 +116,7 @@ router.post('/', authenticateToken, requireTenantAdmin, validate(createTicketSch
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  */
-router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketController.updateTicket);
+router.put('/:id', validate(updateTicketSchema), ticketController.updateTicket);
 
 /**
  * @swagger
@@ -135,11 +135,11 @@ router.put('/:id', authenticateToken, validate(updateTicketSchema), ticketContro
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:id', authenticateToken, requireTenantAdmin, ticketController.deleteTicket);
+router.delete('/:id', requireTenantAdmin, ticketController.deleteTicket);
 
-router.patch('/bulk', authenticateToken, requireAdmin, ticketController.bulkUpdateStatus);
-router.patch('/:id/restore', authenticateToken, requireTenantAdmin, ticketController.restoreTicket);
-router.patch('/:id/reassign', authenticateToken, requireTenantAdmin, ticketController.reassignTicket);
+router.patch('/bulk', requireAdmin, ticketController.bulkUpdateStatus);
+router.patch('/:id/restore', requireTenantAdmin, ticketController.restoreTicket);
+router.patch('/:id/reassign', requireTenantAdmin, ticketController.reassignTicket);
 
 /**
  * @swagger
@@ -154,11 +154,11 @@ router.patch('/:id/reassign', authenticateToken, requireTenantAdmin, ticketContr
  *       200:
  *         $ref: '#/components/responses/Ticket'
  */
-router.post('/:id/take', authenticateToken, ticketController.takeTicket);
+router.post('/:id/take', ticketController.takeTicket);
 
 // Attachments — mounted here so :id param is in scope
-router.get('/:id/attachments',                    authenticateToken, getAttachments);
-router.post('/:id/attachments',                   authenticateToken, upload.array('files', 5), uploadAttachments);
-router.delete('/:id/attachments/:attachmentId',   authenticateToken, deleteAttachment);
+router.get('/:id/attachments',                    getAttachments);
+router.post('/:id/attachments',                   upload.array('files', 5), uploadAttachments);
+router.delete('/:id/attachments/:attachmentId',   deleteAttachment);
 
 export default router;
