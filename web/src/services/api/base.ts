@@ -16,7 +16,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "
 // ============================================================================
 
 const BASE_URL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/api")
+  ? (import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/")
   : "/api"; // Always use Vite proxy in dev — avoids HTTPS/CORS issues
 
 const REQUEST_TIMEOUT = 15000; // 15 seconds
