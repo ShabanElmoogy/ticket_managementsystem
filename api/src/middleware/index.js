@@ -12,7 +12,14 @@ export const authenticateAndResolveTenant = [authenticateToken, resolveTenant];
 
 const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : ['http://localhost:3000', 'http://localhost:5173', 'https://localhost:5173', 'https://localhost:5174'];
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://localhost:5173',
+      'https://localhost:5174',
+      'https://ticketmanagement-ab491.web.app',
+      'https://ticketmanagement-ab491.firebaseapp.com',
+    ];
 
 const logger = pinoHttp({
   autoLogging: true,

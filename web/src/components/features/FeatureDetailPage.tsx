@@ -162,7 +162,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         assignedToId: assignedToId || undefined,
         applicationId: applicationId ?? undefined,
         customerId: customerId ?? undefined,
-        dueDate: dueDate || undefined,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
       });
       await onCreated(step.id, ticket.id);
       onClose();
@@ -336,7 +336,7 @@ const FeatureDetailPage: React.FC = () => {
   if (!feature) return <Box p={4}><Alert severity="error">Feature not found</Alert></Box>;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Button startIcon={<ArrowBack />} onClick={() => navigate(backPath)} sx={{ mb: 1 }}>
         Back
       </Button>

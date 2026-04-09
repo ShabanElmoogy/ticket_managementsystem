@@ -1,0 +1,1 @@
+ALTER TABLE "feature_requests" ADD COLUMN "epic_order" integer DEFAULT 0 NOT NULL;

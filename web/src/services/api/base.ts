@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
+import { API_BASE_URL } from "../../config/env";
 
 /**
  * API Base Service - Centralized HTTP client with best practices
@@ -15,9 +16,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "
 // Configuration
 // ============================================================================
 
-const BASE_URL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "/")
-  : "/api"; // Always use Vite proxy in dev — avoids HTTPS/CORS issues
+const BASE_URL = API_BASE_URL;
 
 const REQUEST_TIMEOUT = 15000; // 15 seconds
 const MAX_RETRIES = 3;

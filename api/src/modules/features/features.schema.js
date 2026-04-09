@@ -20,6 +20,7 @@ export const featureRequests = pgTable('feature_requests', {
   applicationId:   uuid('application_id').references(() => applications.id, { onDelete: 'set null' }),
   customerId:      uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
   epicId:          uuid('epic_id'),
+  epicOrder:       integer('epic_order').notNull().default(0),
   createdAt:       timestamp('created_at').defaultNow(),
   updatedAt:      timestamp('updated_at').defaultNow(),
 });

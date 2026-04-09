@@ -169,6 +169,13 @@
       "when": 1775736013478,
       "tag": "0023_sweet_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1775766727698,
+      "tag": "0026_bumpy_triton",
+      "breakpoints": true
     }
   ]
 }

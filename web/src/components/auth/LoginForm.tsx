@@ -59,7 +59,7 @@ const LoginForm: React.FC = () => {
   useEffect(() => {
     setTenantsLoading(true);
     tenantsApi.listPublic()
-      .then(setTenants)
+      .then((data) => setTenants(Array.isArray(data) ? data : []))
       .catch(() => setTenants([]))
       .finally(() => setTenantsLoading(false));
   }, []);

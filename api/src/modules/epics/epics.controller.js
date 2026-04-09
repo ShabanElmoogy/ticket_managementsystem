@@ -4,8 +4,9 @@ import { featureRequests, featureSteps } from '../features/features.schema.js';
 import { users } from '../users/users.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { customers } from '../customers/customers.schema.js';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, inArray, asc } from 'drizzle-orm';
 import { getTenantScope } from '../../utils/tenantUtils.js';
+import { featureVotes } from '../features/features.schema.js';
 
 const EPIC_SELECT = {
   id:              epics.id,
@@ -57,6 +58,19 @@ const attachProgress = async (rows) => {
   });
 };
 
+export const bulkUpdateStatus = async (req, res) => {
+  try {
+    const { ids, status } = req.body;
+    if (!Array.isArray(ids) || !ids.length || !status)
+      return res.status(400).json({ error: 'ids and status are required' });
+    await db.update(epics).set({ status, updatedAt: new Date() }).where(inArray(epics.id, ids));
+    res.json({ updated: ids.length });
+  } catch (err) {
+    console.error('bulkUpdateStatus error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const listEpics = async (req, res) => {
   try {
     const scope = getTenantScope(req);
@@ -94,20 +108,51 @@ export const getEpic = async (req, res) => {
 
     const [withProgress] = await attachProgress([row]);
 
-    // Also return linked features
+    // Also return linked features ordered by epicOrder
     const features = await db
       .select({
-        id: featureRequests.id,
-        title: featureRequests.title,
-        description: featureRequests.description,
-        status: featureRequests.status,
-        createdAt: featureRequests.createdAt,
+        id:              featureRequests.id,
+        title:           featureRequests.title,
+        description:     featureRequests.description,
+        status:          featureRequests.status,
+        epicOrder:       featureRequests.epicOrder,
+        createdAt:       featureRequests.createdAt,
+        applicationName: applications.name,
+        customerName:    customers.name,
+        submittedByName: users.name,
       })
       .from(featureRequests)
+      .leftJoin(applications, eq(featureRequests.applicationId, applications.id))
+      .leftJoin(customers, eq(featureRequests.customerId, customers.id))
+      .leftJoin(users, eq(featureRequests.submittedById, users.id))
       .where(eq(featureRequests.epicId, id))
-      .orderBy(desc(featureRequests.createdAt));
+      .orderBy(asc(featureRequests.epicOrder), desc(featureRequests.createdAt));
 
-    res.json({ ...withProgress, features });
+    // attach vote counts
+    const featureIds = features.map((f) => f.id);
+    const votes = featureIds.length
+      ? await db.select({ featureRequestId: featureVotes.featureRequestId })
+          .from(featureVotes).where(inArray(featureVotes.featureRequestId, featureIds))
+      : [];
+
+    // auto-initialize epicOrder if all features have order 0 (pre-migration data)
+    if (features.length > 1 && features.every((f) => f.epicOrder === 0)) {
+      await Promise.all(
+        features.map((f, i) =>
+          db.update(featureRequests)
+            .set({ epicOrder: i })
+            .where(eq(featureRequests.id, f.id))
+        )
+      );
+      features.forEach((f, i) => { f.epicOrder = i; });
+    }
+
+    const featuresWithVotes = features.map((f) => ({
+      ...f,
+      voteCount: votes.filter((v) => v.featureRequestId === f.id).length,
+    }));
+
+    res.json({ ...withProgress, features: featuresWithVotes });
   } catch (err) {
     console.error('getEpic error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -185,10 +230,39 @@ export const linkFeature = async (req, res) => {
     const { featureId } = req.body;
     if (!featureId) return res.status(400).json({ error: 'featureId is required' });
 
-    await db.update(featureRequests).set({ epicId: id, updatedAt: new Date() }).where(eq(featureRequests.id, featureId));
+    // assign next order value
+    const linked = await db
+      .select({ epicOrder: featureRequests.epicOrder })
+      .from(featureRequests)
+      .where(eq(featureRequests.epicId, id));
+    const nextOrder = linked.length ? Math.max(...linked.map((f) => f.epicOrder)) + 1 : 0;
+
+    await db.update(featureRequests)
+      .set({ epicId: id, epicOrder: nextOrder, updatedAt: new Date() })
+      .where(eq(featureRequests.id, featureId));
     res.json({ message: 'Feature linked' });
   } catch (err) {
     console.error('linkFeature error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const reorderFeatures = async (req, res) => {
+  try {
+    const { order } = req.body;
+    if (!Array.isArray(order) || order.length === 0)
+      return res.status(400).json({ error: 'order array is required' });
+
+    await Promise.all(
+      order.map(({ id, order: o }) =>
+        db.update(featureRequests)
+          .set({ epicOrder: o, updatedAt: new Date() })
+          .where(eq(featureRequests.id, id))
+      )
+    );
+    res.json({ message: 'Order saved' });
+  } catch (err) {
+    console.error('reorderFeatures error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

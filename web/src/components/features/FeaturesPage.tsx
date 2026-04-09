@@ -107,7 +107,7 @@ const FeaturesPage: React.FC = () => {
     .sort((a, b) => sortBy === 'votes' ? b.voteCount - a.voteCount : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 900, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Header */}
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={2}>
         <Box display="flex" alignItems="center" gap={1}>

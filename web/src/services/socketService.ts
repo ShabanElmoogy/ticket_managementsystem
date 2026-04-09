@@ -1,4 +1,5 @@
 import { io, Socket } from "socket.io-client";
+import { SOCKET_URL } from "../config/env";
 
 let socket: Socket | null = null;
 
@@ -6,12 +7,9 @@ export const getSocket = (userId: string, token?: string): Socket => {
   if (!socket) {
     // In dev, connect to same origin so Vite proxy handles it (avoids HTTPS/CORS issues)
     // In prod on MonsterASP, default to same origin unless an explicit socket URL is provided
-    const socketUrl = import.meta.env.DEV
-      ? window.location.origin
-      : (import.meta.env.VITE_SOCKET_URL || window.location.origin);
-    console.log('[Socket] Connecting to:', socketUrl);
+    console.log('[Socket] Connecting to:', SOCKET_URL);
 
-    socket = io(socketUrl, {
+    socket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
       upgrade: false,
