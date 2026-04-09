@@ -9,6 +9,8 @@ import {
   ViewColumn as KanbanIcon,
   Description as DocumentIcon,
   Code as CodeIcon,
+  Lightbulb as FeaturesIcon,
+  AccountTree as EpicsIcon,
 } from "@mui/icons-material";
 import { type MenuItem, type UserInfo } from "../types/header";
 import { isSuperAdmin, isProgrammerRole, isTenantAdmin, Role } from "../types/roles";
@@ -49,6 +51,24 @@ export const createMenuItems = ({
       icon: React.createElement(KanbanIcon),
       onClick: () => {
         navigate('/kanban');
+        onClose();
+        onMobileMenuClose();
+      },
+    },
+    {
+      label: "Epics",
+      icon: React.createElement(EpicsIcon),
+      onClick: () => {
+        navigate('/epics');
+        onClose();
+        onMobileMenuClose();
+      },
+    },
+    {
+      label: "Feature Requests",
+      icon: React.createElement(FeaturesIcon),
+      onClick: () => {
+        navigate('/features');
         onClose();
         onMobileMenuClose();
       },

@@ -141,6 +141,34 @@
       "when": 1774725653933,
       "tag": "0019_damp_pride",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1775734160428,
+      "tag": "0020_ambiguous_gunslinger",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1775734755979,
+      "tag": "0021_nosy_invaders",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1775735091124,
+      "tag": "0022_optimal_tomas",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1775736013478,
+      "tag": "0023_sweet_lionheart",
+      "breakpoints": true
     }
   ]
 }

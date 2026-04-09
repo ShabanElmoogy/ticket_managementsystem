@@ -16,6 +16,10 @@ import DocumentsPage from '../pages/DocumentsPage';
 import AdminPage from '../pages/AdminPage';
 import ProgrammingPage from '../pages/ProgrammingPage';
 import TicketDetailPage from '../pages/TicketDetailPage';
+import FeaturesPageRoute from '../pages/FeaturesPageRoute';
+import FeatureDetailRoute from '../pages/FeatureDetailRoute';
+import EpicsPageRoute from '../pages/EpicsPageRoute';
+import EpicDetailRoute from '../pages/EpicDetailRoute';
 
 // Per-status dialog content — only for statuses that restrict access
 const STATUS_CONTENT: Record<string, { icon: string; title: string; body: string; btnColor: 'error' | 'warning' }> = {
@@ -120,6 +124,10 @@ const AppRouter: React.FC = () => {
         <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
         <Route path="/admin"     element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
+        <Route path="/features"     element={<ProtectedRoute><FeaturesPageRoute /></ProtectedRoute>} />
+        <Route path="/features/:id"  element={<ProtectedRoute><FeatureDetailRoute /></ProtectedRoute>} />
+        <Route path="/epics"         element={<ProtectedRoute><EpicsPageRoute /></ProtectedRoute>} />
+        <Route path="/epics/:id"     element={<ProtectedRoute><EpicDetailRoute /></ProtectedRoute>} />
 
         <Route
           path="/programming"

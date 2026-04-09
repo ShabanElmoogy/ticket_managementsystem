@@ -17,6 +17,8 @@ import docBuilderRoutes from './docs/docs.routes.js';
 import tenantRoutes from './tenants/tenants.routes.js';
 import templateRoutes from './templates/templates.routes.js';
 import emailIngestRoutes from './emailIngest/emailIngest.routes.js';
+import featureRoutes from './features/features.routes.js';
+import epicRoutes from './epics/epics.routes.js';
 
 import attachmentRoutes from './attachments/attachments.routes.js';
 
@@ -38,6 +40,8 @@ router.use('/reminders', reminderRoutes);
 router.use('/tenants', tenantRoutes);
 router.use('/templates', templateRoutes);
 router.use('/email-ingest', emailIngestRoutes);
+router.use('/features', featureRoutes);
+router.use('/epics', epicRoutes);
 router.use('/docs', docRoutes);
 router.use('/docsbuilder', docBuilderRoutes);
 

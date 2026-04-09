@@ -52,6 +52,10 @@ export class UsersApiService extends BaseApiService {
   async getEmployees(): Promise<User[]> {
     return this.get<User[]>("/users/employees");
   }
+
+  async getProgrammers(): Promise<User[]> {
+    return this.get<User[]>("/users/programmers");
+  }
 }
 
 export const usersApi = new UsersApiService();
