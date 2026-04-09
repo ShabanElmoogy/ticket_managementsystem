@@ -10,20 +10,20 @@ import { registerSwagger } from './swagger.routes.js';
 export function registerRoutes(app) {
   registerSwagger(app);
 
-  app.use('/api', moduleRoutes);
+  app.use('/', moduleRoutes);
 
-  app.get('/api/health', (req, res) => {
+  app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
   // Unmatched /api/* → 404 JSON (must come before the SPA catch-all)
-  app.use('/api/*', (req, res) => {
+  app.use('/*', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found' });
   });
 
   // SPA catch-all — only for non-API routes
   app.get('*', (req, res) => {
-    const frontendPath = path.join(__dirname, '../../../frontend/dist/index.html');
+    const frontendPath = path.join(__dirname, '../../../web/dist/index.html');
     res.sendFile(frontendPath, (err) => {
       if (err) {
         res.json({

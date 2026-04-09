@@ -5,10 +5,10 @@ let socket: Socket | null = null;
 export const getSocket = (userId: string, token?: string): Socket => {
   if (!socket) {
     // In dev, connect to same origin so Vite proxy handles it (avoids HTTPS/CORS issues)
-    // In prod, connect directly to the backend URL
+    // In prod on MonsterASP, default to same origin unless an explicit socket URL is provided
     const socketUrl = import.meta.env.DEV
       ? window.location.origin
-      : (import.meta.env.VITE_SOCKET_URL || "https://ticket-managementsystem-2.onrender.com");
+      : (import.meta.env.VITE_SOCKET_URL || window.location.origin);
     console.log('[Socket] Connecting to:', socketUrl);
 
     socket = io(socketUrl, {
@@ -29,7 +29,7 @@ export const getSocket = (userId: string, token?: string): Socket => {
       console.log('[Socket] Joined room for user:', userId);
     });
 
-    socket.on('notification', (data: any) => {
+    socket.on('notification', (data: unknown) => {
       console.log('[Socket] Notification received:', data);
     });
 
