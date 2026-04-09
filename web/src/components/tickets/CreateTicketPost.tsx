@@ -10,6 +10,7 @@ import FooterBar from "./createTicketPost/FooterBar";
 import TemplatePickerButton from "./TemplatePickerButton";
 import type { Priority } from "./createTicketPost/utils";
 import type { TicketTemplate } from "../../services/api/types";
+import { useTicketsQuery } from "../dashboard/hooks/useTicketsQuery";
 
 interface CreateTicketPostProps {
   onSubmit: (data: CreateTicketData) => void;
@@ -25,6 +26,7 @@ const CreateTicketPost: React.FC<CreateTicketPostProps> = ({
   applications = [],
 }) => {
   const { user } = useAuthStore();
+  const { data: tickets = [] } = useTicketsQuery({ deletedFilter: 'active' });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
@@ -128,6 +130,7 @@ const CreateTicketPost: React.FC<CreateTicketPostProps> = ({
                 employees={employees}
                 customers={customers}
                 applications={applications}
+                tickets={tickets}
               />
             </Collapse>
 

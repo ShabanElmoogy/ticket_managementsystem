@@ -1,5 +1,5 @@
-import React, { memo } from "react";
-import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Button, TextField, InputAdornment } from "@mui/material";
+import React, { memo, useMemo } from "react";
+import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Button, TextField, InputAdornment, Chip } from "@mui/material";
 import { Refresh as RefreshIcon, Search as SearchIcon, Clear as ClearIcon, Schedule as ScheduleIcon } from "@mui/icons-material";
 import { type User, type Customer, type Application, type Ticket } from "../../../services/api";
 import TicketViewToggle from "../../tickets/TicketViewToggle";
@@ -24,6 +24,7 @@ type Props = {
   allUsers: User[];
   customers: Customer[];
   applications: Application[];
+  tickets: Ticket[];
   loading: boolean;
   onRefresh: () => void;
 };
@@ -48,9 +49,19 @@ const DesktopFilters: React.FC<Props> = memo(({
   allUsers,
   customers,
   applications,
+  tickets,
   loading,
   onRefresh,
 }) => {
+  // Count all active tickets assigned to each user
+  const countByUser = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of tickets) {
+      if (!t.assignedToId) continue;
+      map.set(t.assignedToId, (map.get(t.assignedToId) ?? 0) + 1);
+    }
+    return map;
+  }, [tickets]);
   return (
     <Box sx={{ mb: 3, p: { xs: 1.5, sm: 2 }, backgroundColor: 'background.paper', borderRadius: 3 }}>
 
@@ -139,16 +150,25 @@ const DesktopFilters: React.FC<Props> = memo(({
           <Select value={userFilter} label="User" onChange={(e) => setUserFilter(e.target.value)} sx={{ borderRadius: 2 }} MenuProps={{ disableScrollLock: true }}>
             <MenuItem value="">All Users</MenuItem>
             <MenuItem value="NEW_TICKETS">🆕 New Tickets</MenuItem>
-            {allUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: (user.role === 'TENANT_ADMIN' || user.role === 'SUPER_ADMIN') ? 'error.main' : 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'white', fontWeight: 600 }}>
-                    {user.name.charAt(0)}
+            {allUsers.map((user) => {
+              const count = countByUser.get(user.id) ?? 0;
+              return (
+                <MenuItem key={user.id} value={user.id}>
+                  <Box display="flex" alignItems="center" gap={1} width="100%">
+                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: (user.role === 'TENANT_ADMIN' || user.role === 'SUPER_ADMIN') ? 'error.main' : 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'white', fontWeight: 600, flexShrink: 0 }}>
+                      {user.name.charAt(0)}
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>{user.name}</Typography>
+                    <Chip
+                      label={count}
+                      size="small"
+                      color={count === 0 ? 'default' : count >= 5 ? 'error' : 'primary'}
+                      sx={{ height: 18, fontSize: '0.65rem', '& .MuiChip-label': { px: 0.75 } }}
+                    />
                   </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{user.name}</Typography>
-                </Box>
-              </MenuItem>
-            ))}
+                </MenuItem>
+              );
+            })}
           </Select>
         </FormControl>
 

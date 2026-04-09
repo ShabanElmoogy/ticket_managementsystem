@@ -175,6 +175,7 @@ const DashboardContent: React.FC<Props> = ({
                   allUsers={allUsers}
                   customers={customers}
                   applications={applications}
+                  tickets={tickets}
                   loading={loading}
                   onRefresh={onRefresh}
                 />

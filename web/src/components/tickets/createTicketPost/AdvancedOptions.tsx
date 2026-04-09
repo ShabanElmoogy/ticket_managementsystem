@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Grid from "@mui/material/Grid";
-import type { User, Customer, Application } from "../../../services/api";
+import type { User, Customer, Application, Ticket } from "../../../services/api";
 import PrioritySelect, { type Priority } from "./fields/PrioritySelect";
 import AssignToSelect from "./fields/AssignToSelect";
 import CustomerSelect from "./fields/CustomerSelect";
@@ -24,6 +24,7 @@ export interface AdvancedOptionsProps {
   employees: User[];
   customers: Customer[];
   applications: Application[];
+  tickets?: Ticket[];
 }
 
 const AdvancedOptions = memo(
@@ -43,6 +44,7 @@ const AdvancedOptions = memo(
     employees,
     customers,
     applications,
+    tickets,
   }: AdvancedOptionsProps) => (
     <>
       <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -67,6 +69,7 @@ const AdvancedOptions = memo(
             value={assignedTo}
             onChange={onAssignedToChange}
             employees={employees}
+            tickets={tickets}
           />
         </Grid>
       </Grid>
