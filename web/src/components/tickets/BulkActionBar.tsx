@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, CircularProgress, Chip, MenuItem, Menu } from '@mui/material';
 import {
-  CheckCircle as ResolvedIcon,
-  Cancel as ClosedIcon,
   Close as ClearIcon,
   KeyboardArrowDown as ArrowDownIcon,
 } from '@mui/icons-material';

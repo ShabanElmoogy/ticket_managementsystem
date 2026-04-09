@@ -25,7 +25,6 @@ const Dashboard: React.FC = () => {
         onClose={() => dashboardProps.setDetailsDialogOpen(false)}
         ticket={dashboardProps.selectedTicket}
         onUpdateStatus={dashboardProps.handleUpdateTicketStatus}
-        token={dashboardProps.token || ""}
       />
       <TicketReminder onTicketClick={handleTicketClick} />
     </Box>

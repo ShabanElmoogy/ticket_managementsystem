@@ -396,3 +396,23 @@ export interface Notification {
   timestamp: string;
   read?: boolean;
 }
+
+export interface ActivityItem {
+  id: string;
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
+  data: {
+    ticket?: { id: string; title: string; priority?: string; status?: string };
+    createdBy?: string;
+    updatedBy?: string;
+    assignedTo?: string;
+    reassignedTo?: string;
+    description?: string;
+    commentBy?: string;
+    mentionedBy?: string;
+    mentionedUsers?: string[];
+    comment?: string;
+    newStatus?: string;
+  };
+  timestamp: string;
+  read?: boolean;
+}

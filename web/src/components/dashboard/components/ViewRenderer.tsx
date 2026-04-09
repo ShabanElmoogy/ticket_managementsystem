@@ -65,7 +65,6 @@ const ViewRenderer: React.FC<ViewRendererProps> = ({
         selectedTicket={dashboardProps.selectedTicket}
         onCloseDetailsDialog={() => dashboardProps.setDetailsDialogOpen(false)}
         onUpdateStatus={dashboardProps.handleUpdateTicketStatus}
-        token={dashboardProps.token || ""}
         showMobileSearch={dashboardProps.showMobileSearch}
         onCloseMobileSearch={() => dashboardProps.setShowMobileSearch(false)}
         searchQuery={dashboardProps.searchQuery}

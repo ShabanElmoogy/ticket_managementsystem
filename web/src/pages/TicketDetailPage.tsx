@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Grid from '@mui/material/Grid';
 import {
   Box, Typography, Chip, Avatar, Button, Tabs, Tab, Paper,
-  Grid, Divider, TextField, IconButton, CircularProgress,
+  IconButton, CircularProgress,
   Tooltip, Alert, Skeleton, LinearProgress,
 } from '@mui/material';
 import {
@@ -153,8 +154,8 @@ const TicketDetailPage: React.FC = () => {
     try {
       const data = await ticketsApi.getTicket(id);
       setTicket({ ...data, comments: [...(data.comments ?? [])].reverse() });
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load ticket');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load ticket');
     } finally {
       setLoading(false);
     }
@@ -289,7 +290,7 @@ const TicketDetailPage: React.FC = () => {
               <Grid container spacing={3}>
 
                 {/* ── Left: description + status ── */}
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
 
                   {/* Description card */}
                   <Paper
@@ -384,7 +385,7 @@ const TicketDetailPage: React.FC = () => {
                 </Grid>
 
                 {/* ── Right: details panel ── */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', borderColor: 'divider' }}>
 
                     {/* Panel header */}

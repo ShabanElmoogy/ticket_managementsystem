@@ -6,6 +6,8 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useTenantStatus } from "../../../stores";
 
+const DEFAULT_DRAWER_WIDTH = 240;
+
 export interface AdminTopBarProps {
   title: string;
   userEmail?: string;

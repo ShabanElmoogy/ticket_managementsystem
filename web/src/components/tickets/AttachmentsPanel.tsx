@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Box, Typography, IconButton, Tooltip, CircularProgress,
-  Chip, LinearProgress, Alert, Paper, useTheme, useMediaQuery, Divider,
+  Chip, LinearProgress, Alert, Paper, useTheme, useMediaQuery,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button,
 } from '@mui/material';
 import {
@@ -61,9 +61,6 @@ function getFileIcon(m: string, size: 'small' | 'medium' | 'large' = 'small') {
   if (isVideo(m)) return <VideoIcon  fontSize={size} sx={{ color: c }} />;
   if (m.includes('word') || m.includes('document')) return <DocIcon fontSize={size} sx={{ color: c }} />;
   return <FileIcon fontSize={size} sx={{ color: c }} />;
-}
-function getExt(m: string) {
-  return m.split('/')[1]?.toUpperCase().slice(0, 6) ?? 'FILE';
 }
 
 // ── Inline viewer pane ────────────────────────────────────────────────────────

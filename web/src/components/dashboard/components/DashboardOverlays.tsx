@@ -22,7 +22,6 @@ type Props = {
   selectedTicket: Ticket | null;
   onCloseDetailsDialog: () => void;
   onUpdateStatus: (id: string, status: Ticket['status']) => void | Promise<void>;
-  token: string;
 
   // Mobile search overlay
   showMobileSearch: boolean;
@@ -49,7 +48,6 @@ const DashboardOverlays: React.FC<Props> = ({
   selectedTicket,
   onCloseDetailsDialog,
   onUpdateStatus,
-  token,
   showMobileSearch,
   onCloseMobileSearch,
   searchQuery,
@@ -70,7 +68,6 @@ const DashboardOverlays: React.FC<Props> = ({
         onClose={onCloseDetailsDialog}
         ticket={selectedTicket}
         onUpdateStatus={onUpdateStatus}
-        token={token}
       />
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={onCloseSnackbar}>

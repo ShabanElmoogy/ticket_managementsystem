@@ -32,7 +32,6 @@ interface TicketDetailsDialogProps {
   onClose: () => void;
   ticket: Ticket | null;
   onUpdateStatus: (ticketId: string, status: Ticket['status']) => void;
-  token: string;
 }
 
 const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
@@ -40,7 +39,6 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   onClose,
   ticket,
   onUpdateStatus,
-  token,
 }) => {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();

@@ -16,7 +16,6 @@ import {
   Send as SendIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { ticketsApi, type Ticket, type Comment } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import Header from '../components/dashboard/Header';
@@ -48,7 +47,6 @@ const PROGRAMMING_STATUSES = ['PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW',
 const ProgrammingPage: React.FC = () => {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
   const isProgrammer = user?.role === 'PROGRAMMER';

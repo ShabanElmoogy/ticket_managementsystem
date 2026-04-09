@@ -17,7 +17,7 @@ import EpicStatusChip from './components/EpicStatusChip';
 import EpicFormDialog from './components/EpicFormDialog';
 import FeatureStatusChip from '../features/components/FeatureStatusChip';
 import FeatureFormDialog from '../features/components/FeatureFormDialog';
-import type { Epic, UpdateEpicData, CreateFeatureData, UpdateFeatureData } from '../../services/api/types';
+import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData } from '../../services/api/types';
 import { useIsAdmin } from '../../stores/authStore';
 
 // ── Link Feature Dialog ───────────────────────────────────────────────────────

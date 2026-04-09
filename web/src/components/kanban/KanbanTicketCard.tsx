@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { isBefore, addDays } from 'date-fns';
 import { formatDate } from '../../utils/dateUtils';
+import type { Ticket } from '../../services/api';
 import type { KanbanTicket, Priority } from './types/types';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';
 import WhatsAppButton from '../WhatsAppButton';
@@ -355,9 +356,8 @@ const KanbanTicketCard: React.FC<KanbanTicketCardProps> = ({
       <TicketDetailsDialog
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
-        ticket={ticket as any}
+        ticket={ticket as unknown as Ticket}
         onUpdateStatus={() => {}}
-        token={''}
       />
     </>
   );

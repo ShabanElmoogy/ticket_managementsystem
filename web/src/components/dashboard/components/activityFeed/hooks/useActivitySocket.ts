@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Socket } from "socket.io-client";
 import { useAuthStore } from "../../../../../stores/authStore";
-import type { ActivityItem } from "../components/shared/types";
+import type { ActivityItem } from "../../../../../services/api/types";
 import { getSocket, disconnectSocket } from "../../../../../services/socketService";
 
 interface SocketNotification {

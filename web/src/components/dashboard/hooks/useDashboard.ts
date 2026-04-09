@@ -181,7 +181,7 @@ export const useDashboard = () => {
     }
   };
 
-  const handleUpdateTicketStatus = async (ticketId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
+  const handleUpdateTicketStatus = async (ticketId: string, status: Ticket['status']) => {
     try {
       await updateTicketMutation.mutateAsync({ id: ticketId, data: { status } });
       showSnackbar("Ticket updated successfully", "success");

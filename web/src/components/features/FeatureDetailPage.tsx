@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
-  Box, Typography, Paper, Button, Chip, Avatar,
+  Box, Typography, Paper, Button, Chip,
   IconButton, Tooltip, CircularProgress, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, FormControl, InputLabel,
-  Select, MenuItem, Stack, LinearProgress, Alert, Snackbar, Divider,
+  Select, MenuItem, Stack, LinearProgress, Alert, Snackbar,
 } from '@mui/material';
 import {
   ArrowBack, Add, Edit, Delete, CheckCircle, RadioButtonUnchecked,
-  Person, Code, LinkOutlined, Apps, Group, ConfirmationNumber, OpenInNew,
+  Person, Code, Apps, Group, ConfirmationNumber, OpenInNew,
 } from '@mui/icons-material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +16,6 @@ import { usersApi } from '../admin/usersManagement/api/users';
 import { ticketsApi } from '../admin/ticketsManagement/api/tickets';
 import FeatureStatusChip from './components/FeatureStatusChip';
 import type { FeatureStep, CreateStepData, UpdateStepData } from '../../services/api/types';
-import { useIsAdmin } from '../../stores/authStore';
 
 const STEP_STATUS_COLOR: Record<FeatureStep['status'], 'default' | 'warning' | 'success'> = {
   TODO: 'default', IN_PROGRESS: 'warning', DONE: 'success',
@@ -249,7 +248,6 @@ const FeatureDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
-  const isAdmin = useIsAdmin();
 
   const backPath: string = (location.state as { from?: string })?.from ?? '/features';
 

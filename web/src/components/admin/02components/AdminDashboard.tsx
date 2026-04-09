@@ -98,7 +98,7 @@ const AdminDashboard: React.FC = () => {
         ticketsApi.getTickets({}),
       ]);
 
-      const activeCustomers = customers.filter((c) => c.isActive).length;
+      const activeCustomers = customers.filter((c) => c.subscriptionStatus === 'ACTIVE' || c.subscriptionStatus === 'TRIAL').length;
       const activeApplications = applications.filter((a) => a.isActive).length;
       const openTickets = tickets.filter((t) => t.status === "OPEN").length;
       const inProgressTickets = tickets.filter(
