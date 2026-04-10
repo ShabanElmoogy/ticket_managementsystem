@@ -28,7 +28,9 @@ export const useActivityUtils = () => {
       : type === "TICKET_UPDATED" ? "UPDATED"
       : type === "TICKET_ASSIGNED" ? "ASSIGNED"
       : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT"
-      : type === "EPIC_FEATURE_STATUS_CHANGED" ? "UPDATED"
+      : (type === "EPIC_FEATURE_STATUS_CHANGED" || type === "STATUS_CHANGED") ? "UPDATED"
+      : (type === "TICKET_OVERDUE" || type === "PRIORITY_ESCALATED") ? "MUTED"
+      : type === "TICKET_DUE_SOON" ? "UPDATED"
       : "MUTED";
 
     const accent = map[key].accent;
@@ -87,6 +89,26 @@ export const useActivityUtils = () => {
         return {
           primary: "Feature status updated",
           secondary: data.description || "A linked feature status changed",
+        };
+      case "TICKET_DUE_SOON":
+        return {
+          primary: "Ticket Due Soon",
+          secondary: data.description || "A ticket is due tomorrow",
+        };
+      case "TICKET_OVERDUE":
+        return {
+          primary: "Ticket Overdue",
+          secondary: data.description || "A ticket is overdue",
+        };
+      case "STATUS_CHANGED":
+        return {
+          primary: "Ticket Status Changed",
+          secondary: data.description || "A ticket status changed",
+        };
+      case "PRIORITY_ESCALATED":
+        return {
+          primary: "Priority Escalated",
+          secondary: data.description || "A ticket priority was auto-escalated",
         };
       default:
         return { primary: "New activity", secondary: "" };

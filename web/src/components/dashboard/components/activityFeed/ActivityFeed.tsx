@@ -18,31 +18,13 @@ import { dashboardApi, ticketsApi, type Ticket } from "../../../../services/api"
 import { getSocket } from "../../../../services/socketService";
 import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
-type ActivityItemType = {
-  id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
-  data: {
-    ticket?: { id: string; title: string; priority?: string; status?: string };
-    createdBy?: string;
-    updatedBy?: string;
-    assignedTo?: string;
-    reassignedTo?: string;
-    description?: string;
-    commentBy?: string;
-    mentionedBy?: string;
-    mentionedUsers?: string[];
-    comment?: string;
-    newStatus?: string;
-  };
-  timestamp: string;
-  read?: boolean;
-};
+import type { ActivityItem as ActivityItemType, NotificationType } from '../../../../services/api/types';
+
+type ActivityTypeFilter = "ALL" | "TICKET_DELETED" | "TICKET_RESTORED" | NotificationType;
 
 type ActivityFeedProps = {
   onTicketClick?: (ticket: Ticket) => void;
 };
-
-type ActivityTypeFilter = "ALL" | "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "TICKET_DELETED" | "TICKET_RESTORED";
 
 const useActivitySocket = (
   onNotification: (raw?: any) => void
@@ -95,9 +77,15 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
   }, [token]);
 
   useActivitySocket((raw?: any) => {
-    if (raw?.type === 'COMMENT_MENTION' || raw?.type === 'COMMENT_ADDED') {
+    const inlineTypes: NotificationType[] = [
+      'COMMENT_MENTION', 'COMMENT_ADDED',
+      'EPIC_FEATURE_STATUS_CHANGED',
+      'TICKET_DUE_SOON', 'TICKET_OVERDUE',
+      'STATUS_CHANGED', 'PRIORITY_ESCALATED',
+    ];
+    if (raw?.type && inlineTypes.includes(raw.type)) {
       const item: ActivityItemType = {
-        id: `${raw.type}-${Date.now()}`,
+        id: `${raw.id || raw.type}-${Date.now()}`,
         type: raw.type,
         data: {
           ticket: raw.data?.ticket,
@@ -105,17 +93,8 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
           mentionedUsers: raw.data?.mentionedUsers,
           mentionedBy: raw.data?.mentionedBy,
           comment: raw.data?.comment,
+          description: raw.message,
         },
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
-      setActivities((prev) => [item, ...prev.slice(0, 19)]);
-      setUnreadCount((c) => c + 1);
-    } else if (raw?.type === 'EPIC_FEATURE_STATUS_CHANGED') {
-      const item: ActivityItemType = {
-        id: `${raw.id || raw.type}-${Date.now()}`,
-        type: 'EPIC_FEATURE_STATUS_CHANGED',
-        data: { description: raw.message },
         timestamp: raw.timestamp ? new Date(raw.timestamp).toISOString() : new Date().toISOString(),
         read: false,
       };

@@ -21,25 +21,7 @@ import {
   RadioButtonChecked as UnreadCheckedIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";
-type ActivityItemType = {
-  id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
-  data: {
-    ticket?: { id: string; title: string; priority?: string; status?: string };
-    createdBy?: string;
-    updatedBy?: string;
-    assignedTo?: string;
-    reassignedTo?: string;
-    description?: string;
-    commentBy?: string;
-    comment?: string;
-    mentionedUsers?: string[];
-    mentionedBy?: string;
-    newStatus?: string;
-  };
-  timestamp: string;
-  read?: boolean;
-};
+import type { ActivityItem as ActivityItemType } from '../../../../../../services/api/types';
 
 const useActivityUtils = () => {
   const theme = useTheme();
@@ -62,7 +44,14 @@ const useActivityUtils = () => {
       },
     } as const;
     const map = accents[mode === "dark" ? "dark" : "light"];
-    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT" : type === "EPIC_FEATURE_STATUS_CHANGED" ? "UPDATED" : "MUTED";
+    const key = type === "TICKET_CREATED" ? "CREATED"
+      : type === "TICKET_UPDATED" ? "UPDATED"
+      : type === "TICKET_ASSIGNED" ? "ASSIGNED"
+      : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT"
+      : (type === "EPIC_FEATURE_STATUS_CHANGED" || type === "STATUS_CHANGED") ? "UPDATED"
+      : (type === "TICKET_OVERDUE" || type === "PRIORITY_ESCALATED") ? "MUTED"
+      : type === "TICKET_DUE_SOON" ? "UPDATED"
+      : "MUTED";
     const accent = map[key].accent;
     const iconOnAccent = theme.palette.getContrastText(accent);
     const iconInline = map[key].iconInline;
@@ -119,6 +108,26 @@ const useActivityUtils = () => {
         return {
           primary: "Feature status updated",
           secondary: data.description || "A linked feature status changed",
+        };
+      case "TICKET_DUE_SOON":
+        return {
+          primary: "Ticket Due Soon",
+          secondary: data.description || "A ticket is due tomorrow",
+        };
+      case "TICKET_OVERDUE":
+        return {
+          primary: "Ticket Overdue",
+          secondary: data.description || "A ticket is overdue",
+        };
+      case "STATUS_CHANGED":
+        return {
+          primary: "Ticket Status Changed",
+          secondary: data.description || "A ticket status changed",
+        };
+      case "PRIORITY_ESCALATED":
+        return {
+          primary: "Priority Escalated",
+          secondary: data.description || "A ticket priority was auto-escalated",
         };
       default:
         return { primary: "New activity", secondary: "" };

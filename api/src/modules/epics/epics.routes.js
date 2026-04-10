@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
 import { listEpics, getEpic, createEpic, updateEpic, deleteEpic, linkFeature, unlinkFeature, reorderFeatures, bulkUpdateStatus, addBlocker, removeBlocker } from './epics/epics.controller.js';
 import { listEpicComments, createEpicComment, deleteEpicComment } from './epicComments/epicComments.controller.js';
+import { listEpicActivity } from './epicActivity/epicActivity.controller.js';
 
 const router = express.Router();
 
@@ -27,5 +28,8 @@ router.delete('/:id/blockers/:blockerId',   requireTenantAdmin, removeBlocker);
 router.get('/:id/comments',               listEpicComments);
 router.post('/:id/comments',              createEpicComment);
 router.delete('/:id/comments/:commentId', deleteEpicComment);
+
+// Activity
+router.get('/:id/activity', listEpicActivity);
 
 export default router;

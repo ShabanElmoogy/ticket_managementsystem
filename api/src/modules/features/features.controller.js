@@ -7,6 +7,7 @@ import { epics } from '../epics/epics/epics.schema.js';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { getTenantScope } from '../../utils/tenantUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
+import { logEpicActivity } from '../epics/epicActivity/epicActivity.controller.js';
 
 const FEATURE_SELECT = {
   id:              featureRequests.id,
@@ -144,10 +145,10 @@ export const updateFeature = async (req, res) => {
       .where(eq(featureRequests.id, id))
       .returning();
 
-    // Notify on feature status change
+    // Notify on feature status change + check if all features shipped
     if (status !== undefined && status !== existing.status && existing.epicId) {
       const [epic] = await db
-        .select({ ownerId: epics.ownerId, title: epics.title })
+        .select({ ownerId: epics.ownerId, title: epics.title, status: epics.status })
         .from(epics)
         .where(eq(epics.id, existing.epicId))
         .limit(1);
@@ -156,12 +157,22 @@ export const updateFeature = async (req, res) => {
         const notifyIds = [...new Set([epic.ownerId, actorId].filter(Boolean))];
         for (const userId of notifyIds) {
           await createNotification({
-            userId,
-            ticketId: null,
+            userId, ticketId: null,
             type: 'EPIC_FEATURE_STATUS_CHANGED',
             title: 'Feature status updated',
             message: `Feature "${existing.title}" changed to ${status} in epic "${epic.title}"`,
           }, req);
+        }
+        await logEpicActivity(existing.epicId, actorId, 'FEATURE_STATUS_CHANGED', { featureId: id, featureTitle: existing.title, from: existing.status, to: status });
+        // Check if all features are now SHIPPED (excluding DECLINED)
+        if (status === 'SHIPPED' && epic.status !== 'COMPLETED') {
+          const allFeatures = await db
+            .select({ status: featureRequests.status })
+            .from(featureRequests)
+            .where(eq(featureRequests.epicId, existing.epicId));
+          const active = allFeatures.filter((f) => f.status !== 'DECLINED');
+          const allShipped = active.length > 0 && active.every((f) => f.status === 'SHIPPED');
+          if (allShipped) return res.json({ ...updated, allShipped: true, epicId: existing.epicId });
         }
       }
     }

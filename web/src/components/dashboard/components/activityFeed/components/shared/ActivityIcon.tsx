@@ -7,6 +7,10 @@ import {
   Notifications as NotificationsIcon,
   AlternateEmail as MentionIcon,
   AccountTree as EpicIcon,
+  Schedule as ScheduleIcon,
+  Error as ErrorIcon,
+  SwapHoriz as StatusIcon,
+  TrendingUp as EscalateIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";
 
@@ -63,6 +67,14 @@ export const ActivityIcon: React.FC<ActivityIconProps> = ({ type, inline = false
       return <MentionIcon sx={sx} />;
     case "EPIC_FEATURE_STATUS_CHANGED":
       return <EpicIcon sx={sx} />;
+    case "TICKET_DUE_SOON":
+      return <ScheduleIcon sx={sx} />;
+    case "TICKET_OVERDUE":
+      return <ErrorIcon sx={sx} />;
+    case "STATUS_CHANGED":
+      return <StatusIcon sx={sx} />;
+    case "PRIORITY_ESCALATED":
+      return <EscalateIcon sx={sx} />;
     default:
       return <NotificationsIcon sx={sx} />;
   }

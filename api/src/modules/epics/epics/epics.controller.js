@@ -6,6 +6,7 @@ import { applications } from '../../applications/applications.schema.js';
 import { customers } from '../../customers/customers.schema.js';
 import { eq, desc, inArray, asc, and } from 'drizzle-orm';
 import { getTenantScope } from '../../../utils/tenantUtils.js';
+import { logEpicActivity } from '../epicActivity/epicActivity.controller.js';
 
 const EPIC_SELECT = {
   id:              epics.id,
@@ -168,7 +169,7 @@ export const updateEpic = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, status, priority, tags, ownerId, applicationId, customerId, targetDate } = req.body;
-    const [existing] = await db.select({ id: epics.id }).from(epics).where(eq(epics.id, id)).limit(1);
+    const [existing] = await db.select({ id: epics.id, status: epics.status, priority: epics.priority }).from(epics).where(eq(epics.id, id)).limit(1);
     if (!existing) return res.status(404).json({ error: 'Epic not found' });
     const patch = { updatedAt: new Date() };
     if (title !== undefined) patch.title = title;
@@ -193,6 +194,10 @@ export const updateEpic = async (req, res) => {
     if (tags !== undefined) patch.tags = Array.isArray(tags) ? tags : [];
     if (targetDate !== undefined) patch.targetDate = targetDate || null;
     const [updated] = await db.update(epics).set(patch).where(eq(epics.id, id)).returning();
+    const actorId = req.user?.userId ?? req.user?.id;
+    if (patch.status) await logEpicActivity(id, actorId, 'STATUS_CHANGED', { from: existing.status ?? null, to: patch.status });
+    if (patch.title) await logEpicActivity(id, actorId, 'TITLE_CHANGED', { to: patch.title });
+    if (patch.priority) await logEpicActivity(id, actorId, 'PRIORITY_CHANGED', { from: existing.priority ?? null, to: patch.priority });
     res.json(updated);
   } catch (err) {
     console.error('updateEpic error:', err);
@@ -219,7 +224,13 @@ export const linkFeature = async (req, res) => {
     const linked = await db.select({ epicOrder: featureRequests.epicOrder }).from(featureRequests).where(eq(featureRequests.epicId, id));
     const nextOrder = linked.length ? Math.max(...linked.map((f) => f.epicOrder)) + 1 : 0;
     await db.update(featureRequests).set({ epicId: id, epicOrder: nextOrder, updatedAt: new Date() }).where(eq(featureRequests.id, featureId));
-    res.json({ message: 'Feature linked' });
+    const isFirst = linked.length === 0;
+    const [epic] = await db.select({ status: epics.status }).from(epics).where(eq(epics.id, id)).limit(1);
+    const suggestedStatus = isFirst && epic?.status === 'DRAFT' ? 'ACTIVE' : null;
+    const actorId = req.user?.userId ?? req.user?.id;
+    const [feat] = await db.select({ title: featureRequests.title }).from(featureRequests).where(eq(featureRequests.id, featureId)).limit(1);
+    await logEpicActivity(id, actorId, 'FEATURE_LINKED', { featureId, featureTitle: feat?.title ?? featureId });
+    res.json({ message: 'Feature linked', suggestedStatus });
   } catch (err) {
     console.error('linkFeature error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -231,9 +242,12 @@ export const reorderFeatures = async (req, res) => {
     const { order } = req.body;
     if (!Array.isArray(order) || order.length === 0)
       return res.status(400).json({ error: 'order array is required' });
+    const { id: epicId } = req.params;
     await Promise.all(order.map(({ id, order: o }) =>
       db.update(featureRequests).set({ epicOrder: o, updatedAt: new Date() }).where(eq(featureRequests.id, id))
     ));
+    const actorId = req.user?.userId ?? req.user?.id;
+    await logEpicActivity(epicId, actorId, 'FEATURES_REORDERED', { count: order.length });
     res.json({ message: 'Order saved' });
   } catch (err) {
     console.error('reorderFeatures error:', err);
@@ -244,7 +258,10 @@ export const reorderFeatures = async (req, res) => {
 export const unlinkFeature = async (req, res) => {
   try {
     const { featureId } = req.params;
+    const [feat] = await db.select({ title: featureRequests.title, epicId: featureRequests.epicId }).from(featureRequests).where(eq(featureRequests.id, featureId)).limit(1);
     await db.update(featureRequests).set({ epicId: null, updatedAt: new Date() }).where(eq(featureRequests.id, featureId));
+    const actorId = req.user?.userId ?? req.user?.id;
+    if (feat?.epicId) await logEpicActivity(feat.epicId, actorId, 'FEATURE_UNLINKED', { featureId, featureTitle: feat?.title ?? featureId });
     res.json({ message: 'Feature unlinked' });
   } catch (err) {
     console.error('unlinkFeature error:', err);

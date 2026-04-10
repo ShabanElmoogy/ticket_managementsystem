@@ -8,6 +8,14 @@ export interface EpicComment {
   user: { id: string; name: string; email: string };
 }
 
+export interface EpicActivityItem {
+  id: string;
+  action: string;
+  meta: Record<string, any>;
+  createdAt: string;
+  user: { id: string; name: string } | null;
+}
+
 class EpicsApiService extends BaseApiService {
   list(): Promise<Epic[]> {
     return this.get('/epics');
@@ -33,13 +41,16 @@ class EpicsApiService extends BaseApiService {
   listComments(epicId: string): Promise<EpicComment[]> {
     return this.get(`/epics/${epicId}/comments`);
   }
+  listActivity(epicId: string): Promise<EpicActivityItem[]> {
+    return this.get(`/epics/${epicId}/activity`);
+  }
   addComment(epicId: string, content: string): Promise<EpicComment> {
     return this.post(`/epics/${epicId}/comments`, { content });
   }
   deleteComment(epicId: string, commentId: string): Promise<{ message: string }> {
     return this.delete(`/epics/${epicId}/comments/${commentId}`);
   }
-  linkFeature(epicId: string, featureId: string): Promise<{ message: string }> {
+  linkFeature(epicId: string, featureId: string): Promise<{ message: string; suggestedStatus: 'ACTIVE' | null }> {
     return this.post(`/epics/${epicId}/features`, { featureId });
   }
   unlinkFeature(epicId: string, featureId: string): Promise<{ message: string }> {

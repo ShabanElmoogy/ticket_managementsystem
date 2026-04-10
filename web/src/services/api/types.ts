@@ -389,9 +389,22 @@ export interface UpdateFeatureData {
   customerId?: string | null;
 }
 
+export type NotificationType =
+  | 'TICKET_CREATED'
+  | 'TICKET_UPDATED'
+  | 'TICKET_ASSIGNED'
+  | 'COMMENT_ADDED'
+  | 'COMMENT_DELETED'
+  | 'COMMENT_MENTION'
+  | 'TICKET_DUE_SOON'
+  | 'TICKET_OVERDUE'
+  | 'STATUS_CHANGED'
+  | 'PRIORITY_ESCALATED'
+  | 'EPIC_FEATURE_STATUS_CHANGED';
+
 export interface Notification {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED";
+  type: NotificationType;
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -408,7 +421,7 @@ export interface Notification {
 
 export interface ActivityItem {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
+  type: NotificationType;
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;

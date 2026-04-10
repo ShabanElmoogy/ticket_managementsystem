@@ -161,7 +161,23 @@ export const startNotificationScheduler = (emitNotification = null) => {
       const overdueTickets = await db.select().from(tickets).where(and(lt(tickets.dueDate, now), eq(tickets.status, 'OPEN')));
       for (const ticket of overdueTickets) {
         if (ticket.assignedToId) {
-          await db.insert(notifications).values({ title: 'Ticket Overdue', message: `Ticket "${ticket.title}" is overdue`, type: 'TICKET_OVERDUE', userId: ticket.assignedToId, ticketId: ticket.id });
+          const [notification] = await db.insert(notifications).values({
+            title: 'Ticket Overdue',
+            message: `Ticket "${ticket.title}" is overdue`,
+            type: 'TICKET_OVERDUE',
+            userId: ticket.assignedToId,
+            ticketId: ticket.id,
+          }).returning();
+          if (_emitNotification) {
+            _emitNotification(ticket.assignedToId, {
+              id: notification.id,
+              type: 'TICKET_OVERDUE',
+              title: 'Ticket Overdue',
+              message: `Ticket "${ticket.title}" is overdue`,
+              data: { ticket: { id: ticket.id, title: ticket.title } },
+              timestamp: notification.createdAt,
+            });
+          }
         }
       }
     } catch (error) {

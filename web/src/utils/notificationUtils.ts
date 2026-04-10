@@ -54,15 +54,15 @@ export const createNotificationFromSocketData = (
       break;
     case "TICKET_DUE_SOON":
       title = "Ticket Due Soon";
-      message = safeData.message || `${safeTicket.title || "A ticket"} is due tomorrow`;
+      message = socketNotification.message || `${safeTicket.title || "A ticket"} is due tomorrow`;
       break;
     case "TICKET_OVERDUE":
       title = "Ticket Overdue";
-      message = safeData.message || `${safeTicket.title || "A ticket"} is overdue`;
+      message = socketNotification.message || `${safeTicket.title || "A ticket"} is overdue`;
       break;
     case "STATUS_CHANGED":
       title = "Ticket Status Changed";
-      message = safeData.message || `${safeTicket.title || "A ticket"} status changed`;
+      message = socketNotification.message || `${safeTicket.title || "A ticket"} status changed`;
       break;
     case "EPIC_FEATURE_STATUS_CHANGED":
       title = socketNotification.title || "Feature status updated";

@@ -1,28 +1,5 @@
 # Epics — Real-World Enhancement Suggestions
 
-## High Value / Quick Wins
-
-### Epic Dependencies
-- Mark one epic as "blocked by" another
-- Visual indicator on blocked epics (lock icon, greyed out card)
-- Prevent marking COMPLETED if any blocker is unresolved
-
-### Priority Field
-- Add `priority` column (`LOW` / `MEDIUM` / `HIGH` / `CRITICAL`) to the epics table
-- Color-coded badge next to the title in both list and detail views
-- Sortable by priority in EpicsPage
-
-### Epic Tags / Labels
-- Free-form tags (e.g. "backend", "mobile", "Q3-2025")
-- Stored as a `text[]` column in the DB
-- Filter by tag in EpicsPage filter bar
-
-### Assignee Notifications
-- Notify the epic owner via the existing Socket.IO system when a linked feature status changes
-- Reuse the existing notifications module — no new infrastructure needed
-
----
-
 ## Workflow
 
 ### Epic Status Automation

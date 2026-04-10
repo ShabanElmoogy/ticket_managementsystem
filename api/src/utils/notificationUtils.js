@@ -4,8 +4,6 @@ import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
 
 export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {
   try {
-    console.log('Creating notification:', { userId, ticketId, type, title, message, hasReq: !!req, hasEmitFn: !!req?.emitNotification });
-
     const [notification] = await db.insert(notifications).values({
       userId,
       ticketId,
@@ -34,12 +32,8 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
       timestamp: notification.createdAt,
     };
 
-    // Emit real-time notification via WebSocket
     if (req?.emitNotification) {
-      console.log('Emitting notification via req.emitNotification:', notificationData);
       req.emitNotification(userId, notificationData);
-    } else {
-      console.log('No emitNotification function available in req');
     }
 
     return { success: true };
@@ -113,7 +107,7 @@ export const createBulkNotifications = async (notificationData) => {
   }
 };
 
-export const checkDueDateNotifications = async () => {
+export const checkDueDateNotifications = async (emitNotification = null) => {
   try {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -209,11 +203,35 @@ export const checkDueDateNotifications = async () => {
     });
 
     if (dueSoonNotifications.length > 0) {
-      await createBulkNotifications(dueSoonNotifications);
+      for (const n of dueSoonNotifications) {
+        const [notification] = await db.insert(notifications).values(n).returning();
+        if (emitNotification) {
+          emitNotification(n.userId, {
+            id: notification.id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            data: { ticket: { id: n.ticketId, title: n.message } },
+            timestamp: notification.createdAt,
+          });
+        }
+      }
     }
 
     if (overdueNotifications.length > 0) {
-      await createBulkNotifications(overdueNotifications);
+      for (const n of overdueNotifications) {
+        const [notification] = await db.insert(notifications).values(n).returning();
+        if (emitNotification) {
+          emitNotification(n.userId, {
+            id: notification.id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            data: { ticket: { id: n.ticketId, title: n.message } },
+            timestamp: notification.createdAt,
+          });
+        }
+      }
     }
 
     return {

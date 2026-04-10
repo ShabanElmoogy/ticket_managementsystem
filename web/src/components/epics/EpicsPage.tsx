@@ -295,6 +295,16 @@ const EpicsPage: React.FC = () => {
           const progress = epic.stepsTotal ? Math.round((epic.stepsDone / epic.stepsTotal) * 100) : 0;
           const overdue = epic.targetDate && new Date(epic.targetDate) < new Date() && epic.status !== 'COMPLETED';
           const isSelected = selected.has(epic.id);
+          const dueDiff = (() => {
+            if (!epic.targetDate) return null;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const target = new Date(epic.targetDate); target.setHours(0, 0, 0, 0);
+            return Math.round((target.getTime() - today.getTime()) / 86400000);
+          })();
+          const dueDateLabel = dueDiff === null ? null
+            : dueDiff === 0 ? 'Due today'
+            : dueDiff < 0 ? `${Math.abs(dueDiff)} day${Math.abs(dueDiff) !== 1 ? 's' : ''} overdue`
+            : `Due in ${dueDiff} day${dueDiff !== 1 ? 's' : ''}`;
           return (
             <Paper key={epic.id} sx={{ p: 2.5, borderRadius: 3, border: '1px solid',
               borderColor: isSelected ? 'primary.main' : 'divider',
@@ -330,8 +340,8 @@ const EpicsPage: React.FC = () => {
                     {epic.customerName && <Chip icon={<Person fontSize="small" />} label={epic.customerName} size="small" variant="outlined" color="secondary" />}
                     {epic.ownerName && <Chip icon={<Person fontSize="small" />} label={`Owner: ${epic.ownerName}`} size="small" variant="outlined" color="primary" />}
                     {epic.targetDate && (
-                      <Chip icon={<CalendarToday fontSize="small" />} label={formatDate(epic.targetDate)}
-                        size="small" variant="outlined" color={overdue ? 'error' : 'default'} />
+                      <Chip icon={<CalendarToday fontSize="small" />} label={dueDateLabel}
+                        size="small" variant="outlined" color={overdue ? 'error' : dueDiff === 0 ? 'warning' : 'default'} />
                     )}
                     <Chip label={`${epic.featureCount} feature${epic.featureCount !== 1 ? 's' : ''}`} size="small" />
                   </Box>

@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Chip,
   CircularProgress, Alert, Snackbar, Divider, IconButton,
   Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
-  FormControl, InputLabel, Select, MenuItem, Menu,
+  FormControl, InputLabel, Select, MenuItem, Menu, Tabs, Tab,
 } from '@mui/material';
 import {
   ArrowBack, Add, Edit, OpenInNew, LinkOff, Apps, Person,
@@ -28,6 +28,7 @@ import EpicStatusChip from './components/EpicStatusChip';
 import EpicPriorityChip from './components/EpicPriorityChip';
 import EpicFormDialog from './components/EpicFormDialog';
 import EpicComments from './components/EpicComments';
+import EpicActivity from './components/EpicActivity';
 import FeatureStatusChip from '../features/components/FeatureStatusChip';
 import FeatureFormDialog from '../features/components/FeatureFormDialog';
 import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData, FeatureRequest } from '../../services/api/types';
@@ -274,7 +275,7 @@ interface LinkDialogProps {
   epicId: string;
   linkedIds: string[];
   onClose: () => void;
-  onLinked: () => void;
+  onLinked: (suggestedStatus: 'ACTIVE' | null) => void;
 }
 
 const LinkFeatureDialog: React.FC<LinkDialogProps> = ({ open, epicId, linkedIds, onClose, onLinked }) => {
@@ -293,8 +294,8 @@ const LinkFeatureDialog: React.FC<LinkDialogProps> = ({ open, epicId, linkedIds,
     if (!selectedId) return;
     setSaving(true);
     try {
-      await epicsApi.linkFeature(epicId, selectedId);
-      onLinked();
+      const result = await epicsApi.linkFeature(epicId, selectedId);
+      onLinked(result.suggestedStatus);
       onClose();
       setSelectedId('');
     } finally {
@@ -348,6 +349,9 @@ const EpicDetailPage: React.FC = () => {
   const [orderedFeatures, setOrderedFeatures] = useState<EpicFeature[]>([]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
   const [blockerMenuAnchor, setBlockerMenuAnchor] = useState<null | HTMLElement>(null);
+  const [sidebarTab, setSidebarTab] = useState(0);
+  const [suggestActive, setSuggestActive] = useState(false);
+  const [suggestCompleted, setSuggestCompleted] = useState(false);
 
   // @dnd-kit PointerSensor with 8px activation distance to avoid accidental drags
   const sensors = useSensors(
@@ -416,32 +420,31 @@ const EpicDetailPage: React.FC = () => {
 
   const handleNewFeature = async (data: CreateFeatureData | UpdateFeatureData) => {
     const created = await featuresApi.create(data as CreateFeatureData);
-    await epicsApi.linkFeature(id!, created.id);
+    const result = await epicsApi.linkFeature(id!, created.id);
     invalidate();
     setSnack({ msg: 'Feature created and linked!', severity: 'success' });
+    if (result.suggestedStatus === 'ACTIVE') setSuggestActive(true);
   };
 
   const editFeatureMutation = useMutation({
     mutationFn: ({ fid, data }: { fid: string; data: UpdateFeatureData }) => featuresApi.update(fid, data),
     onMutate: async ({ fid, data }) => {
       if (data.status === undefined) return;
-      // Cancel any in-flight refetch so it doesn't overwrite our optimistic update
       await qc.cancelQueries({ queryKey: ['epics', id] });
-      // Patch the cached epic features in place — no refetch needed
       qc.setQueryData(['epics', id], (old: any) => {
         if (!old?.features) return old;
         return { ...old, features: old.features.map((f: any) => f.id === fid ? { ...f, status: data.status } : f) };
       });
     },
-    onSuccess: (_, { data }) => {
-      // Only do a full invalidate for non-status updates (e.g. title/description edits)
+    onSuccess: (res: any, { data }) => {
       if (data.status === undefined) {
         invalidate();
         setSnack({ msg: 'Feature updated', severity: 'success' });
+      } else if (res?.allShipped) {
+        setSuggestCompleted(true);
       }
     },
     onError: () => {
-      // Roll back by refetching on error
       invalidate();
       setSnack({ msg: 'Failed to update feature', severity: 'error' });
     },
@@ -465,11 +468,24 @@ const EpicDetailPage: React.FC = () => {
   const overdue = epic.targetDate && new Date(epic.targetDate) < new Date() && epic.status !== 'COMPLETED';
   const linkedIds = orderedFeatures.map((f) => f.id);
 
+  const overduedays = (() => {
+    if (!epic.targetDate || !overdue) return 0;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(epic.targetDate); target.setHours(0, 0, 0, 0);
+    return Math.round((today.getTime() - target.getTime()) / 86400000);
+  })();
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Button startIcon={<ArrowBack />} onClick={() => navigate('/epics')} sx={{ mb: 2 }}>
         Back to Epics
       </Button>
+
+      {overdue && (
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+          This epic is <strong>{overduedays} day{overduedays !== 1 ? 's' : ''} overdue</strong> — target date was {formatDate(epic.targetDate!)}. Update the target date or mark it completed.
+        </Alert>
+      )}
 
       {/* Epic Header */}
       <Paper sx={{ p: 3, borderRadius: 3, mb: 3 }}>
@@ -499,11 +515,13 @@ const EpicDetailPage: React.FC = () => {
               ))}
             </Box>
           </Box>
-          {isAdmin && (
-            <Button startIcon={<Edit />} variant="outlined" size="small" onClick={() => setEditOpen(true)}>
-              Edit
-            </Button>
-          )}
+          <Box display="flex" gap={1}>
+            {isAdmin && (
+              <Button startIcon={<Edit />} variant="outlined" size="small" onClick={() => setEditOpen(true)}>
+                Edit
+              </Button>
+            )}
+          </Box>
         </Box>
 
 
@@ -601,10 +619,10 @@ const EpicDetailPage: React.FC = () => {
             </Box>
           );
         })()}
-      </Paper>
 
-      {/* Dependencies */}
-      <Paper sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: (epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED')) ? 'error.main' : 'divider' }}>
+        <Divider sx={{ my: 2 }} />
+
+        {/* Dependencies */}
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
           <Box display="flex" alignItems="center" gap={1}>
             <Lock sx={{ fontSize: 18, color: epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') ? 'error.main' : 'text.secondary' }} />
@@ -619,38 +637,30 @@ const EpicDetailPage: React.FC = () => {
             </Button>
           )}
         </Box>
-
         {(epic.blockedBy?.length ?? 0) === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            No blockers. This epic can proceed freely.
-            {isAdmin && ' Click “Add Blocker” to mark it as blocked by another epic.'}
+            No blockers — this epic can proceed freely.
           </Typography>
         ) : (
-          <Box>
-            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-              This epic is waiting on the following epics to complete first:
-            </Typography>
-            <Box display="flex" gap={1} flexWrap="wrap">
-              {epic.blockedBy!.map((b) => {
-                const resolved = b.status === 'COMPLETED' || b.status === 'CANCELLED';
-                return (
-                  <Chip
-                    key={b.id}
-                    icon={<Lock fontSize="small" />}
-                    label={`${b.title} · ${b.status.replace('_', ' ')}`}
-                    size="small"
-                    color={resolved ? 'success' : 'error'}
-                    variant={resolved ? 'outlined' : 'filled'}
-                    onDelete={isAdmin ? () => blockerMutation.mutate({ action: 'remove', blockerId: b.id }) : undefined}
-                    onClick={() => navigate(`/epics/${b.id}`)}
-                    sx={{ cursor: 'pointer' }}
-                  />
-                );
-              })}
-            </Box>
+          <Box display="flex" gap={1} flexWrap="wrap">
+            {epic.blockedBy!.map((b) => {
+              const resolved = b.status === 'COMPLETED' || b.status === 'CANCELLED';
+              return (
+                <Chip
+                  key={b.id}
+                  icon={<Lock fontSize="small" />}
+                  label={`${b.title} · ${b.status.replace('_', ' ')}`}
+                  size="small"
+                  color={resolved ? 'success' : 'error'}
+                  variant={resolved ? 'outlined' : 'filled'}
+                  onDelete={isAdmin ? () => blockerMutation.mutate({ action: 'remove', blockerId: b.id }) : undefined}
+                  onClick={() => navigate(`/epics/${b.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                />
+              );
+            })}
           </Box>
         )}
-
         <BlockerPickerMenu
           anchor={blockerMenuAnchor}
           epicId={id!}
@@ -721,9 +731,13 @@ const EpicDetailPage: React.FC = () => {
       )}
         </Box>
 
-        {/* Right: Discussion */}
+        {/* Right: Discussion + Activity */}
         <Box sx={{ position: { lg: 'sticky' }, top: { lg: 24 } }}>
-          <EpicComments epicId={id!} />
+          <Tabs value={sidebarTab} onChange={(_, v) => setSidebarTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Tab label="Comments" />
+            <Tab label="Activity" />
+          </Tabs>
+          {sidebarTab === 0 ? <EpicComments epicId={id!} /> : <EpicActivity epicId={id!} />}
         </Box>
 
       </Box>{/* end two-column grid */}
@@ -756,12 +770,50 @@ const EpicDetailPage: React.FC = () => {
         epicId={id!}
         linkedIds={linkedIds}
         onClose={() => setLinkOpen(false)}
-        onLinked={invalidate}
+        onLinked={(suggested) => { invalidate(); if (suggested === 'ACTIVE') setSuggestActive(true); }}
       />
 
       <Snackbar open={!!snack} autoHideDuration={3000} onClose={() => setSnack(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity={snack?.severity} onClose={() => setSnack(null)}>{snack?.msg}</Alert>
       </Snackbar>
+
+      {/* Suggest ACTIVE when first feature is linked */}
+      <Dialog open={suggestActive} onClose={() => setSuggestActive(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Set Epic to Active?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            You just linked the first feature to this epic. Would you like to set its status to <strong>ACTIVE</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuggestActive(false)}>Keep as Draft</Button>
+          <Button variant="contained" onClick={async () => {
+            await updateMutation.mutateAsync({ status: 'ACTIVE' });
+            setSuggestActive(false);
+          }}>
+            Set Active
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Suggest COMPLETED when all features are shipped */}
+      <Dialog open={suggestCompleted} onClose={() => setSuggestCompleted(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Mark Epic as Completed?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            All features have been shipped. Would you like to mark this epic as <strong>COMPLETED</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuggestCompleted(false)}>Not Yet</Button>
+          <Button variant="contained" color="success" onClick={async () => {
+            await updateMutation.mutateAsync({ status: 'COMPLETED' });
+            setSuggestCompleted(false);
+          }}>
+            Mark Completed
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
