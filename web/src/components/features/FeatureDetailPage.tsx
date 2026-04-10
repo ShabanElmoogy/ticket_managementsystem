@@ -338,6 +338,8 @@ const FeatureDetailPage: React.FC = () => {
   const progress = steps.length ? Math.round((doneCount / steps.length) * 100) : 0;
   const isShipped = feature?.status === 'SHIPPED';
 
+  const SHIPPED_TOOLTIP = 'Change feature status to edit steps';
+
   if (featureLoading) return <Box display="flex" justifyContent="center" pt={8}><CircularProgress /></Box>;
   if (!feature) return <Box p={4}><Alert severity="error">Feature not found</Alert></Box>;
 
@@ -411,12 +413,16 @@ const FeatureDetailPage: React.FC = () => {
             </Typography>
           )}
         </Box>
-        <Button variant="contained" size="small" startIcon={<Add />}
-          disabled={isShipped}
-          onClick={() => { setEditingStep(null); setStepDialog(true); }}
-        >
-          Add Step
-        </Button>
+        <Tooltip title={isShipped ? SHIPPED_TOOLTIP : ''} arrow>
+          <span>
+            <Button variant="contained" size="small" startIcon={<Add />}
+              disabled={isShipped}
+              onClick={() => { setEditingStep(null); setStepDialog(true); }}
+            >
+              Add Step
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
 
       {steps.length > 0 && (
@@ -441,12 +447,14 @@ const FeatureDetailPage: React.FC = () => {
             }}
           >
             <Box display="flex" alignItems="flex-start" gap={1.5}>
-              <Tooltip title={step.status === 'DONE' ? 'Mark incomplete' : 'Mark done'}>
-                <IconButton size="small" onClick={() => toggleStepDone(step)} sx={{ mt: 0.25 }} disabled={isShipped}>
-                  {step.status === 'DONE'
-                    ? <CheckCircle color="success" fontSize="small" />
-                    : <RadioButtonUnchecked fontSize="small" />}
-                </IconButton>
+              <Tooltip title={isShipped ? SHIPPED_TOOLTIP : (step.status === 'DONE' ? 'Mark incomplete' : 'Mark done')} arrow>
+                <span>
+                  <IconButton size="small" onClick={() => toggleStepDone(step)} sx={{ mt: 0.25 }} disabled={isShipped}>
+                    {step.status === 'DONE'
+                      ? <CheckCircle color="success" fontSize="small" />
+                      : <RadioButtonUnchecked fontSize="small" />}
+                  </IconButton>
+                </span>
               </Tooltip>
 
               <Box flex={1} minWidth={0}>
@@ -514,15 +522,19 @@ const FeatureDetailPage: React.FC = () => {
 
               {/* Actions */}
               <Box display="flex" gap={0.5}>
-                <Tooltip title="Edit step">
-                  <IconButton size="small" disabled={isShipped} onClick={() => { setEditingStep(step); setStepDialog(true); }}>
-                    <Edit fontSize="small" />
-                  </IconButton>
+                <Tooltip title={isShipped ? SHIPPED_TOOLTIP : 'Edit step'} arrow>
+                  <span>
+                    <IconButton size="small" disabled={isShipped} onClick={() => { setEditingStep(step); setStepDialog(true); }}>
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  </span>
                 </Tooltip>
-                <Tooltip title="Delete step">
-                  <IconButton size="small" color="error" disabled={isShipped} onClick={() => deleteStepMutation.mutate(step.id)}>
-                    <Delete fontSize="small" />
-                  </IconButton>
+                <Tooltip title={isShipped ? SHIPPED_TOOLTIP : 'Delete step'} arrow>
+                  <span>
+                    <IconButton size="small" color="error" disabled={isShipped} onClick={() => deleteStepMutation.mutate(step.id)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               </Box>
             </Box>

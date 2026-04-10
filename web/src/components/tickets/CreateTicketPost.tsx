@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, Collapse, Divider, Box } from "@mui/material";
 import { useAuthStore } from "../../stores/authStore";
 import type { User, Customer, Application, CreateTicketData } from "../../services/api";
+import dayjs, { type Dayjs } from 'dayjs';
 import Header from "./createTicketPost/Header";
 import Description from "./createTicketPost/Description";
 import OptionsBar from "./createTicketPost/OptionsBar";
@@ -33,7 +34,7 @@ const CreateTicketPost: React.FC<CreateTicketPostProps> = ({
   const [assignedTo, setAssignedTo] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [applicationId, setApplicationId] = useState("");
-  const [dueDate, setDueDate] = useState<Date | null>(new Date());
+  const [dueDate, setDueDate] = useState<Dayjs | null>(dayjs());
   const [estimatedHours, setEstimatedHours] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isPosting, setIsPosting] = useState(false);

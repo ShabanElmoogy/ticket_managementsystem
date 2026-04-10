@@ -1,29 +1,26 @@
 import { memo } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import type { Dayjs } from "dayjs";
 
 export interface DueDatePickerProps {
-  value: Date | null;
-  onChange: (date: Date | null) => void;
+  value: Dayjs | null;
+  onChange: (date: Dayjs | null) => void;
 }
 
 const DueDatePicker = memo(({ value, onChange }: DueDatePickerProps) => (
-  <LocalizationProvider dateAdapter={AdapterDateFns}>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
     <DatePicker
       label="Due Date"
       value={value}
-      onChange={(date) => onChange(date)}
-      format="dd/MM/yyyy"
+      onChange={(val) => onChange(val as Dayjs | null)}
+      format="DD/MM/YYYY"
       slotProps={{
         textField: {
           fullWidth: true,
           size: "small",
-          sx: {
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-            },
-          },
+          sx: { "& .MuiOutlinedInput-root": { borderRadius: 2 } },
         },
       }}
     />

@@ -20,7 +20,7 @@ import { ActivityHeader } from "./components/header";
 import { ActivityItem } from "./components/item";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -107,6 +107,16 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ onTicketClick }) => 
           comment: raw.data?.comment,
         },
         timestamp: new Date().toISOString(),
+        read: false,
+      };
+      setActivities((prev) => [item, ...prev.slice(0, 19)]);
+      setUnreadCount((c) => c + 1);
+    } else if (raw?.type === 'EPIC_FEATURE_STATUS_CHANGED') {
+      const item: ActivityItemType = {
+        id: `${raw.id || raw.type}-${Date.now()}`,
+        type: 'EPIC_FEATURE_STATUS_CHANGED',
+        data: { description: raw.message },
+        timestamp: raw.timestamp ? new Date(raw.timestamp).toISOString() : new Date().toISOString(),
         read: false,
       };
       setActivities((prev) => [item, ...prev.slice(0, 19)]);

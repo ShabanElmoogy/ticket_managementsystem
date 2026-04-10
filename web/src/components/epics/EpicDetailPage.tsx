@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Button, Chip, LinearProgress,
+  Box, Typography, Paper, Button, Chip,
   CircularProgress, Alert, Snackbar, Divider, IconButton,
   Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
   FormControl, InputLabel, Select, MenuItem, Menu,
@@ -9,13 +9,13 @@ import {
   ArrowBack, Add, Edit, OpenInNew, LinkOff, Apps, Person,
   CalendarToday, AccountTree, Lightbulb, DragIndicator,
   InfoOutlined, FlipCameraAndroid, ThumbUp, EditNote,
-  AccessTime, Update,
+  AccessTime, Update, Lock, Block, Label,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent, type DragStartEvent, type DragUpdateEvent,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext, verticalListSortingStrategy,
@@ -25,11 +25,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { epicsApi } from './api/epics';
 import { featuresApi } from '../features/api/features';
 import EpicStatusChip from './components/EpicStatusChip';
+import EpicPriorityChip from './components/EpicPriorityChip';
 import EpicFormDialog from './components/EpicFormDialog';
 import EpicComments from './components/EpicComments';
 import FeatureStatusChip from '../features/components/FeatureStatusChip';
 import FeatureFormDialog from '../features/components/FeatureFormDialog';
-import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData, FeatureRequest, Epic } from '../../services/api/types';
+import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData, FeatureRequest } from '../../services/api/types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { useIsAdmin } from '../../stores/authStore';
 
@@ -59,7 +60,7 @@ const SortableFeatureCard: React.FC<{
   onEdit: (feature: EpicFeature) => void;
   onStatusChange: (id: string, status: FeatureRequest['status']) => void;
   epicId: string;
-}> = ({ feature, isAdmin, isFlipped, onFlip, onNavigate, onUnlink, onEdit, onStatusChange, epicId }) => {
+}> = ({ feature, isAdmin, isFlipped, onFlip, onNavigate, onUnlink, onEdit, onStatusChange }) => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const STATUSES: { value: FeatureRequest['status']; label: string; color: string }[] = [
@@ -238,6 +239,35 @@ const SortableFeatureCard: React.FC<{
   );
 };
 
+// ── Blocker Picker Menu ───────────────────────────────────────────────────────
+const BlockerPickerMenu: React.FC<{
+  anchor: HTMLElement | null;
+  epicId: string;
+  blockedBy: { id: string; title: string; status: string }[];
+  onClose: () => void;
+  onAdd: (blockerId: string) => void;
+}> = ({ anchor, epicId, blockedBy, onClose, onAdd }) => {
+  const { data: allEpics = [] } = useQuery({
+    queryKey: ['epics'],
+    queryFn: () => epicsApi.list(),
+    enabled: !!anchor,
+  });
+  const available = allEpics.filter((e) => e.id !== epicId && !blockedBy.some((b) => b.id === e.id));
+  return (
+    <Menu anchorEl={anchor} open={!!anchor} onClose={onClose} disableScrollLock>
+      <MenuItem disabled sx={{ fontSize: '0.75rem', opacity: 0.6 }}>Select an epic that blocks this one</MenuItem>
+      {available.length === 0
+        ? <MenuItem disabled>No other epics available</MenuItem>
+        : available.map((e) => (
+          <MenuItem key={e.id} onClick={() => { onAdd(e.id); onClose(); }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main', mr: 1, flexShrink: 0 }} />
+            {e.title}
+          </MenuItem>
+        ))}
+    </Menu>
+  );
+};
+
 // ── Link Feature Dialog ───────────────────────────────────────────────────────
 interface LinkDialogProps {
   open: boolean;
@@ -317,6 +347,7 @@ const EpicDetailPage: React.FC = () => {
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
   const [orderedFeatures, setOrderedFeatures] = useState<EpicFeature[]>([]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
+  const [blockerMenuAnchor, setBlockerMenuAnchor] = useState<null | HTMLElement>(null);
 
   // @dnd-kit PointerSensor with 8px activation distance to avoid accidental drags
   const sensors = useSensors(
@@ -335,7 +366,7 @@ const EpicDetailPage: React.FC = () => {
   useEffect(() => {
     if (!epic?.features) return;
     setOrderedFeatures(
-      [...(epic.features as EpicFeature[])].sort((a, b) => (a.epicOrder ?? 0) - (b.epicOrder ?? 0))
+      [...(epic.features as unknown as EpicFeature[])].sort((a, b) => (a.epicOrder ?? 0) - (b.epicOrder ?? 0))
     );
   }, [epic?.features]);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -376,6 +407,13 @@ const EpicDetailPage: React.FC = () => {
     onError: () => setSnack({ msg: 'Failed to unlink', severity: 'error' }),
   });
 
+  const blockerMutation = useMutation({
+    mutationFn: ({ action, blockerId }: { action: 'add' | 'remove'; blockerId: string }) =>
+      action === 'add' ? epicsApi.addBlocker(id!, blockerId) : epicsApi.removeBlocker(id!, blockerId),
+    onSuccess: () => invalidate(),
+    onError: (err: any) => setSnack({ msg: err?.response?.data?.error ?? 'Failed to update blockers', severity: 'error' }),
+  });
+
   const handleNewFeature = async (data: CreateFeatureData | UpdateFeatureData) => {
     const created = await featuresApi.create(data as CreateFeatureData);
     await epicsApi.linkFeature(id!, created.id);
@@ -385,8 +423,28 @@ const EpicDetailPage: React.FC = () => {
 
   const editFeatureMutation = useMutation({
     mutationFn: ({ fid, data }: { fid: string; data: UpdateFeatureData }) => featuresApi.update(fid, data),
-    onSuccess: () => { invalidate(); setSnack({ msg: 'Feature updated', severity: 'success' }); },
-    onError: () => setSnack({ msg: 'Failed to update feature', severity: 'error' }),
+    onMutate: async ({ fid, data }) => {
+      if (data.status === undefined) return;
+      // Cancel any in-flight refetch so it doesn't overwrite our optimistic update
+      await qc.cancelQueries({ queryKey: ['epics', id] });
+      // Patch the cached epic features in place — no refetch needed
+      qc.setQueryData(['epics', id], (old: any) => {
+        if (!old?.features) return old;
+        return { ...old, features: old.features.map((f: any) => f.id === fid ? { ...f, status: data.status } : f) };
+      });
+    },
+    onSuccess: (_, { data }) => {
+      // Only do a full invalidate for non-status updates (e.g. title/description edits)
+      if (data.status === undefined) {
+        invalidate();
+        setSnack({ msg: 'Feature updated', severity: 'success' });
+      }
+    },
+    onError: () => {
+      // Roll back by refetching on error
+      invalidate();
+      setSnack({ msg: 'Failed to update feature', severity: 'error' });
+    },
   });
 
   const handleStatusChange = (fid: string, status: FeatureRequest['status']) => {
@@ -420,6 +478,7 @@ const EpicDetailPage: React.FC = () => {
             <Box display="flex" alignItems="center" gap={1} mb={1} flexWrap="wrap">
               <AccountTree color="primary" />
               <Typography variant="h5" fontWeight={700}>{epic.title}</Typography>
+              <EpicPriorityChip priority={epic.priority} />
               <EpicStatusChip status={epic.status} />
             </Box>
             {epic.description && (
@@ -435,6 +494,9 @@ const EpicDetailPage: React.FC = () => {
                 <Chip icon={<CalendarToday fontSize="small" />} label={formatDate(epic.targetDate)}
                   size="small" variant="outlined" color={overdue ? 'error' : 'default'} />
               )}
+              {(epic.tags ?? []).map((t) => (
+                <Chip key={t} icon={<Label fontSize="small" />} label={t} size="small" variant="outlined" />
+              ))}
             </Box>
           </Box>
           {isAdmin && (
@@ -443,6 +505,7 @@ const EpicDetailPage: React.FC = () => {
             </Button>
           )}
         </Box>
+
 
         <Divider sx={{ my: 2 }} />
         <Box display="flex" gap={3} flexWrap="wrap" alignItems="center" mb={2}>
@@ -538,6 +601,63 @@ const EpicDetailPage: React.FC = () => {
             </Box>
           );
         })()}
+      </Paper>
+
+      {/* Dependencies */}
+      <Paper sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: (epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED')) ? 'error.main' : 'divider' }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Lock sx={{ fontSize: 18, color: epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') ? 'error.main' : 'text.secondary' }} />
+            <Typography variant="subtitle2" fontWeight={700}>Dependencies</Typography>
+            {epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') && (
+              <Chip label="Blocked" color="error" size="small" />
+            )}
+          </Box>
+          {isAdmin && (
+            <Button size="small" startIcon={<Add />} onClick={(e) => setBlockerMenuAnchor(e.currentTarget)}>
+              Add Blocker
+            </Button>
+          )}
+        </Box>
+
+        {(epic.blockedBy?.length ?? 0) === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No blockers. This epic can proceed freely.
+            {isAdmin && ' Click “Add Blocker” to mark it as blocked by another epic.'}
+          </Typography>
+        ) : (
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+              This epic is waiting on the following epics to complete first:
+            </Typography>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {epic.blockedBy!.map((b) => {
+                const resolved = b.status === 'COMPLETED' || b.status === 'CANCELLED';
+                return (
+                  <Chip
+                    key={b.id}
+                    icon={<Lock fontSize="small" />}
+                    label={`${b.title} · ${b.status.replace('_', ' ')}`}
+                    size="small"
+                    color={resolved ? 'success' : 'error'}
+                    variant={resolved ? 'outlined' : 'filled'}
+                    onDelete={isAdmin ? () => blockerMutation.mutate({ action: 'remove', blockerId: b.id }) : undefined}
+                    onClick={() => navigate(`/epics/${b.id}`)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+
+        <BlockerPickerMenu
+          anchor={blockerMenuAnchor}
+          epicId={id!}
+          blockedBy={epic.blockedBy ?? []}
+          onClose={() => setBlockerMenuAnchor(null)}
+          onAdd={(blockerId) => blockerMutation.mutate({ action: 'add', blockerId })}
+        />
       </Paper>
 
       {/* Two-column layout on large screens */}

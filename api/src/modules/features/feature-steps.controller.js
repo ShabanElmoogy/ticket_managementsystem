@@ -1,8 +1,10 @@
 import { db } from '../../config/database.js';
-import { featureSteps } from './features.schema.js';
+import { featureSteps, featureRequests } from './features.schema.js';
+import { epics } from '../epics/epics/epics.schema.js';
 import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { eq, asc, inArray } from 'drizzle-orm';
+import { createNotification } from '../../utils/notificationUtils.js';
 
 export const listSteps = async (req, res) => {
   try {
@@ -100,14 +102,11 @@ export const updateStep = async (req, res) => {
         .where(eq(featureSteps.featureRequestId, featureRequestId));
 
       if (allSteps.length > 0 && allSteps.every((s) => s.status === 'DONE')) {
-        const { featureRequests } = await import('./features.schema.js');
-        const { epics } = await import('../epics/epics.schema.js');
-
         const [feat] = await db
           .update(featureRequests)
           .set({ status: 'SHIPPED', updatedAt: new Date() })
           .where(eq(featureRequests.id, featureRequestId))
-          .returning({ epicId: featureRequests.epicId });
+          .returning({ id: featureRequests.id, title: featureRequests.title, epicId: featureRequests.epicId });
 
         // Fix #3: auto-complete epic when all its features are SHIPPED
         if (feat?.epicId) {
@@ -121,6 +120,26 @@ export const updateStep = async (req, res) => {
               .update(epics)
               .set({ status: 'COMPLETED', updatedAt: new Date() })
               .where(eq(epics.id, feat.epicId));
+          }
+
+          // Notify epic owner of auto-promotion to SHIPPED
+          const [epic] = await db
+            .select({ ownerId: epics.ownerId, title: epics.title })
+            .from(epics)
+            .where(eq(epics.id, feat.epicId))
+            .limit(1);
+          if (epic) {
+            const actorId = req.user?.userId ?? req.user?.id;
+            const notifyIds = [...new Set([epic.ownerId, actorId].filter(Boolean))];
+            for (const userId of notifyIds) {
+              await createNotification({
+                userId,
+                ticketId: null,
+                type: 'EPIC_FEATURE_STATUS_CHANGED',
+                title: 'Feature status updated',
+                message: `Feature "${feat.title}" changed to SHIPPED in epic "${epic.title}"`,
+              }, req);
+            }
           }
         }
       }

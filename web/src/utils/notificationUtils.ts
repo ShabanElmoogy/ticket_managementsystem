@@ -64,6 +64,10 @@ export const createNotificationFromSocketData = (
       title = "Ticket Status Changed";
       message = safeData.message || `${safeTicket.title || "A ticket"} status changed`;
       break;
+    case "EPIC_FEATURE_STATUS_CHANGED":
+      title = socketNotification.title || "Feature status updated";
+      message = socketNotification.message || "A linked feature status changed";
+      break;
     default:
       title = "New Notification";
       message = "You have a new notification";

@@ -7,6 +7,8 @@ import { getSocket, disconnectSocket } from "../../../../../services/socketServi
 interface SocketNotification {
   id?: string;
   type?: ActivityItem['type'];
+  title?: string;
+  message?: string;
   data?: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -54,6 +56,9 @@ export const useActivitySocket = (
           mentionedBy: notification.data?.mentionedBy,
           comment: notification.data?.comment,
           newStatus: notification.data?.newStatus,
+          description: notification.type === 'EPIC_FEATURE_STATUS_CHANGED'
+            ? notification.message
+            : undefined,
         },
         timestamp: notification.timestamp || notification.createdAt || new Date().toISOString(),
         read: false

@@ -6,6 +6,7 @@ import {
   Update as UpdateIcon,
   Notifications as NotificationsIcon,
   AlternateEmail as MentionIcon,
+  AccountTree as EpicIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material";
 
@@ -60,6 +61,8 @@ export const ActivityIcon: React.FC<ActivityIconProps> = ({ type, inline = false
       return <CommentIcon sx={sx} />;
     case "COMMENT_MENTION":
       return <MentionIcon sx={sx} />;
+    case "EPIC_FEATURE_STATUS_CHANGED":
+      return <EpicIcon sx={sx} />;
     default:
       return <NotificationsIcon sx={sx} />;
   }

@@ -1,10 +1,10 @@
 import { db } from '../../../config/database.js';
-import { epics } from './epics.schema.js';
+import { epics, epicDependencies } from './epics.schema.js';
 import { featureRequests, featureSteps, featureVotes } from '../../features/features.schema.js';
 import { users } from '../../users/users.schema.js';
 import { applications } from '../../applications/applications.schema.js';
 import { customers } from '../../customers/customers.schema.js';
-import { eq, desc, inArray, asc } from 'drizzle-orm';
+import { eq, desc, inArray, asc, and } from 'drizzle-orm';
 import { getTenantScope } from '../../../utils/tenantUtils.js';
 
 const EPIC_SELECT = {
@@ -12,6 +12,8 @@ const EPIC_SELECT = {
   title:           epics.title,
   description:     epics.description,
   status:          epics.status,
+  priority:        epics.priority,
+  tags:            epics.tags,
   tenantId:        epics.tenantId,
   ownerId:         epics.ownerId,
   applicationId:   epics.applicationId,
@@ -22,6 +24,26 @@ const EPIC_SELECT = {
   ownerName:       users.name,
   applicationName: applications.name,
   customerName:    customers.name,
+};
+
+const attachDependencies = async (rows) => {
+  if (!rows.length) return rows.map((r) => ({ ...r, blockedBy: [], blocking: [] }));
+  const ids = rows.map((r) => r.id);
+  const deps = await db.select().from(epicDependencies)
+    .where(inArray(epicDependencies.epicId, ids));
+  const blocking = await db.select().from(epicDependencies)
+    .where(inArray(epicDependencies.blockerId, ids));
+  // Fetch titles for referenced epics
+  const refIds = [...new Set([...deps.map((d) => d.blockerId), ...blocking.map((d) => d.epicId)])];
+  const refEpics = refIds.length
+    ? await db.select({ id: epics.id, title: epics.title, status: epics.status }).from(epics).where(inArray(epics.id, refIds))
+    : [];
+  const byId = Object.fromEntries(refEpics.map((e) => [e.id, e]));
+  return rows.map((r) => ({
+    ...r,
+    blockedBy: deps.filter((d) => d.epicId === r.id).map((d) => byId[d.blockerId]).filter(Boolean),
+    blocking:  blocking.filter((d) => d.blockerId === r.id).map((d) => byId[d.epicId]).filter(Boolean),
+  }));
 };
 
 const attachProgress = async (rows) => {
@@ -77,7 +99,8 @@ export const listEpics = async (req, res) => {
       .leftJoin(customers, eq(epics.customerId, customers.id))
       .orderBy(desc(epics.createdAt));
     const rows = tenantId ? await query.where(eq(epics.tenantId, tenantId)) : await query;
-    res.json(await attachProgress(rows));
+    const withProgress = await attachProgress(rows);
+    res.json(await attachDependencies(withProgress));
   } catch (err) {
     console.error('listEpics error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -94,6 +117,7 @@ export const getEpic = async (req, res) => {
       .where(eq(epics.id, id)).limit(1);
     if (!row) return res.status(404).json({ error: 'Epic not found' });
     const [withProgress] = await attachProgress([row]);
+    const [withDeps] = await attachDependencies([withProgress]);
     const features = await db.select({
       id: featureRequests.id, title: featureRequests.title, description: featureRequests.description,
       status: featureRequests.status, epicOrder: featureRequests.epicOrder, createdAt: featureRequests.createdAt,
@@ -113,7 +137,7 @@ export const getEpic = async (req, res) => {
       await Promise.all(features.map((f, i) => db.update(featureRequests).set({ epicOrder: i }).where(eq(featureRequests.id, f.id))));
       features.forEach((f, i) => { f.epicOrder = i; });
     }
-    res.json({ ...withProgress, features: features.map((f) => ({ ...f, voteCount: votes.filter((v) => v.featureRequestId === f.id).length })) });
+    res.json({ ...withDeps, features: features.map((f) => ({ ...f, voteCount: votes.filter((v) => v.featureRequestId === f.id).length })) });
   } catch (err) {
     console.error('getEpic error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -122,12 +146,14 @@ export const getEpic = async (req, res) => {
 
 export const createEpic = async (req, res) => {
   try {
-    const { title, description, ownerId, applicationId, customerId, targetDate } = req.body;
+    const { title, description, ownerId, applicationId, customerId, targetDate, priority, tags } = req.body;
     if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
     const [row] = await db.insert(epics).values({
       title: title.trim(), description: description?.trim() || null,
+      priority: priority || 'MEDIUM',
+      tags: Array.isArray(tags) ? tags : [],
       tenantId, ownerId: ownerId || null, applicationId: applicationId || null,
       customerId: customerId || null, targetDate: targetDate || null,
     }).returning();
@@ -141,16 +167,30 @@ export const createEpic = async (req, res) => {
 export const updateEpic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, status, ownerId, applicationId, customerId, targetDate } = req.body;
+    const { title, description, status, priority, tags, ownerId, applicationId, customerId, targetDate } = req.body;
     const [existing] = await db.select({ id: epics.id }).from(epics).where(eq(epics.id, id)).limit(1);
     if (!existing) return res.status(404).json({ error: 'Epic not found' });
     const patch = { updatedAt: new Date() };
     if (title !== undefined) patch.title = title;
     if (description !== undefined) patch.description = description || null;
-    if (status !== undefined) patch.status = status;
+    if (status !== undefined) {
+      if (status === 'COMPLETED') {
+        const blockers = await db.select().from(epicDependencies).where(eq(epicDependencies.epicId, id));
+        if (blockers.length) {
+          const blockerEpics = await db.select({ id: epics.id, status: epics.status, title: epics.title })
+            .from(epics).where(inArray(epics.id, blockers.map((b) => b.blockerId)));
+          const unresolved = blockerEpics.filter((e) => e.status !== 'COMPLETED' && e.status !== 'CANCELLED');
+          if (unresolved.length)
+            return res.status(400).json({ error: `Blocked by unresolved epic${unresolved.length > 1 ? 's' : ''}: ${unresolved.map((e) => e.title).join(', ')}` });
+        }
+      }
+      patch.status = status;
+    }
     if (ownerId !== undefined) patch.ownerId = ownerId || null;
     if (applicationId !== undefined) patch.applicationId = applicationId || null;
     if (customerId !== undefined) patch.customerId = customerId || null;
+    if (priority !== undefined) patch.priority = priority;
+    if (tags !== undefined) patch.tags = Array.isArray(tags) ? tags : [];
     if (targetDate !== undefined) patch.targetDate = targetDate || null;
     const [updated] = await db.update(epics).set(patch).where(eq(epics.id, id)).returning();
     res.json(updated);
@@ -208,6 +248,36 @@ export const unlinkFeature = async (req, res) => {
     res.json({ message: 'Feature unlinked' });
   } catch (err) {
     console.error('unlinkFeature error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const addBlocker = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { blockerId } = req.body;
+    if (!blockerId) return res.status(400).json({ error: 'blockerId is required' });
+    if (blockerId === id) return res.status(400).json({ error: 'An epic cannot block itself' });
+    // Prevent circular: check if id is already a blocker of blockerId
+    const reverse = await db.select().from(epicDependencies)
+      .where(and(eq(epicDependencies.epicId, blockerId), eq(epicDependencies.blockerId, id)));
+    if (reverse.length) return res.status(400).json({ error: 'Circular dependency detected' });
+    await db.insert(epicDependencies).values({ epicId: id, blockerId }).onConflictDoNothing();
+    res.json({ message: 'Blocker added' });
+  } catch (err) {
+    console.error('addBlocker error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const removeBlocker = async (req, res) => {
+  try {
+    const { id, blockerId } = req.params;
+    await db.delete(epicDependencies)
+      .where(and(eq(epicDependencies.epicId, id), eq(epicDependencies.blockerId, blockerId)));
+    res.json({ message: 'Blocker removed' });
+  } catch (err) {
+    console.error('removeBlocker error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

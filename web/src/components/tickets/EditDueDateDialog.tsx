@@ -4,7 +4,8 @@ import {
   Button, Typography, CircularProgress,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { ticketsApi } from '../../services/api';
 import type { Ticket } from '../../services/api';
@@ -18,11 +19,11 @@ interface EditDueDateDialogProps {
 
 const EditDueDateDialog: React.FC<EditDueDateDialogProps> = ({ open, onClose, ticket }) => {
   const queryClient = useQueryClient();
-  const [date, setDate] = useState<Date | null>(null);
+  const [date, setDate] = useState<Dayjs | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setDate(ticket.dueDate ? new Date(ticket.dueDate) : null);
+    if (open) setDate(ticket.dueDate ? dayjs(ticket.dueDate) : null);
   }, [open, ticket.dueDate]);
 
   const handleSave = async () => {
@@ -47,11 +48,11 @@ const EditDueDateDialog: React.FC<EditDueDateDialogProps> = ({ open, onClose, ti
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {ticket.title}
         </Typography>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Due Date"
             value={date}
-            onChange={setDate}
+            onChange={(val) => setDate(val as Dayjs | null)}
             format="dd/MM/yyyy"
             slotProps={{
               textField: { fullWidth: true, size: 'small' },

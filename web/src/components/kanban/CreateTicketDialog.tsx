@@ -18,7 +18,8 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import type { Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { Priority } from './types/types';
 import { ticketsApi, usersApi, customersApi, applicationsApi } from '../../services/api';
@@ -61,7 +62,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
     assignedToId: '',
     customerId: '',
     applicationId: '',
-    dueDate: null as Date | null,
+    dueDate: null as Dayjs | null,
     estimatedHours: '',
     selectedLabels: [] as string[]
   });
@@ -170,7 +171,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Create New Ticket</DialogTitle>
         
@@ -282,7 +283,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
               <DatePicker
                 label="Due Date"
                 value={formData.dueDate}
-                onChange={(date) => setFormData(prev => ({ ...prev, dueDate: date }))}
+                onChange={(val) => setFormData(prev => ({ ...prev, dueDate: val as Dayjs | null }))}
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>

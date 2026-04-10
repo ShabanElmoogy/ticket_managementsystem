@@ -57,6 +57,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return <ErrorIcon sx={{ color: "#ef4444" }} />;
       case "STATUS_CHANGED":
         return <UpdateIcon sx={{ color: "#06b6d4" }} />;
+      case "EPIC_FEATURE_STATUS_CHANGED":
+        return <UpdateIcon sx={{ color: "#8b5cf6" }} />;
       default:
         return <NotificationsIcon />;
     }
@@ -80,6 +82,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return "#ef4444";
       case "STATUS_CHANGED":
         return "#06b6d4";
+      case "EPIC_FEATURE_STATUS_CHANGED":
+        return "#8b5cf6";
       default:
         return "#6b7280";
     }

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import Grid from "@mui/material/Grid";
 import type { User, Customer, Application, Ticket } from "../../../services/api";
+import type { Dayjs } from 'dayjs';
 import PrioritySelect, { type Priority } from "./fields/PrioritySelect";
 import AssignToSelect from "./fields/AssignToSelect";
 import CustomerSelect from "./fields/CustomerSelect";
@@ -17,8 +18,8 @@ export interface AdvancedOptionsProps {
   onCustomerChange: (id: string) => void;
   applicationId: string;
   onApplicationChange: (id: string) => void;
-  dueDate: Date | null;
-  onDueDateChange: (date: Date | null) => void;
+  dueDate: Dayjs | null;
+  onDueDateChange: (date: Dayjs | null) => void;
   estimatedHours: string;
   onEstimatedHoursChange: (value: string) => void;
   employees: User[];

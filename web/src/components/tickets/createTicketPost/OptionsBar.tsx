@@ -9,6 +9,8 @@ import {
   Timer as TimerIcon,
 } from "@mui/icons-material";
 import type { User } from "../../../services/api";
+import type { Dayjs } from 'dayjs';
+import { formatDate } from '../../../utils/dateUtils';
 import { getPriorityColor } from "./utils";
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -18,7 +20,7 @@ export interface OptionsBarProps {
   onToggleAdvanced: () => void;
   priority: Priority;
   assignedTo: string;
-  dueDate: Date | null;
+  dueDate: Dayjs | null;
   estimatedHours: string;
   employees: User[];
 }
@@ -57,7 +59,7 @@ const OptionsBar = memo(({ showAdvanced, onToggleAdvanced, priority, assignedTo,
       {dueDate && (
         <Chip
           icon={<ScheduleIcon />}
-          label={`Due: ${dueDate.toLocaleDateString()}`}
+          label={`Due: ${formatDate(dueDate.toISOString())}`}
           size="small"
           color="warning"
           variant="outlined"

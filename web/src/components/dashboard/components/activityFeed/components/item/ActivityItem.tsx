@@ -23,7 +23,7 @@ import {
 import { useTheme } from "@mui/material";
 type ActivityItemType = {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;
@@ -62,7 +62,7 @@ const useActivityUtils = () => {
       },
     } as const;
     const map = accents[mode === "dark" ? "dark" : "light"];
-    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT" : "MUTED";
+    const key = type === "TICKET_CREATED" ? "CREATED" : type === "TICKET_UPDATED" ? "UPDATED" : type === "TICKET_ASSIGNED" ? "ASSIGNED" : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT" : type === "EPIC_FEATURE_STATUS_CHANGED" ? "UPDATED" : "MUTED";
     const accent = map[key].accent;
     const iconOnAccent = theme.palette.getContrastText(accent);
     const iconInline = map[key].iconInline;
@@ -114,6 +114,11 @@ const useActivityUtils = () => {
         return {
           primary: `${data.mentionedBy || "Someone"} mentioned you on: ${ticket.title || "Untitled ticket"}`,
           secondary: data.comment ? `"${data.comment.substring(0, 60)}${data.comment.length > 60 ? '…' : ''}"` : "",
+        };
+      case "EPIC_FEATURE_STATUS_CHANGED":
+        return {
+          primary: "Feature status updated",
+          secondary: data.description || "A linked feature status changed",
         };
       default:
         return { primary: "New activity", secondary: "" };

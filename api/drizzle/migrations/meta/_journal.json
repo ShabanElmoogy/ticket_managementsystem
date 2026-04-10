@@ -183,6 +183,27 @@
       "when": 1775821320934,
       "tag": "0027_mature_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1775830595628,
+      "tag": "0028_long_whistler",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1775832754367,
+      "tag": "0029_keen_sleepwalker",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1775833119205,
+      "tag": "0030_sparkling_gamora",
+      "breakpoints": true
     }
   ]
 }

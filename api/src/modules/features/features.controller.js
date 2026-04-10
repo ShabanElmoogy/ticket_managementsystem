@@ -6,6 +6,7 @@ import { customers } from '../customers/customers.schema.js';
 import { epics } from '../epics/epics/epics.schema.js';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { getTenantScope } from '../../utils/tenantUtils.js';
+import { createNotification } from '../../utils/notificationUtils.js';
 
 const FEATURE_SELECT = {
   id:              featureRequests.id,
@@ -122,7 +123,7 @@ export const updateFeature = async (req, res) => {
     const { title, description, status, linkedTicketId, applicationId, customerId } = req.body;
 
     const [existing] = await db
-      .select({ id: featureRequests.id })
+      .select({ id: featureRequests.id, status: featureRequests.status, epicId: featureRequests.epicId, title: featureRequests.title })
       .from(featureRequests)
       .where(eq(featureRequests.id, id))
       .limit(1);
@@ -142,6 +143,28 @@ export const updateFeature = async (req, res) => {
       .set(patch)
       .where(eq(featureRequests.id, id))
       .returning();
+
+    // Notify on feature status change
+    if (status !== undefined && status !== existing.status && existing.epicId) {
+      const [epic] = await db
+        .select({ ownerId: epics.ownerId, title: epics.title })
+        .from(epics)
+        .where(eq(epics.id, existing.epicId))
+        .limit(1);
+      if (epic) {
+        const actorId = req.user?.userId ?? req.user?.id;
+        const notifyIds = [...new Set([epic.ownerId, actorId].filter(Boolean))];
+        for (const userId of notifyIds) {
+          await createNotification({
+            userId,
+            ticketId: null,
+            type: 'EPIC_FEATURE_STATUS_CHANGED',
+            title: 'Feature status updated',
+            message: `Feature "${existing.title}" changed to ${status} in epic "${epic.title}"`,
+          }, req);
+        }
+      }
+    }
 
     res.json(updated);
   } catch (err) {

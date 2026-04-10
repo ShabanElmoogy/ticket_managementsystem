@@ -35,8 +35,9 @@ import {
   ViewCarousel as ViewCarouselIcon,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { isAfter, isBefore, parseISO } from "date-fns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import { parseISO } from "date-fns";
 import { useKanbanStore } from "../../stores/kanbanStore";
 import { useTenantSuspended } from "../../stores";
 import type {
@@ -100,8 +101,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [columnsDrawerOpen, setColumnsDrawerOpen] = useState(false);
 
   // Filter states
-  const [dueDateFrom, setDueDateFrom] = useState<Date | null>(null);
-  const [dueDateTo, setDueDateTo] = useState<Date | null>(null);
+  const [dueDateFrom, setDueDateFrom] = useState<Dayjs | null>(null);
+  const [dueDateTo, setDueDateTo] = useState<Dayjs | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string>("");
   const [assigneeFilter, setAssigneeFilter] = useState<string>("");
   const [customerFilter, setCustomerFilter] = useState<string>("");
@@ -224,8 +225,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         if (dueDateFrom || dueDateTo) {
           if (!ticket.dueDate) return false;
           const ticketDueDate = parseISO(ticket.dueDate);
-          if (dueDateFrom && isBefore(ticketDueDate, dueDateFrom)) return false;
-          if (dueDateTo && isAfter(ticketDueDate, dueDateTo)) return false;
+          if (dueDateFrom && dayjs(ticketDueDate).isBefore(dueDateFrom)) return false;
+          if (dueDateTo && dayjs(ticketDueDate).isAfter(dueDateTo)) return false;
         }
 
         if (priorityFilter && ticket.priority !== priorityFilter) return false;
@@ -675,7 +676,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   );
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Suspended Banner */}
         {tenantSuspended && (
@@ -726,8 +727,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             uniqueApplications={getUniqueApplications()}
             uniqueCreators={getUniqueCreators()}
             onSearchChange={setSearchFilter}
-            onDueDateFromChange={setDueDateFrom}
-            onDueDateToChange={setDueDateTo}
+            onDueDateFromChange={(val) => setDueDateFrom(val)}
+            onDueDateToChange={(val) => setDueDateTo(val)}
             onPriorityChange={setPriorityFilter}
             onAssigneeChange={setAssigneeFilter}
             onCustomerChange={setCustomerFilter}

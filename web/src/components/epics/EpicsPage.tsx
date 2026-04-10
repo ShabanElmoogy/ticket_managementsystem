@@ -3,14 +3,15 @@ import {
   Box, Typography, Button, Paper, Chip,
   IconButton, Tooltip, TextField, InputAdornment, FormControl,
   InputLabel, Select, MenuItem, Snackbar, Alert, CircularProgress,
-  ToggleButton, ToggleButtonGroup, Checkbox, Collapse,
+  ToggleButton, ToggleButtonGroup, Checkbox, Collapse, Autocomplete,
 } from '@mui/material';
-import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward } from '@mui/icons-material';
+import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from './api/epics';
 import EpicStatusChip from './components/EpicStatusChip';
+import EpicPriorityChip from './components/EpicPriorityChip';
 import EpicFormDialog from './components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
 import { useIsAdmin } from '../../stores/authStore';
@@ -41,7 +42,7 @@ const EpicsPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<Epic['status'] | ''>('');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'targetDate' | 'featureCount' | 'progress'>('createdAt');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'targetDate' | 'featureCount' | 'progress' | 'priority'>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Epic | null>(null);
@@ -52,6 +53,7 @@ const EpicsPage: React.FC = () => {
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<Epic['status'] | ''>('');
+  const [tagFilter, setTagFilter] = useState('');
 
   const { data: epics = [], isLoading } = useQuery({ queryKey: ['epics'], queryFn: () => epicsApi.list() });
 
@@ -81,6 +83,7 @@ const EpicsPage: React.FC = () => {
   const filtered = epics
     .filter((e) => !statusFilter || e.status === statusFilter)
     .filter((e) => !search || e.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((e) => !tagFilter || (e.tags ?? []).includes(tagFilter))
     .sort((a, b) => {
       let diff = 0;
       if (sortBy === 'targetDate') {
@@ -93,12 +96,16 @@ const EpicsPage: React.FC = () => {
         const pa = a.stepsTotal ? a.stepsDone / a.stepsTotal : 0;
         const pb = b.stepsTotal ? b.stepsDone / b.stepsTotal : 0;
         diff = pa - pb;
+      } else if (sortBy === 'priority') {
+        const order = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+        diff = (order[a.priority] ?? 1) - (order[b.priority] ?? 1);
       } else {
         diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       }
       return sortDir === 'asc' ? diff : -diff;
     });
 
+  const allTags = [...new Set(epics.flatMap((e) => e.tags ?? []))].sort();
   const statCounts = (['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'] as Epic['status'][]).map((s) => ({
     status: s, count: epics.filter((e) => e.status === s).length,
   }));
@@ -179,6 +186,23 @@ const EpicsPage: React.FC = () => {
               {STATUSES.map((s) => <MenuItem key={s} value={s}>{s || 'All'}</MenuItem>)}
             </Select>
           </FormControl>
+          <Autocomplete
+            size="small"
+            sx={{ flex: '1 1 160px' }}
+            options={allTags}
+            value={tagFilter || null}
+            onChange={(_, v) => setTagFilter(v ?? '')}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search by tag…"
+                InputProps={{ ...params.InputProps, startAdornment: <><Label fontSize="small" sx={{ ml: 0.5, mr: 0.5, color: 'text.secondary' }} />{params.InputProps.startAdornment}</> }}
+              />
+            )}
+            renderOption={(props, option) => (
+              <li {...props}><Chip label={option} size="small" sx={{ pointerEvents: 'none' }} /></li>
+            )}
+          />
           <FormControl size="small" sx={{ flex: '1 1 150px' }}>
             <InputLabel>Sort by</InputLabel>
             <Select value={sortBy} label="Sort by" onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
@@ -186,6 +210,7 @@ const EpicsPage: React.FC = () => {
               <MenuItem value="targetDate">Target Date</MenuItem>
               <MenuItem value="featureCount">Feature Count</MenuItem>
               <MenuItem value="progress">Progress</MenuItem>
+              <MenuItem value="priority">Priority</MenuItem>
             </Select>
           </FormControl>
           <Tooltip title={sortDir === 'asc' ? 'Ascending' : 'Descending'}>
@@ -242,7 +267,7 @@ const EpicsPage: React.FC = () => {
           ) : (
             <>
               <Typography variant="h6" color="text.secondary">No epics match your filters</Typography>
-              <Button size="small" sx={{ mt: 1 }} onClick={() => { setSearch(''); setStatusFilter(''); }}>
+              <Button size="small" sx={{ mt: 1 }} onClick={() => { setSearch(''); setStatusFilter(''); setTagFilter(''); }}>
                 Clear filters
               </Button>
             </>
@@ -284,6 +309,12 @@ const EpicsPage: React.FC = () => {
                 <Box flex={1} minWidth={0}>
                   <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
                     <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>{epic.title}</Typography>
+                    <EpicPriorityChip priority={epic.priority} />
+                    {epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') && (
+                      <Tooltip title={`Blocked by: ${epic.blockedBy!.filter((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED').map((b) => b.title).join(', ')}`}>
+                        <Lock fontSize="small" color="error" />
+                      </Tooltip>
+                    )}
                     <EpicStatusChip status={epic.status} />
                   </Box>
 
@@ -304,6 +335,19 @@ const EpicsPage: React.FC = () => {
                     )}
                     <Chip label={`${epic.featureCount} feature${epic.featureCount !== 1 ? 's' : ''}`} size="small" />
                   </Box>
+
+                  {/* Tags */}
+                  {(epic.tags ?? []).length > 0 && (
+                    <Box display="flex" gap={0.5} flexWrap="wrap" mb={1}>
+                      {epic.tags!.map((t) => (
+                        <Chip
+                          key={t} label={t} size="small" variant="outlined"
+                          onClick={(e) => { e.stopPropagation(); setTagFilter(tagFilter === t ? '' : t); }}
+                          sx={{ borderColor: tagFilter === t ? 'primary.main' : undefined, color: tagFilter === t ? 'primary.main' : undefined, fontSize: '0.7rem' }}
+                        />
+                      ))}
+                    </Box>
+                  )}
 
                   {/* Progress + feature status breakdown */}
                   {epic.featureCount > 0 && (() => {

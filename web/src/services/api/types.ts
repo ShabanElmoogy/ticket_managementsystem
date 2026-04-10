@@ -274,6 +274,8 @@ export interface Epic {
   title: string;
   description?: string | null;
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  tags: string[];
   tenantId?: string | null;
   ownerId?: string | null;
   ownerName?: string | null;
@@ -286,6 +288,8 @@ export interface Epic {
   stepsTotal: number;
   stepsDone: number;
   featureStatusCounts?: Partial<Record<FeatureRequest['status'], number>>;
+  blockedBy?: { id: string; title: string; status: Epic['status'] }[];
+  blocking?: { id: string; title: string; status: Epic['status'] }[];
   features?: Pick<FeatureRequest, 'id' | 'title' | 'description' | 'status' | 'createdAt'> & { epicOrder: number; applicationName?: string | null; customerName?: string | null; submittedByName?: string | null; voteCount?: number; }[];
   createdAt: string;
   updatedAt: string;
@@ -294,6 +298,8 @@ export interface Epic {
 export interface CreateEpicData {
   title: string;
   description?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  tags?: string[];
   ownerId?: string | null;
   applicationId?: string | null;
   customerId?: string | null;
@@ -304,6 +310,8 @@ export interface UpdateEpicData {
   title?: string;
   description?: string | null;
   status?: Epic['status'];
+  priority?: Epic['priority'];
+  tags?: string[];
   ownerId?: string | null;
   applicationId?: string | null;
   customerId?: string | null;
@@ -400,7 +408,7 @@ export interface Notification {
 
 export interface ActivityItem {
   id: string;
-  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION";
+  type: "TICKET_CREATED" | "TICKET_UPDATED" | "TICKET_ASSIGNED" | "COMMENT_ADDED" | "COMMENT_DELETED" | "COMMENT_MENTION" | "EPIC_FEATURE_STATUS_CHANGED";
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };
     createdBy?: string;

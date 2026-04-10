@@ -45,6 +45,12 @@ class EpicsApiService extends BaseApiService {
   unlinkFeature(epicId: string, featureId: string): Promise<{ message: string }> {
     return this.delete(`/epics/${epicId}/features/${featureId}`);
   }
+  addBlocker(epicId: string, blockerId: string): Promise<{ message: string }> {
+    return this.post(`/epics/${epicId}/blockers`, { blockerId });
+  }
+  removeBlocker(epicId: string, blockerId: string): Promise<{ message: string }> {
+    return this.delete(`/epics/${epicId}/blockers/${blockerId}`);
+  }
 }
 
 export const epicsApi = new EpicsApiService();

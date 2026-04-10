@@ -28,6 +28,7 @@ export const useActivityUtils = () => {
       : type === "TICKET_UPDATED" ? "UPDATED"
       : type === "TICKET_ASSIGNED" ? "ASSIGNED"
       : (type === "COMMENT_ADDED" || type === "COMMENT_DELETED" || type === "COMMENT_MENTION") ? "COMMENT"
+      : type === "EPIC_FEATURE_STATUS_CHANGED" ? "UPDATED"
       : "MUTED";
 
     const accent = map[key].accent;
@@ -81,6 +82,11 @@ export const useActivityUtils = () => {
         return {
           primary: `${(data as any).mentionedBy || "Someone"} mentioned you on: ${ticket.title || "Untitled ticket"}`,
           secondary: (data as any).comment ? `"${((data as any).comment as string).substring(0, 60)}${((data as any).comment as string).length > 60 ? '…' : ''}"` : "",
+        };
+      case "EPIC_FEATURE_STATUS_CHANGED":
+        return {
+          primary: "Feature status updated",
+          secondary: data.description || "A linked feature status changed",
         };
       default:
         return { primary: "New activity", secondary: "" };

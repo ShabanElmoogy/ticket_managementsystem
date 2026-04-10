@@ -11,15 +11,17 @@ export const useSocketQuery = () => {
     if (!user || !token) return;
 
     const socket = getSocket(user.id, token);
-    
-    socket.on("notification", (notification: any) => {
+
+    const handleNotification = (notification: any) => {
       if (["TICKET_CREATED", "TICKET_ASSIGNED", "TICKET_UPDATED", "PRIORITY_ESCALATED"].includes(notification.type)) {
         queryClient.invalidateQueries({ queryKey: ['tickets'] });
       }
-    });
+    };
+
+    socket.on("notification", handleNotification);
 
     return () => {
-      socket.off("notification");
+      socket.off("notification", handleNotification);
     };
   }, [user, token, queryClient]);
 };

@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import type { Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { TaskStatus } from './types/types';
 
@@ -38,7 +39,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     title: '',
     description: '',
     assigneeId: '',
-    dueDate: null as Date | null,
+    dueDate: null as Dayjs | null,
     columnId: columnId || ''
   });
 
@@ -94,7 +95,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   ];
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Create New Task</DialogTitle>
         
@@ -166,7 +167,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               <DatePicker
                 label="Due Date"
                 value={formData.dueDate}
-                onChange={(date) => setFormData(prev => ({ ...prev, dueDate: date }))}
+                onChange={(val) => setFormData(prev => ({ ...prev, dueDate: val as Dayjs | null }))}
                 slotProps={{
                   textField: {
                     fullWidth: true,

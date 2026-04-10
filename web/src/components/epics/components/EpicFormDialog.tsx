@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, FormControl, InputLabel, Select, MenuItem, Stack,
+  Chip, Box,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -14,6 +15,7 @@ import { usersApi } from '../../admin/usersManagement/api/users';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../../services/api/types';
 
 const STATUSES: Epic['status'][] = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+const PRIORITIES: Epic['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
 interface Props {
   open: boolean;
@@ -30,6 +32,9 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
   const [applicationId, setApplicationId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [targetDate, setTargetDate] = useState<Dayjs | null>(null);
+  const [priority, setPriority] = useState<Epic['priority']>('MEDIUM');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -54,9 +59,11 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
       setApplicationId(editing.applicationId ?? '');
       setCustomerId(editing.customerId ?? '');
       setTargetDate(editing.targetDate ? dayjs(editing.targetDate) : null);
+      setPriority(editing.priority ?? 'MEDIUM');
+      setTags(editing.tags ?? []);
     } else {
       setTitle(''); setDescription(''); setStatus('DRAFT');
-      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null);
+      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null); setPriority('MEDIUM'); setTags([]);
     }
   }, [editing]);
 
@@ -71,6 +78,8 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
       const base = {
         title: title.trim(),
         description: description.trim() || null,
+        priority,
+        tags,
         ownerId: ownerId || null,
         applicationId: applicationId || null,
         customerId: customerId || null,
@@ -91,6 +100,13 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required inputRef={titleRef} />
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={3} size="small" />
+
+          <FormControl size="small" fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select value={priority} label="Priority" onChange={(e) => setPriority(e.target.value as Epic['priority'])}>
+              {PRIORITIES.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+            </Select>
+          </FormControl>
 
           <FormControl size="small" fullWidth>
             <InputLabel>Owner</InputLabel>
@@ -119,10 +135,36 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
           <DatePicker
             label="Target Date"
             value={targetDate}
-            onChange={(val) => setTargetDate(val)}
+            onChange={(val) => setTargetDate(val as Dayjs | null)}
             format="DD/MM/YYYY"
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
+
+          <Box>
+            <TextField
+              size="small" fullWidth label="Tags"
+              placeholder="Type a tag and press Enter or comma"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault();
+                  const t = tagInput.trim().replace(/,$/, '');
+                  if (t && !tags.includes(t)) setTags((prev) => [...prev, t]);
+                  setTagInput('');
+                } else if (e.key === 'Backspace' && !tagInput && tags.length) {
+                  setTags((prev) => prev.slice(0, -1));
+                }
+              }}
+            />
+            {tags.length > 0 && (
+              <Box display="flex" gap={0.5} flexWrap="wrap" mt={1}>
+                {tags.map((t) => (
+                  <Chip key={t} label={t} size="small" onDelete={() => setTags((prev) => prev.filter((x) => x !== t))} />
+                ))}
+              </Box>
+            )}
+          </Box>
 
           {editing && (
             <FormControl size="small" fullWidth>

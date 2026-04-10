@@ -7,8 +7,9 @@ import {
 } from '@mui/material';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { isAfter, isBefore, parseISO } from 'date-fns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { type Dayjs } from 'dayjs';
+import { parseISO } from 'date-fns';
 
 import { useKanbanStore } from '../../../stores/kanbanStore';
 import type {
@@ -65,8 +66,8 @@ const BoardContainer: React.FC<BoardContainerProps> = ({
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filter State
-  const [dueDateFrom, setDueDateFrom] = useState<Date | null>(null);
-  const [dueDateTo, setDueDateTo] = useState<Date | null>(null);
+  const [dueDateFrom, setDueDateFrom] = useState<Dayjs | null>(null);
+  const [dueDateTo, setDueDateTo] = useState<Dayjs | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string>('');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('');
   const [customerFilter, setCustomerFilter] = useState<string>('');
@@ -147,11 +148,11 @@ const BoardContainer: React.FC<BoardContainerProps> = ({
 
           const ticketDueDate = parseISO(ticket.dueDate);
 
-          if (dueDateFrom && isBefore(ticketDueDate, dueDateFrom)) {
+          if (dueDateFrom && dayjs(ticketDueDate).isBefore(dueDateFrom)) {
             return false;
           }
 
-          if (dueDateTo && isAfter(ticketDueDate, dueDateTo)) {
+          if (dueDateTo && dayjs(ticketDueDate).isAfter(dueDateTo)) {
             return false;
           }
         }
@@ -358,7 +359,7 @@ const BoardContainer: React.FC<BoardContainerProps> = ({
   ];
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <BoardHeader currentBoard={currentBoard}>
           <BoardControls
@@ -398,8 +399,8 @@ const BoardContainer: React.FC<BoardContainerProps> = ({
             uniqueApplications={getUniqueApplications()}
             uniqueCreators={getUniqueCreators()}
             onSearchChange={setSearchFilter}
-            onDueDateFromChange={setDueDateFrom}
-            onDueDateToChange={setDueDateTo}
+            onDueDateFromChange={(val) => setDueDateFrom(val)}
+            onDueDateToChange={(val) => setDueDateTo(val)}
             onPriorityChange={setPriorityFilter}
             onAssigneeChange={setAssigneeFilter}
             onCustomerChange={setCustomerFilter}

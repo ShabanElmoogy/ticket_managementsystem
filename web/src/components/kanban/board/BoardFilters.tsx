@@ -7,22 +7,25 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
   TextField,
   Typography,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import {
   DateRange as DateRangeIcon,
   Clear as ClearIcon,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import type { Dayjs } from 'dayjs';
 
 interface BoardFiltersProps {
   filtersOpen: boolean;
   hasActiveFilters: boolean;
   searchFilter: string;
-  dueDateFrom: Date | null;
-  dueDateTo: Date | null;
+  dueDateFrom: Dayjs | null;
+  dueDateTo: Dayjs | null;
   priorityFilter: string;
   assigneeFilter: string;
   customerFilter: string;
@@ -35,8 +38,8 @@ interface BoardFiltersProps {
   uniqueApplications: any[];
   uniqueCreators: any[];
   onSearchChange: (value: string) => void;
-  onDueDateFromChange: (date: Date | null) => void;
-  onDueDateToChange: (date: Date | null) => void;
+  onDueDateFromChange: (date: Dayjs | null) => void;
+  onDueDateToChange: (date: Dayjs | null) => void;
   onPriorityChange: (value: string) => void;
   onAssigneeChange: (value: string) => void;
   onCustomerChange: (value: string) => void;
@@ -143,32 +146,26 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
 
           {/* Due Date From */}
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Due Date From"
               value={dueDateFrom}
-              onChange={onDueDateFromChange}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
-                },
-              }}
+              onChange={(val) => onDueDateFromChange(val as Dayjs | null)}
+              slotProps={{ textField: { size: "small", fullWidth: true } }}
             />
+            </LocalizationProvider>
           </Grid>
 
           {/* Due Date To */}
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Due Date To"
               value={dueDateTo}
-              onChange={onDueDateToChange}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
-                },
-              }}
+              onChange={(val) => onDueDateToChange(val as Dayjs | null)}
+              slotProps={{ textField: { size: "small", fullWidth: true } }}
             />
+            </LocalizationProvider>
           </Grid>
         </Grid>
 

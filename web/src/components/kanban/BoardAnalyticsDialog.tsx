@@ -31,8 +31,8 @@ import {
 } from 'recharts';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { subDays, subMonths } from 'date-fns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
 
 interface BoardAnalyticsDialogProps {
@@ -51,8 +51,8 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
   const { analytics, fetchBoardAnalytics, loading, error } = useKanbanStore();
   
   const [dateRange, setDateRange] = useState('30days');
-  const [startDate, setStartDate] = useState<Date | null>(subDays(new Date(), 30));
-  const [endDate, setEndDate] = useState<Date | null>(new Date());
+  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(30, 'day'));
+  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [customRange, setCustomRange] = useState(false);
 
   useEffect(() => {
@@ -69,19 +69,19 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
       start = startDate.toISOString();
       end = endDate.toISOString();
     } else {
-      const now = new Date();
+      const now = dayjs();
       switch (dateRange) {
         case '7days':
-          start = subDays(now, 7).toISOString();
+          start = dayjs().subtract(7, 'day').toISOString();
           break;
         case '30days':
-          start = subDays(now, 30).toISOString();
+          start = dayjs().subtract(30, 'day').toISOString();
           break;
         case '3months':
-          start = subMonths(now, 3).toISOString();
+          start = dayjs().subtract(3, 'month').toISOString();
           break;
         case '6months':
-          start = subMonths(now, 6).toISOString();
+          start = dayjs().subtract(6, 'month').toISOString();
           break;
       }
       end = now.toISOString();
@@ -136,7 +136,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
         <DialogTitle>Board Analytics</DialogTitle>
         
@@ -167,7 +167,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                     <DatePicker
                       label="Start Date"
                       value={startDate}
-                      onChange={setStartDate}
+                      onChange={(val) => setStartDate(val as Dayjs | null)}
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   </Grid>
@@ -175,7 +175,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                     <DatePicker
                       label="End Date"
                       value={endDate}
-                      onChange={setEndDate}
+                      onChange={(val) => setEndDate(val as Dayjs | null)}
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   </Grid>
