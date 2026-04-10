@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Box, Typography, Button, Paper, Chip, LinearProgress,
+  Box, Typography, Button, Paper, Chip,
   IconButton, Tooltip, TextField, InputAdornment, FormControl,
   InputLabel, Select, MenuItem, Snackbar, Alert, CircularProgress,
   ToggleButton, ToggleButtonGroup, Checkbox, Collapse,
 } from '@mui/material';
-import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox } from '@mui/icons-material';
+import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -15,8 +15,24 @@ import EpicFormDialog from './components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
 import { useIsAdmin } from '../../stores/authStore';
 import { DeleteConfirmDialog } from '../common';
+import { formatDate } from '../../utils/dateUtils';
 
 const STATUSES: Array<Epic['status'] | ''> = ['', 'DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+
+const FEATURE_STATUS_COLORS: Record<string, string> = {
+  UNDER_REVIEW: '#9e9e9e',
+  PLANNED:      '#29b6f6',
+  IN_PROGRESS:  '#1976d2',
+  SHIPPED:      '#2e7d32',
+  DECLINED:     '#d32f2f',
+};
+const FEATURE_STATUS_LABELS: Record<string, string> = {
+  UNDER_REVIEW: 'Under Review',
+  PLANNED:      'Planned',
+  IN_PROGRESS:  'In Progress',
+  SHIPPED:      'Shipped',
+  DECLINED:     'Declined',
+};
 
 const EpicsPage: React.FC = () => {
   const qc = useQueryClient();
@@ -25,6 +41,8 @@ const EpicsPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<Epic['status'] | ''>('');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'targetDate' | 'featureCount' | 'progress'>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Epic | null>(null);
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
@@ -62,7 +80,24 @@ const EpicsPage: React.FC = () => {
 
   const filtered = epics
     .filter((e) => !statusFilter || e.status === statusFilter)
-    .filter((e) => !search || e.title.toLowerCase().includes(search.toLowerCase()));
+    .filter((e) => !search || e.title.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      let diff = 0;
+      if (sortBy === 'targetDate') {
+        const da = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
+        const db = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
+        diff = da - db;
+      } else if (sortBy === 'featureCount') {
+        diff = a.featureCount - b.featureCount;
+      } else if (sortBy === 'progress') {
+        const pa = a.stepsTotal ? a.stepsDone / a.stepsTotal : 0;
+        const pb = b.stepsTotal ? b.stepsDone / b.stepsTotal : 0;
+        diff = pa - pb;
+      } else {
+        diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
 
   const statCounts = (['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'] as Epic['status'][]).map((s) => ({
     status: s, count: epics.filter((e) => e.status === s).length,
@@ -144,6 +179,20 @@ const EpicsPage: React.FC = () => {
               {STATUSES.map((s) => <MenuItem key={s} value={s}>{s || 'All'}</MenuItem>)}
             </Select>
           </FormControl>
+          <FormControl size="small" sx={{ flex: '1 1 150px' }}>
+            <InputLabel>Sort by</InputLabel>
+            <Select value={sortBy} label="Sort by" onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+              <MenuItem value="createdAt">Date Created</MenuItem>
+              <MenuItem value="targetDate">Target Date</MenuItem>
+              <MenuItem value="featureCount">Feature Count</MenuItem>
+              <MenuItem value="progress">Progress</MenuItem>
+            </Select>
+          </FormControl>
+          <Tooltip title={sortDir === 'asc' ? 'Ascending' : 'Descending'}>
+            <IconButton size="small" onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}>
+              {sortDir === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
+            </IconButton>
+          </Tooltip>
         </Box>
       </Paper>
 
@@ -185,8 +234,19 @@ const EpicsPage: React.FC = () => {
       ) : view === 'roadmap' ? null : filtered.length === 0 ? (
         <Paper sx={{ p: 6, textAlign: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 3 }}>
           <AccountTree sx={{ fontSize: 56, color: 'text.secondary', mb: 1 }} />
-          <Typography variant="h6" color="text.secondary">No epics yet</Typography>
-          <Typography variant="body2" color="text.secondary">Create an epic to group your feature requests</Typography>
+          {epics.length === 0 ? (
+            <>
+              <Typography variant="h6" color="text.secondary">No epics yet</Typography>
+              <Typography variant="body2" color="text.secondary">Create an epic to group your feature requests</Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="h6" color="text.secondary">No epics match your filters</Typography>
+              <Button size="small" sx={{ mt: 1 }} onClick={() => { setSearch(''); setStatusFilter(''); }}>
+                Clear filters
+              </Button>
+            </>
+          )}
         </Paper>
       ) : (
         <>
@@ -205,12 +265,13 @@ const EpicsPage: React.FC = () => {
               {allSelected ? 'Deselect all' : `Select all (${filtered.length})`}
             </Typography>
           </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
           {filtered.map((epic) => {
           const progress = epic.stepsTotal ? Math.round((epic.stepsDone / epic.stepsTotal) * 100) : 0;
           const overdue = epic.targetDate && new Date(epic.targetDate) < new Date() && epic.status !== 'COMPLETED';
           const isSelected = selected.has(epic.id);
           return (
-            <Paper key={epic.id} sx={{ mb: 2, p: 2.5, borderRadius: 3, border: '1px solid',
+            <Paper key={epic.id} sx={{ p: 2.5, borderRadius: 3, border: '1px solid',
               borderColor: isSelected ? 'primary.main' : 'divider',
               cursor: 'pointer', '&:hover': { borderColor: 'primary.main', boxShadow: 2 } }}
               onClick={() => navigate(`/epics/${epic.id}`)}
@@ -238,22 +299,46 @@ const EpicsPage: React.FC = () => {
                     {epic.customerName && <Chip icon={<Person fontSize="small" />} label={epic.customerName} size="small" variant="outlined" color="secondary" />}
                     {epic.ownerName && <Chip icon={<Person fontSize="small" />} label={`Owner: ${epic.ownerName}`} size="small" variant="outlined" color="primary" />}
                     {epic.targetDate && (
-                      <Chip icon={<CalendarToday fontSize="small" />} label={new Date(epic.targetDate).toLocaleDateString()}
+                      <Chip icon={<CalendarToday fontSize="small" />} label={formatDate(epic.targetDate)}
                         size="small" variant="outlined" color={overdue ? 'error' : 'default'} />
                     )}
                     <Chip label={`${epic.featureCount} feature${epic.featureCount !== 1 ? 's' : ''}`} size="small" />
                   </Box>
 
-                  {/* Progress */}
-                  {epic.stepsTotal > 0 && (
-                    <Box>
-                      <Box display="flex" justifyContent="space-between" mb={0.5}>
-                        <Typography variant="caption" color="text.secondary">Progress</Typography>
-                        <Typography variant="caption" color="text.secondary">{epic.stepsDone}/{epic.stepsTotal} steps · {progress}%</Typography>
+                  {/* Progress + feature status breakdown */}
+                  {epic.featureCount > 0 && (() => {
+                    const counts = Object.entries(epic.featureStatusCounts ?? {}) as [string, number][];
+                    const total = epic.featureCount;
+                    return (
+                      <Box>
+                        {epic.stepsTotal > 0 && (
+                          <Box display="flex" justifyContent="space-between" mb={0.5}>
+                            <Typography variant="caption" color="text.secondary">Steps</Typography>
+                            <Typography variant="caption" color="text.secondary">{epic.stepsDone}/{epic.stepsTotal} · {progress}%</Typography>
+                          </Box>
+                        )}
+                        {counts.length > 0 && (
+                          <>
+                            <Box display="flex" height={8} borderRadius={1} overflow="hidden" mb={0.75}>
+                              {counts.map(([status, count]) => (
+                                <Tooltip key={status} title={`${FEATURE_STATUS_LABELS[status] ?? status}: ${count}`}>
+                                  <Box sx={{ width: `${(count / total) * 100}%`, bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', transition: 'width 0.3s' }} />
+                                </Tooltip>
+                              ))}
+                            </Box>
+                            <Box display="flex" gap={1.5} flexWrap="wrap">
+                              {counts.map(([status, count]) => (
+                                <Box key={status} display="flex" alignItems="center" gap={0.5}>
+                                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', flexShrink: 0 }} />
+                                  <Typography variant="caption" color="text.secondary">{FEATURE_STATUS_LABELS[status] ?? status} <strong>{count}</strong></Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          </>
+                        )}
                       </Box>
-                      <LinearProgress variant="determinate" value={progress} sx={{ borderRadius: 1, height: 6 }} color={progress === 100 ? 'success' : 'primary'} />
-                    </Box>
-                  )}
+                    );
+                  })()}
                 </Box>
 
                 {/* Actions */}
@@ -274,6 +359,7 @@ const EpicsPage: React.FC = () => {
             </Paper>
           );
         })}
+          </Box>
         </>
       )}
 

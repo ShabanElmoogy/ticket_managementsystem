@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { epics } from '../epics/epics.schema.js';
-import { users } from '../users/users.schema.js';
+import { users } from '../../users/users.schema.js';
 
 export const epicComments = pgTable('epic_comments', {
   id:        uuid('id').primaryKey().defaultRandom(),

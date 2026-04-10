@@ -1,8 +1,8 @@
 import { pgTable, text, timestamp, pgEnum, uuid, date } from 'drizzle-orm/pg-core';
-import { users } from '../users/users.schema.js';
-import { tenants } from '../tenants/tenants.schema.js';
-import { applications } from '../applications/applications.schema.js';
-import { customers } from '../customers/customers.schema.js';
+import { users } from '../../users/users.schema.js';
+import { tenants } from '../../tenants/tenants.schema.js';
+import { applications } from '../../applications/applications.schema.js';
+import { customers } from '../../customers/customers.schema.js';
 
 export const epicStatusEnum = pgEnum('epic_status', [
   'DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED',

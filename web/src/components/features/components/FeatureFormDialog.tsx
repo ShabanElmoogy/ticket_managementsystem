@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, FormControl, InputLabel, Select, MenuItem, Stack,
@@ -25,6 +25,11 @@ const FeatureFormDialog: React.FC<Props> = ({ open, editing, isAdmin, onClose, o
   const [applicationId, setApplicationId] = useState<string>('');
   const [customerId, setCustomerId] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) setTimeout(() => titleRef.current?.focus(), 100);
+  }, [open]);
 
   const { data: applications = [] } = useQuery({
     queryKey: ['applications'],
@@ -93,6 +98,7 @@ const FeatureFormDialog: React.FC<Props> = ({ open, editing, isAdmin, onClose, o
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             fullWidth size="small" required
+            inputRef={titleRef}
           />
           <TextField
             label="Description"

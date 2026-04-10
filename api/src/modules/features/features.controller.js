@@ -3,7 +3,7 @@ import { featureRequests, featureVotes } from './features.schema.js';
 import { users } from '../users/users.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { customers } from '../customers/customers.schema.js';
-import { epics } from '../epics/epics.schema.js';
+import { epics } from '../epics/epics/epics.schema.js';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { getTenantScope } from '../../utils/tenantUtils.js';
 

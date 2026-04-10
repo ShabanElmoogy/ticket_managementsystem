@@ -38,6 +38,11 @@ const StepDialog: React.FC<StepDialogProps> = ({ open, editing, employees, progr
   const [assignedProgrammerId, setAssignedProgrammerId] = useState('');
   const [status, setStatus] = useState<FeatureStep['status']>('TODO');
   const [saving, setSaving] = useState(false);
+  const titleRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (open) setTimeout(() => titleRef.current?.focus(), 100);
+  }, [open]);
 
   React.useEffect(() => {
     if (editing) {
@@ -73,7 +78,7 @@ const StepDialog: React.FC<StepDialogProps> = ({ open, editing, employees, progr
       <DialogTitle>{editing ? 'Edit Step' : 'Add Step'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField label="Step Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required />
+          <TextField label="Step Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required inputRef={titleRef} />
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={3} size="small" />
           <FormControl size="small" fullWidth>
             <InputLabel>Assign to Employee</InputLabel>
@@ -331,6 +336,7 @@ const FeatureDetailPage: React.FC = () => {
 
   const doneCount = steps.filter((s) => s.status === 'DONE').length;
   const progress = steps.length ? Math.round((doneCount / steps.length) * 100) : 0;
+  const isShipped = feature?.status === 'SHIPPED';
 
   if (featureLoading) return <Box display="flex" justifyContent="center" pt={8}><CircularProgress /></Box>;
   if (!feature) return <Box p={4}><Alert severity="error">Feature not found</Alert></Box>;
@@ -405,7 +411,10 @@ const FeatureDetailPage: React.FC = () => {
             </Typography>
           )}
         </Box>
-        <Button variant="contained" size="small" startIcon={<Add />} onClick={() => { setEditingStep(null); setStepDialog(true); }}>
+        <Button variant="contained" size="small" startIcon={<Add />}
+          disabled={isShipped}
+          onClick={() => { setEditingStep(null); setStepDialog(true); }}
+        >
           Add Step
         </Button>
       </Box>
@@ -433,7 +442,7 @@ const FeatureDetailPage: React.FC = () => {
           >
             <Box display="flex" alignItems="flex-start" gap={1.5}>
               <Tooltip title={step.status === 'DONE' ? 'Mark incomplete' : 'Mark done'}>
-                <IconButton size="small" onClick={() => toggleStepDone(step)} sx={{ mt: 0.25 }}>
+                <IconButton size="small" onClick={() => toggleStepDone(step)} sx={{ mt: 0.25 }} disabled={isShipped}>
                   {step.status === 'DONE'
                     ? <CheckCircle color="success" fontSize="small" />
                     : <RadioButtonUnchecked fontSize="small" />}
@@ -476,7 +485,7 @@ const FeatureDetailPage: React.FC = () => {
                         size="small"
                         color="info"
                         onClick={() => navigate(`/tickets/${step.linkedTicketId}`)}
-                        onDelete={() => unlinkTicket(step)}
+                        onDelete={isShipped ? undefined : () => unlinkTicket(step)}
                         sx={{ cursor: 'pointer', maxWidth: 220 }}
                       />
                       <Tooltip title="Open ticket">
@@ -486,17 +495,19 @@ const FeatureDetailPage: React.FC = () => {
                       </Tooltip>
                     </>
                   ) : (
-                    <Tooltip title="Create a ticket for this step">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<ConfirmationNumber fontSize="small" />}
-                        onClick={() => { setTicketStep(step); setTicketDialog(true); }}
-                        sx={{ height: 24, fontSize: '0.7rem', py: 0 }}
-                      >
-                        Create Ticket
-                      </Button>
-                    </Tooltip>
+                    !isShipped && (
+                      <Tooltip title="Create a ticket for this step">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<ConfirmationNumber fontSize="small" />}
+                          onClick={() => { setTicketStep(step); setTicketDialog(true); }}
+                          sx={{ height: 24, fontSize: '0.7rem', py: 0 }}
+                        >
+                          Create Ticket
+                        </Button>
+                      </Tooltip>
+                    )
                   )}
                 </Box>
               </Box>
@@ -504,12 +515,12 @@ const FeatureDetailPage: React.FC = () => {
               {/* Actions */}
               <Box display="flex" gap={0.5}>
                 <Tooltip title="Edit step">
-                  <IconButton size="small" onClick={() => { setEditingStep(step); setStepDialog(true); }}>
+                  <IconButton size="small" disabled={isShipped} onClick={() => { setEditingStep(step); setStepDialog(true); }}>
                     <Edit fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Delete step">
-                  <IconButton size="small" color="error" onClick={() => deleteStepMutation.mutate(step.id)}>
+                  <IconButton size="small" color="error" disabled={isShipped} onClick={() => deleteStepMutation.mutate(step.id)}>
                     <Delete fontSize="small" />
                   </IconButton>
                 </Tooltip>

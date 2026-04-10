@@ -285,6 +285,7 @@ export interface Epic {
   featureCount: number;
   stepsTotal: number;
   stepsDone: number;
+  featureStatusCounts?: Partial<Record<FeatureRequest['status'], number>>;
   features?: Pick<FeatureRequest, 'id' | 'title' | 'description' | 'status' | 'createdAt'> & { epicOrder: number; applicationName?: string | null; customerName?: string | null; submittedByName?: string | null; voteCount?: number; }[];
   createdAt: string;
   updatedAt: string;

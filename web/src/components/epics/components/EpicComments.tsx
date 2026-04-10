@@ -87,7 +87,7 @@ const EpicComments: React.FC<Props> = ({ epicId }) => {
           <Typography variant="body2" color="text.secondary">No comments yet. Start the discussion!</Typography>
         </Paper>
       ) : (
-        <Box>
+        <Box sx={{ maxHeight: 355, overflowY: 'auto', pr: 0.5 }}>
           {comments.map((comment, idx) => {
             const isOwn = comment.user.id === user?.id;
             const initials = comment.user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);

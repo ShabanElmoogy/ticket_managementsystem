@@ -14,4 +14,5 @@ export * from './attachments/attachments.schema.js';
 export * from './templates/templates.schema.js';
 export * from './tickets/watchers.schema.js';
 export * from './features/features.schema.js';
-export * from './epics/epics.schema.js';
+export * from './epics/epics/epics.schema.js';
+export * from './epics/epicComments/epicComments.schema.js';

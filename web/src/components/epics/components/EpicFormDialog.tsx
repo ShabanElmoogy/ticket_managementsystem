@@ -1,8 +1,12 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, FormControl, InputLabel, Select, MenuItem, Stack,
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { useQuery } from '@tanstack/react-query';
 import { applicationsApi } from '../../admin/applicationsManagement/api/applications';
 import { customersApi } from '../../admin/customersManagement/api/customers';
@@ -25,8 +29,13 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
   const [ownerId, setOwnerId] = useState('');
   const [applicationId, setApplicationId] = useState('');
   const [customerId, setCustomerId] = useState('');
-  const [targetDate, setTargetDate] = useState('');
+  const [targetDate, setTargetDate] = useState<Dayjs | null>(null);
   const [saving, setSaving] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) setTimeout(() => titleRef.current?.focus(), 100);
+  }, [open]);
 
   const { data: applications = [] } = useQuery({ queryKey: ['applications'], queryFn: () => applicationsApi.getApplications(), enabled: open });
   const { data: customers = [] } = useQuery({ queryKey: ['customers'], queryFn: () => customersApi.getCustomers(), enabled: open });
@@ -44,12 +53,12 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
       setOwnerId(editing.ownerId ?? '');
       setApplicationId(editing.applicationId ?? '');
       setCustomerId(editing.customerId ?? '');
-      setTargetDate(editing.targetDate ?? '');
+      setTargetDate(editing.targetDate ? dayjs(editing.targetDate) : null);
     } else {
       setTitle(''); setDescription(''); setStatus('DRAFT');
-      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate('');
+      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null);
     }
-  }, [editing, open]);
+  }, [editing]);
 
   useEffect(() => {
     if (customerId && applicationId && !filteredCustomers.some((c) => c.id === customerId)) setCustomerId('');
@@ -65,7 +74,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         ownerId: ownerId || null,
         applicationId: applicationId || null,
         customerId: customerId || null,
-        targetDate: targetDate || null,
+        targetDate: targetDate ? targetDate.format('YYYY-MM-DD') : null,
       };
       await onSubmit(editing ? { ...base, status } : base);
       onClose();
@@ -75,11 +84,12 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
   };
 
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editing ? 'Edit Epic' : 'New Epic'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required />
+          <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required inputRef={titleRef} />
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={3} size="small" />
 
           <FormControl size="small" fullWidth>
@@ -106,7 +116,13 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
             </Select>
           </FormControl>
 
-          <TextField label="Target Date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+          <DatePicker
+            label="Target Date"
+            value={targetDate}
+            onChange={(val) => setTargetDate(val)}
+            format="DD/MM/YYYY"
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
 
           {editing && (
             <FormControl size="small" fullWidth>
@@ -125,6 +141,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         </Button>
       </DialogActions>
     </Dialog>
+    </LocalizationProvider>
   );
 };
 

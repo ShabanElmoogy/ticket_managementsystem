@@ -3,12 +3,13 @@ import {
   Box, Typography, Paper, Button, Chip, LinearProgress,
   CircularProgress, Alert, Snackbar, Divider, IconButton,
   Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
-  FormControl, InputLabel, Select, MenuItem,
+  FormControl, InputLabel, Select, MenuItem, Menu,
 } from '@mui/material';
 import {
   ArrowBack, Add, Edit, OpenInNew, LinkOff, Apps, Person,
   CalendarToday, AccountTree, Lightbulb, DragIndicator,
-  InfoOutlined, FlipCameraAndroid, ThumbUp,
+  InfoOutlined, FlipCameraAndroid, ThumbUp, EditNote,
+  AccessTime, Update,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,7 +29,8 @@ import EpicFormDialog from './components/EpicFormDialog';
 import EpicComments from './components/EpicComments';
 import FeatureStatusChip from '../features/components/FeatureStatusChip';
 import FeatureFormDialog from '../features/components/FeatureFormDialog';
-import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData, FeatureRequest } from '../../services/api/types';
+import type { UpdateEpicData, CreateFeatureData, UpdateFeatureData, FeatureRequest, Epic } from '../../services/api/types';
+import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { useIsAdmin } from '../../stores/authStore';
 
 type EpicFeature = {
@@ -38,6 +40,8 @@ type EpicFeature = {
   status: FeatureRequest['status'];
   epicOrder: number;
   createdAt: string;
+  applicationId?: string | null;
+  customerId?: string | null;
   applicationName?: string | null;
   customerName?: string | null;
   submittedByName?: string | null;
@@ -52,8 +56,20 @@ const SortableFeatureCard: React.FC<{
   onFlip: (id: string | null) => void;
   onNavigate: (id: string) => void;
   onUnlink: (id: string) => void;
+  onEdit: (feature: EpicFeature) => void;
+  onStatusChange: (id: string, status: FeatureRequest['status']) => void;
   epicId: string;
-}> = ({ feature, isAdmin, isFlipped, onFlip, onNavigate, onUnlink, epicId }) => {
+}> = ({ feature, isAdmin, isFlipped, onFlip, onNavigate, onUnlink, onEdit, onStatusChange, epicId }) => {
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const STATUSES: { value: FeatureRequest['status']; label: string; color: string }[] = [
+    { value: 'UNDER_REVIEW', label: 'Under Review', color: '#9e9e9e' },
+    { value: 'PLANNED',      label: 'Planned',      color: '#29b6f6' },
+    { value: 'IN_PROGRESS',  label: 'In Progress',  color: '#1976d2' },
+    { value: 'SHIPPED',      label: 'Shipped',      color: '#2e7d32' },
+    { value: 'DECLINED',     label: 'Declined',     color: '#d32f2f' },
+  ];
+  const current = STATUSES.find((s) => s.value === feature.status)!;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: feature.id,
     disabled: !isAdmin,
@@ -103,7 +119,36 @@ const SortableFeatureCard: React.FC<{
               <Box flex={1} minWidth={0}>
                 <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                   <Typography variant="subtitle2" fontWeight={600} sx={{ flex: 1 }} noWrap>{feature.title}</Typography>
-                  <FeatureStatusChip status={feature.status} />
+                  {isAdmin ? (
+                    <>
+                      <Chip
+                        label={current.label}
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); setMenuAnchor(e.currentTarget); }}
+                        sx={{ fontWeight: 600, bgcolor: current.color, color: '#fff', cursor: 'pointer', '&:hover': { opacity: 0.85 } }}
+                      />
+                      <Menu
+                        anchorEl={menuAnchor}
+                        open={!!menuAnchor}
+                        onClose={() => setMenuAnchor(null)}
+                        onClick={(e) => e.stopPropagation()}
+                        disableScrollLock
+                      >
+                        {STATUSES.map((s) => (
+                          <MenuItem
+                            key={s.value}
+                            selected={s.value === feature.status}
+                            onClick={() => { onStatusChange(feature.id, s.value); setMenuAnchor(null); }}
+                          >
+                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: s.color, mr: 1, flexShrink: 0 }} />
+                            {s.label}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <FeatureStatusChip status={feature.status} />
+                  )}
                 </Box>
                 {feature.description && (
                   <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
@@ -122,6 +167,13 @@ const SortableFeatureCard: React.FC<{
                     <OpenInNew fontSize="small" />
                   </IconButton>
                 </Tooltip>
+                {isAdmin && (
+                  <Tooltip title="Edit feature">
+                    <IconButton size="small" onClick={() => onEdit(feature)}>
+                      <EditNote fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 {isAdmin && (
                   <Tooltip title="Unlink from epic">
                     <IconButton size="small" color="error" onClick={() => onUnlink(feature.id)}>
@@ -170,7 +222,7 @@ const SortableFeatureCard: React.FC<{
                   </Box>
                 )}
                 <Typography variant="caption" color="text.secondary">
-                  {new Date(feature.createdAt).toLocaleDateString()}
+                  {formatDate(feature.createdAt)}
                 </Typography>
               </Box>
               <Tooltip title="Flip back">
@@ -261,6 +313,7 @@ const EpicDetailPage: React.FC = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [newFeatureOpen, setNewFeatureOpen] = useState(false);
+  const [editingFeature, setEditingFeature] = useState<EpicFeature | null>(null);
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
   const [orderedFeatures, setOrderedFeatures] = useState<EpicFeature[]>([]);
   const [flippedId, setFlippedId] = useState<string | null>(null);
@@ -284,7 +337,7 @@ const EpicDetailPage: React.FC = () => {
     setOrderedFeatures(
       [...(epic.features as EpicFeature[])].sort((a, b) => (a.epicOrder ?? 0) - (b.epicOrder ?? 0))
     );
-  }, [epic?.features]);
+  }, [epic?.features]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['epics', id] });
@@ -330,6 +383,23 @@ const EpicDetailPage: React.FC = () => {
     setSnack({ msg: 'Feature created and linked!', severity: 'success' });
   };
 
+  const editFeatureMutation = useMutation({
+    mutationFn: ({ fid, data }: { fid: string; data: UpdateFeatureData }) => featuresApi.update(fid, data),
+    onSuccess: () => { invalidate(); setSnack({ msg: 'Feature updated', severity: 'success' }); },
+    onError: () => setSnack({ msg: 'Failed to update feature', severity: 'error' }),
+  });
+
+  const handleStatusChange = (fid: string, status: FeatureRequest['status']) => {
+    setOrderedFeatures((prev) => prev.map((f) => f.id === fid ? { ...f, status } : f));
+    editFeatureMutation.mutate({ fid, data: { status } });
+  };
+
+  const handleEditFeature = async (data: CreateFeatureData | UpdateFeatureData) => {
+    if (!editingFeature) return;
+    await editFeatureMutation.mutateAsync({ fid: editingFeature.id, data: data as UpdateFeatureData });
+    setEditingFeature(null);
+  };
+
   if (isLoading) return <Box display="flex" justifyContent="center" pt={8}><CircularProgress /></Box>;
   if (!epic) return <Box p={4}><Alert severity="error">Epic not found</Alert></Box>;
 
@@ -362,7 +432,7 @@ const EpicDetailPage: React.FC = () => {
               {epic.customerName && <Chip icon={<Person fontSize="small" />} label={epic.customerName} size="small" variant="outlined" color="secondary" />}
               {epic.ownerName && <Chip icon={<Person fontSize="small" />} label={`Owner: ${epic.ownerName}`} size="small" variant="outlined" color="primary" />}
               {epic.targetDate && (
-                <Chip icon={<CalendarToday fontSize="small" />} label={new Date(epic.targetDate).toLocaleDateString()}
+                <Chip icon={<CalendarToday fontSize="small" />} label={formatDate(epic.targetDate)}
                   size="small" variant="outlined" color={overdue ? 'error' : 'default'} />
               )}
             </Box>
@@ -375,7 +445,7 @@ const EpicDetailPage: React.FC = () => {
         </Box>
 
         <Divider sx={{ my: 2 }} />
-        <Box display="flex" gap={3} flexWrap="wrap" mb={epic.stepsTotal > 0 ? 1.5 : 0}>
+        <Box display="flex" gap={3} flexWrap="wrap" alignItems="center" mb={2}>
           <Box textAlign="center">
             <Typography variant="h6" fontWeight={700}>{epic.featureCount}</Typography>
             <Typography variant="caption" color="text.secondary">Features</Typography>
@@ -392,14 +462,90 @@ const EpicDetailPage: React.FC = () => {
             <Typography variant="h6" fontWeight={700} color={progress === 100 ? 'success.main' : 'text.primary'}>{progress}%</Typography>
             <Typography variant="caption" color="text.secondary">Complete</Typography>
           </Box>
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Tooltip title={formatDateTime(epic.createdAt)}>
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.75,
+                px: 1.5, py: 0.5, borderRadius: 2,
+                bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider',
+              }}>
+                <AccessTime sx={{ fontSize: 13, color: 'text.disabled' }} />
+                <Box>
+                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem', lineHeight: 1, display: 'block' }}>Created</Typography>
+                  <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.72rem', lineHeight: 1.2 }}>{formatDate(epic.createdAt)}</Typography>
+                </Box>
+              </Box>
+            </Tooltip>
+            <Tooltip title={formatDateTime(epic.updatedAt)}>
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.75,
+                px: 1.5, py: 0.5, borderRadius: 2,
+                bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.100',
+              }}>
+                <Update sx={{ fontSize: 13, color: 'primary.main' }} />
+                <Box>
+                  <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.6rem', lineHeight: 1, display: 'block' }}>Updated</Typography>
+                  <Typography variant="caption" fontWeight={600} color="primary.main" sx={{ fontSize: '0.72rem', lineHeight: 1.2 }}>{formatDate(epic.updatedAt)}</Typography>
+                </Box>
+              </Box>
+            </Tooltip>
+          </Box>
         </Box>
-        {epic.stepsTotal > 0 && (
-          <LinearProgress variant="determinate" value={progress} sx={{ borderRadius: 1, height: 8 }} color={progress === 100 ? 'success' : 'primary'} />
-        )}
+
+        {/* Feature status breakdown */}
+        {orderedFeatures.length > 0 && (() => {
+          const STATUS_COLORS: Record<string, string> = {
+            UNDER_REVIEW: '#9e9e9e',
+            PLANNED:      '#29b6f6',
+            IN_PROGRESS:  '#1976d2',
+            SHIPPED:      '#2e7d32',
+            DECLINED:     '#d32f2f',
+          };
+          const STATUS_LABELS: Record<string, string> = {
+            UNDER_REVIEW: 'Under Review',
+            PLANNED:      'Planned',
+            IN_PROGRESS:  'In Progress',
+            SHIPPED:      'Shipped',
+            DECLINED:     'Declined',
+          };
+          const total = orderedFeatures.length;
+          const counts = orderedFeatures.reduce<Record<string, number>>((acc, f) => {
+            acc[f.status] = (acc[f.status] ?? 0) + 1;
+            return acc;
+          }, {});
+          const segments = Object.entries(counts);
+          return (
+            <Box>
+              {/* Stacked bar */}
+              <Box display="flex" height={10} borderRadius={1} overflow="hidden" mb={1}>
+                {segments.map(([status, count]) => (
+                  <Tooltip key={status} title={`${STATUS_LABELS[status] ?? status}: ${count}`}>
+                    <Box sx={{ width: `${(count / total) * 100}%`, bgcolor: STATUS_COLORS[status] ?? 'grey.400', transition: 'width 0.3s' }} />
+                  </Tooltip>
+                ))}
+              </Box>
+              {/* Legend */}
+              <Box display="flex" gap={2} flexWrap="wrap">
+                {segments.map(([status, count]) => (
+                  <Box key={status} display="flex" alignItems="center" gap={0.5}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: STATUS_COLORS[status] ?? 'grey.400', flexShrink: 0 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      {STATUS_LABELS[status] ?? status} <strong>{count}</strong>
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          );
+        })()}
       </Paper>
 
-      {/* Features Section */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+      {/* Two-column layout on large screens */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 380px' }, gap: 3, alignItems: 'start' }}>
+
+        {/* Left: Features Section */}
+        <Box>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
         <Typography variant="h6" fontWeight={700}>
           Feature Requests
           <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
@@ -445,12 +591,22 @@ const EpicDetailPage: React.FC = () => {
                 onFlip={setFlippedId}
                 onNavigate={(fid) => navigate(`/features/${fid}`, { state: { from: `/epics/${id}` } })}
                 onUnlink={(fid) => unlinkMutation.mutate(fid)}
+                onEdit={(f) => setEditingFeature(f)}
+                onStatusChange={handleStatusChange}
                 epicId={id!}
               />
             ))}
           </SortableContext>
         </DndContext>
       )}
+        </Box>
+
+        {/* Right: Discussion */}
+        <Box sx={{ position: { lg: 'sticky' }, top: { lg: 24 } }}>
+          <EpicComments epicId={id!} />
+        </Box>
+
+      </Box>{/* end two-column grid */}
 
       <EpicFormDialog
         open={editOpen}
@@ -459,17 +615,20 @@ const EpicDetailPage: React.FC = () => {
         onSubmit={async (data) => { await updateMutation.mutateAsync(data as UpdateEpicData); setEditOpen(false); }}
       />
 
-      {/* Discussion */}
-      <Box mt={4}>
-        <EpicComments epicId={id!} />
-      </Box>
-
-      <FeatureFormDialog
+<FeatureFormDialog
         open={newFeatureOpen}
         editing={null}
         isAdmin={isAdmin}
         onClose={() => setNewFeatureOpen(false)}
         onSubmit={handleNewFeature}
+      />
+
+      <FeatureFormDialog
+        open={!!editingFeature}
+        editing={editingFeature as FeatureRequest | null}
+        isAdmin={isAdmin}
+        onClose={() => setEditingFeature(null)}
+        onSubmit={handleEditFeature}
       />
 
       <LinkFeatureDialog
