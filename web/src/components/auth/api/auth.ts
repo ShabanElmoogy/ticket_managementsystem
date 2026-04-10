@@ -11,6 +11,12 @@ export class AuthApiService extends BaseApiService {
   ): Promise<LoginResponse> {
     return this.post<LoginResponse>("/auth/register", data);
   }
+
+  async devLogin(email: string, tenantSlug?: string): Promise<LoginResponse> {
+    return this.post<LoginResponse>("/auth/dev-login", { email }, {
+      headers: tenantSlug ? { 'X-Tenant-Slug': tenantSlug } : {},
+    });
+  }
 }
 
 export const authApi = new AuthApiService();

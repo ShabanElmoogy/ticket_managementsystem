@@ -26,15 +26,21 @@ export const listTenantsPublic = async (req, res) => {
     .from(tenants)
     .orderBy(tenants.name);
 
-  // Attach the first TENANT_ADMIN email for each tenant (dev convenience)
+  // Attach first user email per role for each tenant (dev convenience)
   const withAdmin = await Promise.all(
     rows.map(async (t) => {
-      const [admin] = await db
-        .select({ email: users.email })
-        .from(users)
-        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN)))
-        .limit(1);
-      return { ...t, adminEmail: admin?.email ?? null };
+      const [admin] = await db.select({ email: users.email }).from(users)
+        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN))).limit(1);
+      const [employee] = await db.select({ email: users.email }).from(users)
+        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.EMPLOYEE))).limit(1);
+      const [programmer] = await db.select({ email: users.email }).from(users)
+        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.PROGRAMMER))).limit(1);
+      return {
+        ...t,
+        adminEmail:      admin?.email ?? null,
+        employeeEmail:   employee?.email ?? null,
+        programmerEmail: programmer?.email ?? null,
+      };
     })
   );
 

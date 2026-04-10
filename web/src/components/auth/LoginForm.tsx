@@ -10,7 +10,6 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
-  InputAdornment,
   Divider,
   Stack,
   Chip,
@@ -24,11 +23,6 @@ import {
 import {
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  ContentCopy as ContentCopyIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   PersonOutline as PersonOutlineIcon,
   Assignment as AssignmentIcon,
@@ -49,6 +43,7 @@ const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const isDev = import.meta.env.DEV;
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
@@ -105,7 +100,7 @@ const LoginForm: React.FC = () => {
 
   const handleDemoLogin = async (
     demoEmail: string,
-    demoPassword: string,
+    _demoPassword: string,
     options?: { tenantSlug?: string | null }
   ) => {
     const demoTenant = (options?.tenantSlug ?? '').trim().toLowerCase();
@@ -113,18 +108,17 @@ const LoginForm: React.FC = () => {
     setIsSystemLogin(!demoTenant);
     setTenantSlug(demoTenant);
     setEmail(demoEmail);
-    setPassword(demoPassword);
     setLoading(true);
     setError('');
 
     try {
-    if (!demoTenant) {
-    localStorage.removeItem('tenantSlug');
-    } else {
-    localStorage.setItem('tenantSlug', demoTenant);
-    }
+      if (!demoTenant) {
+        localStorage.removeItem('tenantSlug');
+      } else {
+        localStorage.setItem('tenantSlug', demoTenant);
+      }
 
-      const response = await authApi.login({ email: demoEmail, password: demoPassword });
+      const response = await authApi.devLogin(demoEmail, demoTenant || undefined);
 
       const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
       if (responseTenantSlug) {
@@ -139,14 +133,6 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const copyCreds = async (email: string, password: string) => {
-    try {
-      await navigator.clipboard.writeText(`${email} / ${password}`);
-      setSnack('Credentials copied to clipboard');
-    } catch {
-      setSnack('Could not copy credentials');
-    }
-  };
 
   return (
     <>
@@ -397,89 +383,102 @@ const LoginForm: React.FC = () => {
                 </Typography>
               </FormControl>
 
-              <TextField
-                fullWidth
-                label="Email address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
-                required
-                autoFocus
-                disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              {!isDev && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Email address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    margin="normal"
+                    required
+                    autoFocus
+                    disabled={loading}
+                  />
 
-              <TextField
-                fullWidth
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
-                required
-                disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton edge="end" onClick={() => setShowPassword((s) => !s)} aria-label="toggle password visibility">
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    margin="normal"
+                    required
+                    disabled={loading}
+                  />
 
-              {error && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {error}
-                </Alert>
+                  {error && (
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                      {error}
+                    </Alert>
+                  )}
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    sx={{
+                      mt: 3,
+                      mb: 2,
+                      py: 1.5,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      background: 'linear-gradient(45deg, #1976d2, #9c27b0)',
+                      boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #1565c0, #7b1fa2)',
+                        boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign in to Dashboard'}
+                  </Button>
+                </>
               )}
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{
-                  mt: 3,
-                  mb: 2,
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  background: 'linear-gradient(45deg, #1976d2, #9c27b0)',
-                  boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #1565c0, #7b1fa2)',
-                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                    transform: 'translateY(-1px)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign in to Dashboard'}
-              </Button>
             </Box>
 
-            <Divider sx={{ my: 2 }}>or</Divider>
+            {!isDev && <Divider sx={{ my: 2 }}>or</Divider>}
 
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ textAlign: 'center' }}>
                 Quick demo login
               </Typography>
+
+              {/* Tenant role buttons — shown when a tenant is selected */}
+              {tenantSlug && (() => {
+                const tenant = tenants.find((t) => t.slug === tenantSlug);
+                if (!tenant) return null;
+                const roles = [
+                  { label: 'Admin',      email: tenant.adminEmail,      color: 'primary'   as const, icon: <AdminPanelSettingsIcon /> },
+                  { label: 'Employee',   email: tenant.employeeEmail,   color: 'secondary' as const, icon: <PersonOutlineIcon /> },
+                  { label: 'Programmer', email: tenant.programmerEmail, color: 'warning'   as const, icon: <SupportAgentIcon /> },
+                ].filter((r) => r.email);
+                if (roles.length === 0) return null;
+                return (
+                  <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 2 }} justifyContent="center">
+                    {roles.map((r) => (
+                      <Button
+                        key={r.label}
+                        variant="outlined"
+                        color={r.color}
+                        size="small"
+                        startIcon={r.icon}
+                        disabled={loading}
+                        onClick={() => handleDemoLogin(r.email!, 'password123', { tenantSlug })}
+                        sx={{ textTransform: 'none', fontWeight: 600, flex: 1 }}
+                      >
+                        {r.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                );
+              })()}
 
               <Stack spacing={2} sx={{ mt: 1 }}>
                 {/* Admin demo card */}
@@ -510,71 +509,12 @@ const LoginForm: React.FC = () => {
                           manager@company.com
                         </Typography>
                       </Box>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip label="Admin" size="small" color="primary" variant="filled" />
-                        <Tooltip title="Copy credentials">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyCreds('manager@company.com', 'shabanelmogy');
-                            }}
-                            disabled={loading}
-                          >
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
+                      <Chip label="Admin" size="small" color="primary" variant="filled" />
                     </Stack>
                   </CardContent>
                 </Card>
 
-                {/* Employee demo card */}
-                <Card
-                  variant="outlined"
-                  sx={{
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: (theme) => theme.shadows[4],
-                      borderColor: 'secondary.main',
-                    },
-                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.08)' : 'rgba(156, 39, 176, 0.04)',
-                  }}
-                  onClick={() => handleDemoLogin('john@company.com', 'employee123', { tenantSlug: 'default' })}
-                >
-                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar sx={{ bgcolor: 'secondary.main', width: 40, height: 40 }}>
-                        <PersonOutlineIcon />
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle2" fontWeight={600} noWrap>
-                          Support Agent
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          john@company.com
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip label="Employee" size="small" color="secondary" variant="filled" />
-                        <Tooltip title="Copy credentials">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyCreds('john@company.com', 'employee123');
-                            }}
-                            disabled={loading}
-                          >
-                            <ContentCopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
+
               </Stack>
             </Box>
           </CardContent>

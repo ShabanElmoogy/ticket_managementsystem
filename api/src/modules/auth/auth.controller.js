@@ -415,6 +415,61 @@ export const refreshToken = async (req, res) => {
   }
 };
 
+// Dev-only quick login (no password check) — disabled in production
+export const devLogin = async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    const tenantSlugRaw = req.headers['x-tenant-slug'];
+    const tenantSlug = typeof tenantSlugRaw === 'string' ? tenantSlugRaw.trim() : '';
+
+    let user, tenant, tenantId;
+
+    if (tenantSlug) {
+      [tenant] = await db.select({ id: tenants.id, slug: tenants.slug, subscriptionStatus: tenants.subscriptionStatus, subscriptionEnd: tenants.subscriptionEnd })
+        .from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+      if (!tenant) return res.status(400).json({ error: 'Invalid tenant' });
+      tenantId = tenant.id;
+      [user] = await db.select().from(users).where(and(eq(users.email, email), eq(users.tenantId, tenantId))).limit(1);
+    } else {
+      [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    }
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const accessToken = generateAccessToken({
+      userId: user.id, email: user.email, role: user.role,
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {}),
+    });
+    const refreshTokenValue = generateRefreshToken({
+      userId: user.id, email: user.email, role: user.role,
+      ...(TENANT_SCOPED_ROLES.includes(user.role) ? { tenantId: user.tenantId } : {}),
+    });
+    await storeRefreshToken(refreshTokenValue, user.id);
+
+    const isExpired = tenant?.subscriptionEnd && new Date(tenant.subscriptionEnd) < new Date();
+    const tenantStatus = isExpired ? 'EXPIRED' : tenant?.subscriptionStatus ?? null;
+    const tenantSuspended = tenantStatus === 'SUSPENDED' || tenantStatus === 'PAST_DUE' || tenantStatus === 'EXPIRED';
+
+    const { password: _, ...userWithoutPassword } = user;
+    return res.json({
+      user: { ...userWithoutPassword, ...(tenant ? { tenantSlug: tenant.slug } : {}) },
+      token: accessToken,
+      refreshToken: refreshTokenValue,
+      tenantSuspended,
+      tenantStatus,
+      ...(tenant ? { tenant: { id: tenantId, slug: tenant.slug } } : {}),
+    });
+  } catch (error) {
+    console.error('devLogin error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Logout user
 export const logout = async (req, res) => {
   try {

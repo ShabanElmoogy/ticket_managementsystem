@@ -5,6 +5,8 @@ export type Tenant = {
   name: string;
   slug: string;
   adminEmail?: string | null;
+  employeeEmail?: string | null;
+  programmerEmail?: string | null;
   subscriptionPlan?: string;
   subscriptionStatus?: string;
   subscriptionStart?: string;
@@ -23,7 +25,7 @@ export type TenantStats = {
 
 export const tenantsApi = {
   // Public — no auth required
-  listPublic: () => api.get<Pick<Tenant, 'id' | 'name' | 'slug'>[]>("/tenants/public"),
+  listPublic: () => api.get<Pick<Tenant, 'id' | 'name' | 'slug' | 'adminEmail' | 'employeeEmail' | 'programmerEmail'>[]>("/tenants/public"),
 
   // Admin
   list: () => api.get<Tenant[]>("/tenants"),
