@@ -19,6 +19,7 @@ import {
   InputLabel,
   FormControl,
   Select,
+  InputAdornment,
 } from '@mui/material';
 import {
   LightMode as LightModeIcon,
@@ -29,7 +30,9 @@ import {
   SupportAgent as SupportAgentIcon,
   Dashboard as DashboardIcon,
   Notifications as NotificationsIcon,
-  Timeline as TimelineIcon
+  Timeline as TimelineIcon,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -111,13 +114,15 @@ const LoginForm: React.FC = () => {
     setLoading(true);
     setError('');
 
-    try {
-      if (!demoTenant) {
-        localStorage.removeItem('tenantSlug');
-      } else {
-        localStorage.setItem('tenantSlug', demoTenant);
-      }
+    if (!demoTenant) {
+      localStorage.removeItem('tenantSlug');
+    } else {
+      localStorage.setItem('tenantSlug', demoTenant);
+    }
 
+    sessionStorage.setItem('skipTenantHeader', demoTenant ? 'false' : 'true');
+
+    try {
       const response = await authApi.devLogin(demoEmail, demoTenant || undefined);
 
       const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
@@ -128,6 +133,10 @@ const LoginForm: React.FC = () => {
       login(response.user, response.token, response.refreshToken,
         !!(response as any).tenantSuspended,
         (response as any).tenantStatus ?? null);
+      sessionStorage.removeItem('skipTenantHeader');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || err?.message || 'Login failed';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -406,6 +415,18 @@ const LoginForm: React.FC = () => {
                     margin="normal"
                     required
                     disabled={loading}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
 
                   {error && (
@@ -494,7 +515,7 @@ const LoginForm: React.FC = () => {
                     },
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.08)' : 'rgba(25, 118, 210, 0.04)',
                   }}
-                  onClick={() => handleDemoLogin('manager@company.com', 'shabanelmogy', { tenantSlug: 'default' })}
+                  onClick={() => handleDemoLogin('manager@company.com', 'shabanelmogy')}
                 >
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Stack direction="row" spacing={2} alignItems="center">

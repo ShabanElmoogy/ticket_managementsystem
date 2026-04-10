@@ -22,7 +22,6 @@ interface SocketNotification {
     newStatus?: string;
   };
   ticketId?: string;
-  title?: string;
   createdAt?: string;
   timestamp?: string;
 }

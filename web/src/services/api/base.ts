@@ -65,7 +65,8 @@ http.interceptors.request.use(
     // - SUPER_ADMIN login is global and can omit tenant.
     // - Tenant users must send X-Tenant-Slug even for /auth/login.
     // We attach tenant slug whenever it exists; backend will ignore it for SUPER_ADMIN.
-    const tenantSlug = localStorage.getItem("tenantSlug");
+    const skipTenantHeader = sessionStorage.getItem('skipTenantHeader') === 'true';
+    const tenantSlug = skipTenantHeader ? null : localStorage.getItem("tenantSlug");
     if (tenantSlug) {
       (config.headers as Record<string, string>)["X-Tenant-Slug"] = tenantSlug;
     }

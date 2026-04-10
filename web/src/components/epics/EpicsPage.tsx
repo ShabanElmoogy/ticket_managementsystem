@@ -16,7 +16,6 @@ import EpicFormDialog from './components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
 import { useIsAdmin } from '../../stores/authStore';
 import { DeleteConfirmDialog } from '../common';
-import { formatDate } from '../../utils/dateUtils';
 
 const STATUSES: Array<Epic['status'] | ''> = ['', 'DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 
