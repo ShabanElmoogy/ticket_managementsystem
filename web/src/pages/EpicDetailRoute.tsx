@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import Header from '../components/dashboard/Header';
-import EpicDetailPage from '../components/epics/EpicDetailPage';
+import EpicDetailPage from '../components/epics/detail/EpicDetailPage';
 
 const EpicDetailRoute: React.FC = () => (
   <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>

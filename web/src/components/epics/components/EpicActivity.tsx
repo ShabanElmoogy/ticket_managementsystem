@@ -27,6 +27,7 @@ const EpicActivity: React.FC<Props> = ({ epicId }) => {
     queryKey: ['epics', epicId, 'activity'],
     queryFn: () => epicsApi.listActivity(epicId),
     enabled: !!epicId,
+    staleTime: 0,
   });
 
   return (

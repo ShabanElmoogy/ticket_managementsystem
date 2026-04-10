@@ -1,7 +1,17 @@
 import { db } from '../../../config/database.js';
 import { epicComments } from './epicComments.schema.js';
+import { notifications } from '../../notifications/notifications.schema.js';
 import { users } from '../../users/users.schema.js';
-import { eq, asc } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
+
+/** Find mentioned user IDs by checking if content contains @name for each known user. */
+const findMentionedIds = (content, allUsers, excludeId) => {
+  const lower = content.toLowerCase();
+  return allUsers
+    .filter((u) => lower.includes(`@${u.name.toLowerCase()}`))
+    .map((u) => u.id)
+    .filter((id) => id !== excludeId);
+};
 
 export const listEpicComments = async (req, res) => {
   try {
@@ -11,7 +21,7 @@ export const listEpicComments = async (req, res) => {
       .from(epicComments)
       .leftJoin(users, eq(epicComments.userId, users.id))
       .where(eq(epicComments.epicId, id))
-      .orderBy(asc(epicComments.createdAt));
+      .orderBy(desc(epicComments.createdAt));
     res.json(rows.map((r) => ({ id: r.id, content: r.content, createdAt: r.createdAt, user: { id: r.userId, name: r.userName, email: r.userEmail } })));
   } catch (err) {
     console.error('listEpicComments error:', err);
@@ -27,6 +37,38 @@ export const createEpicComment = async (req, res) => {
     const [row] = await db.insert(epicComments).values({ content: content.trim(), epicId: id, userId: req.user.userId }).returning();
     const [user] = await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, req.user.userId)).limit(1);
     res.status(201).json({ ...row, user });
+
+    // Fire mention notifications async
+    (async () => {
+      try {
+        if (!req.emitNotification) return;
+        const allUsers = await db.select({ id: users.id, name: users.name }).from(users);
+        const mentionedIds = findMentionedIds(content.trim(), allUsers, req.user.userId);
+        if (mentionedIds.length === 0) return;
+        for (const uid of mentionedIds) {
+          const [notification] = await db.insert(notifications).values({
+            userId:   uid,
+            ticketId: null,
+            type:     'COMMENT_MENTION',
+            title:    'You were mentioned',
+            message:  `${user?.name} mentioned you in an epic comment: ${content.trim().substring(0, 80)}`,
+          }).returning();
+          req.emitNotification(uid, {
+            id:        notification.id,
+            type:      'COMMENT_MENTION',
+            title:     notification.title,
+            message:   notification.message,
+            timestamp: notification.createdAt,
+            data: {
+              mentionedBy: user?.name,
+              comment:     content.trim().substring(0, 100),
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Epic mention notification error:', e);
+      }
+    })();
   } catch (err) {
     console.error('createEpicComment error:', err);
     res.status(500).json({ error: 'Internal server error' });
