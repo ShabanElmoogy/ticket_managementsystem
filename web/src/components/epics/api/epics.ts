@@ -1,5 +1,5 @@
 import { BaseApiService } from '../../../services/api/base';
-import type { Epic, CreateEpicData, UpdateEpicData } from '../../../services/api/types';
+import type { Epic, CreateEpicData, UpdateEpicData, LinkedTicket } from '../../../services/api/types';
 
 export interface EpicComment {
   id: string;
@@ -70,6 +70,15 @@ class EpicsApiService extends BaseApiService {
   }
   unwatch(epicId: string): Promise<{ watching: boolean }> {
     return this.delete(`/epics/${epicId}/watch`);
+  }
+  listLinkedTickets(epicId: string): Promise<LinkedTicket[]> {
+    return this.get(`/epics/${epicId}/tickets`);
+  }
+  linkTicket(epicId: string, ticketId: string): Promise<{ message: string }> {
+    return this.post(`/epics/${epicId}/tickets`, { ticketId });
+  }
+  unlinkTicket(epicId: string, ticketId: string): Promise<{ message: string }> {
+    return this.delete(`/epics/${epicId}/tickets/${ticketId}`);
   }
 }
 

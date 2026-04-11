@@ -13,6 +13,7 @@ import EpicActivity from '../components/EpicActivity';
 import FeatureFormDialog from '../../features/components/FeatureFormDialog';
 import EpicHeader from './EpicHeader';
 import EpicFeaturesList from './EpicFeaturesList';
+import EpicLinkedTickets from './EpicLinkedTickets';
 import LinkFeatureDialog from './LinkFeatureDialog';
 import { useEpicDetail } from '../hooks/useEpicDetail';
 import type { UpdateEpicData, FeatureRequest } from '../../../services/api/types';
@@ -110,6 +111,8 @@ const EpicDetailPage: React.FC = () => {
             onNewFeature={() => setNewFeatureOpen(true)}
             onLinkExisting={() => setLinkOpen(true)}
           />
+
+          <EpicLinkedTickets epicId={id!} isAdmin={isAdmin} />
         </Box>
 
         {/* Right column: sticky tabbed sidebar */}

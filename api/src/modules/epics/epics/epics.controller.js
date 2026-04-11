@@ -1,10 +1,11 @@
 import { db } from '../../../config/database.js';
 import { epics, epicDependencies } from './epics.schema.js';
 import { featureRequests, featureSteps, featureVotes } from '../../features/features.schema.js';
+import { tickets } from '../../tickets/tickets.schema.js';
 import { users } from '../../users/users.schema.js';
 import { applications } from '../../applications/applications.schema.js';
 import { customers } from '../../customers/customers.schema.js';
-import { eq, desc, inArray, asc, and } from 'drizzle-orm';
+import { eq, desc, inArray, asc, and, isNull } from 'drizzle-orm';
 import { getTenantScope } from '../../../utils/tenantUtils.js';
 import { logEpicActivity } from '../epicActivity/epicActivity.controller.js';
 
@@ -295,6 +296,63 @@ export const removeBlocker = async (req, res) => {
     res.json({ message: 'Blocker removed' });
   } catch (err) {
     console.error('removeBlocker error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const listLinkedTickets = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rows = await db.select({
+      id:            tickets.id,
+      title:         tickets.title,
+      status:        tickets.status,
+      priority:      tickets.priority,
+      createdAt:     tickets.createdAt,
+      customerName:  customers.name,
+      assignedToName: users.name,
+    }).from(tickets)
+      .leftJoin(customers, eq(tickets.customerId, customers.id))
+      .leftJoin(users, eq(tickets.assignedToId, users.id))
+      .where(eq(tickets.epicId, id))
+      .orderBy(desc(tickets.createdAt));
+    res.json(rows);
+  } catch (err) {
+    console.error('listLinkedTickets error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const linkTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ticketId } = req.body;
+    if (!ticketId) return res.status(400).json({ error: 'ticketId is required' });
+    const [epic] = await db.select({ id: epics.id }).from(epics).where(eq(epics.id, id)).limit(1);
+    if (!epic) return res.status(404).json({ error: 'Epic not found' });
+    const [ticket] = await db.select({ id: tickets.id, title: tickets.title }).from(tickets).where(eq(tickets.id, ticketId)).limit(1);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    await db.update(tickets).set({ epicId: id, updatedAt: new Date() }).where(eq(tickets.id, ticketId));
+    const actorId = req.user?.userId ?? req.user?.id;
+    await logEpicActivity(id, actorId, 'TICKET_LINKED', { ticketId, ticketTitle: ticket.title });
+    res.json({ message: 'Ticket linked' });
+  } catch (err) {
+    console.error('linkTicket error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const unlinkTicket = async (req, res) => {
+  try {
+    const { id, ticketId } = req.params;
+    const [ticket] = await db.select({ id: tickets.id, title: tickets.title, epicId: tickets.epicId }).from(tickets).where(eq(tickets.id, ticketId)).limit(1);
+    if (!ticket || ticket.epicId !== id) return res.status(404).json({ error: 'Linked ticket not found' });
+    await db.update(tickets).set({ epicId: null, updatedAt: new Date() }).where(eq(tickets.id, ticketId));
+    const actorId = req.user?.userId ?? req.user?.id;
+    await logEpicActivity(id, actorId, 'TICKET_UNLINKED', { ticketId, ticketTitle: ticket.title });
+    res.json({ message: 'Ticket unlinked' });
+  } catch (err) {
+    console.error('unlinkTicket error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

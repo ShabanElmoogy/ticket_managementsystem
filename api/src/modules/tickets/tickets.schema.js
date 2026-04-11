@@ -46,6 +46,7 @@ export const tickets = pgTable('tickets', {
   slaDeadline: timestamp('sla_deadline'),
   emailMessageId: text('email_message_id'),
   emailFrom: text('email_from'),
+  epicId: uuid('epic_id'),
 });
 
 // Ticket activities table

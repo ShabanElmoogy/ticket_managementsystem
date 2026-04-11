@@ -218,6 +218,13 @@
       "when": 1775922577174,
       "tag": "0032_fair_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1775924042086,
+      "tag": "0033_rare_spyke",
+      "breakpoints": true
     }
   ]
 }

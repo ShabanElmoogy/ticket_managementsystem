@@ -269,6 +269,16 @@ export interface TicketTemplate {
   createdBy: { id: string; name: string };
 }
 
+export interface LinkedTicket {
+  id: string;
+  title: string;
+  status: TicketStatus;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  createdAt: string;
+  customerName?: string | null;
+  assignedToName?: string | null;
+}
+
 export interface Epic {
   id: string;
   title: string;

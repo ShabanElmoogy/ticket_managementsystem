@@ -70,24 +70,26 @@ const EpicFeaturesList: React.FC<Props> = ({
           )}
         </Paper>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={features.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-            {features.map((feature) => (
-              <SortableFeatureCard
-                key={feature.id}
-                feature={feature}
-                isAdmin={isAdmin}
-                isFlipped={flippedId === feature.id}
-                onFlip={onFlip}
-                onNavigate={onNavigate}
-                onUnlink={onUnlink}
-                onEdit={onEdit}
-                onStatusChange={onStatusChange}
-                epicId={epicId}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
+        <Box sx={{ maxHeight: 300, overflowY: 'auto', pr: 0.5 }}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={features.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+              {features.map((feature) => (
+                <SortableFeatureCard
+                  key={feature.id}
+                  feature={feature}
+                  isAdmin={isAdmin}
+                  isFlipped={flippedId === feature.id}
+                  onFlip={onFlip}
+                  onNavigate={onNavigate}
+                  onUnlink={onUnlink}
+                  onEdit={onEdit}
+                  onStatusChange={onStatusChange}
+                  epicId={epicId}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        </Box>
       )}
     </Box>
   );
