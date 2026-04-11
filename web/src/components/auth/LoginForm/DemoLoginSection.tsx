@@ -40,7 +40,7 @@ const DemoLoginSection: React.FC<DemoLoginSectionProps> = ({ tenantSlug, tenants
               size="small"
               startIcon={r.icon}
               disabled={loading}
-              onClick={() => onDemoLogin(r.email!, 'password123', { tenantSlug })}
+              onClick={() => onDemoLogin(r.email!, '', { tenantSlug })}
               sx={{ textTransform: 'none', fontWeight: 600, flex: 1 }}
             >
               {r.label}

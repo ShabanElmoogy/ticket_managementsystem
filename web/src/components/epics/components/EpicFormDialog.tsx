@@ -2,8 +2,9 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, TextField, FormControl, InputLabel, Select, MenuItem, Stack,
-  Chip, Box,
+  Chip, Box, Autocomplete, Divider, Typography, Collapse,
 } from '@mui/material';
+import { LibraryBooks, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -12,6 +13,9 @@ import { useQuery } from '@tanstack/react-query';
 import { applicationsApi } from '../../admin/applicationsManagement/api/applications';
 import { customersApi } from '../../admin/customersManagement/api/customers';
 import { usersApi } from '../../admin/usersManagement/api/users';
+import { epicsApi } from '../api/epics';
+import TemplatePicker from './TemplatePicker';
+import type { EpicTemplate } from '../api/epicTemplates';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../../services/api/types';
 
 const STATUSES: Epic['status'][] = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
@@ -21,7 +25,7 @@ interface Props {
   open: boolean;
   editing: Epic | null;
   onClose: () => void;
-  onSubmit: (data: CreateEpicData | UpdateEpicData) => Promise<void>;
+  onSubmit: (data: CreateEpicData | UpdateEpicData, templateId?: string) => Promise<void>;
 }
 
 const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) => {
@@ -36,8 +40,13 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [estimatedDays, setEstimatedDays] = useState<string>('');
+  const [parentEpicId, setParentEpicId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<EpicTemplate | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
+
+  const { data: allEpics = [] } = useQuery({ queryKey: ['epics'], queryFn: () => epicsApi.list(), enabled: open });
 
   useEffect(() => {
     if (open) setTimeout(() => titleRef.current?.focus(), 100);
@@ -63,11 +72,13 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
       setPriority(editing.priority ?? 'MEDIUM');
       setTags(editing.tags ?? []);
       setEstimatedDays(editing.estimatedDays != null ? String(editing.estimatedDays) : '');
+      setParentEpicId(editing.parentEpicId ?? null);
     } else {
       setTitle(''); setDescription(''); setStatus('DRAFT');
-      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null); setPriority('MEDIUM'); setTags([]); setEstimatedDays('');
+      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null); setPriority('MEDIUM'); setTags([]); setEstimatedDays(''); setParentEpicId(null);
+      setSelectedTemplate(null); setTemplateOpen(false);
     }
-  }, [editing]);
+  }, [editing, open]);
 
   useEffect(() => {
     if (customerId && applicationId && !filteredCustomers.some((c) => c.id === customerId)) setCustomerId('');
@@ -87,8 +98,9 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         customerId: customerId || null,
         targetDate: targetDate ? targetDate.format('YYYY-MM-DD') : null,
         estimatedDays: estimatedDays ? parseInt(estimatedDays, 10) : null,
+        parentEpicId: parentEpicId || null,
       };
-      await onSubmit(editing ? { ...base, status } : base);
+      await onSubmit(editing ? { ...base, status } : base, selectedTemplate?.id);
       onClose();
     } finally {
       setSaving(false);
@@ -103,6 +115,44 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" required inputRef={titleRef} />
           <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={3} size="small" />
+
+          {/* Template picker — only for new epics */}
+          {!editing && (
+            <>
+              <Divider />
+              <Box>
+                <Box
+                  display="flex" alignItems="center" justifyContent="space-between"
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => setTemplateOpen((v) => !v)}
+                >
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LibraryBooks fontSize="small" color="primary" />
+                    <Typography variant="subtitle2" fontWeight={700}>Start from a Template</Typography>
+                    {selectedTemplate && (
+                      <Chip label={selectedTemplate.name} size="small" color="primary" onDelete={(e) => { e.stopPropagation(); setSelectedTemplate(null); }} />
+                    )}
+                  </Box>
+                  {templateOpen ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                </Box>
+                <Collapse in={templateOpen}>
+                  <Box mt={1.5}>
+                    <TemplatePicker
+                      selected={selectedTemplate}
+                      onSelect={(t) => {
+                        setSelectedTemplate(t);
+                        if (t) {
+                          if (!title.trim()) setTitle(t.name);
+                          if (!description.trim() && t.description) setDescription(t.description);
+                        }
+                      }}
+                    />
+                  </Box>
+                </Collapse>
+              </Box>
+              <Divider />
+            </>
+          )}
 
           <FormControl size="small" fullWidth>
             <InputLabel>Priority</InputLabel>
@@ -153,6 +203,27 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
             inputProps={{ min: 1 }}
             placeholder="e.g. 14"
             helperText="How many working days is this epic expected to take?"
+          />
+
+          <Autocomplete
+            size="small"
+            options={allEpics.filter((e) => e.id !== editing?.id)}
+            getOptionLabel={(e) => e.title}
+            value={allEpics.find((e) => e.id === parentEpicId) ?? null}
+            onChange={(_, v) => setParentEpicId(v?.id ?? null)}
+            renderInput={(params) => (
+              <TextField {...params} label="Parent Epic (optional)" placeholder="Search epics…" size="small" />
+            )}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <Box>
+                  <span>{option.title}</span>
+                  <Box component="span" sx={{ ml: 1, fontSize: '0.7rem', color: 'text.secondary' }}>
+                    {option.status}
+                  </Box>
+                </Box>
+              </li>
+            )}
           />
 
           <Box>

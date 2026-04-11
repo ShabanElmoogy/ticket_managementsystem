@@ -1,5 +1,5 @@
 import { BaseApiService } from '../../../services/api/base';
-import type { Epic, CreateEpicData, UpdateEpicData, LinkedTicket } from '../../../services/api/types';
+import type { Epic, CreateEpicData, UpdateEpicData, LinkedTicket, EpicRelation, EpicRelationType, EpicNetworkGraph } from '../../../services/api/types';
 
 export interface EpicComment {
   id: string;
@@ -82,6 +82,31 @@ class EpicsApiService extends BaseApiService {
   }
   checkAutoClose(epicId: string): Promise<{ eligible: boolean; reason?: string; message?: string; stats?: any }> {
     return this.get(`/epics/${epicId}/auto-close`);
+  }
+  listSubEpics(epicId: string): Promise<Epic[]> {
+    return this.get(`/epics/${epicId}/sub-epics`);
+  }
+  listRelations(epicId: string): Promise<EpicRelation[]> {
+    return this.get(`/epics/${epicId}/relations`);
+  }
+  addRelation(epicId: string, targetEpicId: string, relationType: EpicRelationType): Promise<{ id: string }> {
+    return this.post(`/epics/${epicId}/relations`, { targetEpicId, relationType });
+  }
+  removeRelation(epicId: string, relationId: string): Promise<{ message: string }> {
+    return this.delete(`/epics/${epicId}/relations/${relationId}`);
+  }
+  getNetworkGraph(): Promise<EpicNetworkGraph> {
+    return this.get('/epics/network/graph');
+  }
+  getBurndown(epicId: string): Promise<{
+    points: { date: string; completed: number; total: number; ideal: number | null }[];
+    total: number;
+    completed: number;
+    projectedDate: string | null;
+    startDate: string;
+    targetDate: string | null;
+  }> {
+    return this.get(`/epics/${epicId}/burndown`);
   }
 }
 

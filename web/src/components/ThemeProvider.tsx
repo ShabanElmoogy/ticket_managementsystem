@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import { useThemeStore } from '../stores/themeStore';
 
 interface CustomThemeProviderProps {
@@ -227,8 +228,44 @@ export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ childr
     },
   });
 
+  // Scrollbar colors derived from the active palette
+  const scrollThumb  = mode === 'dark' ? '#334155' : '#cbd5e1';
+  const scrollThumbH = mode === 'dark' ? '#475569' : '#94a3b8';
+  const scrollTrack  = mode === 'dark' ? '#0f172a' : '#f1f5f9';
+  const scrollBorder = mode === 'dark' ? '#0f172a' : '#f8fafc';
+
   return (
     <ThemeProvider theme={theme}>
+      <GlobalStyles styles={{
+        // Thin, modern scrollbar for all elements
+        '*': {
+          scrollbarWidth: 'thin',
+          scrollbarColor: `${scrollThumb} transparent`,
+        },
+        '*::-webkit-scrollbar': {
+          width: '6px',
+          height: '6px',
+        },
+        '*::-webkit-scrollbar-track': {
+          background: 'transparent',
+        },
+        '*::-webkit-scrollbar-thumb': {
+          background: scrollThumb,
+          borderRadius: '999px',
+          border: `2px solid ${scrollBorder}`,
+          transition: 'background 0.2s',
+        },
+        '*::-webkit-scrollbar-thumb:hover': {
+          background: scrollThumbH,
+        },
+        '*::-webkit-scrollbar-corner': {
+          background: 'transparent',
+        },
+        // Keep layout stable when scrollbar appears/disappears
+        html: {
+          scrollbarGutter: 'stable',
+        },
+      }} />
       {children}
     </ThemeProvider>
   );

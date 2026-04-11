@@ -82,6 +82,7 @@ router.get('/stats', authenticateToken, requireTenantAdmin, usersController.getU
 router.get('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantUsers);
 router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, validate(createUserSchema), usersController.createTenantUser);
 router.get('/tenant/seats', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantSeats);
+router.post('/tenant/:id/reset-password', authenticateToken, requireTenantAdmin, usersController.resetTenantUserPassword);
 
 /**
  * @swagger

@@ -260,3 +260,38 @@ export const getDelayedTickets = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// Get epic auto-close setting for current tenant
+export const getEpicAutoCloseSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const [tenant] = await db
+      .select({ epicAutoClose: tenants.epicAutoClose })
+      .from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    res.json({ epicAutoClose: tenant.epicAutoClose });
+  } catch (error) {
+    console.error('Get epic auto-close settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update epic auto-close setting for current tenant
+export const updateEpicAutoCloseSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const { epicAutoClose } = req.body;
+    if (typeof epicAutoClose !== 'boolean') return res.status(400).json({ error: 'epicAutoClose must be a boolean' });
+    const [updated] = await db
+      .update(tenants)
+      .set({ epicAutoClose, updatedAt: new Date() })
+      .where(eq(tenants.id, tenantId))
+      .returning({ epicAutoClose: tenants.epicAutoClose });
+    res.json({ epicAutoClose: updated.epicAutoClose });
+  } catch (error) {
+    console.error('Update epic auto-close settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

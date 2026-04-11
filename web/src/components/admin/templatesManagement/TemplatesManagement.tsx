@@ -3,16 +3,18 @@ import {
   Box, Typography, Button, Paper, IconButton, Tooltip, Chip,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   FormControl, InputLabel, Select, MenuItem, CircularProgress,
-  Alert,
+  Alert, Tabs, Tab,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Label as TemplateIcon,
+  AccountTree as EpicsIcon,
 } from '@mui/icons-material';
 import { templatesApi, type TemplatePayload } from './api/templates';
 import type { TicketTemplate } from '../../../services/api/types';
+import EpicTemplatesPage from '../../epics/EpicTemplatesPage';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 const PRIORITY_COLORS: Record<string, string> = {
@@ -22,6 +24,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 const emptyForm = (): TemplatePayload => ({ name: '', description: '', priority: 'MEDIUM', estimatedHours: null });
 
 const TemplatesManagement: React.FC = () => {
+  const [tab, setTab] = useState(0);
   const [templates, setTemplates] = useState<TicketTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +90,13 @@ const TemplatesManagement: React.FC = () => {
 
   return (
     <Box>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Tab icon={<TemplateIcon fontSize="small" />} iconPosition="start" label="Ticket Templates" />
+        <Tab icon={<EpicsIcon fontSize="small" />} iconPosition="start" label="Epic Templates" />
+      </Tabs>
+
+      {tab === 1 ? <EpicTemplatesPage /> : (
+      <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center" gap={1}>
           <TemplateIcon color="primary" />
@@ -210,6 +220,8 @@ const TemplatesManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    </Box>
+    )}
     </Box>
   );
 };

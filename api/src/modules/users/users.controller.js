@@ -435,6 +435,39 @@ export const resetUserPassword = async (req, res) => {
   }
 };
 
+// Reset tenant user password (tenant admin — can only reset passwords for users in their tenant)
+export const resetTenantUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+
+    // Verify the target user belongs to this tenant
+    const [target] = await db
+      .select({ id: users.id, tenantId: users.tenantId })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!target) return res.status(404).json({ error: 'User not found' });
+    if (target.tenantId !== tenantId) return res.status(403).json({ error: 'Forbidden' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    await db.update(users).set({ password: hashed, updatedAt: new Date() }).where(eq(users.id, id));
+
+    return res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset tenant user password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Get all employees
 // - SUPER_ADMIN: sees all employees
 // - TENANT_ADMIN/EMPLOYEE: sees employees only within resolved tenant

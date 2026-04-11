@@ -13,7 +13,11 @@ import FeatureFormDialog from '../../features/components/FeatureFormDialog';
 import EpicHeader from './EpicHeader';
 import EpicFeaturesList from './EpicFeaturesList';
 import EpicLinkedTickets from './EpicLinkedTickets';
+import EpicBreadcrumb from './EpicBreadcrumb';
+import EpicSubEpics from './EpicSubEpics';
+import EpicRelations from './EpicRelations';
 import LinkFeatureDialog from './LinkFeatureDialog';
+import EpicBurndownChart from './EpicBurndownChart';
 import { useEpicDetail } from '../hooks/useEpicDetail';
 import { exportEpicToCsv } from '../utils/exportEpicCsv';
 import type { UpdateEpicData, FeatureRequest } from '../../../services/api/types';
@@ -33,7 +37,7 @@ const EpicDetailPage: React.FC = () => {
     editingFeature, setEditingFeature,
     snack, setSnack,
     suggestActive, setSuggestActive,
-    suggestCompleted, setSuggestCompleted,
+    autoCloseData, setAutoCloseData,
     handleNewFeature, handleEditFeature,
     handleStatusChange, handleReorder, handleUpdate,
     onUnlink, onBlockerAdd, onBlockerRemove,
@@ -85,6 +89,11 @@ const EpicDetailPage: React.FC = () => {
 
         {/* Left column */}
         <Box>
+          {/* Breadcrumb */}
+          {(epic.ancestors?.length ?? 0) > 0 && (
+            <EpicBreadcrumb ancestors={epic.ancestors!} current={epic.title} />
+          )}
+
           {overdue && (
             <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
               This epic is <strong>{overduedays} day{overduedays !== 1 ? 's' : ''} overdue</strong> — target date was {formatDate(epic.targetDate!)}. Update the target date or mark it completed.
@@ -107,22 +116,32 @@ const EpicDetailPage: React.FC = () => {
             onExportCsv={handleCsvExport}
           />
 
-          <EpicFeaturesList
-            features={orderedFeatures}
-            isAdmin={isAdmin}
-            flippedId={flippedId}
+          <EpicSubEpics
             epicId={id!}
-            onFlip={setFlippedId}
-            onNavigate={(fid) => navigate(`/features/${fid}`, { state: { from: `/epics/${id}` } })}
-            onUnlink={onUnlink}
-            onEdit={(f) => setEditingFeature(f)}
-            onStatusChange={handleStatusChange}
-            onReorder={handleReorder}
-            onNewFeature={() => setNewFeatureOpen(true)}
-            onLinkExisting={() => setLinkOpen(true)}
+            subEpics={(epic.subEpics ?? []) as any}
+            isAdmin={isAdmin}
           />
 
+          <Box mt={3}>
+            <EpicBurndownChart epicId={id!} targetDate={epic.targetDate} />
+            <EpicFeaturesList
+              features={orderedFeatures}
+              isAdmin={isAdmin}
+              flippedId={flippedId}
+              epicId={id!}
+              onFlip={setFlippedId}
+              onNavigate={(fid) => navigate(`/features/${fid}`, { state: { from: `/epics/${id}` } })}
+              onUnlink={onUnlink}
+              onEdit={(f) => setEditingFeature(f)}
+              onStatusChange={handleStatusChange}
+              onReorder={handleReorder}
+              onNewFeature={() => setNewFeatureOpen(true)}
+              onLinkExisting={() => setLinkOpen(true)}
+            />
+          </Box>
+
           <EpicLinkedTickets epicId={id!} isAdmin={isAdmin} />
+          <EpicRelations epicId={id!} isAdmin={isAdmin} />
         </Box>
 
         {/* Right column: sticky tabbed sidebar */}
@@ -199,16 +218,39 @@ const EpicDetailPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={suggestCompleted} onClose={() => setSuggestCompleted(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Mark Epic as Completed?</DialogTitle>
+      <Dialog open={!!autoCloseData} onClose={() => setAutoCloseData(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {autoCloseData?.openTickets === 0 ? '🎉 Mark Epic as Completed?' : 'All Features Shipped'}
+        </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            All features have been shipped. Would you like to mark this epic as <strong>COMPLETED</strong>?
-          </Typography>
+          {autoCloseData?.openTickets === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              All features have been shipped and there are no open linked tickets.
+              {autoCloseData?.autoCloseEnabled
+                ? ' Auto-close is enabled — would you like to mark this epic as COMPLETED?'
+                : ' Would you like to mark this epic as COMPLETED?'}
+            </Typography>
+          ) : (
+            <Box>
+              <Typography variant="body2" color="text.secondary" mb={1.5}>
+                All features have been shipped, but there {autoCloseData?.openTickets === 1 ? 'is' : 'are'} still{' '}
+                <strong>{autoCloseData?.openTickets} open linked ticket{autoCloseData?.openTickets !== 1 ? 's' : ''}</strong>.
+                Resolve them before closing, or close anyway.
+              </Typography>
+              {!autoCloseData?.autoCloseEnabled && (
+                <Typography variant="caption" color="text.disabled" display="block">
+                  Auto-close is disabled for this tenant.
+                </Typography>
+              )}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSuggestCompleted(false)}>Not Yet</Button>
-          <Button variant="contained" color="success" onClick={async () => { await handleUpdate({ status: 'COMPLETED' }); setSuggestCompleted(false); }}>
+          <Button onClick={() => setAutoCloseData(null)}>Not Yet</Button>
+          <Button
+            variant="contained" color="success"
+            onClick={async () => { await handleUpdate({ status: 'COMPLETED' }); setAutoCloseData(null); }}
+          >
             Mark Completed
           </Button>
         </DialogActions>

@@ -5,12 +5,14 @@ import {
   InputLabel, Select, MenuItem, Snackbar, Alert, CircularProgress,
   ToggleButton, ToggleButtonGroup, Checkbox, Collapse, Autocomplete,
 } from '@mui/material';
-import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload, ViewModule, Dashboard } from '@mui/icons-material';
+import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload, ViewModule, Dashboard, PictureAsPdf, Hub } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
 import EpicHealthScore from './components/EpicHealthScore';
 import EpicBoard from './components/EpicBoard';
 import EpicDashboard from './components/EpicDashboard';
+import EpicNetworkView from './components/EpicNetworkView';
 import { exportMultipleEpicsToCsv } from './utils/exportEpicCsv';
+import { generateEpicsReport } from '../../utils/reports/epicsReport';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from './api/epics';
@@ -18,6 +20,7 @@ import EpicStatusChip from './components/EpicStatusChip';
 import EpicPriorityChip from './components/EpicPriorityChip';
 import EpicFormDialog from './components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
+import { epicTemplatesApi } from './api/epicTemplates';
 import { useIsAdmin } from '../../stores/authStore';
 import { DeleteConfirmDialog } from '../common';
 
@@ -51,8 +54,8 @@ const EpicsPage: React.FC = () => {
   const [editing, setEditing] = useState<Epic | null>(null);
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Epic | null>(null);
-  const [view, setView] = useState<'list' | 'roadmap' | 'board' | 'dashboard'>(
-    () => (localStorage.getItem('epics-view') as 'list' | 'roadmap' | 'board' | 'dashboard') ?? 'list'
+  const [view, setView] = useState<'list' | 'roadmap' | 'board' | 'dashboard' | 'network'>(
+    () => (localStorage.getItem('epics-view') as 'list' | 'roadmap' | 'board' | 'dashboard' | 'network') ?? 'list'
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<Epic['status'] | ''>('');
@@ -78,9 +81,21 @@ const EpicsPage: React.FC = () => {
     onError: () => setSnack({ msg: 'Failed to delete', severity: 'error' }),
   });
 
-  const handleSubmit = async (data: CreateEpicData | UpdateEpicData) => {
-    if (editing) await updateMutation.mutateAsync({ id: editing.id, data: data as UpdateEpicData });
-    else await createMutation.mutateAsync(data as CreateEpicData);
+  const handleSubmit = async (data: CreateEpicData | UpdateEpicData, templateId?: string) => {
+    if (editing) {
+      await updateMutation.mutateAsync({ id: editing.id, data: data as UpdateEpicData });
+    } else {
+      const created = await createMutation.mutateAsync(data as CreateEpicData);
+      if (templateId && created?.id) {
+        try {
+          await epicTemplatesApi.apply(created.id, templateId);
+          qc.invalidateQueries({ queryKey: ['epics'] });
+          qc.invalidateQueries({ queryKey: ['features'] });
+        } catch {
+          // template apply failure is non-fatal
+        }
+      }
+    }
   };
 
   const filtered = epics
@@ -153,6 +168,7 @@ const EpicsPage: React.FC = () => {
             <ToggleButton value="board"><Tooltip title="Board"><ViewModule fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="roadmap"><Tooltip title="Roadmap"><Timeline fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="dashboard"><Tooltip title="Dashboard"><Dashboard fontSize="small" /></Tooltip></ToggleButton>
+            <ToggleButton value="network"><Tooltip title="Network"><Hub fontSize="small" /></Tooltip></ToggleButton>
           </ToggleButtonGroup>
           <Tooltip title="Export all epics to CSV">
             <Button
@@ -165,6 +181,27 @@ const EpicsPage: React.FC = () => {
               Export CSV
             </Button>
           </Tooltip>
+          {isAdmin && (
+            <Tooltip title="Export epics to PDF">
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                startIcon={<PictureAsPdf />}
+                onClick={() => generateEpicsReport(filtered, {
+                  title: 'Epics Report',
+                  filters: {
+                    ...(statusFilter ? { Status: statusFilter } : {}),
+                    ...(search ? { Search: search } : {}),
+                    ...(tagFilter ? { Tag: tagFilter } : {}),
+                  },
+                })}
+                disabled={filtered.length === 0}
+              >
+                Export PDF
+              </Button>
+            </Tooltip>
+          )}
           {isAdmin && (
             <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}>
               New Epic
@@ -256,6 +293,11 @@ const EpicsPage: React.FC = () => {
         <EpicDashboard epics={filtered} />
       )}
 
+      {/* Network view */}
+      {!isLoading && view === 'network' && (
+        <EpicNetworkView />
+      )}
+
       {/* Bulk action bar */}
       <Collapse in={selected.size > 0}>
         <Paper sx={{ p: 1.5, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'primary.main', bgcolor: 'primary.50' }}>
@@ -284,7 +326,7 @@ const EpicsPage: React.FC = () => {
       {/* List view */}
       {isLoading ? (
         <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>
-      ) : view === 'roadmap' || view === 'board' || view === 'dashboard' ? null : filtered.length === 0 ? (
+      ) : view === 'roadmap' || view === 'board' || view === 'dashboard' || view === 'network' ? null : filtered.length === 0 ? (
         <Paper sx={{ p: 6, textAlign: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 3 }}>
           <AccountTree sx={{ fontSize: 56, color: 'text.secondary', mb: 1 }} />
           {epics.length === 0 ? (

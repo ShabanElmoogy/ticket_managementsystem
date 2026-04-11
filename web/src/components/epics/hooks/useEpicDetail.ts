@@ -23,7 +23,7 @@ export const useEpicDetail = () => {
   const [blockerMenuAnchor, setBlockerMenuAnchor] = useState<null | HTMLElement>(null);
   const [sidebarTab, setSidebarTab] = useState(0);
   const [suggestActive, setSuggestActive] = useState(false);
-  const [suggestCompleted, setSuggestCompleted] = useState(false);
+  const [autoCloseData, setAutoCloseData] = useState<{ autoCloseEnabled: boolean; openTickets: number } | null>(null);
 
   const { data: epic, isLoading } = useQuery({
     queryKey: ['epics', id],
@@ -89,7 +89,14 @@ export const useEpicDetail = () => {
       if (data.status === undefined) {
         setSnack({ msg: 'Feature updated', severity: 'success' });
       } else if (res?.allShipped) {
-        setSuggestCompleted(true);
+        const autoCloseEnabled: boolean = res.autoCloseEnabled ?? true;
+        const openTickets: number = res.openTickets ?? 0;
+        if (autoCloseEnabled && openTickets === 0) {
+          // Auto-close immediately — no dialog needed
+          updateMutation.mutate({ status: 'COMPLETED' });
+        } else {
+          setAutoCloseData({ autoCloseEnabled, openTickets });
+        }
       }
     },
     onError: () => { invalidate(); setSnack({ msg: 'Failed to update feature', severity: 'error' }); },
@@ -139,7 +146,7 @@ export const useEpicDetail = () => {
     editingFeature, setEditingFeature,
     snack, setSnack,
     suggestActive, setSuggestActive,
-    suggestCompleted, setSuggestCompleted,
+    autoCloseData, setAutoCloseData,
     handleNewFeature,
     handleEditFeature,
     handleStatusChange,

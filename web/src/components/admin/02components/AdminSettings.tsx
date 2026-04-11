@@ -4,10 +4,14 @@ import {
   Schedule as ScheduleIcon,
   Timer as TimerIcon,
   Email as EmailIcon,
+  AccountTree as EpicsIcon,
 } from '@mui/icons-material';
 import SchedulerSettings from './SchedulerSettings';
 import SlaSettings from './SlaSettings';
 import EmailIngestSettings from './EmailIngestSettings';
+import EpicAutoCloseSettings from './EpicAutoCloseSettings';
+import { useAuthStore } from '../../../stores/authStore';
+import { isSuperAdmin } from '../../../types/roles';
 
 interface TabPanelProps {
   children: React.ReactNode;
@@ -21,14 +25,20 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
   </Box>
 );
 
-const TABS = [
-  { label: 'Scheduler',    icon: <ScheduleIcon fontSize="small" /> },
-  { label: 'SLA Timers',   icon: <TimerIcon fontSize="small" /> },
-  { label: 'Email Ingest', icon: <EmailIcon fontSize="small" /> },
-];
-
 const AdminSettings: React.FC = () => {
+  const { user } = useAuthStore();
+  const isSuper = isSuperAdmin(user?.role);
   const [tab, setTab] = useState(0);
+
+  const tabs = isSuper
+    ? [
+        { label: 'Email Ingest', icon: <EmailIcon fontSize="small" />, content: <EmailIngestSettings /> },
+      ]
+    : [
+        { label: 'Scheduler',       icon: <ScheduleIcon fontSize="small" />, content: <SchedulerSettings /> },
+        { label: 'SLA Timers',      icon: <TimerIcon fontSize="small" />,    content: <SlaSettings /> },
+        { label: 'Epic Auto-Close', icon: <EpicsIcon fontSize="small" />,    content: <EpicAutoCloseSettings /> },
+      ];
 
   return (
     <Box>
@@ -37,33 +47,19 @@ const AdminSettings: React.FC = () => {
       </Typography>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          {TABS.map((t, i) => (
-            <Tab
-              key={i}
-              label={t.label}
-              icon={t.icon}
-              iconPosition="start"
-              sx={{ textTransform: 'none', fontWeight: 600, minHeight: 48 }}
-            />
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
+          {tabs.map((t, i) => (
+            <Tab key={i} label={t.label} icon={t.icon} iconPosition="start"
+              sx={{ textTransform: 'none', fontWeight: 600, minHeight: 48 }} />
           ))}
         </Tabs>
       </Box>
 
-      <TabPanel value={tab} index={0}>
-        <SchedulerSettings />
-      </TabPanel>
-      <TabPanel value={tab} index={1}>
-        <SlaSettings />
-      </TabPanel>
-      <TabPanel value={tab} index={2}>
-        <EmailIngestSettings />
-      </TabPanel>
+      {tabs.map((t, i) => (
+        <TabPanel key={i} value={tab} index={i}>
+          {t.content}
+        </TabPanel>
+      ))}
     </Box>
   );
 };

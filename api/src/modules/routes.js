@@ -19,6 +19,7 @@ import templateRoutes from './templates/templates.routes.js';
 import emailIngestRoutes from './emailIngest/emailIngest.routes.js';
 import featureRoutes from './features/features.routes.js';
 import epicRoutes from './epics/epics.routes.js';
+import epicTemplateRoutes from './epicTemplates/epicTemplates.routes.js';
 
 import attachmentRoutes from './attachments/attachments.routes.js';
 
@@ -42,6 +43,7 @@ router.use('/templates', templateRoutes);
 router.use('/email-ingest', emailIngestRoutes);
 router.use('/features', featureRoutes);
 router.use('/epics', epicRoutes);
+router.use('/epic-templates', epicTemplateRoutes);
 router.use('/docs', docRoutes);
 router.use('/docsbuilder', docBuilderRoutes);
 

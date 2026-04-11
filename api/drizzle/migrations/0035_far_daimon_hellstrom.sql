@@ -1,0 +1,1 @@
+ALTER TABLE "epics" ADD COLUMN "parent_epic_id" uuid;

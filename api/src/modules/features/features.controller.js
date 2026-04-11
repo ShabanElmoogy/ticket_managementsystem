@@ -4,6 +4,8 @@ import { users } from '../users/users.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { customers } from '../customers/customers.schema.js';
 import { epics } from '../epics/epics/epics.schema.js';
+import { tenants } from '../tenants/tenants.schema.js';
+import { tickets } from '../tickets/tickets.schema.js';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { getTenantScope } from '../../utils/tenantUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
@@ -172,7 +174,20 @@ export const updateFeature = async (req, res) => {
             .where(eq(featureRequests.epicId, existing.epicId));
           const active = allFeatures.filter((f) => f.status !== 'DECLINED');
           const allShipped = active.length > 0 && active.every((f) => f.status === 'SHIPPED');
-          if (allShipped) return res.json({ ...updated, allShipped: true, epicId: existing.epicId });
+          if (allShipped) {
+            // Check tenant auto-close setting
+            const epicRow = await db.select({ tenantId: epics.tenantId }).from(epics).where(eq(epics.id, existing.epicId)).limit(1);
+            const tenantId = epicRow[0]?.tenantId;
+            let autoCloseEnabled = true;
+            if (tenantId) {
+              const [t] = await db.select({ epicAutoClose: tenants.epicAutoClose }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+              autoCloseEnabled = t?.epicAutoClose ?? true;
+            }
+            // Count open linked tickets
+            const linkedTickets = await db.select({ status: tickets.status }).from(tickets).where(eq(tickets.epicId, existing.epicId));
+            const openTickets = linkedTickets.filter((t) => t.status !== 'RESOLVED' && t.status !== 'CLOSED').length;
+            return res.json({ ...updated, allShipped: true, epicId: existing.epicId, autoCloseEnabled, openTickets });
+          }
         }
       }
     }

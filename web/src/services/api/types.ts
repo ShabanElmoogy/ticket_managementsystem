@@ -295,6 +295,10 @@ export interface Epic {
   customerName?: string | null;
   targetDate?: string | null;
   estimatedDays?: number | null;
+  parentEpicId?: string | null;
+  parentEpic?: { id: string; title: string; status: Epic['status'] } | null;
+  subEpics?: Pick<Epic, 'id' | 'title' | 'status' | 'priority' | 'featureCount' | 'stepsTotal' | 'stepsDone'>[];
+  ancestors?: { id: string; title: string; status: Epic['status'] }[];
   featureCount: number;
   stepsTotal: number;
   stepsDone: number;
@@ -316,6 +320,7 @@ export interface CreateEpicData {
   customerId?: string | null;
   targetDate?: string | null;
   estimatedDays?: number | null;
+  parentEpicId?: string | null;
 }
 
 export interface UpdateEpicData {
@@ -329,6 +334,38 @@ export interface UpdateEpicData {
   customerId?: string | null;
   targetDate?: string | null;
   estimatedDays?: number | null;
+  parentEpicId?: string | null;
+}
+
+export type EpicRelationType = 'RELATES_TO' | 'DUPLICATES' | 'DEPENDS_ON' | 'SPLIT_FROM';
+
+export interface EpicRelation {
+  id: string;
+  relationType: EpicRelationType;
+  direction: 'outgoing' | 'incoming';
+  epicId: string;
+  title: string;
+  status: Epic['status'];
+  priority: Epic['priority'];
+}
+
+export interface EpicNetworkNode {
+  id: string;
+  title: string;
+  status: Epic['status'];
+  priority: Epic['priority'];
+}
+
+export interface EpicNetworkEdge {
+  id?: string;
+  source: string;
+  target: string;
+  type: EpicRelationType | 'BLOCKS' | 'PARENT_OF';
+}
+
+export interface EpicNetworkGraph {
+  nodes: EpicNetworkNode[];
+  edges: EpicNetworkEdge[];
 }
 
 export interface FeatureStep {

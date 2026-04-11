@@ -18,3 +18,4 @@ export * from './epics/epics/epics.schema.js';
 export * from './epics/epicComments/epicComments.schema.js';
 export * from './epics/epicActivity/epicActivity.schema.js';
 export * from './epics/epicWatchers/epicWatchers.schema.js';
+export * from './epicTemplates/epicTemplates.schema.js';

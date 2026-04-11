@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -15,6 +15,7 @@ export const tenants = pgTable('tenants', {
   slaHighHours: integer('sla_high_hours').notNull().default(8),
   slaMediumHours: integer('sla_medium_hours').notNull().default(24),
   slaLowHours: integer('sla_low_hours').notNull().default(72),
+  epicAutoClose: boolean('epic_auto_close').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

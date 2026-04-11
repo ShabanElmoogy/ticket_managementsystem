@@ -201,7 +201,11 @@ function UsersPageComponent(props: UsersPageProps) {
     if (!resetPwdUser || resetPwdValue.length < 6) return;
     setResetPwdLoading(true);
     try {
-      await usersApi.resetPassword(resetPwdUser.id, resetPwdValue);
+      if (isSuper) {
+        await usersApi.resetPassword(resetPwdUser.id, resetPwdValue);
+      } else {
+        await usersApi.resetTenantUserPassword(resetPwdUser.id, resetPwdValue);
+      }
       showSnackbar("Password reset successfully", "success");
       setResetPwdUser(null);
       setResetPwdValue("");
@@ -253,7 +257,7 @@ function UsersPageComponent(props: UsersPageProps) {
         onEdit={openDialog}
         onDelete={openDeleteDialog}
         onResetPassword={
-          isSuper
+          isSuper || isTenantAdminUser
             ? (user) => {
                 setResetPwdUser(user);
                 setResetPwdValue("");

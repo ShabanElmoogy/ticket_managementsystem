@@ -37,6 +37,10 @@ export class UsersApiService extends BaseApiService {
     return this.post<{ message: string }>(`/users/${id}/reset-password`, { password });
   }
 
+  async resetTenantUserPassword(id: string, password: string): Promise<{ message: string }> {
+    return this.post<{ message: string }>(`/users/tenant/${id}/reset-password`, { password });
+  }
+
   async getUserStats(): Promise<UserStats> {
     return this.get<UserStats>("/users/stats");
   }

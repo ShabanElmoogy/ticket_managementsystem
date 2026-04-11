@@ -64,4 +64,7 @@ router.put('/escalation-settings', authenticateToken, requireAdmin, remindersCon
 router.get('/sla-settings', authenticateToken, requireAdmin, remindersController.getSlaSettings);
 router.put('/sla-settings', authenticateToken, requireAdmin, remindersController.updateSlaSettings);
 
+router.get('/epic-auto-close-settings', authenticateToken, requireAdmin, remindersController.getEpicAutoCloseSettings);
+router.put('/epic-auto-close-settings', authenticateToken, requireAdmin, remindersController.updateEpicAutoCloseSettings);
+
 export default router;

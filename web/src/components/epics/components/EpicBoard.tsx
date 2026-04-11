@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   DndContext,
-  closestCenter,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -121,18 +121,22 @@ const EpicBoard: React.FC<Props> = ({ epics, isAdmin }) => {
     if (!event.over || !isAdmin) return;
 
     const epicId = event.active.id as string;
-    const newStatus = event.over.id as Epic['status'];
-    const epic = epics.find(e => e.id === epicId);
+    const overId = event.over.id as string;
 
+    // overId is either a column status (from useDroppable) or an epic id (from useSortable)
+    // Resolve to a column status in both cases
+    const newStatus = (EPIC_STATUSES as string[]).includes(overId)
+      ? (overId as Epic['status'])
+      : epics.find(e => e.id === overId)?.status;
+
+    if (!newStatus) return;
+
+    const epic = epics.find(e => e.id === epicId);
     if (!epic || epic.status === newStatus) return;
 
     // Prevent invalid transitions
-    if (epic.status === 'COMPLETED' && newStatus !== 'ACTIVE') {
-      return; // Only allow COMPLETED -> ACTIVE
-    }
-    if (epic.status === 'CANCELLED' && newStatus !== 'DRAFT') {
-      return; // Only allow CANCELLED -> DRAFT
-    }
+    if (epic.status === 'COMPLETED' && newStatus !== 'ACTIVE') return;
+    if (epic.status === 'CANCELLED' && newStatus !== 'DRAFT') return;
 
     updateStatusMutation.mutate({ id: epicId, status: newStatus });
   };
@@ -324,10 +328,11 @@ const EpicBoard: React.FC<Props> = ({ epics, isAdmin }) => {
     });
 
     return (
-      <Box sx={{ flex: '1 1 0', minWidth: 0 }}>
+      <Box sx={{ flex: '1 1 0', minWidth: 0, minHeight: 0 }}>
         <Paper
           sx={{
             height: '100%',
+            maxHeight: '100%',
             display: 'flex',
             flexDirection: 'column',
             borderRadius: 2,
@@ -375,6 +380,9 @@ const EpicBoard: React.FC<Props> = ({ epics, isAdmin }) => {
               flex: 1,
               p: 1.5,
               minHeight: 200,
+              maxHeight: 'calc(100vh - 320px)',
+              overflowY: 'auto',
+              overflowX: 'hidden',
               backgroundColor: isOver ? alpha(config.color, 0.08) : 'transparent',
               transition: theme.transitions.create('background-color'),
             }}
@@ -416,7 +424,7 @@ const EpicBoard: React.FC<Props> = ({ epics, isAdmin }) => {
     <Box sx={{ height: '100%', overflow: 'hidden' }}>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

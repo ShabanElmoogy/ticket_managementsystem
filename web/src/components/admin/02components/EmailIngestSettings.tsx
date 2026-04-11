@@ -61,6 +61,7 @@ const EmailIngestSettings: React.FC = () => {
           size="small"
           variant="outlined"
         />
+        <Chip label="Server-wide" size="small" color="warning" variant="outlined" />
       </Box>
 
       <Typography variant="body2" color="text.secondary" mb={3}>
@@ -87,7 +88,6 @@ const EmailIngestSettings: React.FC = () => {
           <TextField label="Poll Interval" value={`${config.intervalMinutes} min`} size="small" sx={{ flex: 1 }} InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_INTERVAL_MINUTES" />
         </Box>
         <TextField label="Mailbox User" value={config.user || '—'} size="small" fullWidth InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_USER" />
-        <TextField label="Poll Interval" value={`${config.intervalMinutes} min`} size="small" fullWidth InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_INTERVAL_MINUTES" />
       </Box>
 
       <Divider sx={{ my: 3 }} />
