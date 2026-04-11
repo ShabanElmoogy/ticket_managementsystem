@@ -1,0 +1,1 @@
+ALTER TABLE "epics" ADD COLUMN "estimated_days" integer;

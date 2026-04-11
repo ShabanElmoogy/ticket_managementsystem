@@ -35,6 +35,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
   const [priority, setPriority] = useState<Epic['priority']>('MEDIUM');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [estimatedDays, setEstimatedDays] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -61,9 +62,10 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
       setTargetDate(editing.targetDate ? dayjs(editing.targetDate) : null);
       setPriority(editing.priority ?? 'MEDIUM');
       setTags(editing.tags ?? []);
+      setEstimatedDays(editing.estimatedDays != null ? String(editing.estimatedDays) : '');
     } else {
       setTitle(''); setDescription(''); setStatus('DRAFT');
-      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null); setPriority('MEDIUM'); setTags([]);
+      setOwnerId(''); setApplicationId(''); setCustomerId(''); setTargetDate(null); setPriority('MEDIUM'); setTags([]); setEstimatedDays('');
     }
   }, [editing]);
 
@@ -84,6 +86,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
         applicationId: applicationId || null,
         customerId: customerId || null,
         targetDate: targetDate ? targetDate.format('YYYY-MM-DD') : null,
+        estimatedDays: estimatedDays ? parseInt(estimatedDays, 10) : null,
       };
       await onSubmit(editing ? { ...base, status } : base);
       onClose();
@@ -138,6 +141,18 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
             onChange={(val) => setTargetDate(val as Dayjs | null)}
             format="DD/MM/YYYY"
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+
+          <TextField
+            label="Estimated Days"
+            value={estimatedDays}
+            onChange={(e) => setEstimatedDays(e.target.value.replace(/[^0-9]/g, ''))}
+            size="small"
+            fullWidth
+            type="number"
+            inputProps={{ min: 1 }}
+            placeholder="e.g. 14"
+            helperText="How many working days is this epic expected to take?"
           />
 
           <Box>

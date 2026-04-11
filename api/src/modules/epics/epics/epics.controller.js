@@ -21,6 +21,7 @@ const EPIC_SELECT = {
   applicationId:   epics.applicationId,
   customerId:      epics.customerId,
   targetDate:      epics.targetDate,
+  estimatedDays:   epics.estimatedDays,
   createdAt:       epics.createdAt,
   updatedAt:       epics.updatedAt,
   ownerName:       users.name,
@@ -148,7 +149,7 @@ export const getEpic = async (req, res) => {
 
 export const createEpic = async (req, res) => {
   try {
-    const { title, description, ownerId, applicationId, customerId, targetDate, priority, tags } = req.body;
+    const { title, description, ownerId, applicationId, customerId, targetDate, priority, tags, estimatedDays } = req.body;
     if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
     const scope = getTenantScope(req);
     const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
@@ -158,6 +159,7 @@ export const createEpic = async (req, res) => {
       tags: Array.isArray(tags) ? tags : [],
       tenantId, ownerId: ownerId || null, applicationId: applicationId || null,
       customerId: customerId || null, targetDate: targetDate || null,
+      estimatedDays: estimatedDays ? parseInt(estimatedDays, 10) : null,
     }).returning();
     res.status(201).json({ ...row, ownerName: null, applicationName: null, customerName: null, featureCount: 0, stepsTotal: 0, stepsDone: 0, featureStatusCounts: {} });
   } catch (err) {
@@ -169,7 +171,7 @@ export const createEpic = async (req, res) => {
 export const updateEpic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, status, priority, tags, ownerId, applicationId, customerId, targetDate } = req.body;
+    const { title, description, status, priority, tags, ownerId, applicationId, customerId, targetDate, estimatedDays } = req.body;
     const [existing] = await db.select({ id: epics.id, status: epics.status, priority: epics.priority }).from(epics).where(eq(epics.id, id)).limit(1);
     if (!existing) return res.status(404).json({ error: 'Epic not found' });
     const patch = { updatedAt: new Date() };
@@ -194,6 +196,7 @@ export const updateEpic = async (req, res) => {
     if (priority !== undefined) patch.priority = priority;
     if (tags !== undefined) patch.tags = Array.isArray(tags) ? tags : [];
     if (targetDate !== undefined) patch.targetDate = targetDate || null;
+    if (estimatedDays !== undefined) patch.estimatedDays = estimatedDays ? parseInt(estimatedDays, 10) : null;
     const [updated] = await db.update(epics).set(patch).where(eq(epics.id, id)).returning();
     const actorId = req.user?.userId ?? req.user?.id;
     if (patch.status) await logEpicActivity(id, actorId, 'STATUS_CHANGED', { from: existing.status ?? null, to: patch.status });

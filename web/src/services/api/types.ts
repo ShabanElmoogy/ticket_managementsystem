@@ -294,6 +294,7 @@ export interface Epic {
   customerId?: string | null;
   customerName?: string | null;
   targetDate?: string | null;
+  estimatedDays?: number | null;
   featureCount: number;
   stepsTotal: number;
   stepsDone: number;
@@ -314,6 +315,7 @@ export interface CreateEpicData {
   applicationId?: string | null;
   customerId?: string | null;
   targetDate?: string | null;
+  estimatedDays?: number | null;
 }
 
 export interface UpdateEpicData {
@@ -326,6 +328,7 @@ export interface UpdateEpicData {
   applicationId?: string | null;
   customerId?: string | null;
   targetDate?: string | null;
+  estimatedDays?: number | null;
 }
 
 export interface FeatureStep {

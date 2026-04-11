@@ -5,7 +5,7 @@ import {
 import {
   Edit, Apps, Person, CalendarToday, AccountTree,
   AccessTime, Update, Lock, Label, Add, Visibility, VisibilityOff,
-  PictureAsPdf, ExpandMore, ExpandLess, ArrowBack,
+  PictureAsPdf, ExpandMore, ExpandLess, ArrowBack, Timer,
 } from '@mui/icons-material';
 import { exportEpicPdf } from '../utils/exportEpicPdf';
 import type { Epic } from '../../../services/api/types';
@@ -82,6 +82,15 @@ const EpicHeader: React.FC<Props> = ({
   const hasBlockers = (epic.blockedBy?.length ?? 0) > 0;
   const isBlocked = epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED');
   const descLong = (epic.description?.length ?? 0) > 120;
+
+  // Effort estimation
+  const estimatedDays = epic.estimatedDays ?? null;
+  const startDate = epic.createdAt ? new Date(epic.createdAt) : null;
+  const now = new Date();
+  const actualDays = startDate
+    ? Math.max(1, Math.round((now.getTime() - startDate.getTime()) / 86_400_000))
+    : null;
+  const isOverrun = estimatedDays != null && actualDays != null && actualDays > estimatedDays && epic.status !== 'COMPLETED' && epic.status !== 'CANCELLED';
 
   return (
     <Paper sx={{ p: 2, borderRadius: 3, mb: 3 }}>
@@ -203,6 +212,31 @@ const EpicHeader: React.FC<Props> = ({
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>{label}</Typography>
           </Box>
         ))}
+
+        {/* effort estimation stat */}
+        {estimatedDays != null && actualDays != null && (
+          <Tooltip title={isOverrun
+            ? `Overrun by ${actualDays - estimatedDays} day${actualDays - estimatedDays !== 1 ? 's' : ''} — estimated ${estimatedDays}d, running ${actualDays}d`
+            : `${actualDays}d elapsed of ${estimatedDays}d estimated`}
+          >
+            <Box textAlign="center" sx={{
+              minWidth: 40, px: 1, py: 0.25, borderRadius: 1.5,
+              bgcolor: isOverrun ? 'error.50' : 'action.hover',
+              border: '1px solid', borderColor: isOverrun ? 'error.200' : 'divider',
+              cursor: 'default',
+            }}>
+              <Box display="flex" alignItems="center" justifyContent="center" gap={0.4}>
+                <Timer sx={{ fontSize: 12, color: isOverrun ? 'error.main' : 'text.secondary' }} />
+                <Typography variant="subtitle2" fontWeight={700} color={isOverrun ? 'error.main' : 'text.primary'} sx={{ lineHeight: 1.2 }}>
+                  {actualDays}d / {estimatedDays}d
+                </Typography>
+              </Box>
+              <Typography variant="caption" color={isOverrun ? 'error.main' : 'text.secondary'} sx={{ fontSize: '0.65rem' }}>
+                {isOverrun ? '⚠ Overrun' : 'Elapsed / Est.'}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
 
         {/* progress bar */}
         {total > 0 && (

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, pgEnum, uuid, date } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, pgEnum, uuid, date, integer } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from '../../users/users.schema.js';
 import { tenants } from '../../tenants/tenants.schema.js';
@@ -25,6 +25,7 @@ export const epics = pgTable('epics', {
   priority:      epicPriorityEnum('priority').notNull().default('MEDIUM'),
   tags:          text('tags').array().notNull().default(sql`'{}'::text[]`),
   targetDate:    date('target_date'),
+  estimatedDays: integer('estimated_days'),
   createdAt:     timestamp('created_at').defaultNow(),
   updatedAt:     timestamp('updated_at').defaultNow(),
 });
