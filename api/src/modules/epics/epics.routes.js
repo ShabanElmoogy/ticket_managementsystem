@@ -3,6 +3,7 @@ import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js'
 import { listEpics, getEpic, createEpic, updateEpic, deleteEpic, linkFeature, unlinkFeature, reorderFeatures, bulkUpdateStatus, addBlocker, removeBlocker } from './epics/epics.controller.js';
 import { listEpicComments, createEpicComment, deleteEpicComment } from './epicComments/epicComments.controller.js';
 import { listEpicActivity } from './epicActivity/epicActivity.controller.js';
+import { getEpicWatchers, watchEpic, unwatchEpic } from './epicWatchers/epicWatchers.controller.js';
 
 const router = express.Router();
 
@@ -31,5 +32,10 @@ router.delete('/:id/comments/:commentId', deleteEpicComment);
 
 // Activity
 router.get('/:id/activity', listEpicActivity);
+
+// Watchers
+router.get('/:id/watchers',  getEpicWatchers);
+router.post('/:id/watch',    watchEpic);
+router.delete('/:id/watch',  unwatchEpic);
 
 export default router;

@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
+import EpicHealthScore from './components/EpicHealthScore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from './api/epics';
@@ -318,6 +319,7 @@ const EpicsPage: React.FC = () => {
                 <Box flex={1} minWidth={0}>
                   <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
                     <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>{epic.title}</Typography>
+                    <EpicHealthScore epic={epic} />
                     <EpicPriorityChip priority={epic.priority} />
                     {epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') && (
                       <Tooltip title={`Blocked by: ${epic.blockedBy!.filter((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED').map((b) => b.title).join(', ')}`}>

@@ -8,22 +8,33 @@ import moduleRoutes from '../modules/routes.js';
 import { registerSwagger } from './swagger.routes.js';
 
 export function registerRoutes(app) {
+  // تسجيل Swagger
   registerSwagger(app);
 
-  // All API routes under /api
-  app.use('/api', moduleRoutes);
-
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  // إعادة التوجيه من الصفحة الرئيسية إلى Swagger
+  app.get('/', (req, res) => {
+    res.redirect('/api/docs');
   });
 
-  // SPA catch-all — serve index.html for non-API routes
-  app.get('*', (req, res) => {
-    const frontendPath = path.join(__dirname, '../../../web/dist/index.html');
-    res.sendFile(frontendPath, (err) => {
-      if (err) {
-        res.json({ name: 'Ticket Management API', status: 'OK' });
-      }
+  // جميع مسارات الـ API تحت /api
+  app.use('/api', moduleRoutes);
+
+  // Health Check
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
     });
+  });
+
+  // Catch-all: إعادة توجيه أي مسار غير معروف إلى Swagger
+  app.get('*', (req, res) => {
+    if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({
+        message: 'API route not found',
+      });
+    }
+
+    res.redirect('/api/docs');
   });
 }

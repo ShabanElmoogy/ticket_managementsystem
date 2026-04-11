@@ -62,6 +62,15 @@ class EpicsApiService extends BaseApiService {
   removeBlocker(epicId: string, blockerId: string): Promise<{ message: string }> {
     return this.delete(`/epics/${epicId}/blockers/${blockerId}`);
   }
+  getWatchers(epicId: string): Promise<{ id: string; name: string; email: string }[]> {
+    return this.get(`/epics/${epicId}/watchers`);
+  }
+  watch(epicId: string): Promise<{ watching: boolean }> {
+    return this.post(`/epics/${epicId}/watch`, {});
+  }
+  unwatch(epicId: string): Promise<{ watching: boolean }> {
+    return this.delete(`/epics/${epicId}/watch`);
+  }
 }
 
 export const epicsApi = new EpicsApiService();

@@ -3,6 +3,7 @@ import { epicComments } from './epicComments.schema.js';
 import { notifications } from '../../notifications/notifications.schema.js';
 import { users } from '../../users/users.schema.js';
 import { eq, desc } from 'drizzle-orm';
+import { notifyEpicWatchers } from '../epicWatchers/epicWatchers.controller.js';
 
 /** Find mentioned user IDs by checking if content contains @name for each known user. */
 const findMentionedIds = (content, allUsers, excludeId) => {
@@ -38,13 +39,14 @@ export const createEpicComment = async (req, res) => {
     const [user] = await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, req.user.userId)).limit(1);
     res.status(201).json({ ...row, user });
 
-    // Fire mention notifications async
+    // Fire mention + watcher notifications async
     (async () => {
       try {
         if (!req.emitNotification) return;
         const allUsers = await db.select({ id: users.id, name: users.name }).from(users);
+
+        // Mention notifications
         const mentionedIds = findMentionedIds(content.trim(), allUsers, req.user.userId);
-        if (mentionedIds.length === 0) return;
         for (const uid of mentionedIds) {
           const [notification] = await db.insert(notifications).values({
             userId:   uid,
@@ -59,14 +61,22 @@ export const createEpicComment = async (req, res) => {
             title:     notification.title,
             message:   notification.message,
             timestamp: notification.createdAt,
-            data: {
-              mentionedBy: user?.name,
-              comment:     content.trim().substring(0, 100),
-            },
+            data: { mentionedBy: user?.name, comment: content.trim().substring(0, 100) },
           });
         }
+
+        // Watcher notifications (exclude commenter and already-mentioned users)
+        const excludeIds = new Set([req.user.userId, ...mentionedIds]);
+        await notifyEpicWatchers(id, req.user.userId, {
+          type:    'EPIC_COMMENT',
+          title:   'New comment on epic',
+          message: `${user?.name} commented: ${content.trim().substring(0, 80)}`,
+          data:    { epicId: id, commentBy: user?.name },
+        }, (uid, payload) => {
+          if (!excludeIds.has(uid)) req.emitNotification(uid, payload);
+        });
       } catch (e) {
-        console.error('Epic mention notification error:', e);
+        console.error('Epic comment notification error:', e);
       }
     })();
   } catch (err) {

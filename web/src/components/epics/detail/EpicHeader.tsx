@@ -4,8 +4,9 @@ import {
 } from '@mui/material';
 import {
   Edit, Apps, Person, CalendarToday, AccountTree,
-  AccessTime, Update, Lock, Label, Add,
+  AccessTime, Update, Lock, Label, Add, Visibility, VisibilityOff, PictureAsPdf,
 } from '@mui/icons-material';
+import { exportEpicPdf } from '../utils/exportEpicPdf';
 import type { Epic } from '../../../services/api/types';
 import EpicStatusChip from '../components/EpicStatusChip';
 import EpicPriorityChip from '../components/EpicPriorityChip';
@@ -13,6 +14,9 @@ import BlockerPickerMenu from './BlockerPickerMenu';
 import { formatDate, formatDateTime } from '../../../utils/dateUtils';
 import type { EpicFeature } from './types';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { epicsApi } from '../api/epics';
+import { useUser } from '../../../stores/authStore';
 
 interface Props {
   epic: Epic & {
@@ -50,6 +54,21 @@ const EpicHeader: React.FC<Props> = ({
   blockerMenuAnchor, onEditOpen, onAddBlocker, onRemoveBlocker, onBlockerMenuClose, onBlockerAdd,
 }) => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const currentUser = useUser();
+
+  const { data: watchers = [] } = useQuery({
+    queryKey: ['epics', epic.id, 'watchers'],
+    queryFn: () => epicsApi.getWatchers(epic.id),
+    staleTime: 30_000,
+  });
+
+  const isWatching = watchers.some((w) => w.id === currentUser?.id);
+
+  const watchMutation = useMutation({
+    mutationFn: () => isWatching ? epicsApi.unwatch(epic.id) : epicsApi.watch(epic.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['epics', epic.id, 'watchers'] }),
+  });
 
   const counts = orderedFeatures.reduce<Record<string, number>>((acc, f) => {
     acc[f.status] = (acc[f.status] ?? 0) + 1;
@@ -90,6 +109,34 @@ const EpicHeader: React.FC<Props> = ({
         {isAdmin && (
           <Button startIcon={<Edit />} variant="outlined" size="small" onClick={onEditOpen}>Edit</Button>
         )}
+        {isAdmin && (
+          <Button
+            startIcon={<PictureAsPdf />}
+            variant="outlined"
+            size="small"
+            color="error"
+            onClick={() => exportEpicPdf(epic, orderedFeatures)}
+          >
+            Export PDF
+          </Button>
+        )}
+        <Tooltip title={isWatching ? `Watching · ${watchers.length} watcher${watchers.length !== 1 ? 's' : ''}` : `Watch · ${watchers.length} watcher${watchers.length !== 1 ? 's' : ''}`}>
+          <Button
+            startIcon={isWatching ? <Visibility /> : <VisibilityOff />}
+            variant={isWatching ? 'contained' : 'outlined'}
+            size="small"
+            color={isWatching ? 'primary' : 'inherit'}
+            onClick={() => watchMutation.mutate()}
+            disabled={watchMutation.isPending}
+          >
+            {isWatching ? 'Watching' : 'Watch'}
+            {watchers.length > 0 && (
+              <Box component="span" sx={{ ml: 0.5, opacity: 0.75, fontSize: '0.75rem' }}>
+                {watchers.length}
+              </Box>
+            )}
+          </Button>
+        </Tooltip>
       </Box>
 
       <Divider sx={{ my: 2 }} />
