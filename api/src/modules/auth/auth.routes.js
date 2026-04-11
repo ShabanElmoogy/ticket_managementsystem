@@ -70,7 +70,7 @@ router.post('/login', authRateLimit, validate(loginSchema), authController.login
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/refresh', authRateLimit, validate(refreshTokenSchema), authController.refreshToken);
+router.post('/refresh', validate(refreshTokenSchema), authController.refreshToken);
 
 /**
  * @swagger

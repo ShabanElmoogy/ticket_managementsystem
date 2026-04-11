@@ -70,8 +70,30 @@ export const useEpicDetail = () => {
   const blockerMutation = useMutation({
     mutationFn: ({ action, blockerId }: { action: 'add' | 'remove'; blockerId: string }) =>
       action === 'add' ? epicsApi.addBlocker(id!, blockerId) : epicsApi.removeBlocker(id!, blockerId),
-    onSuccess: () => invalidate(),
-    onError: (err: any) => setSnack({ msg: err?.response?.data?.error ?? 'Failed to update blockers', severity: 'error' }),
+    onMutate: async ({ action, blockerId }) => {
+      await qc.cancelQueries({ queryKey: ['epics', id] });
+      const previous = qc.getQueryData(['epics', id]);
+      qc.setQueryData(['epics', id], (old: any) => {
+        if (!old) return old;
+        const blockedBy = old.blockedBy ?? [];
+        if (action === 'add') {
+          // Find title from cached epics list
+          const allEpics = qc.getQueryData<any[]>(['epics']) ?? [];
+          const blocker = allEpics.find((e) => e.id === blockerId);
+          return { ...old, blockedBy: [...blockedBy, { id: blockerId, title: blocker?.title ?? blockerId, status: blocker?.status ?? 'ACTIVE' }] };
+        } else {
+          return { ...old, blockedBy: blockedBy.filter((b: any) => b.id !== blockerId) };
+        }
+      });
+      return { previous };
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previous) qc.setQueryData(['epics', id], context.previous);
+      setSnack({ msg: err?.response?.data?.error ?? 'Failed to update blockers', severity: 'error' });
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['epics', id] });
+    },
   });
 
   const editFeatureMutation = useMutation({

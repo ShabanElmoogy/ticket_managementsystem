@@ -27,7 +27,7 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { ticketsApi, type TicketWithComments, type Ticket, type TicketActivity } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { formatDateTime, formatDate, formatRelativeDuration } from '../utils/dateUtils';
 import AttachmentsPanel from '../components/tickets/AttachmentsPanel';
 import Header from '../components/dashboard/Header';
@@ -128,7 +128,6 @@ const TicketDetailPage: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
 
   // Status update
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -143,9 +142,12 @@ const TicketDetailPage: React.FC = () => {
     if (id) fetchTicket();
   }, [id]);
 
-  useEffect(() => {
-    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
-  }, []);
+  const { data: employeesData = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
+    staleTime: 300_000,
+  });
+  const mentionUsers = employeesData.map((u) => ({ id: u.id, name: u.name }));
 
   const fetchTicket = async () => {
     if (!id) return;

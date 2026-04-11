@@ -310,9 +310,11 @@ const EpicRoadmap: React.FC<Props> = ({ epics }) => {
                           </Typography>
                         </Box>
                         <Box display="flex" gap={0.5} alignItems="center" flexWrap="wrap">
-                          {strategy !== 'status' && (
-                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_COLOR[epic.status], flexShrink: 0 }} />
-                          )}
+                          {/* Always show status dot so it's clear regardless of grouping */}
+                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_COLOR[epic.status] ?? '#9e9e9e', flexShrink: 0 }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: STATUS_COLOR[epic.status] ?? 'text.secondary', fontWeight: 600, textTransform: 'capitalize' }}>
+                            {epic.status.toLowerCase()}
+                          </Typography>
                           {epic.featureCount > 0 && (
                             <Chip label={`${epic.featureCount}f`} size="small" sx={{ height: 15, fontSize: '0.58rem' }} />
                           )}

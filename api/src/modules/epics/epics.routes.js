@@ -4,6 +4,7 @@ import { listEpics, getEpic, createEpic, updateEpic, deleteEpic, linkFeature, un
 import { listEpicComments, createEpicComment, deleteEpicComment } from './epicComments/epicComments.controller.js';
 import { listEpicActivity } from './epicActivity/epicActivity.controller.js';
 import { getEpicWatchers, watchEpic, unwatchEpic } from './epicWatchers/epicWatchers.controller.js';
+import { listContributors, addContributor, updateContributor, removeContributor } from './epicContributors/epicContributors.controller.js';
 
 const router = express.Router();
 
@@ -59,5 +60,11 @@ router.get('/:id/auto-close', checkAutoClose);
 
 // Burndown chart data
 router.get('/:id/burndown', getEpicBurndown);
+
+// Contributors
+router.get('/:id/contributors',                        listContributors);
+router.post('/:id/contributors',                       requireTenantAdmin, addContributor);
+router.put('/:id/contributors/:contributorId',         requireTenantAdmin, updateContributor);
+router.delete('/:id/contributors/:contributorId',      requireTenantAdmin, removeContributor);
 
 export default router;

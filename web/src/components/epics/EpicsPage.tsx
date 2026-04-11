@@ -154,15 +154,21 @@ const EpicsPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={2}>
+      <Box display="flex" alignItems="flex-start" justifyContent="space-between" mb={3} flexWrap="wrap" gap={1.5}>
+        {/* Title */}
         <Box display="flex" alignItems="center" gap={1}>
-          <AccountTree color="primary" sx={{ fontSize: 32 }} />
+          <AccountTree color="primary" sx={{ fontSize: { xs: 26, md: 32 } }} />
           <Box>
-            <Typography variant="h5" fontWeight={700}>Epics</Typography>
-            <Typography variant="body2" color="text.secondary">Large goals that group feature requests</Typography>
+            <Typography variant="h5" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', md: '1.5rem' } }}>Epics</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+              Large goals that group feature requests
+            </Typography>
           </Box>
         </Box>
-        <Box display="flex" gap={1} alignItems="center">
+
+        {/* Actions */}
+        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
+          {/* View toggle */}
           <ToggleButtonGroup size="small" value={view} exclusive onChange={(_, v) => { if (v) { setView(v); localStorage.setItem('epics-view', v); } }}>
             <ToggleButton value="list"><Tooltip title="List"><ViewList fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="board"><Tooltip title="Board"><ViewModule fontSize="small" /></Tooltip></ToggleButton>
@@ -170,70 +176,86 @@ const EpicsPage: React.FC = () => {
             <ToggleButton value="dashboard"><Tooltip title="Dashboard"><Dashboard fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="network"><Tooltip title="Network"><Hub fontSize="small" /></Tooltip></ToggleButton>
           </ToggleButtonGroup>
+
+          {/* Export CSV — icon-only on xs */}
           <Tooltip title="Export all epics to CSV">
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<FileDownload />}
-              onClick={() => exportMultipleEpicsToCsv(filtered)}
-              disabled={filtered.length === 0}
-            >
-              Export CSV
-            </Button>
-          </Tooltip>
-          {isAdmin && (
-            <Tooltip title="Export epics to PDF">
+            <span>
               <Button
                 variant="outlined"
                 size="small"
-                color="error"
-                startIcon={<PictureAsPdf />}
-                onClick={() => generateEpicsReport(filtered, {
-                  title: 'Epics Report',
-                  filters: {
-                    ...(statusFilter ? { Status: statusFilter } : {}),
-                    ...(search ? { Search: search } : {}),
-                    ...(tagFilter ? { Tag: tagFilter } : {}),
-                  },
-                })}
+                startIcon={<FileDownload />}
+                onClick={() => exportMultipleEpicsToCsv(filtered)}
                 disabled={filtered.length === 0}
+                sx={{ minWidth: 0 }}
               >
-                Export PDF
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Export CSV</Box>
               </Button>
+            </span>
+          </Tooltip>
+
+          {/* Export PDF — icon-only on xs, admin only */}
+          {isAdmin && (
+            <Tooltip title="Export epics to PDF">
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  startIcon={<PictureAsPdf />}
+                  onClick={() => generateEpicsReport(filtered, {
+                    title: 'Epics Report',
+                    filters: {
+                      ...(statusFilter ? { Status: statusFilter } : {}),
+                      ...(search ? { Search: search } : {}),
+                      ...(tagFilter ? { Tag: tagFilter } : {}),
+                    },
+                  })}
+                  disabled={filtered.length === 0}
+                  sx={{ minWidth: 0 }}
+                >
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Export PDF</Box>
+                </Button>
+              </span>
             </Tooltip>
           )}
+
+          {/* New Epic */}
           {isAdmin && (
-            <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              New Epic
+            <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}
+              sx={{ minWidth: 0 }}>
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>New Epic</Box>
             </Button>
           )}
         </Box>
       </Box>
 
       {/* Stats row */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+      <Box display="flex" gap={1.5} mb={3} flexWrap="wrap">
         {statCounts.map(({ status, count }) => (
           <Paper
             key={status}
             onClick={() => setStatusFilter(statusFilter === status ? '' : status)}
-            sx={{ px: 2, py: 1.5, borderRadius: 2, flex: '1 1 100px', textAlign: 'center', cursor: 'pointer',
+            sx={{ px: 2, py: 1.5, borderRadius: 2, flex: '1 1 80px', textAlign: 'center', cursor: 'pointer',
               border: '1px solid', borderColor: statusFilter === status ? 'primary.main' : 'divider' }}
           >
             <Typography variant="h6" fontWeight={700}>{count}</Typography>
-            <Typography variant="caption" color="text.secondary">{status}</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
+              {status}
+            </Typography>
           </Paper>
         ))}
       </Box>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+      <Paper sx={{ p: { xs: 1.5, md: 2 }, mb: 3, borderRadius: 3 }}>
         <Box display="flex" gap={1.5} flexWrap="wrap" alignItems="center">
           <TextField
             size="small" placeholder="Search epics…" value={search}
-            onChange={(e) => setSearch(e.target.value)} sx={{ flex: '1 1 200px' }}
+            onChange={(e) => setSearch(e.target.value)}
+            sx={{ flex: '1 1 160px', minWidth: 0 }}
             InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
           />
-          <FormControl size="small" sx={{ flex: '1 1 140px' }}>
+          <FormControl size="small" sx={{ flex: '1 1 120px', minWidth: 0 }}>
             <InputLabel>Status</InputLabel>
             <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value as Epic['status'] | '')}>
               {STATUSES.map((s) => <MenuItem key={s} value={s}>{s || 'All'}</MenuItem>)}
@@ -241,14 +263,14 @@ const EpicsPage: React.FC = () => {
           </FormControl>
           <Autocomplete
             size="small"
-            sx={{ flex: '1 1 160px' }}
+            sx={{ flex: '1 1 140px', minWidth: 0 }}
             options={allTags}
             value={tagFilter || null}
             onChange={(_, v) => setTagFilter(v ?? '')}
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Search by tag…"
+                placeholder="Tag…"
                 InputProps={{ ...params.InputProps, startAdornment: <><Label fontSize="small" sx={{ ml: 0.5, mr: 0.5, color: 'text.secondary' }} />{params.InputProps.startAdornment}</> }}
               />
             )}
@@ -256,21 +278,23 @@ const EpicsPage: React.FC = () => {
               <li {...props}><Chip label={option} size="small" sx={{ pointerEvents: 'none' }} /></li>
             )}
           />
-          <FormControl size="small" sx={{ flex: '1 1 150px' }}>
-            <InputLabel>Sort by</InputLabel>
-            <Select value={sortBy} label="Sort by" onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
-              <MenuItem value="createdAt">Date Created</MenuItem>
-              <MenuItem value="targetDate">Target Date</MenuItem>
-              <MenuItem value="featureCount">Feature Count</MenuItem>
-              <MenuItem value="progress">Progress</MenuItem>
-              <MenuItem value="priority">Priority</MenuItem>
-            </Select>
-          </FormControl>
-          <Tooltip title={sortDir === 'asc' ? 'Ascending' : 'Descending'}>
-            <IconButton size="small" onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}>
-              {sortDir === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
-            </IconButton>
-          </Tooltip>
+          <Box display="flex" gap={1} alignItems="center" sx={{ flex: '1 1 160px', minWidth: 0 }}>
+            <FormControl size="small" sx={{ flex: 1, minWidth: 0 }}>
+              <InputLabel>Sort by</InputLabel>
+              <Select value={sortBy} label="Sort by" onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+                <MenuItem value="createdAt">Date Created</MenuItem>
+                <MenuItem value="targetDate">Target Date</MenuItem>
+                <MenuItem value="featureCount">Features</MenuItem>
+                <MenuItem value="progress">Progress</MenuItem>
+                <MenuItem value="priority">Priority</MenuItem>
+              </Select>
+            </FormControl>
+            <Tooltip title={sortDir === 'asc' ? 'Ascending' : 'Descending'}>
+              <IconButton size="small" onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}>
+                {sortDir === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Paper>
 
@@ -283,7 +307,7 @@ const EpicsPage: React.FC = () => {
 
       {/* Board view */}
       {!isLoading && view === 'board' && (
-        <Box sx={{ height: 'calc(100vh - 280px)', minHeight: 600 }}>
+        <Box sx={{ height: { xs: 'calc(100vh - 200px)', md: 'calc(100vh - 280px)' }, minHeight: { xs: 400, md: 600 } }}>
           <EpicBoard epics={filtered} isAdmin={isAdmin} />
         </Box>
       )}
@@ -301,9 +325,9 @@ const EpicsPage: React.FC = () => {
       {/* Bulk action bar */}
       <Collapse in={selected.size > 0}>
         <Paper sx={{ p: 1.5, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'primary.main', bgcolor: 'primary.50' }}>
-          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
             <Typography variant="body2" fontWeight={600}>{selected.size} selected</Typography>
-            <FormControl size="small" sx={{ minWidth: 160 }}>
+            <FormControl size="small" sx={{ flex: '1 1 130px', minWidth: 0 }}>
               <InputLabel>Change Status</InputLabel>
               <Select value={bulkStatus} label="Change Status" onChange={(e) => setBulkStatus(e.target.value as Epic['status'])}>
                 {(['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'] as Epic['status'][]).map((s) => (
@@ -365,6 +389,7 @@ const EpicsPage: React.FC = () => {
           const progress = epic.stepsTotal ? Math.round((epic.stepsDone / epic.stepsTotal) * 100) : 0;
           const overdue = epic.targetDate && new Date(epic.targetDate) < new Date() && epic.status !== 'COMPLETED';
           const isSelected = selected.has(epic.id);
+          const isBlocked = epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED');
           const dueDiff = (() => {
             if (!epic.targetDate) return null;
             const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -373,114 +398,181 @@ const EpicsPage: React.FC = () => {
           })();
           const dueDateLabel = dueDiff === null ? null
             : dueDiff === 0 ? 'Due today'
-            : dueDiff < 0 ? `${Math.abs(dueDiff)} day${Math.abs(dueDiff) !== 1 ? 's' : ''} overdue`
-            : `Due in ${dueDiff} day${dueDiff !== 1 ? 's' : ''}`;
+            : dueDiff < 0 ? `${Math.abs(dueDiff)}d overdue`
+            : `${dueDiff}d left`;
+
+          const STATUS_ACCENT: Record<Epic['status'], string> = {
+            DRAFT: '#9e9e9e', ACTIVE: '#1976d2', COMPLETED: '#2e7d32', CANCELLED: '#d32f2f',
+          };
+          const accent = STATUS_ACCENT[epic.status];
+
           return (
-            <Paper key={epic.id} sx={{ p: 2.5, borderRadius: 3, border: '1px solid',
-              borderColor: isSelected ? 'primary.main' : 'divider',
-              cursor: 'pointer', '&:hover': { borderColor: 'primary.main', boxShadow: 2 } }}
+            <Paper
+              key={epic.id}
               onClick={() => navigate(`/epics/${epic.id}`)}
+              sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: isSelected ? 'primary.main' : 'divider',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                transition: 'box-shadow 0.2s, border-color 0.2s, transform 0.15s',
+                '&:hover': { borderColor: 'primary.main', boxShadow: 4, transform: 'translateY(-1px)' },
+              }}
             >
-              <Box display="flex" alignItems="flex-start" gap={2}>
-                {/* Checkbox */}
-                <Box onClick={(e) => { e.stopPropagation(); toggleOne(epic.id); }} sx={{ mt: 0.5 }}>
-                  <Checkbox size="small" checked={isSelected} onChange={() => toggleOne(epic.id)} />
-                </Box>
-                <Box flex={1} minWidth={0}>
-                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
-                    <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>{epic.title}</Typography>
-                    <EpicHealthScore epic={epic} />
-                    <EpicPriorityChip priority={epic.priority} />
-                    {epic.blockedBy?.some((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED') && (
-                      <Tooltip title={`Blocked by: ${epic.blockedBy!.filter((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED').map((b) => b.title).join(', ')}`}>
-                        <Lock fontSize="small" color="error" />
+              {/* Accent bar + header */}
+              <Box sx={{ borderLeft: `4px solid ${accent}`, px: { xs: 1.5, sm: 2 }, pt: 1.75, pb: 1.25 }}>
+                <Box display="flex" alignItems="flex-start" gap={1}>
+                  {/* Checkbox */}
+                  <Box onClick={(e) => { e.stopPropagation(); toggleOne(epic.id); }} sx={{ mt: 0.25, flexShrink: 0 }}>
+                    <Checkbox size="small" checked={isSelected} onChange={() => toggleOne(epic.id)} sx={{ p: 0.25 }} />
+                  </Box>
+
+                  {/* Title + badges */}
+                  <Box flex={1} minWidth={0}>
+                    <Box display="flex" alignItems="center" gap={0.75} mb={0.5} flexWrap="wrap">
+                      <Typography
+                        variant="subtitle1" fontWeight={700}
+                        sx={{ flex: 1, minWidth: 0, fontSize: { xs: '0.9rem', sm: '1rem' }, lineHeight: 1.3 }}
+                        noWrap
+                      >
+                        {epic.title}
+                      </Typography>
+                      <EpicHealthScore epic={epic} />
+                      <EpicPriorityChip priority={epic.priority} />
+                      <EpicStatusChip status={epic.status} />
+                      {isBlocked && (
+                        <Tooltip title={`Blocked by: ${epic.blockedBy!.filter((b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED').map((b) => b.title).join(', ')}`}>
+                          <Lock sx={{ fontSize: 14, color: 'error.main', flexShrink: 0 }} />
+                        </Tooltip>
+                      )}
+                    </Box>
+
+                    {epic.description && (
+                      <Typography
+                        variant="body2" color="text.secondary"
+                        sx={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', fontSize: '0.8rem', lineHeight: 1.5, mb: 0.75 }}
+                      >
+                        {epic.description}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Desktop actions */}
+                  {isAdmin && (
+                    <Box display={{ xs: 'none', sm: 'flex' }} flexDirection="column" gap={0.25}
+                      onClick={(e) => e.stopPropagation()} flexShrink={0} sx={{ ml: 0.5 }}>
+                      <Tooltip title="View">
+                        <IconButton size="small" onClick={() => navigate(`/epics/${epic.id}`)} sx={{ p: 0.5 }}><OpenInNew sx={{ fontSize: 16 }} /></IconButton>
                       </Tooltip>
-                    )}
-                    <EpicStatusChip status={epic.status} />
-                  </Box>
-
-                  {epic.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                      {epic.description}
-                    </Typography>
-                  )}
-
-                  {/* Meta chips */}
-                  <Box display="flex" gap={1} flexWrap="wrap" mb={1.5}>
-                    {epic.applicationName && <Chip icon={<Apps fontSize="small" />} label={epic.applicationName} size="small" variant="outlined" />}
-                    {epic.customerName && <Chip icon={<Person fontSize="small" />} label={epic.customerName} size="small" variant="outlined" color="secondary" />}
-                    {epic.ownerName && <Chip icon={<Person fontSize="small" />} label={`Owner: ${epic.ownerName}`} size="small" variant="outlined" color="primary" />}
-                    {epic.targetDate && (
-                      <Chip icon={<CalendarToday fontSize="small" />} label={dueDateLabel}
-                        size="small" variant="outlined" color={overdue ? 'error' : dueDiff === 0 ? 'warning' : 'default'} />
-                    )}
-                    <Chip label={`${epic.featureCount} feature${epic.featureCount !== 1 ? 's' : ''}`} size="small" />
-                  </Box>
-
-                  {/* Tags */}
-                  {(epic.tags ?? []).length > 0 && (
-                    <Box display="flex" gap={0.5} flexWrap="wrap" mb={1}>
-                      {epic.tags!.map((t) => (
-                        <Chip
-                          key={t} label={t} size="small" variant="outlined"
-                          onClick={(e) => { e.stopPropagation(); setTagFilter(tagFilter === t ? '' : t); }}
-                          sx={{ borderColor: tagFilter === t ? 'primary.main' : undefined, color: tagFilter === t ? 'primary.main' : undefined, fontSize: '0.7rem' }}
-                        />
-                      ))}
+                      <Tooltip title="Edit">
+                        <IconButton size="small" onClick={() => { setEditing(epic); setDialogOpen(true); }} sx={{ p: 0.5 }}><Edit sx={{ fontSize: 16 }} /></IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton size="small" color="error" onClick={() => setDeleteTarget(epic)} sx={{ p: 0.5 }}><Delete sx={{ fontSize: 16 }} /></IconButton>
+                      </Tooltip>
                     </Box>
                   )}
-
-                  {/* Progress + feature status breakdown */}
-                  {epic.featureCount > 0 && (() => {
-                    const counts = Object.entries(epic.featureStatusCounts ?? {}) as [string, number][];
-                    const total = epic.featureCount;
-                    return (
-                      <Box>
-                        {epic.stepsTotal > 0 && (
-                          <Box display="flex" justifyContent="space-between" mb={0.5}>
-                            <Typography variant="caption" color="text.secondary">Steps</Typography>
-                            <Typography variant="caption" color="text.secondary">{epic.stepsDone}/{epic.stepsTotal} · {progress}%</Typography>
-                          </Box>
-                        )}
-                        {counts.length > 0 && (
-                          <>
-                            <Box display="flex" height={8} borderRadius={1} overflow="hidden" mb={0.75}>
-                              {counts.map(([status, count]) => (
-                                <Tooltip key={status} title={`${FEATURE_STATUS_LABELS[status] ?? status}: ${count}`}>
-                                  <Box sx={{ width: `${(count / total) * 100}%`, bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', transition: 'width 0.3s' }} />
-                                </Tooltip>
-                              ))}
-                            </Box>
-                            <Box display="flex" gap={1.5} flexWrap="wrap">
-                              {counts.map(([status, count]) => (
-                                <Box key={status} display="flex" alignItems="center" gap={0.5}>
-                                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', flexShrink: 0 }} />
-                                  <Typography variant="caption" color="text.secondary">{FEATURE_STATUS_LABELS[status] ?? status} <strong>{count}</strong></Typography>
-                                </Box>
-                              ))}
-                            </Box>
-                          </>
-                        )}
-                      </Box>
-                    );
-                  })()}
                 </Box>
-
-                {/* Actions */}
-                {isAdmin && (
-                  <Box display="flex" flexDirection="column" gap={0.5} onClick={(e) => e.stopPropagation()}>
-                    <Tooltip title="View">
-                      <IconButton size="small" onClick={() => navigate(`/epics/${epic.id}`)}><OpenInNew fontSize="small" /></IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton size="small" onClick={() => { setEditing(epic); setDialogOpen(true); }}><Edit fontSize="small" /></IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton size="small" color="error" onClick={() => setDeleteTarget(epic)}><Delete fontSize="small" /></IconButton>
-                    </Tooltip>
-                  </Box>
-                )}
               </Box>
+
+              {/* Meta row */}
+              <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: 1, display: 'flex', gap: 0.75, flexWrap: 'wrap', alignItems: 'center' }}>
+                {epic.applicationName && (
+                  <Chip icon={<Apps sx={{ fontSize: '0.7rem !important' }} />} label={epic.applicationName}
+                    size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+                )}
+                {epic.customerName && (
+                  <Chip icon={<Person sx={{ fontSize: '0.7rem !important' }} />} label={epic.customerName}
+                    size="small" variant="outlined" color="secondary" sx={{ height: 20, fontSize: '0.65rem' }} />
+                )}
+                {epic.ownerName && (
+                  <Chip icon={<Person sx={{ fontSize: '0.7rem !important' }} />} label={epic.ownerName}
+                    size="small" variant="outlined" color="primary" sx={{ height: 20, fontSize: '0.65rem' }} />
+                )}
+                {epic.targetDate && (
+                  <Chip
+                    icon={<CalendarToday sx={{ fontSize: '0.7rem !important' }} />}
+                    label={dueDateLabel}
+                    size="small" variant="outlined"
+                    color={overdue ? 'error' : dueDiff === 0 ? 'warning' : 'default'}
+                    sx={{ height: 20, fontSize: '0.65rem' }}
+                  />
+                )}
+                <Chip label={`${epic.featureCount} feature${epic.featureCount !== 1 ? 's' : ''}`}
+                  size="small" sx={{ height: 20, fontSize: '0.65rem', ml: 'auto' }} />
+              </Box>
+
+              {/* Tags */}
+              {(epic.tags ?? []).length > 0 && (
+                <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {epic.tags!.map((t) => (
+                    <Chip
+                      key={t} label={t} size="small" variant="outlined"
+                      onClick={(e) => { e.stopPropagation(); setTagFilter(tagFilter === t ? '' : t); }}
+                      sx={{
+                        height: 16, fontSize: '0.6rem',
+                        borderColor: tagFilter === t ? 'primary.main' : 'divider',
+                        color: tagFilter === t ? 'primary.main' : 'text.secondary',
+                        '& .MuiChip-label': { px: 0.75 },
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
+
+              {/* Progress bar + legend */}
+              {epic.featureCount > 0 && (() => {
+                const counts = Object.entries(epic.featureStatusCounts ?? {}) as [string, number][];
+                const total = epic.featureCount;
+                if (!counts.length) return null;
+                return (
+                  <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: 1.5 }}>
+                    {epic.stepsTotal > 0 && (
+                      <Box display="flex" justifyContent="space-between" mb={0.5}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>Steps</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>{epic.stepsDone}/{epic.stepsTotal} · {progress}%</Typography>
+                      </Box>
+                    )}
+                    <Box display="flex" height={5} borderRadius={1} overflow="hidden" mb={0.75}>
+                      {counts.map(([status, count]) => (
+                        <Tooltip key={status} title={`${FEATURE_STATUS_LABELS[status] ?? status}: ${count}`}>
+                          <Box sx={{ width: `${(count / total) * 100}%`, bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', transition: 'width 0.3s' }} />
+                        </Tooltip>
+                      ))}
+                    </Box>
+                    <Box display="flex" gap={1.25} flexWrap="wrap">
+                      {counts.map(([status, count]) => (
+                        <Box key={status} display="flex" alignItems="center" gap={0.4}>
+                          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: FEATURE_STATUS_COLORS[status] ?? 'grey.400', flexShrink: 0 }} />
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+                            {FEATURE_STATUS_LABELS[status] ?? status} <strong>{count}</strong>
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })()}
+
+              {/* Mobile action row */}
+              {isAdmin && (
+                <Box
+                  display={{ xs: 'flex', sm: 'none' }}
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{ px: 1, pb: 0.75, pt: 0.25, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'flex-end', gap: 0.5 }}
+                >
+                  <Tooltip title="View">
+                    <IconButton size="small" onClick={() => navigate(`/epics/${epic.id}`)}><OpenInNew sx={{ fontSize: 16 }} /></IconButton>
+                  </Tooltip>
+                  <Tooltip title="Edit">
+                    <IconButton size="small" onClick={() => { setEditing(epic); setDialogOpen(true); }}><Edit sx={{ fontSize: 16 }} /></IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete">
+                    <IconButton size="small" color="error" onClick={() => setDeleteTarget(epic)}><Delete sx={{ fontSize: 16 }} /></IconButton>
+                  </Tooltip>
+                </Box>
+              )}
             </Paper>
           );
         })}

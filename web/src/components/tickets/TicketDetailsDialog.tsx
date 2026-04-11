@@ -20,6 +20,7 @@ import { ExpandMore as ExpandMoreIcon, Delete as DeleteIcon, History as HistoryI
 import { ticketsApi, type Ticket, type Comment, type TicketActivity } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
 import AttachmentsPanel from './AttachmentsPanel';
 import { useNavigate } from 'react-router-dom';
@@ -55,11 +56,12 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [activityMaximized, setActivityMaximized] = useState(false);
-  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
-
-  useEffect(() => {
-    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
-  }, []);
+  const { data: mentionUsersData = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
+    staleTime: 300_000,
+  });
+  const mentionUsers = mentionUsersData.map((u) => ({ id: u.id, name: u.name }));
 
   const isAdmin = user?.role === 'TENANT_ADMIN' || user?.role === 'SUPER_ADMIN';
 

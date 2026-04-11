@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { epicsApi } from '../api/epics';
 import EpicFormDialog from '../components/EpicFormDialog';
 import EpicComments from '../components/EpicComments';
-import EpicActivity from '../components/EpicActivity';
+import EpicChangelog from '../components/EpicChangelog';
 import FeatureFormDialog from '../../features/components/FeatureFormDialog';
 import EpicHeader from './EpicHeader';
 import EpicFeaturesList from './EpicFeaturesList';
@@ -147,7 +147,7 @@ const EpicDetailPage: React.FC = () => {
         {/* Right column: sticky tabbed sidebar */}
         <Box sx={{ position: { lg: 'sticky' }, top: { lg: 30 } }}>
           <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Tabs value={sidebarTab} onChange={(_, v) => setSidebarTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
+            <Tabs value={Math.min(sidebarTab, 1)} onChange={(_, v) => setSidebarTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
               <Tab label={
                 <Box display="flex" alignItems="center" gap={0.75}>
                   Comments
@@ -156,14 +156,14 @@ const EpicDetailPage: React.FC = () => {
               } />
               <Tab label={
                 <Box display="flex" alignItems="center" gap={0.75}>
-                  Activity
+                  Changelog
                   {activities.length > 0 && <Chip label={activities.length} size="small" sx={{ height: 18, fontSize: '0.7rem', pointerEvents: 'none' }} />}
                 </Box>
               } />
             </Tabs>
             <Box sx={{ p: 2 }}>
               {sidebarTab === 0 && <EpicComments epicId={id!} />}
-              {sidebarTab === 1 && <EpicActivity epicId={id!} />}
+              {sidebarTab === 1 && <EpicChangelog epicId={id!} />}
             </Box>
           </Paper>
         </Box>

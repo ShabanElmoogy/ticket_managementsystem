@@ -13,6 +13,7 @@ import EpicStatusChip from '../components/EpicStatusChip';
 import EpicPriorityChip from '../components/EpicPriorityChip';
 import EpicHealthScore from '../components/EpicHealthScore';
 import BlockerPickerMenu from './BlockerPickerMenu';
+import EpicContributors from '../components/EpicContributors';
 import { formatDate, formatDateTime } from '../../../utils/dateUtils';
 import type { EpicFeature } from './types';
 import { useNavigate } from 'react-router-dom';
@@ -278,37 +279,50 @@ const EpicHeader: React.FC<Props> = ({
 
       <Divider sx={{ my: 1.25 }} />
 
-      {/* ── Row 5: dependencies ── */}
-      <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-        <Lock sx={{ fontSize: 15, color: isBlocked ? 'error.main' : 'text.disabled', flexShrink: 0 }} />
-        <Typography variant="caption" fontWeight={600} color="text.secondary">Blockers</Typography>
-        {isBlocked && <Chip label="Blocked" color="error" size="small" sx={{ height: 18, fontSize: '0.65rem' }} />}
+      {/* ── Row 5 & 6: blockers + contributors side by side ── */}
+      <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
 
-        {!hasBlockers && (
-          <Typography variant="caption" color="text.disabled">None</Typography>
-        )}
-        {epic.blockedBy?.map((b) => {
-          const resolved = b.status === 'COMPLETED' || b.status === 'CANCELLED';
-          return (
-            <Chip
-              key={b.id}
-              icon={<Lock sx={{ fontSize: '0.8rem !important' }} />}
-              label={`${b.title} · ${b.status.replace('_', ' ')}`}
-              size="small"
-              color={resolved ? 'success' : 'error'}
-              variant={resolved ? 'outlined' : 'filled'}
-              onDelete={isAdmin ? () => onRemoveBlocker(b.id) : undefined}
-              onClick={() => navigate(`/epics/${b.id}`)}
-              sx={{ cursor: 'pointer', height: 20, fontSize: '0.68rem' }}
-            />
-          );
-        })}
+        {/* Blockers */}
+        <Box>
+          <Box display="flex" alignItems="center" gap={0.75} mb={1}>
+            <Lock sx={{ fontSize: 14, color: isBlocked ? 'error.main' : 'text.disabled' }} />
+            <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
+              Blockers
+            </Typography>
+            {isBlocked && <Chip label="Blocked" color="error" size="small" sx={{ height: 16, fontSize: '0.6rem' }} />}
+            {isAdmin && (
+              <IconButton size="small" onClick={onAddBlocker} sx={{ ml: 'auto', p: 0.25 }}>
+                <Add sx={{ fontSize: 16 }} />
+              </IconButton>
+            )}
+          </Box>
+          <Box display="flex" gap={0.5} flexWrap="wrap">
+            {!hasBlockers ? (
+              <Typography variant="caption" color="text.disabled">None</Typography>
+            ) : (
+              epic.blockedBy?.map((b) => {
+                const resolved = b.status === 'COMPLETED' || b.status === 'CANCELLED';
+                return (
+                  <Chip
+                    key={b.id}
+                    icon={<Lock sx={{ fontSize: '0.75rem !important' }} />}
+                    label={`${b.title} · ${b.status.replace('_', ' ')}`}
+                    size="small"
+                    color={resolved ? 'success' : 'error'}
+                    variant={resolved ? 'outlined' : 'filled'}
+                    onDelete={isAdmin ? () => onRemoveBlocker(b.id) : undefined}
+                    onClick={() => navigate(`/epics/${b.id}`)}
+                    sx={{ cursor: 'pointer', height: 22, fontSize: '0.68rem' }}
+                  />
+                );
+              })
+            )}
+          </Box>
+        </Box>
 
-        {isAdmin && (
-          <Button size="small" startIcon={<Add />} onClick={onAddBlocker} sx={{ ml: 'auto', py: 0.25 }}>
-            Add Blocker
-          </Button>
-        )}
+        {/* Contributors */}
+        <EpicContributors epicId={epic.id} isAdmin={isAdmin} />
+
       </Box>
 
       <BlockerPickerMenu

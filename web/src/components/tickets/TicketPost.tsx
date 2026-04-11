@@ -47,7 +47,7 @@ import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/
 import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import MyChip from "../common/MyChip";
 import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
@@ -103,14 +103,16 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [editDueDateOpen, setEditDueDateOpen] = useState(false);
-  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>(mentionUsersProp ?? []);
+  const { data: employeesData = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
+    staleTime: 300_000,
+    enabled: !mentionUsersProp,
+  });
+  const mentionUsers: MentionUser[] = mentionUsersProp ?? employeesData.map((u) => ({ id: u.id, name: u.name }));
 
   useEffect(() => {
-    if (mentionUsersProp !== undefined) {
-      setMentionUsers(mentionUsersProp);
-      return;
-    }
-    usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
+    // no-op: mentionUsers now derived from query cache
   }, [mentionUsersProp]);
 
   // Reset activities cache when ticket changes (e.g. after reassign or due date edit)

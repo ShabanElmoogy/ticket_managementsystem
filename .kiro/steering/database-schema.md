@@ -22,6 +22,8 @@ npm run db:migrate
 ```
 This applies the migration to the database
 
+> **If `db:migrate` fails with `ECONNREFUSED`**: the database server is not running or not reachable from the current terminal. Start the DB first, then re-run. Never work around this by writing ad-hoc scripts or raw SQL — always fix the connection and use `db:migrate`.
+
 ### 4. Never manually write SQL migration files
 Always use `npm run db:generate` to generate migrations from the schema — do not hand-write `.sql` files in `drizzle/migrations/`
 

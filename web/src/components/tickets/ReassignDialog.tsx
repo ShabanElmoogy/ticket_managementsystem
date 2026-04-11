@@ -6,7 +6,7 @@ import {
 import { usersApi } from '../../services/api';
 import { ticketsApi } from '../../services/api';
 import type { Ticket, User } from '../../services/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 interface ReassignDialogProps {
   open: boolean;
@@ -16,19 +16,18 @@ interface ReassignDialogProps {
 
 const ReassignDialog: React.FC<ReassignDialogProps> = ({ open, onClose, ticket }) => {
   const queryClient = useQueryClient();
-  const [employees, setEmployees] = useState<User[]>([]);
   const [selectedId, setSelectedId] = useState('');
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const { data: employees = [], isLoading: loading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
+    staleTime: 300_000,
+    enabled: open,
+  });
+
   useEffect(() => {
-    if (!open) return;
-    setSelectedId(ticket.assignedToId ?? '');
-    setLoading(true);
-    usersApi.getEmployees()
-      .then(setEmployees)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    if (open) setSelectedId(ticket.assignedToId ?? '');
   }, [open, ticket.assignedToId]);
 
   const handleSave = async () => {

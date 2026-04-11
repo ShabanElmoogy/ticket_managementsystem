@@ -242,12 +242,14 @@ http.interceptors.response.use(
       error.response.status === 429 ||
       (error.response.status >= 500 && error.response.status !== 501);
 
+    // Never retry 401 — it's handled above via token refresh.
+    // If we reach here with a 401 it means refresh already failed or was skipped.
     const normalized: ApiError = {
       status,
       message,
       details: data,
       code: error.code,
-      isRetryable,
+      isRetryable: status === 401 ? false : isRetryable,
     };
 
     return Promise.reject(normalized);

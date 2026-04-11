@@ -16,6 +16,13 @@ export interface EpicActivityItem {
   user: { id: string; name: string } | null;
 }
 
+export interface EpicContributor {
+  id: string;
+  role: string;
+  createdAt: string;
+  user: { id: string; name: string; email: string };
+}
+
 class EpicsApiService extends BaseApiService {
   list(): Promise<Epic[]> {
     return this.get('/epics');
@@ -107,6 +114,20 @@ class EpicsApiService extends BaseApiService {
     targetDate: string | null;
   }> {
     return this.get(`/epics/${epicId}/burndown`);
+  }
+
+  // Contributors
+  listContributors(epicId: string): Promise<EpicContributor[]> {
+    return this.get(`/epics/${epicId}/contributors`);
+  }
+  addContributor(epicId: string, userId: string, role: string): Promise<EpicContributor> {
+    return this.post(`/epics/${epicId}/contributors`, { userId, role });
+  }
+  updateContributor(epicId: string, contributorId: string, role: string): Promise<EpicContributor> {
+    return this.put(`/epics/${epicId}/contributors/${contributorId}`, { role });
+  }
+  removeContributor(epicId: string, contributorId: string): Promise<{ message: string }> {
+    return this.delete(`/epics/${epicId}/contributors/${contributorId}`);
   }
 }
 
