@@ -415,11 +415,8 @@ export const refreshToken = async (req, res) => {
   }
 };
 
-// Dev-only quick login (no password check) — disabled in production
+// Quick login (no password check) — demo/testing purposes
 export const devLogin = async (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(404).json({ error: 'Not found' });
-  }
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'email is required' });

@@ -66,6 +66,7 @@ interface TicketPostProps {
   onAddComment: (ticketId: string, content: string) => void;
   onTicketClick: (ticket: Ticket) => void;
   onDeleteTicket?: (ticketId: string) => void;
+  mentionUsers?: MentionUser[];
 }
 
 const TicketPost: React.FC<TicketPostProps> = ({
@@ -75,6 +76,7 @@ const TicketPost: React.FC<TicketPostProps> = ({
   onAddComment,
   onTicketClick,
   onDeleteTicket: _onDeleteTicket,
+  mentionUsers: mentionUsersProp,
 }) => {
   const { user, token, tenantSuspended } = useAuthStore();
   const queryClient = useQueryClient();
@@ -101,11 +103,15 @@ const TicketPost: React.FC<TicketPostProps> = ({
   const [assignProgrammerOpen, setAssignProgrammerOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [editDueDateOpen, setEditDueDateOpen] = useState(false);
-  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>(mentionUsersProp ?? []);
 
   useEffect(() => {
+    if (mentionUsersProp !== undefined) {
+      setMentionUsers(mentionUsersProp);
+      return;
+    }
     usersApi.getEmployees().then((data) => setMentionUsers(data.map((u) => ({ id: u.id, name: u.name })))).catch(() => {});
-  }, []);
+  }, [mentionUsersProp]);
 
   // Reset activities cache when ticket changes (e.g. after reassign or due date edit)
   useEffect(() => {

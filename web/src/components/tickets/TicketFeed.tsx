@@ -16,7 +16,9 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
 import { type Ticket } from '../../services/api';
+import { usersApi } from '../../services/api';
 import TicketPost from './TicketPost';
 import TicketGrid from '../dashboard/components/TicketGrid';
 import TicketCompact from './TicketCompact';
@@ -50,6 +52,13 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [showAllTickets, setShowAllTickets] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const { data: employeesData = [] } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => usersApi.getEmployees(),
+    staleTime: 300000, // 5 minutes
+  });
+  const mentionUsers = employeesData.map((u) => ({ id: u.id, name: u.name }));
 
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -206,6 +215,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
                 onAddComment={onAddComment}
                 onTicketClick={onTicketClick}
                 onDeleteTicket={onDeleteTicket}
+                mentionUsers={mentionUsers}
               />
             </Box>
           </Box>
@@ -237,6 +247,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
                         onAddComment={onAddComment}
                         onTicketClick={onTicketClick}
                         onDeleteTicket={onDeleteTicket}
+                        mentionUsers={mentionUsers}
                       />
                     </Box>
                   </Box>

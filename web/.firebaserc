@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "ticketmanagement-ab491"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

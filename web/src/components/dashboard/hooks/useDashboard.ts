@@ -47,13 +47,11 @@ export const useDashboard = () => {
 
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
-  // Debounce search input — fires API call 400ms after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchInput), 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // TanStack Query hooks
   const { data: rawTickets = [], isLoading: ticketsLoading } = useTicketsQuery({
     status: statusFilter,
     priority: priorityFilter,
@@ -64,7 +62,6 @@ export const useDashboard = () => {
     search: debouncedSearch,
   });
   
-  // Client-side overdue filter only (search is now backend-driven)
   const tickets = useMemo(() => {
     if (!overdueFilter) return rawTickets;
     const now = new Date();
@@ -86,7 +83,6 @@ export const useDashboard = () => {
   const addCommentMutation = useAddCommentMutation();
   const deleteTicketMutation = useDeleteTicketMutation();
   
-  // Socket for real-time updates
   useSocketQuery();
 
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: "", severity: "success" });
@@ -104,7 +100,6 @@ export const useDashboard = () => {
     const resolvedWithDates = tickets.filter(
       (t) => (t.status === "RESOLVED" || t.status === "CLOSED") && t.createdAt
     );
-    console.log('[ResolutionKPI] resolvedWithDates:', resolvedWithDates.length, resolvedWithDates.map(t => ({ id: t.id, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt })));
     const avgResolutionHours =
       resolvedWithDates.length > 0
         ? Math.round(
@@ -119,7 +114,6 @@ export const useDashboard = () => {
           ) / 10
         : null;
 
-    console.log('[ResolutionKPI] stats:', { resolvedTickets, closedTickets, avgResolutionHours });
     return { totalTickets, openTickets, inProgressTickets, resolvedTickets, closedTickets, avgResolutionHours };
   }, [tickets]);
 
@@ -148,7 +142,6 @@ export const useDashboard = () => {
     }
   }, [token]);
 
-  // Initial load
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -226,13 +219,10 @@ export const useDashboard = () => {
   }), [statusFilter, priorityFilter, userFilter, customerFilter, applicationFilter, deletedFilter, searchInput, overdueFilter]);
 
   return {
-    // env
     isMobile,
     user,
     userRole: user?.role,
     token,
-
-    // state
     stats,
     tickets,
     employees,
@@ -253,8 +243,6 @@ export const useDashboard = () => {
     showMobileSearch,
     allUsers,
     snackbar,
-
-    // setters
     setDetailsDialogOpen,
     setSelectedTicket,
     setStatusFilter,
@@ -267,11 +255,7 @@ export const useDashboard = () => {
     setSearchQuery: setSearchInput,
     setShowMobileSearch,
     setSnackbar,
-
-    // data ops
     fetchData,
-
-    // handlers
     showSnackbar,
     handleCreateTicket,
     handleAddComment,
@@ -280,8 +264,6 @@ export const useDashboard = () => {
     handleBulkUpdateStatus,
     handleDeleteTicket,
     handleTicketClick,
-
-    // ui helpers
     activeFilters,
     closeSnackbar,
   } as const;

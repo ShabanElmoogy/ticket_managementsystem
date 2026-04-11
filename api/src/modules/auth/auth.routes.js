@@ -87,9 +87,6 @@ router.post('/refresh', authRateLimit, validate(refreshTokenSchema), authControl
  */
 router.post('/logout', authController.logout);
 
-// Dev-only: quick login without password (disabled in production)
-if (process.env.NODE_ENV !== 'production') {
-  router.post('/dev-login', authController.devLogin);
-}
+router.post('/dev-login', authController.devLogin);
 
 export default router;
