@@ -70,7 +70,7 @@ const EpicFeaturesList: React.FC<Props> = ({
           )}
         </Paper>
       ) : (
-        <Box sx={{ maxHeight: 300, overflowY: 'auto', pr: 0.5 }}>
+        <Box sx={{ maxHeight: 250, overflowY: 'auto', pr: 0.5 }}>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={features.map((f) => f.id)} strategy={verticalListSortingStrategy}>
               {features.map((feature) => (

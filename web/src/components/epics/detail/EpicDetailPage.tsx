@@ -4,8 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Typography,
   Tabs, Tab, Paper, Chip,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
+import { ArrowBack } from '@mui/icons-material';import { useQuery } from '@tanstack/react-query';
 import { epicsApi } from '../api/epics';
 import EpicFormDialog from '../components/EpicFormDialog';
 import EpicComments from '../components/EpicComments';
@@ -73,10 +72,6 @@ const EpicDetailPage: React.FC = () => {
 
         {/* Left column */}
         <Box>
-          <Button startIcon={<ArrowBack />} onClick={() => navigate('/epics')} sx={{ mb: 2 }}>
-            Back to Epics
-          </Button>
-
           {overdue && (
             <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
               This epic is <strong>{overduedays} day{overduedays !== 1 ? 's' : ''} overdue</strong> — target date was {formatDate(epic.targetDate!)}. Update the target date or mark it completed.
@@ -95,6 +90,7 @@ const EpicDetailPage: React.FC = () => {
             onRemoveBlocker={onBlockerRemove}
             onBlockerMenuClose={() => setBlockerMenuAnchor(null)}
             onBlockerAdd={onBlockerAdd}
+            onBack={() => navigate('/epics')}
           />
 
           <EpicFeaturesList
@@ -116,7 +112,7 @@ const EpicDetailPage: React.FC = () => {
         </Box>
 
         {/* Right column: sticky tabbed sidebar */}
-        <Box sx={{ position: { lg: 'sticky' }, top: { lg: 30 }, mt: 7 }}>
+        <Box sx={{ position: { lg: 'sticky' }, top: { lg: 30 } }}>
           <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
             <Tabs value={sidebarTab} onChange={(_, v) => setSidebarTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
               <Tab label={
