@@ -68,10 +68,6 @@ export function calculateEpicHealthScore(
   totalScore += breakdown.blockers;
 
   // 4. Overdue features penalty (0-15 points)
-  const overdueFeatures = orderedFeatures.filter(f => 
-    f.status !== 'SHIPPED' && f.status !== 'DECLINED'
-    // Note: features don't have due dates in current schema, so this is placeholder
-  );
   // For now, penalize if >50% features are stuck in UNDER_REVIEW for active epics
   if (epic.status === 'ACTIVE') {
     const stuckFeatures = orderedFeatures.filter(f => f.status === 'UNDER_REVIEW');

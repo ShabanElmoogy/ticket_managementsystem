@@ -8,7 +8,6 @@ import {
   PictureAsPdf, ExpandMore, ExpandLess, ArrowBack, Timer, FileDownload,
 } from '@mui/icons-material';
 import { exportEpicPdf } from '../utils/exportEpicPdf';
-import { exportEpicToCsv } from '../utils/exportEpicCsv';
 import type { Epic } from '../../../services/api/types';
 import EpicStatusChip from '../components/EpicStatusChip';
 import EpicPriorityChip from '../components/EpicPriorityChip';

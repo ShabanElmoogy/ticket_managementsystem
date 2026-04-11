@@ -5,9 +5,11 @@ import {
   InputLabel, Select, MenuItem, Snackbar, Alert, CircularProgress,
   ToggleButton, ToggleButtonGroup, Checkbox, Collapse, Autocomplete,
 } from '@mui/material';
-import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload } from '@mui/icons-material';
+import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload, ViewModule, Dashboard } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
 import EpicHealthScore from './components/EpicHealthScore';
+import EpicBoard from './components/EpicBoard';
+import EpicDashboard from './components/EpicDashboard';
 import { exportMultipleEpicsToCsv } from './utils/exportEpicCsv';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -49,8 +51,8 @@ const EpicsPage: React.FC = () => {
   const [editing, setEditing] = useState<Epic | null>(null);
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Epic | null>(null);
-  const [view, setView] = useState<'list' | 'roadmap'>(
-    () => (localStorage.getItem('epics-view') as 'list' | 'roadmap') ?? 'list'
+  const [view, setView] = useState<'list' | 'roadmap' | 'board' | 'dashboard'>(
+    () => (localStorage.getItem('epics-view') as 'list' | 'roadmap' | 'board' | 'dashboard') ?? 'list'
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<Epic['status'] | ''>('');
@@ -148,7 +150,9 @@ const EpicsPage: React.FC = () => {
         <Box display="flex" gap={1} alignItems="center">
           <ToggleButtonGroup size="small" value={view} exclusive onChange={(_, v) => { if (v) { setView(v); localStorage.setItem('epics-view', v); } }}>
             <ToggleButton value="list"><Tooltip title="List"><ViewList fontSize="small" /></Tooltip></ToggleButton>
+            <ToggleButton value="board"><Tooltip title="Board"><ViewModule fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="roadmap"><Tooltip title="Roadmap"><Timeline fontSize="small" /></Tooltip></ToggleButton>
+            <ToggleButton value="dashboard"><Tooltip title="Dashboard"><Dashboard fontSize="small" /></Tooltip></ToggleButton>
           </ToggleButtonGroup>
           <Tooltip title="Export all epics to CSV">
             <Button
@@ -240,6 +244,18 @@ const EpicsPage: React.FC = () => {
         </Box>
       )}
 
+      {/* Board view */}
+      {!isLoading && view === 'board' && (
+        <Box sx={{ height: 'calc(100vh - 280px)', minHeight: 600 }}>
+          <EpicBoard epics={filtered} isAdmin={isAdmin} />
+        </Box>
+      )}
+
+      {/* Dashboard view */}
+      {!isLoading && view === 'dashboard' && (
+        <EpicDashboard epics={filtered} />
+      )}
+
       {/* Bulk action bar */}
       <Collapse in={selected.size > 0}>
         <Paper sx={{ p: 1.5, mb: 2, borderRadius: 2, border: '1px solid', borderColor: 'primary.main', bgcolor: 'primary.50' }}>
@@ -268,7 +284,7 @@ const EpicsPage: React.FC = () => {
       {/* List view */}
       {isLoading ? (
         <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>
-      ) : view === 'roadmap' ? null : filtered.length === 0 ? (
+      ) : view === 'roadmap' || view === 'board' || view === 'dashboard' ? null : filtered.length === 0 ? (
         <Paper sx={{ p: 6, textAlign: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 3 }}>
           <AccountTree sx={{ fontSize: 56, color: 'text.secondary', mb: 1 }} />
           {epics.length === 0 ? (

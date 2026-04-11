@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Typography,
   Tabs, Tab, Paper, Chip,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { epicsApi } from '../api/epics';
 import EpicFormDialog from '../components/EpicFormDialog';
 import EpicComments from '../components/EpicComments';
