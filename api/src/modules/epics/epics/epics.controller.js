@@ -359,3 +359,59 @@ export const unlinkTicket = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+export const checkAutoClose = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get epic with features and linked tickets
+    const [epic] = await db.select({ id: epics.id, status: epics.status, title: epics.title }).from(epics).where(eq(epics.id, id)).limit(1);
+    if (!epic) return res.status(404).json({ error: 'Epic not found' });
+    
+    if (epic.status === 'COMPLETED' || epic.status === 'CANCELLED') {
+      return res.json({ eligible: false, reason: 'Epic already completed or cancelled' });
+    }
+
+    // Check all linked features are SHIPPED
+    const features = await db.select({ status: featureRequests.status }).from(featureRequests).where(eq(featureRequests.epicId, id));
+    const activeFeatures = features.filter(f => f.status !== 'DECLINED');
+    const shippedFeatures = features.filter(f => f.status === 'SHIPPED');
+    
+    if (activeFeatures.length === 0) {
+      return res.json({ eligible: false, reason: 'No active features linked to this epic' });
+    }
+    
+    if (shippedFeatures.length < activeFeatures.length) {
+      const remaining = activeFeatures.length - shippedFeatures.length;
+      return res.json({ 
+        eligible: false, 
+        reason: `${remaining} feature${remaining !== 1 ? 's' : ''} still pending (not SHIPPED)`,
+        progress: { shipped: shippedFeatures.length, total: activeFeatures.length }
+      });
+    }
+
+    // Check all linked tickets are RESOLVED or CLOSED
+    const linkedTickets = await db.select({ status: tickets.status }).from(tickets).where(eq(tickets.epicId, id));
+    const openTickets = linkedTickets.filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED');
+    
+    if (openTickets.length > 0) {
+      return res.json({ 
+        eligible: false, 
+        reason: `${openTickets.length} linked ticket${openTickets.length !== 1 ? 's' : ''} still open`,
+        openTickets: openTickets.length
+      });
+    }
+
+    // All conditions met
+    res.json({ 
+      eligible: true, 
+      message: 'All features shipped and tickets resolved. Epic ready for completion.',
+      stats: {
+        featuresShipped: shippedFeatures.length,
+        ticketsResolved: linkedTickets.length
+      }
+    });
+  } catch (err) {
+    console.error('checkAutoClose error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

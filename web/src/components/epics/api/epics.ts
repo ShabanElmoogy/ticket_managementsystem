@@ -80,6 +80,9 @@ class EpicsApiService extends BaseApiService {
   unlinkTicket(epicId: string, ticketId: string): Promise<{ message: string }> {
     return this.delete(`/epics/${epicId}/tickets/${ticketId}`);
   }
+  checkAutoClose(epicId: string): Promise<{ eligible: boolean; reason?: string; message?: string; stats?: any }> {
+    return this.get(`/epics/${epicId}/auto-close`);
+  }
 }
 
 export const epicsApi = new EpicsApiService();

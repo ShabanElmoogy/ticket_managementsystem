@@ -5,9 +5,10 @@ import {
   InputLabel, Select, MenuItem, Snackbar, Alert, CircularProgress,
   ToggleButton, ToggleButtonGroup, Checkbox, Collapse, Autocomplete,
 } from '@mui/material';
-import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label } from '@mui/icons-material';
+import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload } from '@mui/icons-material';
 import EpicRoadmap from './components/EpicRoadmap';
 import EpicHealthScore from './components/EpicHealthScore';
+import { exportMultipleEpicsToCsv } from './utils/exportEpicCsv';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from './api/epics';
@@ -149,6 +150,17 @@ const EpicsPage: React.FC = () => {
             <ToggleButton value="list"><Tooltip title="List"><ViewList fontSize="small" /></Tooltip></ToggleButton>
             <ToggleButton value="roadmap"><Tooltip title="Roadmap"><Timeline fontSize="small" /></Tooltip></ToggleButton>
           </ToggleButtonGroup>
+          <Tooltip title="Export all epics to CSV">
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileDownload />}
+              onClick={() => exportMultipleEpicsToCsv(filtered)}
+              disabled={filtered.length === 0}
+            >
+              Export CSV
+            </Button>
+          </Tooltip>
           {isAdmin && (
             <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}>
               New Epic

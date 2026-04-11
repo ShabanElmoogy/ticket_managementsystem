@@ -15,6 +15,7 @@ import EpicFeaturesList from './EpicFeaturesList';
 import EpicLinkedTickets from './EpicLinkedTickets';
 import LinkFeatureDialog from './LinkFeatureDialog';
 import { useEpicDetail } from '../hooks/useEpicDetail';
+import { exportEpicToCsv } from '../utils/exportEpicCsv';
 import type { UpdateEpicData, FeatureRequest } from '../../../services/api/types';
 import { formatDate } from '../../../utils/dateUtils';
 
@@ -52,6 +53,18 @@ const EpicDetailPage: React.FC = () => {
     enabled: !!id,
     staleTime: 0,
   });
+
+  const { data: linkedTickets = [] } = useQuery({
+    queryKey: ['epics', id, 'tickets'],
+    queryFn: () => epicsApi.listLinkedTickets(id!),
+    enabled: !!id,
+    staleTime: 0,
+  });
+
+  const handleCsvExport = () => {
+    if (!epic) return;
+    exportEpicToCsv(epic as any, orderedFeatures, linkedTickets);
+  };
 
   if (isLoading) return <Box display="flex" justifyContent="center" pt={8}><CircularProgress /></Box>;
   if (!epic) return <Box p={4}><Alert severity="error">Epic not found</Alert></Box>;
@@ -91,6 +104,7 @@ const EpicDetailPage: React.FC = () => {
             onBlockerMenuClose={() => setBlockerMenuAnchor(null)}
             onBlockerAdd={onBlockerAdd}
             onBack={() => navigate('/epics')}
+            onExportCsv={handleCsvExport}
           />
 
           <EpicFeaturesList

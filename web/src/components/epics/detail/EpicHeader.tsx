@@ -5,12 +5,14 @@ import {
 import {
   Edit, Apps, Person, CalendarToday, AccountTree,
   AccessTime, Update, Lock, Label, Add, Visibility, VisibilityOff,
-  PictureAsPdf, ExpandMore, ExpandLess, ArrowBack, Timer,
+  PictureAsPdf, ExpandMore, ExpandLess, ArrowBack, Timer, FileDownload,
 } from '@mui/icons-material';
 import { exportEpicPdf } from '../utils/exportEpicPdf';
+import { exportEpicToCsv } from '../utils/exportEpicCsv';
 import type { Epic } from '../../../services/api/types';
 import EpicStatusChip from '../components/EpicStatusChip';
 import EpicPriorityChip from '../components/EpicPriorityChip';
+import EpicHealthScore from '../components/EpicHealthScore';
 import BlockerPickerMenu from './BlockerPickerMenu';
 import { formatDate, formatDateTime } from '../../../utils/dateUtils';
 import type { EpicFeature } from './types';
@@ -40,6 +42,7 @@ interface Props {
   onBlockerMenuClose: () => void;
   onBlockerAdd: (blockerId: string) => void;
   onBack: () => void;
+  onExportCsv: () => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -53,7 +56,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const EpicHeader: React.FC<Props> = ({
   epic, progress, overdue, isAdmin, orderedFeatures,
-  blockerMenuAnchor, onEditOpen, onAddBlocker, onRemoveBlocker, onBlockerMenuClose, onBlockerAdd, onBack,
+  blockerMenuAnchor, onEditOpen, onAddBlocker, onRemoveBlocker, onBlockerMenuClose, onBlockerAdd, onBack, onExportCsv,
 }) => {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -107,6 +110,7 @@ const EpicHeader: React.FC<Props> = ({
           <Typography variant="h6" fontWeight={700} noWrap>{epic.title}</Typography>
           <EpicPriorityChip priority={epic.priority} />
           <EpicStatusChip status={epic.status} />
+          <EpicHealthScore epic={epic} variant="chip" />
         </Box>
 
         {/* action buttons */}
@@ -140,6 +144,17 @@ const EpicHeader: React.FC<Props> = ({
                   sx={{ minWidth: 0 }}
                 >
                   PDF
+                </Button>
+              </Tooltip>
+              <Tooltip title="Export CSV">
+                <Button
+                  startIcon={<FileDownload />}
+                  variant="outlined"
+                  size="small"
+                  onClick={onExportCsv}
+                  sx={{ minWidth: 0 }}
+                >
+                  CSV
                 </Button>
               </Tooltip>
             </>
