@@ -53,29 +53,19 @@ export const useDocsBuilder = () => {
     const base = { id: newId(), type, settings: {} } as DocBlock;
     let block: DocBlock;
     switch (type) {
-      case 'heading':
-        block = { ...(base as HeadingBlock), type: 'heading', text: '' };
-        break;
-      case 'text':
-        block = { ...(base as TextBlock), type: 'text', html: '' };
-        break;
-      case 'divider':
-        block = { ...(base as DividerBlock), type: 'divider' };
-        break;
-      case 'image':
-        block = { ...(base as ImageBlock), type: 'image', url: '', caption: '' };
-        break;
-      case 'video':
-        block = { ...(base as VideoBlock), type: 'video', url: '', caption: '' };
-        break;
-      case 'bulletedList':
-        block = { ...(base as BulletedListBlock), type: 'bulletedList', title: '', items: [''] };
-        break;
-      case 'code':
-        block = { ...(base as CodeBlock), type: 'code', language: 'javascript', code: '' };
-        break;
-      default:
-        block = base;
+      case 'heading':      block = { ...(base as HeadingBlock),      type: 'heading',      text: '' }; break;
+      case 'text':         block = { ...(base as TextBlock),         type: 'text',         html: '' }; break;
+      case 'divider':      block = { ...(base as DividerBlock),      type: 'divider' }; break;
+      case 'image':        block = { ...(base as ImageBlock),        type: 'image',        url: '', caption: '' }; break;
+      case 'video':        block = { ...(base as VideoBlock),        type: 'video',        url: '', caption: '' }; break;
+      case 'bulletedList': block = { ...(base as BulletedListBlock), type: 'bulletedList', title: '', items: [''] }; break;
+      case 'numberedList': block = { ...base, type: 'numberedList', title: '', items: [''] } as any; break;
+      case 'code':         block = { ...(base as CodeBlock),         type: 'code',         language: 'javascript', code: '' }; break;
+      case 'quote':        block = { ...base, type: 'quote',        text: '', attribution: '' } as any; break;
+      case 'callout':      block = { ...base, type: 'callout',      calloutType: 'info', text: '' } as any; break;
+      case 'table':        block = { ...base, type: 'table',        headers: ['Column 1', 'Column 2'], rows: [['', '']] } as any; break;
+      case 'toggle':       block = { ...base, type: 'toggle',       summary: '', content: '' } as any; break;
+      default:             block = base;
     }
 
     if (!currentDoc) {

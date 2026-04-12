@@ -13,6 +13,10 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import ImageIcon from '@mui/icons-material/Image';
 import MovieIcon from '@mui/icons-material/Movie';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import InfoIcon from '@mui/icons-material/Info';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import CodeIcon from '@mui/icons-material/Code';
 import NotesIcon from '@mui/icons-material/Notes';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -31,21 +35,27 @@ import CheckIcon from '@mui/icons-material/Check';
 import MenuIcon from '@mui/icons-material/Menu';
 import MyGridHeader from '../../common/MyGridHeader';
 
-import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock } from './types';
+import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock, QuoteBlock, CalloutBlock, TableBlock, ToggleBlock, NumberedListBlock } from './types';
 import { findNode } from './utils/treeUtils';
 import BlockContainer from './components/BlockContainer';
 import BlockSettingsBar from './components/BlockSettingsBar';
 import { HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor } from './components/blockEditors';
+import { NumberedListEditor, QuoteEditor, CalloutEditor, TableEditor, ToggleEditor } from './components/blockEditors';
 import { useDocsBuilder } from './hooks/useDocsBuilder';
 
 const PALETTE: { type: BlockType; label: string; icon: React.ReactNode; color: string }[] = [
-  { type: 'heading',      label: 'Heading',      icon: <TitleIcon sx={{ fontSize: 16 }} />,                color: '#f59e0b' },
-  { type: 'text',         label: 'Text',         icon: <TextFieldsIcon sx={{ fontSize: 16 }} />,           color: '#3b82f6' },
-  { type: 'code',         label: 'Code',         icon: <CodeIcon sx={{ fontSize: 16 }} />,                 color: '#8b5cf6' },
-  { type: 'bulletedList', label: 'List',         icon: <FormatListBulletedIcon sx={{ fontSize: 16 }} />,   color: '#10b981' },
-  { type: 'image',        label: 'Image',        icon: <ImageIcon sx={{ fontSize: 16 }} />,                color: '#06b6d4' },
-  { type: 'video',        label: 'Video',        icon: <MovieIcon sx={{ fontSize: 16 }} />,                color: '#ef4444' },
-  { type: 'divider',      label: 'Divider',      icon: <HorizontalRuleIcon sx={{ fontSize: 16 }} />,       color: '#6b7280' },
+  { type: 'heading',      label: 'Heading',       icon: <TitleIcon sx={{ fontSize: 16 }} />,                color: '#f59e0b' },
+  { type: 'text',         label: 'Text',          icon: <TextFieldsIcon sx={{ fontSize: 16 }} />,           color: '#3b82f6' },
+  { type: 'quote',        label: 'Quote',         icon: <FormatQuoteIcon sx={{ fontSize: 16 }} />,          color: '#8b5cf6' },
+  { type: 'callout',      label: 'Callout',       icon: <InfoIcon sx={{ fontSize: 16 }} />,                 color: '#06b6d4' },
+  { type: 'code',         label: 'Code',          icon: <CodeIcon sx={{ fontSize: 16 }} />,                 color: '#6366f1' },
+  { type: 'bulletedList', label: 'Bullet List',   icon: <FormatListBulletedIcon sx={{ fontSize: 16 }} />,   color: '#10b981' },
+  { type: 'numberedList', label: 'Numbered List', icon: <FormatListNumberedIcon sx={{ fontSize: 16 }} />,   color: '#14b8a6' },
+  { type: 'toggle',       label: 'Toggle',        icon: <ExpandMoreIcon sx={{ fontSize: 16 }} />,           color: '#f97316' },
+  { type: 'table',        label: 'Table',         icon: <TableChartIcon sx={{ fontSize: 16 }} />,           color: '#ec4899' },
+  { type: 'image',        label: 'Image',         icon: <ImageIcon sx={{ fontSize: 16 }} />,                color: '#0ea5e9' },
+  { type: 'video',        label: 'Video',         icon: <MovieIcon sx={{ fontSize: 16 }} />,                color: '#ef4444' },
+  { type: 'divider',      label: 'Divider',       icon: <HorizontalRuleIcon sx={{ fontSize: 16 }} />,       color: '#6b7280' },
 ];
 
 // ── Rename dialog ─────────────────────────────────────────────────────────────
@@ -172,6 +182,50 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
           {(block as BulletedListBlock).title && <Typography variant="h6" fontWeight={600} mb={1}>{(block as BulletedListBlock).title}</Typography>}
           <ul style={{ marginTop: 0, paddingLeft: 20 }}>{(block as BulletedListBlock).items.filter(Boolean).map((it: string, i: number) => <li key={i} style={{ marginBottom: 4 }}>{it}</li>)}</ul>
         </Box>
+      );
+      case 'numberedList': return (
+        <Box sx={{ color: block.settings?.color || 'inherit' }}>
+          {(block as NumberedListBlock).title && <Typography variant="h6" fontWeight={600} mb={1}>{(block as NumberedListBlock).title}</Typography>}
+          <ol style={{ marginTop: 0, paddingLeft: 20 }}>{(block as NumberedListBlock).items.filter(Boolean).map((it: string, i: number) => <li key={i} style={{ marginBottom: 4 }}>{it}</li>)}</ol>
+        </Box>
+      );
+      case 'quote': return (
+        <Box sx={{ borderLeft: '4px solid', borderColor: 'primary.main', pl: 2, py: 0.5 }}>
+          <Typography variant="body1" sx={{ fontStyle: 'italic', fontSize: '1.05rem', lineHeight: 1.7 }}>{(block as QuoteBlock).text}</Typography>
+          {(block as QuoteBlock).attribution && <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>— {(block as QuoteBlock).attribution}</Typography>}
+        </Box>
+      );
+      case 'callout': {
+        const COLORS: Record<string, string> = { info: '#3b82f6', success: '#10b981', warning: '#f59e0b', error: '#ef4444' };
+        const c = COLORS[(block as CalloutBlock).calloutType] ?? '#3b82f6';
+        return (
+          <Box sx={{ borderLeft: `4px solid ${c}`, bgcolor: `${c}0d`, borderRadius: 1, p: 1.5 }}>
+            <Typography variant="body2" sx={{ lineHeight: 1.7 }}>{(block as CalloutBlock).text}</Typography>
+          </Box>
+        );
+      }
+      case 'table': {
+        const tb = block as TableBlock;
+        return (
+          <Box sx={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr>{tb.headers.map((h, i) => <th key={i} style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '2px solid', fontWeight: 600, background: 'rgba(0,0,0,0.04)' }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {tb.rows.map((row, r) => <tr key={r}>{row.map((cell, c) => <td key={c} style={{ padding: '8px 12px', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>{cell}</td>)}</tr>)}
+              </tbody>
+            </table>
+          </Box>
+        );
+      }
+      case 'toggle': return (
+        <details style={{ cursor: 'pointer' }}>
+          <summary style={{ fontWeight: 600, padding: '4px 0', userSelect: 'none' }}>{(block as ToggleBlock).summary || 'Toggle'}</summary>
+          <Box sx={{ pl: 2, pt: 1, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{(block as ToggleBlock).content}</Typography>
+          </Box>
+        </details>
       );
       case 'divider': return <Divider sx={{ borderColor: block.settings?.dividerColor, borderBottomWidth: block.settings?.dividerThickness || 1 }} />;
       case 'image': return (block as ImageBlock).url ? (
@@ -329,6 +383,11 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
                       case 'text':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TextBlockEditor block={block as TextBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'code':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><CodeBlockEditor block={block as CodeBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'bulletedList':return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><BulletedListEditor block={block as BulletedListBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'numberedList':return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><NumberedListEditor block={block as NumberedListBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'quote':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><QuoteEditor block={block as QuoteBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'callout':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><CalloutEditor block={block as CalloutBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'table':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TableEditor block={block as TableBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'toggle':      return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ToggleEditor block={block as ToggleBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'divider':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><DividerBlockView settings={settings} /><BlockSettingsBar settings={settings} onSettingsChange={onSC} enableDivider /></BlockContainer>;
                       case 'image':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ImageBlockEditor block={block as ImageBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'video':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoBlockEditor block={block as VideoBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
