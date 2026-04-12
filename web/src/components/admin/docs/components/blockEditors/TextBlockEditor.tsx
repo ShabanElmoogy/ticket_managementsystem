@@ -1,11 +1,5 @@
-import React, { useRef } from 'react';
-import {
-  Stack,
-  Tooltip,
-  IconButton,
-  Box,
-  alpha,
-} from '@mui/material';
+import React, { useEffect, useRef } from 'react';
+import { Stack, Tooltip, IconButton, Box, alpha } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
@@ -15,11 +9,9 @@ import BlockSettingsBar from '../BlockSettingsBar';
 import type { TextBlock, BlockSettings } from '../../types';
 
 const TextToolbar: React.FC = () => {
-  const exec = (cmd: string, val?: string) => {
-    document.execCommand(cmd, false, val);
-  };
+  const exec = (cmd: string) => { document.execCommand(cmd, false, undefined); };
   return (
-    <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+    <Stack direction="row" spacing={0.5} sx={{ mb: 1 }}>
       <Tooltip title="Bold"><IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('bold')}><FormatBoldIcon fontSize="small" /></IconButton></Tooltip>
       <Tooltip title="Italic"><IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('italic')}><FormatItalicIcon fontSize="small" /></IconButton></Tooltip>
       <Tooltip title="Underline"><IconButton size="small" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('underline')}><FormatUnderlinedIcon fontSize="small" /></IconButton></Tooltip>
@@ -36,7 +28,15 @@ const TextBlockEditor: React.FC<{
   onSettingsChange: (patch: Partial<BlockSettings>) => void;
 }> = ({ block, onChange, settings, onSettingsChange }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [initialHtml] = React.useState(block.html || '');
+
+  // Set initial HTML once on mount — never touch innerHTML again after that
+  // so React doesn't fight with the contentEditable DOM
+  useEffect(() => {
+    if (ref.current && ref.current.innerHTML !== (block.html || '')) {
+      ref.current.innerHTML = block.html || '';
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty — only run on mount
 
   return (
     <Box>
@@ -46,16 +46,20 @@ const TextBlockEditor: React.FC<{
         contentEditable
         suppressContentEditableWarning
         onInput={(e) => onChange({ html: (e.currentTarget as HTMLDivElement).innerHTML })}
-        dangerouslySetInnerHTML={{ __html: initialHtml }}
         sx={{
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 1,
           p: 1.5,
           minHeight: 80,
-          '&:focus': { outline: 'none', borderColor: 'primary.main', boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.15)}` },
+          outline: 'none',
+          '&:focus': {
+            borderColor: 'primary.main',
+            boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.15)}`,
+          },
           textAlign: settings.align || 'left',
           color: settings.color || 'inherit',
+          cursor: 'text',
         }}
       />
       <BlockSettingsBar settings={settings} onSettingsChange={onSettingsChange} enableColor enableAlign />
