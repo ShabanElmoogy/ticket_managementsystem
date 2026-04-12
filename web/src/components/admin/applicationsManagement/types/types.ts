@@ -1,9 +1,15 @@
-import type {
+// Re-export shared API types so feature code imports from one place
+export type {
+  Application,
   CreateApplicationData,
   CustomerApplication,
-} from "../../../../services/api";
+} from '../../../../services/api/types/application.ts';
 
-// Alias the API CreateApplicationData for form usage
+// ── Feature-local types ──────────────────────────────────────────────────────
+
+import type { Application } from '../../../../services/api/types/application.ts';
+import type { CreateApplicationData } from '../../../../services/api/types/application.ts';
+
 export type ApplicationFormValues = CreateApplicationData;
 
 export interface ApplicationFormDialogProps {
@@ -21,21 +27,6 @@ export interface UseApplicationFormArgs {
   onSubmit: (values: ApplicationFormValues) => void;
 }
 
-export interface Application {
-  id: string;
-  name: string;
-  description?: string;
-  version?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  customers?: CustomerApplication[];
-  _count?: {
-    tickets: number;
-    customers: number;
-  };
-}
-
 export interface ApplicationsTableProps {
   applications: Application[];
   loading: boolean;
@@ -46,7 +37,7 @@ export interface ApplicationsTableProps {
 export type SnackbarState = {
   open: boolean;
   message: string;
-  severity: "success" | "error";
+  severity: 'success' | 'error';
 };
 
 export type DeleteDialogState = {
@@ -54,4 +45,3 @@ export type DeleteDialogState = {
   application: Application | null;
   loading: boolean;
 };
-

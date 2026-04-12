@@ -1,25 +1,28 @@
-import React, { useEffect } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Box,
-  FormControl,
-  InputLabel,
-  MenuItem,
-} from "@mui/material";
-import { useAuthStore } from "../../../../stores/authStore";
-import { tenantsApi, type Tenant } from "../../../../services/api";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { UserFormDialogProps } from "../types/types";
-import { userFormSchema } from "../schemas/userSchema";
-import MySelect from "../../../common/MySelect";
-import { Role } from "../../../../types/roles";
-import type { UserRole } from "../../../../types/roles";
+import React, { useMemo } from 'react';
+import { ReusableFormDialog } from '../../../common/forms';
+import type { FormField, SelectOption } from '../../../common/forms';
+import { useAuthStore } from '../../../../stores/authStore';
+import { useAuxData } from '../../../../shared/hooks/useAuxData';
+import { tenantsApi } from '../../../../services/api';
+import { userFormSchema } from '../schemas/userSchema';
+import type { UserFormDialogProps, UserFormValues } from '../types/types';
+import { Role } from '../../../../types/roles';
+
+const ROLE_OPTIONS: SelectOption[] = [
+  { value: Role.TENANT_ADMIN, label: 'Tenant Admin' },
+  { value: Role.EMPLOYEE,     label: 'Employee'     },
+  { value: Role.PROGRAMMER,   label: 'Programmer'   },
+];
+
+const DEFAULT_VALUES: UserFormValues = {
+  name:                  '',
+  email:                 '',
+  password:              '',
+  role:                  Role.EMPLOYEE,
+  tenantSlug:            '',
+  phone:                 '',
+  whatsappNotifications: false,
+};
 
 const UserFormDialog: React.FC<UserFormDialogProps> = ({
   open,
@@ -31,191 +34,58 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({
   const { user } = useAuthStore();
   const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
 
-  const [tenants, setTenants] = React.useState<Tenant[]>([]);
+  const { data: tenants = [], isLoading: tenantsLoading } = useAuxData(
+    ['tenants-for-user-form'],
+    () => tenantsApi.list(),
+    isSuperAdmin && open,   // only fetch when dialog is open and user is super admin
+  );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors, isValid },
-  } = useForm({
-    resolver: zodResolver(userFormSchema),
-    mode: "onChange",
-    defaultValues:
-      initialValues ||
-      ({
-        name: "",
-        email: "",
-        password: "",
-        role: Role.EMPLOYEE,
-        tenantSlug: "",
-        phone: "",
-        whatsappNotifications: false,
-      } as const),
-  });
+  const tenantOptions: SelectOption[] = useMemo(
+    () => tenants.map((t) => ({ value: t.slug, label: `${t.name} (${t.slug})` })),
+    [tenants],
+  );
 
-  useEffect(() => {
-    if (!open) return;
+  // Filter role options — only super admin can assign TENANT_ADMIN
+  const roleOptions = isSuperAdmin && !editing
+    ? ROLE_OPTIONS
+    : ROLE_OPTIONS.filter((o) => o.value !== Role.TENANT_ADMIN);
 
-    reset(
-      initialValues || {
-        name: "",
-        email: "",
-        password: "",
-        role: Role.EMPLOYEE as UserRole,
-        tenantSlug: "",
-        phone: "",
-        whatsappNotifications: false,
-      }
-    );
-
-    // Focus first field after dialog opens
-    setTimeout(() => {
-      const firstInput = document.querySelector(
-        'input[name="name"]'
-      ) as HTMLInputElement;
-      if (firstInput) firstInput.focus();
-    }, 100);
-  }, [open, initialValues, reset]);
-
-  useEffect(() => {
-    if (!open) return;
-    if (!isSuperAdmin) return;
-
-    let mounted = true;
-    tenantsApi
-      .list()
-      .then((rows) => {
-        if (!mounted) return;
-        setTenants(rows);
-      })
-      .catch((e) => {
-        console.error("Failed to load tenants", e);
-        setTenants([]);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [open, isSuperAdmin]);
-
-  const submit = handleSubmit(onSubmit);
-  const roleValue = watch("role");
-  const tenantSlugValue = watch("tenantSlug");
-
-  // Only super admin can create tenant admins.
-  const canCreateTenantAdmin = isSuperAdmin && !editing;
+  const fields: FormField<UserFormValues>[] = [
+    { name: 'name',     label: 'Name',     required: true, autoFocus: true, width: 2 },
+    { name: 'email',    label: 'Email',    type: 'email',  required: true,  width: 2 },
+    {
+      name:  'password',
+      label: editing ? 'New Password (leave blank to keep current)' : 'Password',
+      type:  'password',
+      width: 2,
+    },
+    { name: 'role', label: 'Role', type: 'select', options: roleOptions, width: 2 },
+    ...(isSuperAdmin ? [{
+      name:     'tenantSlug' as const,
+      label:    'Tenant',
+      type:     'customSelect' as const,
+      options:  tenantOptions,
+      width:    2 as const,
+      disabled: () => tenantsLoading,
+    }] : []),
+    {
+      name:       'phone',
+      label:      'Phone Number',
+      width:      2,
+    },
+  ];
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{editing ? "Edit User" : "Create New User"}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField
-            label="Name"
-            {...register("name")}
-            required
-            fullWidth
-            autoComplete="off"
-            autoFocus
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-          <TextField
-            label="Email"
-            type="email"
-            {...register("email")}
-            required
-            fullWidth
-            autoComplete="off"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-          <TextField
-            label={editing ? "New Password (leave blank to keep current)" : "Password"}
-            type="password"
-            {...register("password")}
-            fullWidth
-            autoComplete="off"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-          />
-
-          <FormControl fullWidth>
-            <InputLabel id="role-label">Role</InputLabel>
-            <MySelect
-              labelId="role-label"
-              label="Role"
-              name="role"
-              value={roleValue}
-              onChange={(e) =>
-                setValue("role", e.target.value as UserRole, {
-                  shouldValidate: true,
-                })
-              }
-            >
-              {canCreateTenantAdmin && (
-                <MenuItem value={Role.TENANT_ADMIN}>Tenant Admin</MenuItem>
-              )}
-              <MenuItem value={Role.EMPLOYEE}>Employee</MenuItem>
-              <MenuItem value={Role.PROGRAMMER}>Programmer</MenuItem>
-            </MySelect>
-          </FormControl>
-
-          {isSuperAdmin && (
-            <FormControl fullWidth error={!!errors.tenantSlug}>
-              <InputLabel id="tenant-label">Tenant</InputLabel>
-              <MySelect
-                labelId="tenant-label"
-                label="Tenant"
-                name="tenantSlug"
-                value={tenantSlugValue || ""}
-                onChange={(e) =>
-                  setValue("tenantSlug", String(e.target.value), {
-                    shouldValidate: true,
-                  })
-                }
-              >
-                <MenuItem value="">Select tenant</MenuItem>
-                {tenants.map((t) => (
-                  <MenuItem key={t.id} value={t.slug}>
-                    {t.name} ({t.slug})
-                  </MenuItem>
-                ))}
-              </MySelect>
-              {errors.tenantSlug?.message && (
-                <Box sx={{ color: "error.main", fontSize: 12, mt: 0.5 }}>
-                  {String(errors.tenantSlug.message)}
-                </Box>
-              )}
-            </FormControl>
-          )}
-
-          <TextField
-            label="Phone Number"
-            {...register("phone")}
-            fullWidth
-            autoComplete="off"
-            error={!!errors.phone}
-            helperText={
-              errors.phone?.message || "Include country code (e.g., +1234567890)"
-            }
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={submit}
-          variant="contained"
-          disabled={!isValid || (!editing && !(watch("password") || "").toString().trim())}
-        >
-          {editing ? "Update" : "Create"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ReusableFormDialog
+      open={open}
+      title={editing ? 'Edit User' : 'Create New User'}
+      editing={editing}
+      schema={userFormSchema}
+      fields={fields}
+      initialValues={initialValues ?? DEFAULT_VALUES}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
   );
 };
 

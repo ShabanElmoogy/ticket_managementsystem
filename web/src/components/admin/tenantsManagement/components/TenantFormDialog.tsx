@@ -1,129 +1,58 @@
-import React, { useEffect } from 'react';
-import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, Box, MenuItem, CircularProgress,
-} from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { tenantFormSchema, type TenantFormSchemaValues } from '../schemas/tenantSchema';
+import React from 'react';
+import { ReusableFormDialog } from '../../../common/forms';
+import type { FormField, SelectOption } from '../../../common/forms';
+import { tenantFormSchema } from '../schemas/tenantSchema';
 import type { TenantFormDialogProps, TenantFormValues } from '../types/types';
 
-const PLANS = ['FREE', 'PRO', 'ENTERPRISE'];
-const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'];
+const PLAN_OPTIONS: SelectOption[] = [
+  { value: 'FREE',       label: 'Free'       },
+  { value: 'PRO',        label: 'Pro'        },
+  { value: 'ENTERPRISE', label: 'Enterprise' },
+];
 
-const DEFAULT: TenantFormValues = {
-  name: '',
-  slug: '',
-  subscriptionPlan: 'FREE',
+const STATUS_OPTIONS: SelectOption[] = [
+  { value: 'ACTIVE',    label: 'Active'    },
+  { value: 'TRIAL',     label: 'Trial'     },
+  { value: 'PAST_DUE',  label: 'Past Due'  },
+  { value: 'SUSPENDED', label: 'Suspended' },
+];
+
+const DEFAULT_VALUES: TenantFormValues = {
+  name:               '',
+  slug:               '',
+  subscriptionPlan:   'FREE',
   subscriptionStatus: 'ACTIVE',
-  subscriptionSeats: 0,
-  subscriptionStart: '',
-  subscriptionEnd: '',
-  supportEmail: '',
+  subscriptionSeats:  0,
+  subscriptionStart:  '',
+  subscriptionEnd:    '',
+  supportEmail:       '',
 };
+
+const FIELDS: FormField<TenantFormValues>[] = [
+  { name: 'name',               label: 'Name',               required: true, autoFocus: true, width: 2 },
+  { name: 'slug',               label: 'Slug (auto-generated if empty)',      width: 2 },
+  { name: 'subscriptionPlan',   label: 'Subscription Plan',  type: 'select', options: PLAN_OPTIONS,   width: 2 },
+  { name: 'subscriptionStatus', label: 'Subscription Status',type: 'select', options: STATUS_OPTIONS, width: 2 },
+  { name: 'subscriptionSeats',  label: 'Seats',              type: 'number', min: 0,                  width: 2 },
+  { name: 'subscriptionStart',  label: 'Subscription Start', type: 'date',                            width: 2 },
+  { name: 'subscriptionEnd',    label: 'Subscription End',   type: 'date',                            width: 2 },
+  { name: 'supportEmail',       label: 'Support Email (for Email-to-Ticket)', type: 'email',          width: 1 },
+];
 
 const TenantFormDialog: React.FC<TenantFormDialogProps> = ({
   open, editing = false, initialValues, onClose, onSubmit, submitting = false,
-}) => {
-  const { register, handleSubmit, reset, control, formState: { errors, isValid } } = useForm<TenantFormSchemaValues>({
-    resolver: zodResolver(tenantFormSchema) as any,
-    mode: 'onChange',
-    defaultValues: initialValues ?? DEFAULT,
-  });
-
-  useEffect(() => {
-    if (open) reset(initialValues ?? DEFAULT);
-  }, [open, initialValues, reset]);
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{editing ? 'Edit Tenant' : 'Create Tenant'}</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          <TextField
-            label="Name"
-            {...register('name')}
-            required
-            fullWidth
-            autoFocus
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-          <TextField
-            label="Slug (auto-generated if empty)"
-            {...register('slug')}
-            fullWidth
-            error={!!errors.slug}
-            helperText={errors.slug?.message ?? 'Lowercase letters, numbers and hyphens only'}
-          />
-
-          <Controller
-            name="subscriptionPlan"
-            control={control}
-            render={({ field }) => (
-              <TextField select label="Subscription Plan" {...field} fullWidth>
-                {PLANS.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
-              </TextField>
-            )}
-          />
-
-          <Controller
-            name="subscriptionStatus"
-            control={control}
-            render={({ field }) => (
-              <TextField select label="Subscription Status" {...field} fullWidth>
-                {STATUSES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-              </TextField>
-            )}
-          />
-
-          <TextField
-            label="Seats"
-            type="number"
-            {...register('subscriptionSeats')}
-            fullWidth
-            inputProps={{ min: 0 }}
-            error={!!errors.subscriptionSeats}
-            helperText={errors.subscriptionSeats?.message}
-          />
-
-          <TextField
-            label="Subscription Start"
-            type="date"
-            {...register('subscriptionStart')}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Subscription End"
-            type="date"
-            {...register('subscriptionEnd')}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Support Email (for Email-to-Ticket)"
-            type="email"
-            {...register('supportEmail')}
-            fullWidth
-            error={!!errors.supportEmail}
-            helperText={errors.supportEmail?.message ?? 'Incoming emails sent to this address will create tickets for this tenant'}
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={submitting}>Cancel</Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit(onSubmit)}
-          disabled={!isValid || submitting}
-          startIcon={submitting ? <CircularProgress size={16} /> : undefined}
-        >
-          {editing ? 'Save' : 'Create'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+}) => (
+  <ReusableFormDialog
+    open={open}
+    title={editing ? 'Edit Tenant' : 'Create Tenant'}
+    editing={editing}
+    schema={tenantFormSchema}
+    fields={FIELDS}
+    initialValues={initialValues ?? DEFAULT_VALUES}
+    onClose={onClose}
+    onSubmit={onSubmit}
+    submitting={submitting}
+  />
+);
 
 export default TenantFormDialog;

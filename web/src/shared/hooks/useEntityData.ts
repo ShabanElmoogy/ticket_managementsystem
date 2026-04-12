@@ -33,6 +33,7 @@ export function useEntityData<T, CreateT>(
     queryKey: resolvedKey,
     queryFn: config.api.getAll,
     enabled: !!token,
+    staleTime: 30 * 1000,
   });
 
   const createMutation = useMutation({

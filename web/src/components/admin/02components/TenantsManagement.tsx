@@ -1,315 +1,152 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { AdminDataGrid, buildActionsColumn } from "../../common";
-import type { GridColDef } from "@mui/x-data-grid";
-import { tenantsApi, type Tenant } from "../../../services/api";
+import React from 'react';
+import { Box, Snackbar, Alert } from '@mui/material';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
+import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { DeleteConfirmDialog, MyGridHeader } from '../../common';
+import { TenantsTable, TenantFormDialog } from '../tenantsManagement';
+import { tenantsApi } from '../tenantsManagement/api/tenants';
+import { tenantsKeys } from '../tenantsManagement/api/queryKeys';
+import { tenantToFormValues } from '../tenantsManagement/utils/toFormValues';
+import type { Tenant, TenantFormValues } from '../tenantsManagement/types/types';
 
-type TenantRow = Tenant;
-
-const toDateInputValue = (value?: string | null) => {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
+const toISO  = (val: string) => (val ? new Date(val).toISOString() : null);
+const toDate = (iso?: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 };
 
-const toISOOrUndefined = (value: string) =>
-  value ? new Date(value).toISOString() : undefined;
+function TenantsPageComponent() {
+  const f = useAdminFeature<Tenant, TenantFormValues>({
+    entityName: 'tenants',
+    queryKey: tenantsKeys.all,
+    api: {
+      getAll:  tenantsApi.list.bind(tenantsApi),
+      create:  tenantsApi.create.bind(tenantsApi),
+      update:  (id, data) => tenantsApi.update(id, {
+        name:               data.name,
+        slug:               data.slug || undefined,
+        subscriptionPlan:   data.subscriptionPlan,
+        subscriptionStatus: data.subscriptionStatus,
+        subscriptionSeats:  data.subscriptionSeats || undefined,
+        subscriptionStart:  data.subscriptionStart ? toISO(data.subscriptionStart) ?? undefined : undefined,
+        subscriptionEnd:    data.subscriptionEnd   ? toISO(data.subscriptionEnd)   ?? undefined : undefined,
+        supportEmail:       data.supportEmail || undefined,
+      }),
+      delete: (id) => tenantsApi.delete(id),
+    },
+    messages: {
+      success: { created: 'Tenant created successfully', updated: 'Tenant updated successfully', deleted: 'Tenant deleted successfully' },
+      error:   { create:  'Error creating tenant',       update:  'Error updating tenant',       delete:  'Error deleting tenant'       },
+      titles:  { create:  'Create New Tenant',           edit:    'Edit Tenant'                                                         },
+    },
+  });
 
-const toISOOrNull = (value: string) =>
-  value ? new Date(value).toISOString() : null;
+  const [statsMap, setStatsMap] = React.useState<Record<string, { userCount: number; ticketCount: number }>>({});
 
-const TenantsManagement: React.FC = () => {
-  const [rows, setRows] = useState<TenantRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  React.useEffect(() => {
+    if (!f.entities.length) return;
+    f.entities.forEach((t) => {
+      tenantsApi.getStats(t.id)
+        .then((s) => setStatsMap((prev) => ({ ...prev, [t.id]: s })))
+        .catch(() => {});
+    });
+  }, [f.entities]);
 
-  // Create dialog
-  const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [subscriptionPlan, setSubscriptionPlan] = useState("FREE");
-  const [subscriptionStatus, setSubscriptionStatus] = useState("ACTIVE");
-  const [subscriptionSeats, setSubscriptionSeats] = useState<number>(0);
-  const [subscriptionStart, setSubscriptionStart] = useState<string>("");
-  const [subscriptionEnd, setSubscriptionEnd] = useState<string>("");
-  const [supportEmail, setSupportEmail] = useState<string>("");
+  const tenantsWithStats = f.entities.map((t) => ({ ...t, _stats: statsMap[t.id] }));
 
-  // Edit dialog
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState<TenantRow | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editSlug, setEditSlug] = useState("");
-  const [editPlan, setEditPlan] = useState("FREE");
-  const [editStatus, setEditStatus] = useState("ACTIVE");
-  const [editSeats, setEditSeats] = useState<number>(0);
-  const [editStart, setEditStart] = useState<string>("");
-  const [editEnd, setEditEnd] = useState<string>("");
-  const [editSupportEmail, setEditSupportEmail] = useState<string>("");
-
-  const [error, setError] = useState<string | null>(null);
-
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const handleStatusChange = async (tenant: Tenant, status: string) => {
     try {
-      const data = await tenantsApi.list();
-      setRows(data);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load tenants");
-    } finally {
-      setLoading(false);
+      if (status === 'ACTIVE') {
+        await tenantsApi.activate(tenant.id);
+      } else {
+        await tenantsApi.update(tenant.id, { subscriptionStatus: status });
+      }
+      f.showSnackbar(`"${tenant.name}" status changed to ${status}`, 'success');
+      f.refetch();
+    } catch (error) {
+      f.showSnackbar(f.handleError(error, 'Error updating tenant status'), 'error');
     }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
-
-  const onCreate = async () => {
-    setError(null);
-    try {
-      await tenantsApi.create({
-        name,
-        slug: slug || undefined,
-        subscriptionPlan,
-        subscriptionStatus,
-        subscriptionSeats: subscriptionSeats || undefined,
-        subscriptionStart: toISOOrUndefined(subscriptionStart),
-        subscriptionEnd: toISOOrUndefined(subscriptionEnd),
-        supportEmail: supportEmail || undefined,
-      });
-
-      setCreateOpen(false);
-      setName("");
-      setSlug("");
-      setSubscriptionPlan("FREE");
-      setSubscriptionStatus("ACTIVE");
-      setSubscriptionSeats(0);
-      setSubscriptionStart("");
-      setSubscriptionEnd("");
-      setSupportEmail("");
-
-      await load();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create tenant");
-    }
-  };
-
-  const openEdit = (row: TenantRow) => {
-    setEditing(row);
-    setEditName(row.name || "");
-    setEditSlug(row.slug || "");
-    setEditPlan(row.subscriptionPlan || "FREE");
-    setEditStatus(row.subscriptionStatus || "ACTIVE");
-    setEditSeats(typeof row.subscriptionSeats === "number" ? row.subscriptionSeats : 0);
-    setEditStart(toDateInputValue(row.subscriptionStart));
-    setEditEnd(toDateInputValue(row.subscriptionEnd));
-    setEditSupportEmail(row.supportEmail || "");
-    setEditOpen(true);
-  };
-
-  const onSaveEdit = async () => {
-    if (!editing?.id) return;
-    setError(null);
-    try {
-      await tenantsApi.update(editing.id, {
-        name: editName,
-        slug: editSlug,
-        subscriptionPlan: editPlan,
-        subscriptionStatus: editStatus,
-        subscriptionSeats: editSeats || undefined,
-        subscriptionStart: toISOOrNull(editStart),
-        subscriptionEnd: toISOOrNull(editEnd),
-        supportEmail: editSupportEmail || null,
-      } as any);
-
-      setEditOpen(false);
-      setEditing(null);
-      await load();
-    } catch (e: any) {
-      setError(e?.message || "Failed to update tenant");
-    }
-  };
-
-  const columns = useMemo<GridColDef<TenantRow>[]>(
-    () => [
-      { field: "name", headerName: "Name", flex: 1, minWidth: 180 },
-      { field: "slug", headerName: "Slug", flex: 1, minWidth: 160 },
-      { field: "subscriptionPlan", headerName: "Plan", flex: 0.6, minWidth: 120 },
-      { field: "subscriptionStatus", headerName: "Status", flex: 0.7, minWidth: 130 },
-      { field: "subscriptionSeats", headerName: "Seats", flex: 0.5, minWidth: 90, type: "number" },
-      { field: "subscriptionStart", headerName: "Start", flex: 0.8, minWidth: 130 },
-      { field: "subscriptionEnd", headerName: "End", flex: 0.8, minWidth: 130 },
-      buildActionsColumn<TenantRow>({ width: 110, onEdit: openEdit })
-    ],
-    []
-  );
+  const initialValues = f.ui.editingItem
+    ? tenantToFormValues(f.ui.editingItem)
+    : undefined;
 
   return (
-    <Box>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Typography variant="h6">Tenants</Typography>
-        <Button variant="contained" onClick={() => setCreateOpen(true)}>
-          Create Tenant
-        </Button>
-      </Stack>
+    <ErrorBoundary>
+      <Box>
+        <MyGridHeader
+          title="Tenants Management"
+          onAdd={() => f.openDialog()}
+          addButtonText="Add Tenant"
+          addTooltip="Create a new tenant"
+          icon={ApartmentIcon}
+        />
 
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
+        <TenantsTable
+          tenants={tenantsWithStats}
+          loading={f.loading}
+          onEdit={f.openDialog}
+          onDelete={f.openDeleteDialog}
+          onStatusChange={handleStatusChange}
+        />
 
-      <AdminDataGrid rows={rows} columns={columns} loading={loading} />
+        <TenantFormDialog
+          open={f.ui.dialogOpen}
+          editing={!!f.ui.editingItem}
+          initialValues={initialValues}
+          onClose={f.closeDialog}
+          onSubmit={async (values) => {
+            f.setSubmitting(true);
+            try {
+              const payload = {
+                name:               values.name,
+                slug:               values.slug || undefined,
+                subscriptionPlan:   values.subscriptionPlan,
+                subscriptionStatus: values.subscriptionStatus,
+                subscriptionSeats:  values.subscriptionSeats || undefined,
+                subscriptionStart:  values.subscriptionStart ? toISO(values.subscriptionStart) ?? undefined : undefined,
+                subscriptionEnd:    values.subscriptionEnd   ? toISO(values.subscriptionEnd)   ?? undefined : undefined,
+                supportEmail:       values.supportEmail || undefined,
+              };
+              if (f.ui.editingItem) {
+                await f.update(f.ui.editingItem.id, values);
+                f.showSnackbar(f.messages.success.updated, 'success');
+              } else {
+                await f.create(payload as unknown as TenantFormValues);
+                f.showSnackbar(f.messages.success.created, 'success');
+              }
+              f.closeDialog();
+            } catch (error) {
+              f.showSnackbar(f.handleError(error, f.ui.editingItem ? f.messages.error.update : f.messages.error.create), 'error');
+              f.logError(f.ui.editingItem ? 'Update' : 'Create', error);
+            } finally {
+              f.setSubmitting(false);
+            }
+          }}
+          submitting={f.ui.submitting}
+        />
 
-      {/* Create */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Create Tenant</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-            <TextField label="Slug (optional)" value={slug} onChange={(e) => setSlug(e.target.value)} fullWidth />
+        <DeleteConfirmDialog
+          open={f.ui.deleteDialog.open}
+          onClose={f.closeDeleteDialog}
+          onConfirm={() => f.handleDeleteConfirm((t) => t.id, { onSuccess: () => f.refetch() })}
+          itemName={f.ui.deleteDialog.item?.name}
+          itemType="tenant"
+          loading={false}
+        />
 
-            <TextField select label="Subscription Plan" value={subscriptionPlan} onChange={(e) => setSubscriptionPlan(e.target.value)} fullWidth>
-              <MenuItem value="FREE">FREE</MenuItem>
-              <MenuItem value="PRO">PRO</MenuItem>
-              <MenuItem value="ENTERPRISE">ENTERPRISE</MenuItem>
-            </TextField>
-
-            <TextField select label="Subscription Status" value={subscriptionStatus} onChange={(e) => setSubscriptionStatus(e.target.value)} fullWidth>
-              <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-              <MenuItem value="TRIAL">TRIAL</MenuItem>
-              <MenuItem value="PAST_DUE">PAST_DUE</MenuItem>
-              <MenuItem value="CANCELED">CANCELED</MenuItem>
-            </TextField>
-
-            <TextField
-              label="Seats"
-              type="number"
-              value={subscriptionSeats}
-              onChange={(e) => setSubscriptionSeats(Number(e.target.value || 0))}
-              fullWidth
-              inputProps={{ min: 0 }}
-            />
-
-            <TextField
-              label="Subscription Start"
-              type="date"
-              value={subscriptionStart}
-              onChange={(e) => setSubscriptionStart(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              label="Subscription End"
-              type="date"
-              value={subscriptionEnd}
-              onChange={(e) => setSubscriptionEnd(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Support Email (Email-to-Ticket)"
-              type="email"
-              value={supportEmail}
-              onChange={(e) => setSupportEmail(e.target.value)}
-              fullWidth
-              helperText="Emails sent to this address will auto-create tickets for this tenant"
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={onCreate} disabled={!name.trim()}>
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Tenant</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Name" value={editName} onChange={(e) => setEditName(e.target.value)} fullWidth />
-            <TextField label="Slug" value={editSlug} onChange={(e) => setEditSlug(e.target.value)} fullWidth />
-
-            <TextField select label="Subscription Plan" value={editPlan} onChange={(e) => setEditPlan(e.target.value)} fullWidth>
-              <MenuItem value="FREE">FREE</MenuItem>
-              <MenuItem value="PRO">PRO</MenuItem>
-              <MenuItem value="ENTERPRISE">ENTERPRISE</MenuItem>
-            </TextField>
-
-            <TextField select label="Subscription Status" value={editStatus} onChange={(e) => setEditStatus(e.target.value)} fullWidth>
-              <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-              <MenuItem value="TRIAL">TRIAL</MenuItem>
-              <MenuItem value="PAST_DUE">PAST_DUE</MenuItem>
-              <MenuItem value="CANCELED">CANCELED</MenuItem>
-            </TextField>
-
-            <TextField
-              label="Seats"
-              type="number"
-              value={editSeats}
-              onChange={(e) => setEditSeats(Number(e.target.value || 0))}
-              fullWidth
-              inputProps={{ min: 0 }}
-            />
-
-            <TextField
-              label="Subscription Start"
-              type="date"
-              value={editStart}
-              onChange={(e) => setEditStart(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              label="Subscription End"
-              type="date"
-              value={editEnd}
-              onChange={(e) => setEditEnd(e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Support Email (Email-to-Ticket)"
-              type="email"
-              value={editSupportEmail}
-              onChange={(e) => setEditSupportEmail(e.target.value)}
-              fullWidth
-              helperText="Emails sent to this address will auto-create tickets for this tenant"
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={onSaveEdit} disabled={!editing}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        <Snackbar open={f.ui.snackbar.open} autoHideDuration={6000} onClose={f.closeSnackbar}>
+          <Alert onClose={f.closeSnackbar} severity={f.ui.snackbar.severity}>
+            {f.ui.snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </ErrorBoundary>
   );
-};
+}
 
-export default TenantsManagement;
+export { TenantsPageComponent as TenantsManagement };
+export default TenantsPageComponent;

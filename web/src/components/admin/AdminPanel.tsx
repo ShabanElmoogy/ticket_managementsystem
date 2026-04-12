@@ -16,17 +16,17 @@ import { useAuthStore } from "../../stores/authStore";
 import { isSuperAdmin } from "../../types/roles";
 import { useTenantSuspended, useTenantStatus } from "../../stores";
 import CustomersManagement from "./02components/CustomersManagement";
-import ApplicationsPageWithHOC from "./02components/ApplicationsPageWithHOC";
+import ApplicationsManagement from "./02components/ApplicationsManagement";
 import TicketsManagement from "./02components/TicketsManagement";
 import TasksManagement from "./02components/TasksManagement";
-import UserManagement from "./02components/UserManagement";
+import UsersManagement from "./02components/UsersManagement";
 import AdminDashboard from "./02components/AdminDashboard";
 import ReportsManagement from "./02components/ReportsManagement";
 import AdminTopBar from "./01layout/AdminTopBar";
 import AdminSidebar from "./01layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
-import TenantsPageWithHOC from './02components/TenantsPageWithHOC';
+import TenantsManagement from './02components/TenantsManagement';
 import AdminSettings from './02components/AdminSettings';
 import TemplatesManagement from './templatesManagement/TemplatesManagement';
 
@@ -93,11 +93,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
 
   const renderView = () => {
     switch (selectedView) {
-      case "tenants":   return <TenantsPageWithHOC />;
-      case "users":     return <UserManagement />;
-      case "settings":  return <AdminSettings />;
-      case "customers": return <CustomersManagement />;
-      case "applications": return <ApplicationsPageWithHOC />;
+      case "tenants":      return <TenantsManagement />;
+      case "users":        return <UsersManagement />;
+      case "settings":     return <AdminSettings />;
+      case "customers":    return <CustomersManagement />;
+      case "applications": return <ApplicationsManagement />;
       case "tickets":   return <TicketsManagement />;
       case "templates":  return <TemplatesManagement />;
       case "tasks":     return <TasksManagement />;

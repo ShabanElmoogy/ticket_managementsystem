@@ -1,5 +1,18 @@
-import type { CreateCustomerData, MaintenanceType } from "../../../../services/api";
-import type { Application } from "../../applicationsManagement/types/types";
+// Re-export shared API types so feature code imports from one place
+export type {
+  Customer,
+  CustomerApplication,
+  CreateCustomerData,
+  MaintenanceType,
+  SubscriptionStatus,
+} from '../../../../services/api/types/customer.ts';
+
+export type { Application } from '../../../../services/api/types/application.ts';
+
+// ── Feature-local types ──────────────────────────────────────────────────────
+
+import type { CreateCustomerData } from '../../../../services/api/types/customer.ts';
+import type { Application } from '../../../../services/api/types/application.ts';
 
 export type CustomerFormValues = CreateCustomerData;
 
@@ -8,6 +21,7 @@ export interface CustomerFormDialogProps {
   editing?: boolean;
   initialValues?: CustomerFormValues;
   applications: Application[];
+  appsLoading?: boolean;
   onClose: () => void;
   onSubmit: (values: CustomerFormValues) => void;
   submitting?: boolean;
@@ -17,33 +31,4 @@ export interface UseCustomerFormArgs {
   open: boolean;
   initialValues?: CustomerFormValues;
   onSubmit: (values: CustomerFormValues) => void;
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  description?: string;
-  company?: string;
-  maintenanceType?: MaintenanceType | null;
-  subscriptionStartDate?: string | null;
-  subscriptionEndDate?: string | null;
-  subscriptionStatus?: string;
-  createdAt: string;
-  updatedAt: string;
-  applications?: CustomerApplication[];
-  _count?: {
-    tickets: number;
-  };
-}
-
-export interface CustomerApplication {
-  id: string;
-  customerId: string;
-  applicationId: string;
-  assignedAt: string;
-  customer?: Customer;
-  application?: Application;
 }

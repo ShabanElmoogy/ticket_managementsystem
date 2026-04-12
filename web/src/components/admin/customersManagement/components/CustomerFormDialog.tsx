@@ -15,6 +15,7 @@ const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
   editing = false,
   initialValues,
   applications,
+  appsLoading = false,
   onClose,
   onSubmit,
   submitting = false,
@@ -68,6 +69,7 @@ const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({
       type: "multiSelect",
       options: applicationOptions,
       renderChip: (value, options) => options.find((opt) => opt.value === value)?.label || String(value),
+      disabled: () => appsLoading,
       width: 1,
     },
   ];
