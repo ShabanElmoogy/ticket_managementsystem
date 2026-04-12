@@ -65,6 +65,7 @@ export const useDocsBuilder = () => {
       case 'callout':      block = { ...base, type: 'callout',      calloutType: 'info', text: '' } as any; break;
       case 'table':        block = { ...base, type: 'table',        headers: ['Column 1', 'Column 2'], rows: [['', '']] } as any; break;
       case 'toggle':       block = { ...base, type: 'toggle',       summary: '', content: '' } as any; break;
+      case 'tabs':         block = { ...base, type: 'tabs',         tabs: [{ id: newId(), label: 'Tab 1', content: '' }, { id: newId(), label: 'Tab 2', content: '' }] } as any; break;
       default:             block = base;
     }
 

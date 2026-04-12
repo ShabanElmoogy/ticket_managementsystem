@@ -10,3 +10,4 @@ export { default as QuoteEditor }          from './QuoteEditor';
 export { default as CalloutEditor }        from './CalloutEditor';
 export { default as TableEditor }          from './TableEditor';
 export { default as ToggleEditor }         from './ToggleEditor';
+export { default as TabsEditor }           from './TabsEditor';

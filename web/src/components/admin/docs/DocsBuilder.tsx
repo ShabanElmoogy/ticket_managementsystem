@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, IconButton, Tooltip,
   List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   Stack, Collapse, Divider, useTheme, alpha, Chip, TextField,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab,
 } from '@mui/material';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -17,6 +17,7 @@ import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import InfoIcon from '@mui/icons-material/Info';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import TabIcon from '@mui/icons-material/Tab';
 import CodeIcon from '@mui/icons-material/Code';
 import NotesIcon from '@mui/icons-material/Notes';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -35,12 +36,13 @@ import CheckIcon from '@mui/icons-material/Check';
 import MenuIcon from '@mui/icons-material/Menu';
 import MyGridHeader from '../../common/MyGridHeader';
 
-import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock, QuoteBlock, CalloutBlock, TableBlock, ToggleBlock, NumberedListBlock } from './types';
+import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock, QuoteBlock, CalloutBlock, TableBlock, ToggleBlock, NumberedListBlock, TabsBlock } from './types';
 import { findNode } from './utils/treeUtils';
 import BlockContainer from './components/BlockContainer';
 import BlockSettingsBar from './components/BlockSettingsBar';
 import { HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor } from './components/blockEditors';
 import { NumberedListEditor, QuoteEditor, CalloutEditor, TableEditor, ToggleEditor } from './components/blockEditors';
+import { TabsEditor } from './components/blockEditors';
 import { useDocsBuilder } from './hooks/useDocsBuilder';
 
 const PALETTE: { type: BlockType; label: string; icon: React.ReactNode; color: string }[] = [
@@ -52,11 +54,30 @@ const PALETTE: { type: BlockType; label: string; icon: React.ReactNode; color: s
   { type: 'bulletedList', label: 'Bullet List',   icon: <FormatListBulletedIcon sx={{ fontSize: 16 }} />,   color: '#10b981' },
   { type: 'numberedList', label: 'Numbered List', icon: <FormatListNumberedIcon sx={{ fontSize: 16 }} />,   color: '#14b8a6' },
   { type: 'toggle',       label: 'Toggle',        icon: <ExpandMoreIcon sx={{ fontSize: 16 }} />,           color: '#f97316' },
+  { type: 'tabs',         label: 'Tabs',          icon: <TabIcon sx={{ fontSize: 16 }} />,                  color: '#a855f7' },
   { type: 'table',        label: 'Table',         icon: <TableChartIcon sx={{ fontSize: 16 }} />,           color: '#ec4899' },
   { type: 'image',        label: 'Image',         icon: <ImageIcon sx={{ fontSize: 16 }} />,                color: '#0ea5e9' },
   { type: 'video',        label: 'Video',         icon: <MovieIcon sx={{ fontSize: 16 }} />,                color: '#ef4444' },
   { type: 'divider',      label: 'Divider',       icon: <HorizontalRuleIcon sx={{ fontSize: 16 }} />,       color: '#6b7280' },
 ];
+
+// ── Tabs preview ──────────────────────────────────────────────────────────────
+const TabsPreview: React.FC<{ tabs: import('./types').TabItem[] }> = ({ tabs }) => {
+  const [active, setActive] = useState(0);
+  if (!tabs.length) return null;
+  return (
+    <Box>
+      <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', mb: 0 }}>
+        <Tabs value={active} onChange={(_, v) => setActive(v)} sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36, textTransform: 'none', fontSize: '0.85rem' } }}>
+          {tabs.map((t, i) => <Tab key={t.id} label={t.label || `Tab ${i + 1}`} />)}
+        </Tabs>
+      </Box>
+      <Box sx={{ pt: 1.5 }}>
+        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{tabs[active]?.content}</Typography>
+      </Box>
+    </Box>
+  );
+};
 
 // ── Rename dialog ─────────────────────────────────────────────────────────────
 const RenameDialog: React.FC<{ open: boolean; initial: string; onClose: () => void; onConfirm: (v: string) => void }> = ({ open, initial, onClose, onConfirm }) => {
@@ -227,6 +248,11 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
           </Box>
         </details>
       );
+      case 'tabs': {
+        const tb = block as TabsBlock;
+        const tabList = tb.tabs ?? [];
+        return <TabsPreview tabs={tabList} />;
+      }
       case 'divider': return <Divider sx={{ borderColor: block.settings?.dividerColor, borderBottomWidth: block.settings?.dividerThickness || 1 }} />;
       case 'image': return (block as ImageBlock).url ? (
         <Box sx={{ textAlign: block.settings?.align || 'center' }}>
@@ -388,6 +414,7 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
                       case 'callout':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><CalloutEditor block={block as CalloutBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'table':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TableEditor block={block as TableBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'toggle':      return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ToggleEditor block={block as ToggleBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'tabs':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TabsEditor block={block as TabsBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'divider':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><DividerBlockView settings={settings} /><BlockSettingsBar settings={settings} onSettingsChange={onSC} enableDivider /></BlockContainer>;
                       case 'image':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ImageBlockEditor block={block as ImageBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
                       case 'video':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoBlockEditor block={block as VideoBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;

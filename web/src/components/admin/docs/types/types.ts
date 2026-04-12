@@ -1,4 +1,4 @@
-export type BlockType = 'heading' | 'text' | 'divider' | 'image' | 'video' | 'bulletedList' | 'numberedList' | 'code' | 'quote' | 'callout' | 'table' | 'toggle';
+export type BlockType = 'heading' | 'text' | 'divider' | 'image' | 'video' | 'bulletedList' | 'numberedList' | 'code' | 'quote' | 'callout' | 'table' | 'toggle' | 'tabs';
 
 export interface BlockSettings {
   align?: 'left' | 'center' | 'right';
@@ -82,7 +82,18 @@ export interface ToggleBlock extends DocBlockBase {
   content: string;
 }
 
-export type DocBlock = HeadingBlock | TextBlock | DividerBlock | ImageBlock | VideoBlock | BulletedListBlock | CodeBlock | NumberedListBlock | QuoteBlock | CalloutBlock | TableBlock | ToggleBlock;
+export interface TabItem {
+  id: string;
+  label: string;
+  content: string;
+}
+
+export interface TabsBlock extends DocBlockBase {
+  type: 'tabs';
+  tabs: TabItem[];
+}
+
+export type DocBlock = HeadingBlock | TextBlock | DividerBlock | ImageBlock | VideoBlock | BulletedListBlock | CodeBlock | NumberedListBlock | QuoteBlock | CalloutBlock | TableBlock | ToggleBlock | TabsBlock;
 
 export interface Doc {
   id: string;
