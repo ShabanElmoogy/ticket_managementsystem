@@ -11,7 +11,7 @@ export function buildTree(nodes: ServerDocNode[]): TreeNode[] {
     if (n.type === 'FOLDER') {
       byId[n.id] = { id: n.id, type: 'folder', title: n.title, children: [] };
     } else {
-      byId[n.id] = { id: n.id, type: 'doc', title: n.title, docId: n.docId || '' } as DocRefNode;
+      byId[n.id] = { id: n.id, type: 'doc', title: n.title, docId: n.docId ?? '' } as DocRefNode;
     }
   });
 

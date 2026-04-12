@@ -15,13 +15,12 @@ export const useDocsBuilder = () => {
 
   const currentDoc = useMemo(() => {
     const doc = docs.find((d) => d.id === currentDocId) || null;
-    if (doc && typeof doc.blocks === 'string') {
-      try {
-        doc.blocks = JSON.parse(doc.blocks);
-      } catch (e) {
-        doc.blocks = [];
-      }
+    if (!doc) return null;
+    if (typeof doc.blocks === 'string') {
+      try { return { ...doc, blocks: JSON.parse(doc.blocks) }; }
+      catch { return { ...doc, blocks: [] }; }
     }
+    if (!Array.isArray(doc.blocks)) return { ...doc, blocks: [] };
     return doc;
   }, [docs, currentDocId]);
 
@@ -29,7 +28,13 @@ export const useDocsBuilder = () => {
   useEffect(() => {
     (async () => {
       const serverDocs = await loadDocsServer();
-      const docsArray = Array.isArray(serverDocs) ? serverDocs : [];
+      const rawDocs = Array.isArray(serverDocs) ? serverDocs : [];
+      const docsArray = rawDocs.map((d: any) => ({
+        ...d,
+        blocks: typeof d.blocks === 'string'
+          ? (() => { try { return JSON.parse(d.blocks); } catch { return []; } })()
+          : Array.isArray(d.blocks) ? d.blocks : [],
+      }));
       setDocs(docsArray);
       setCurrentDocId(docsArray.length ? docsArray[0].id : null);
 
@@ -74,7 +79,21 @@ export const useDocsBuilder = () => {
     }
 
     if (!currentDoc) {
-      // No document selected: create one on server then insert block
+      // currentDocId is set but doc not in local state — fetch it first
+      if (currentDocId) {
+        try {
+          const { docsApi } = await import('../api/docs');
+          const fetched = await docsApi.getDoc(currentDocId);
+          const parsed = {
+            ...fetched,
+            blocks: typeof fetched.blocks === 'string'
+              ? (() => { try { return JSON.parse(fetched.blocks as any); } catch { return []; } })()
+              : Array.isArray(fetched.blocks) ? fetched.blocks : [],
+          };
+          setDocs((prev) => prev.some(d => d.id === parsed.id) ? prev.map(d => d.id === parsed.id ? parsed : d) : [parsed, ...prev]);
+        } catch { /* ignore */ }
+        return; // user can click again after state updates
+      }
       const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
       const parentId = parent && parent.type === 'folder' ? parent.id : null;
       const initialBlocks: DocBlock[] = [
@@ -90,7 +109,7 @@ export const useDocsBuilder = () => {
       return;
     }
 
-    setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? { ...d, blocks: [...d.blocks, block], updatedAt: new Date().toISOString() } : d)));
+    setDocs((prev) => prev.map((d) => (d.id === currentDoc.id ? { ...d, blocks: [...(d.blocks ?? []), block], updatedAt: new Date().toISOString() } : d)));
   }, [currentDoc, selectedTreeId, tree]);
 
   const updateBlock = useCallback(<T extends DocBlock>(id: string, patch: Partial<T>) => {

@@ -391,7 +391,7 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
 
           {/* Editor area */}
           <Box sx={{ flex: 1, order: 2 }}>
-            {!currentDoc || currentDoc.blocks.length === 0 ? (
+            {!currentDoc || (currentDoc.blocks ?? []).length === 0 ? (
               <Card sx={{ borderRadius: 2, p: 3, mb: 2 }}>
                 <Typography variant="body1" color="text.secondary">
                   {currentDoc ? 'Start by selecting a block from the left sidebar to build your documentation.' : 'Create or select a document to start editing.'}
