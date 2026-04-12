@@ -1,22 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Divider,
-  Typography,
-  Button,
-  IconButton,
-  Tooltip,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  useTheme,
-  alpha,
-  Stack,
-  Collapse,
+  Box, Typography, Button, IconButton, Tooltip,
+  List, ListItem, ListItemButton, ListItemIcon, ListItemText,
+  Stack, Collapse, Divider, useTheme, alpha, Chip, TextField,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -30,6 +17,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import NotesIcon from '@mui/icons-material/Notes';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -38,459 +26,336 @@ import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
-import RestoreIcon from '@mui/icons-material/Restore';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
+import MenuIcon from '@mui/icons-material/Menu';
 import MyGridHeader from '../../common/MyGridHeader';
 
-// Types and constants
 import type { BlockType, TreeNode, HeadingBlock, TextBlock, BulletedListBlock, ImageBlock, VideoBlock, CodeBlock } from './types';
 import { findNode } from './utils/treeUtils';
-
-// Sidebar palette item definition
-const palette: { type: BlockType; label: string; description: string; icon: React.ReactNode }[] = [
-  { type: 'heading', label: 'Heading', description: 'Large section heading', icon: <TitleIcon /> },
-  { type: 'text', label: 'Text', description: 'Rich text paragraph', icon: <TextFieldsIcon /> },
-  { type: 'code', label: 'Code', description: 'Code snippet with syntax highlighting', icon: <CodeIcon /> },
-  { type: 'divider', label: 'Divider', description: 'Horizontal separator', icon: <HorizontalRuleIcon /> },
-  { type: 'image', label: 'Image', description: 'Image by URL', icon: <ImageIcon /> },
-  { type: 'bulletedList', label: 'Bulleted List', description: 'List of bullet points', icon: <FormatListBulletedIcon /> },
-  { type: 'video', label: 'Video', description: 'Video embed URL (YouTube, etc.)', icon: <MovieIcon /> },
-];
-
-// Components
 import BlockContainer from './components/BlockContainer';
 import BlockSettingsBar from './components/BlockSettingsBar';
 import { HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor } from './components/blockEditors';
-
-// Hook
 import { useDocsBuilder } from './hooks/useDocsBuilder';
 
-interface DocsBuilderProps {
-  onBackToGallery?: () => void;
-  editingDocId?: string | null;
-}
+const PALETTE: { type: BlockType; label: string; icon: React.ReactNode; color: string }[] = [
+  { type: 'heading',      label: 'Heading',      icon: <TitleIcon sx={{ fontSize: 16 }} />,                color: '#f59e0b' },
+  { type: 'text',         label: 'Text',         icon: <TextFieldsIcon sx={{ fontSize: 16 }} />,           color: '#3b82f6' },
+  { type: 'code',         label: 'Code',         icon: <CodeIcon sx={{ fontSize: 16 }} />,                 color: '#8b5cf6' },
+  { type: 'bulletedList', label: 'List',         icon: <FormatListBulletedIcon sx={{ fontSize: 16 }} />,   color: '#10b981' },
+  { type: 'image',        label: 'Image',        icon: <ImageIcon sx={{ fontSize: 16 }} />,                color: '#06b6d4' },
+  { type: 'video',        label: 'Video',        icon: <MovieIcon sx={{ fontSize: 16 }} />,                color: '#ef4444' },
+  { type: 'divider',      label: 'Divider',      icon: <HorizontalRuleIcon sx={{ fontSize: 16 }} />,       color: '#6b7280' },
+];
 
-// Main builder component
+// ── Rename dialog ─────────────────────────────────────────────────────────────
+const RenameDialog: React.FC<{ open: boolean; initial: string; onClose: () => void; onConfirm: (v: string) => void }> = ({ open, initial, onClose, onConfirm }) => {
+  const [val, setVal] = React.useState(initial);
+  const ref = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => { if (open) { setVal(initial); setTimeout(() => ref.current?.focus(), 80); } }, [open, initial]);
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>Rename</DialogTitle>
+      <DialogContent>
+        <TextField inputRef={ref} fullWidth size="small" value={val} onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && val.trim()) { onConfirm(val.trim()); onClose(); } }}
+          sx={{ mt: 1 }} />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} size="small">Cancel</Button>
+        <Button variant="contained" size="small" disabled={!val.trim()} onClick={() => { onConfirm(val.trim()); onClose(); }}>Rename</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+interface DocsBuilderProps { onBackToGallery?: () => void; editingDocId?: string | null; }
+
 const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const {
-    docs,
-    currentDocId,
-    setCurrentDocId,
-    currentDoc,
-    preview,
-    setPreview,
-    tree,
-    selectedTreeId,
-    setSelectedTreeId,
-    expanded,
-    addBlock,
-    updateBlock,
-    updateBlockSettings,
-    removeBlock,
-    moveBlock,
-    dndHandlers,
-    addFolder,
-    addDocUnder,
-    renameNode,
-    deleteNodeAndDocs,
-    toggleExpand,
-    saveCurrentDoc,
-    resetCurrent,
+    docs, currentDocId, setCurrentDocId, currentDoc,
+    preview, setPreview, tree, selectedTreeId, setSelectedTreeId, expanded,
+    addBlock, updateBlock, updateBlockSettings, removeBlock, moveBlock, dndHandlers,
+    addFolder, addDocUnder, renameNode, deleteNodeAndDocs, toggleExpand, saveCurrentDoc, resetCurrent,
+    selectDoc,
   } = useDocsBuilder();
 
-  // Set the editing doc when editingDocId prop changes
-  React.useEffect(() => {
-    if (editingDocId) {
-      setCurrentDocId(editingDocId);
-    }
-  }, [editingDocId, setCurrentDocId]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
+  const [saved, setSaved] = useState(false);
 
-  const renderTree = (nodes: TreeNode[], depth = 0): React.ReactNode => {
-    return nodes.map((node) => {
+  React.useEffect(() => { if (editingDocId) setCurrentDocId(editingDocId); }, [editingDocId, setCurrentDocId]);
+
+  const handleSave = async () => {
+    await saveCurrentDoc();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  // ── Sidebar colors ────────────────────────────────────────────────────────
+  const sidebarBg = isDark ? '#0f172a' : '#f8fafc';
+  const sidebarBorder = isDark ? '#1e293b' : '#e2e8f0';
+  const hoverBg = isDark ? alpha('#fff', 0.05) : alpha('#000', 0.04);
+  const selectedBg = isDark ? alpha('#3b82f6', 0.15) : alpha('#3b82f6', 0.08);
+
+  // ── Tree renderer ─────────────────────────────────────────────────────────
+  const renderTree = (nodes: TreeNode[], depth = 0): React.ReactNode =>
+    nodes.map((node) => {
       if (node.type === 'folder') {
         const open = !!expanded[node.id];
         return (
           <Box key={node.id}>
-            <ListItem
-              disablePadding
-              secondaryAction={
-                <Stack direction="row" spacing={0.5}>
-                  <IconButton size="small" onClick={() => addFolder(node.id)}><CreateNewFolderIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" onClick={() => addDocUnder(node.id)}><AddIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" onClick={() => {
-                    const title = prompt('Rename folder', node.title) || node.title;
-                    renameNode(node.id, title);
-                  }}><DriveFileRenameOutlineIcon fontSize="small" /></IconButton>
-                  <IconButton size="small" color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon fontSize="small" /></IconButton>
-                </Stack>
-              }
-            >
-              <ListItemButton onClick={() => { toggleExpand(node.id); setSelectedTreeId(node.id); }} sx={{ pl: 1 + depth * 2 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>{open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}</ListItemIcon>
-                <ListItemIcon sx={{ minWidth: 28 }}><FolderIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary={node.title} />
+            <ListItem disablePadding sx={{ '&:hover .tree-actions': { opacity: 1 } }}>
+              <ListItemButton
+                onClick={() => { toggleExpand(node.id); setSelectedTreeId(node.id); }}
+                sx={{ pl: 1.5 + depth * 1.5, py: 0.5, borderRadius: 1, mx: 0.5, '&:hover': { bgcolor: hoverBg } }}
+              >
+                <ListItemIcon sx={{ minWidth: 24 }}>
+                  {open ? <FolderOpenIcon sx={{ fontSize: 15, color: '#f59e0b' }} /> : <FolderIcon sx={{ fontSize: 15, color: '#f59e0b' }} />}
+                </ListItemIcon>
+                <ListItemText primary={node.title} primaryTypographyProps={{ variant: 'body2', fontWeight: 500, fontSize: '0.8rem', noWrap: true }} />
+                {open ? <ExpandLessIcon sx={{ fontSize: 14, opacity: 0.5 }} /> : <ExpandMoreIcon sx={{ fontSize: 14, opacity: 0.5 }} />}
               </ListItemButton>
+              <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 8, opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1 }}>
+                <Tooltip title="Add doc"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => addDocUnder(node.id)}><AddIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+                <Tooltip title="Rename"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => setRenameTarget({ id: node.id, title: node.title })}><DriveFileRenameOutlineIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+                <Tooltip title="Delete"><IconButton size="small" sx={{ p: 0.25 }} color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+              </Stack>
             </ListItem>
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <List dense disablePadding>
-                {renderTree(node.children, depth + 1)}
-              </List>
+              <List dense disablePadding>{renderTree(node.children, depth + 1)}</List>
             </Collapse>
           </Box>
         );
       }
+      const isSelected = currentDocId === node.docId;
       return (
-        <ListItem
-          key={node.id}
-          disablePadding
-          secondaryAction={
-            <Stack direction="row" spacing={0.5}>
-              <IconButton size="small" onClick={() => {
-                const title = prompt('Rename document', node.title) || node.title;
-                renameNode(node.id, title);
-              }}><DriveFileRenameOutlineIcon fontSize="small" /></IconButton>
-              <IconButton size="small" color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon fontSize="small" /></IconButton>
-            </Stack>
-          }
-        >
-          <ListItemButton selected={currentDocId === node.docId} onClick={() => { setCurrentDocId(node.docId); setSelectedTreeId(node.id); }} sx={{ pl: 7 + depth * 2 }}>
-            <ListItemIcon sx={{ minWidth: 28 }}><DescriptionIcon fontSize="small" /></ListItemIcon>
-            <ListItemText primary={node.title} secondary={(() => {
-              const d = docs.find((x) => x.id === node.docId);
-              return d ? new Date(d.updatedAt).toLocaleString() : undefined;
-            })()} />
+        <ListItem key={node.id} disablePadding sx={{ '&:hover .tree-actions': { opacity: 1 } }}>
+          <ListItemButton
+            selected={isSelected}
+            onClick={() => selectDoc ? selectDoc(node.docId, node.id) : (setCurrentDocId(node.docId), setSelectedTreeId(node.id))}
+            sx={{
+              pl: 2 + depth * 1.5, py: 0.5, borderRadius: 1, mx: 0.5,
+              '&:hover': { bgcolor: hoverBg },
+              '&.Mui-selected': { bgcolor: selectedBg, '&:hover': { bgcolor: selectedBg } },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 22 }}>
+              <DescriptionIcon sx={{ fontSize: 14, color: isSelected ? 'primary.main' : 'text.disabled' }} />
+            </ListItemIcon>
+            <ListItemText primary={node.title} primaryTypographyProps={{ variant: 'body2', fontSize: '0.8rem', noWrap: true, color: isSelected ? 'primary.main' : 'text.primary', fontWeight: isSelected ? 600 : 400 }} />
           </ListItemButton>
+          <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 8, opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1 }}>
+            <Tooltip title="Rename"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => setRenameTarget({ id: node.id, title: node.title })}><DriveFileRenameOutlineIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+            <Tooltip title="Delete"><IconButton size="small" sx={{ p: 0.25 }} color="error" onClick={() => deleteNodeAndDocs(node.id)}><DeleteIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+          </Stack>
         </ListItem>
       );
     });
+
+  // ── Block renderer (preview) ──────────────────────────────────────────────
+  const renderPreviewBlock = (block: any) => {
+    switch (block.type) {
+      case 'heading': return <Typography variant="h4" sx={{ fontWeight: 700, textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}>{(block as HeadingBlock).text}</Typography>;
+      case 'text': return <Typography component="div" sx={{ whiteSpace: 'pre-wrap', textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit', lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: (block as TextBlock).html }} />;
+      case 'code': return (
+        <Box>
+          <Chip label={(block as CodeBlock).language} size="small" sx={{ mb: 1, fontSize: '0.65rem', height: 20 }} />
+          <SyntaxHighlighter language={(block as CodeBlock).language} style={vscDarkPlus} customStyle={{ margin: 0, borderRadius: 8, fontSize: '0.85rem' }}>{(block as CodeBlock).code}</SyntaxHighlighter>
+        </Box>
+      );
+      case 'bulletedList': return (
+        <Box sx={{ color: block.settings?.color || 'inherit' }}>
+          {(block as BulletedListBlock).title && <Typography variant="h6" fontWeight={600} mb={1}>{(block as BulletedListBlock).title}</Typography>}
+          <ul style={{ marginTop: 0, paddingLeft: 20 }}>{(block as BulletedListBlock).items.filter(Boolean).map((it: string, i: number) => <li key={i} style={{ marginBottom: 4 }}>{it}</li>)}</ul>
+        </Box>
+      );
+      case 'divider': return <Divider sx={{ borderColor: block.settings?.dividerColor, borderBottomWidth: block.settings?.dividerThickness || 1 }} />;
+      case 'image': return (block as ImageBlock).url ? (
+        <Box sx={{ textAlign: block.settings?.align || 'center' }}>
+          <img src={(block as ImageBlock).url} alt={(block as ImageBlock).caption || ''} style={{ maxWidth: '100%', borderRadius: 8 }} />
+          {(block as ImageBlock).caption && <Typography variant="caption" display="block" mt={1} color="text.secondary">{(block as ImageBlock).caption}</Typography>}
+        </Box>
+      ) : null;
+      default: return null;
+    }
   };
 
-  const rightActions = (
-    <Box sx={{ display: 'flex', gap: 1 }}>
-      <Button
-        variant="outlined"
-        startIcon={preview ? <EditIcon /> : <VisibilityIcon />}
-        onClick={() => setPreview((p) => !p)}
-      >
-        {preview ? 'Back to Editor' : 'Preview'}
-      </Button>
-      <Tooltip title="Save (server when available, otherwise local)">
-        <span>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            onClick={saveCurrentDoc}
-            disabled={!currentDoc}
-          >
-            Save
-          </Button>
-        </span>
-      </Tooltip>
-      <Tooltip title="Clear blocks in current document">
-        <Button
-          variant="outlined"
-          color="warning"
-          startIcon={<RestoreIcon />}
-          onClick={resetCurrent}
-          disabled={!currentDoc}
-        >
-          Reset
-        </Button>
-      </Tooltip>
-    </Box>
-  );
+  const blocks = currentDoc?.blocks ?? [];
 
   return (
-    <Box>
-      <MyGridHeader title="Documentation Builder" icon={TextFieldsIcon} rightActions={rightActions} />
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 130px)', minHeight: 500 }}>
+      {/* ── Header ── */}
+      <MyGridHeader
+        title={currentDoc?.title || 'Documentation Builder'}
+        icon={TextFieldsIcon}
+        rightActions={
+          <Box display="flex" gap={1} alignItems="center">
+            <Tooltip title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}>
+              <IconButton size="small" onClick={() => setSidebarOpen(v => !v)}><MenuIcon fontSize="small" /></IconButton>
+            </Tooltip>
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+            <Button size="small" variant="outlined" startIcon={preview ? <EditIcon /> : <VisibilityIcon />} onClick={() => setPreview(p => !p)}>
+              {preview ? 'Edit' : 'Preview'}
+            </Button>
+            <Tooltip title="Save">
+              <span>
+                <Button size="small" variant="contained" startIcon={saved ? <CheckIcon /> : <SaveIcon />}
+                  onClick={handleSave} disabled={!currentDoc}
+                  color={saved ? 'success' : 'primary'}>
+                  {saved ? 'Saved' : 'Save'}
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
+        }
+      />
 
-      {preview ? (
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-          {!currentDoc || currentDoc.blocks.length === 0 ? (
-            <Card sx={{ borderRadius: 2, p: 3, mb: 2 }}>
-              <Typography variant="body1" color="text.secondary">
-                Nothing to preview yet. Add some blocks in the editor.
+      {/* ── Body ── */}
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', borderRadius: 2, mt: 0.5 }}>
+
+        {/* ── Left sidebar: tree ── */}
+        {sidebarOpen && (
+          <Box sx={{
+            width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column',
+            bgcolor: sidebarBg, borderRight: `1px solid ${sidebarBorder}`, overflow: 'hidden',
+          }}>
+            {/* Sidebar header */}
+            <Box sx={{ px: 1.5, py: 1.25, borderBottom: `1px solid ${sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <NotesIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5} sx={{ flex: 1 }}>
+                Documents
               </Typography>
-            </Card>
+              <Tooltip title="New folder">
+                <IconButton size="small" sx={{ p: 0.25 }} onClick={() => addFolder(null)}><CreateNewFolderIcon sx={{ fontSize: 14 }} /></IconButton>
+              </Tooltip>
+              <Tooltip title="New document">
+                <IconButton size="small" sx={{ p: 0.25 }} onClick={() => addDocUnder(selectedTreeId && findNode(tree, selectedTreeId)?.type === 'folder' ? selectedTreeId : null)}>
+                  <AddIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {/* Tree */}
+            <Box sx={{ flex: 1, overflowY: 'auto', py: 0.5 }}>
+              {tree.length === 0 ? (
+                <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+                  <Typography variant="caption" color="text.disabled">No documents yet</Typography>
+                  <Box mt={1}>
+                    <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => addDocUnder(null)} sx={{ fontSize: '0.7rem' }}>
+                      New Doc
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <List dense disablePadding>{renderTree(tree)}</List>
+              )}
+            </Box>
+          </Box>
+        )}
+
+        {/* ── Center: editor / preview ── */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+          {preview ? (
+            /* Preview */
+            <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 4 } }}>
+              <Box sx={{ maxWidth: 720, mx: 'auto' }}>
+                {blocks.length === 0 ? (
+                  <Typography color="text.secondary" textAlign="center" mt={6}>Nothing to preview yet.</Typography>
+                ) : (
+                  blocks.map((block) => (
+                    <Box key={block.id} sx={{ mb: 3 }}>{renderPreviewBlock(block)}</Box>
+                  ))
+                )}
+              </Box>
+            </Box>
           ) : (
-            currentDoc.blocks.map((block) => (
-              <Card key={block.id} sx={{ borderRadius: 2, p: 2, mb: 2 }}>
-                {block.type === 'heading' && (
-                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}>
-                    {(block as HeadingBlock).text}
-                  </Typography>
-                )}
-                {block.type === 'text' && (
-                  <Typography component="div" sx={{ whiteSpace: 'pre-wrap', textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}
-                    dangerouslySetInnerHTML={{ __html: (block as TextBlock).html }}
-                  />
-                )}
-                {block.type === 'code' && (
-                  <Box sx={{ textAlign: block.settings?.align || 'left' }}>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'text.secondary' }}>
-                      {(block as CodeBlock).language}
-                    </Typography>
-                    <SyntaxHighlighter
-                      language={(block as CodeBlock).language}
-                      style={vscDarkPlus}
-                      customStyle={{
-                        margin: 0,
-                        borderRadius: 8,
-                        padding: theme.spacing(2),
-                        fontSize: '0.875rem',
-                        textAlign: block.settings?.align || 'left',
-                      }}
-                    >
-                      {(block as CodeBlock).code}
-                    </SyntaxHighlighter>
+            /* Editor */
+            <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 1.5, md: 3 } }}>
+              <Box sx={{ maxWidth: 760, mx: 'auto' }}>
+                {!currentDoc ? (
+                  <Box sx={{ textAlign: 'center', mt: 8 }}>
+                    <NotesIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary" fontWeight={400}>Select a document to start editing</Typography>
+                    <Typography variant="body2" color="text.disabled" mt={0.5}>or create a new one from the sidebar</Typography>
                   </Box>
-                )}
-                {block.type === 'bulletedList' && (
-                  <Box sx={{ textAlign: block.settings?.align || 'left', color: block.settings?.color || 'inherit' }}>
-                    {(block as BulletedListBlock).title && (
-                      <Typography variant="h6" sx={{ mt: 0, mb: 1, fontWeight: 600 }}>
-                        {(block as BulletedListBlock).title}
-                      </Typography>
-                    )}
-                    <ul style={{ marginTop: 0 }}>
-                      {(block as BulletedListBlock).items.filter(Boolean).map((it, i) => (
-                        <li key={i}>{it}</li>
-                      ))}
-                    </ul>
+                ) : blocks.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', mt: 6 }}>
+                    <Typography variant="body1" color="text.secondary">This document is empty.</Typography>
+                    <Typography variant="body2" color="text.disabled" mt={0.5}>Click a block type on the right to add content.</Typography>
                   </Box>
+                ) : (
+                  blocks.map((block, idx) => {
+                    const actions = {
+                      onMoveUp:   idx > 0              ? () => moveBlock(block.id, -1) : undefined,
+                      onMoveDown: idx < blocks.length - 1 ? () => moveBlock(block.id, 1)  : undefined,
+                      onDelete:   () => removeBlock(block.id),
+                    };
+                    const dnd = dndHandlers(block.id);
+                    const settings = block.settings || {};
+                    const onChange = (p: any) => updateBlock(block.id, p);
+                    const onSC = (p: any) => updateBlockSettings(block.id, p);
+                    switch (block.type) {
+                      case 'heading':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><HeadingBlockEditor block={block as HeadingBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'text':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TextBlockEditor block={block as TextBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'code':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><CodeBlockEditor block={block as CodeBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'bulletedList':return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><BulletedListEditor block={block as BulletedListBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'divider':     return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><DividerBlockView settings={settings} /><BlockSettingsBar settings={settings} onSettingsChange={onSC} enableDivider /></BlockContainer>;
+                      case 'image':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ImageBlockEditor block={block as ImageBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      case 'video':       return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoBlockEditor block={block as VideoBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+                      default: return null;
+                    }
+                  })
                 )}
-                {block.type === 'divider' && (
-                  <Divider sx={{ borderColor: block.settings?.dividerColor, borderBottomWidth: block.settings?.dividerThickness || 1 }} />
-                )}
-                {block.type === 'image' && (
-                  <Box sx={{ textAlign: block.settings?.align || 'center' }}>
-                    {(block as ImageBlock).url && (
-                      <img src={(block as ImageBlock).url} alt={(block as ImageBlock).caption || 'image'} style={{ maxWidth: '100%', borderRadius: 8 }} />
-                    )}
-                    {(block as ImageBlock).caption && (
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        {(block as ImageBlock).caption}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-                {block.type === 'video' && (
-                  <Box>
-                    {(() => {
-                      const url = (block as VideoBlock).url as string;
-                      const isYouTube = /youtu\.be|youtube\.com/.test(url);
-                      if (isYouTube) {
-                        try {
-                          const u = new URL(url);
-                          const v = u.searchParams.get('v');
-                          const pathId = u.pathname.split('/').filter(Boolean)[0];
-                          const id = v || pathId;
-                          return id ? (
-                            <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 2, overflow: 'hidden' }}>
-                              <Box sx={{ position: 'absolute', inset: 0 }}>
-                                <iframe
-                                  title={(block as VideoBlock).caption || 'video'}
-                                  src={`https://www.youtube.com/embed/${id}`}
-                                  width="100%"
-                                  height="100%"
-                                  frameBorder={0}
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              </Box>
-                            </Box>
-                          ) : null;
-                        } catch {
-                          return null;
-                        }
-                      }
-                      return url ? (
-                        <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 2, overflow: 'hidden' }}>
-                          <Box sx={{ position: 'absolute', inset: 0 }}>
-                            <video src={url} controls style={{ width: '100%', height: '100%' }} />
-                          </Box>
-                        </Box>
-                      ) : null;
-                    })()}
-                    {(block as VideoBlock).caption && (
-                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        {(block as VideoBlock).caption}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Card>
-            ))
+              </Box>
+            </Box>
           )}
         </Box>
-      ) : (
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {/* Sidebar - documents list and components palette */}
-          <Card
-            sx={{
-              width: 320,
-              flexShrink: 0,
-              order: 1,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: alpha(theme.palette.primary.main, 0.25),
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
-                Components
+
+        {/* ── Right sidebar: block palette ── */}
+        {!preview && (
+          <Box sx={{
+            width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column',
+            bgcolor: sidebarBg, borderLeft: `1px solid ${sidebarBorder}`, overflow: 'hidden',
+          }}>
+            <Box sx={{ px: 1.5, py: 1.25, borderBottom: `1px solid ${sidebarBorder}` }}>
+              <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
+                Blocks
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Click to insert a block
-              </Typography>
-              <List dense>
-                {palette.map((p) => (
-                  <ListItem key={p.type} disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton onClick={() => addBlock(p.type)}>
-                      <ListItemIcon>{p.icon}</ListItemIcon>
-                      <ListItemText primary={p.label} secondary={p.description} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-              <Divider sx={{ my: 2 }} />
-              <Button fullWidth startIcon={<AddIcon />} variant="outlined" onClick={() => addBlock('text')}>
-                New Text
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Right - Documents Tree */}
-          <Card
-            sx={{
-              width: 320,
-              flexShrink: 0,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: alpha(theme.palette.primary.main, 0.25),
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
-              order: 3,
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <NotesIcon fontSize="small" /> Documents
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                <Button size="small" variant="outlined" startIcon={<CreateNewFolderIcon />} onClick={() => addFolder(null)}>New Folder</Button>
-                <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => addDocUnder(selectedTreeId && findNode(tree, selectedTreeId)?.type === 'folder' ? selectedTreeId : null)}>New Doc</Button>
-                <Button size="small" variant="outlined" startIcon={<SaveIcon />} onClick={saveCurrentDoc} disabled={!currentDoc}>Save</Button>
-              </Stack>
-              <List dense sx={{ mb: 2, maxHeight: 220, overflow: 'auto' }}>
-                {renderTree(tree, 0)}
-              </List>
-            </CardContent>
-          </Card>
-
-          {/* Editor area */}
-          <Box sx={{ flex: 1, order: 2 }}>
-            {!currentDoc || (currentDoc.blocks ?? []).length === 0 ? (
-              <Card sx={{ borderRadius: 2, p: 3, mb: 2 }}>
-                <Typography variant="body1" color="text.secondary">
-                  {currentDoc ? 'Start by selecting a block from the left sidebar to build your documentation.' : 'Create or select a document to start editing.'}
-                </Typography>
-              </Card>
-            ) : null}
-
-            {(() => {
-              return currentDoc?.blocks && Array.isArray(currentDoc.blocks) && currentDoc.blocks.map((block, idx) => {
-              const commonActions = {
-                onMoveUp: idx > 0 ? () => moveBlock(block.id, -1) : undefined,
-                onMoveDown: currentDoc.blocks && idx < currentDoc.blocks.length - 1 ? () => moveBlock(block.id, 1) : undefined,
-                onDelete: () => removeBlock(block.id),
-              };
-
-              const dragHandlers = dndHandlers(block.id);
-
-              switch (block.type) {
-                case 'heading':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <HeadingBlockEditor
-                        block={block as HeadingBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                case 'text':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <TextBlockEditor
-                        block={block as TextBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                case 'code':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <CodeBlockEditor
-                        block={block as CodeBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                case 'bulletedList':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <BulletedListEditor
-                        block={block as BulletedListBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                case 'divider':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <DividerBlockView settings={block.settings || {}} />
-                      <BlockSettingsBar settings={block.settings || {}} onSettingsChange={(p) => updateBlockSettings(block.id, p)} enableDivider />
-                    </BlockContainer>
-                  );
-                case 'image':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <ImageBlockEditor
-                        block={block as ImageBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                case 'video':
-                  return (
-                    <BlockContainer key={block.id} {...commonActions} draggable dragHandlers={dragHandlers}>
-                      <VideoBlockEditor
-                        block={block as VideoBlock}
-                        onChange={(p) => updateBlock(block.id, p)}
-                        settings={block.settings || {}}
-                        onSettingsChange={(p) => updateBlockSettings(block.id, p)}
-                      />
-                    </BlockContainer>
-                  );
-                default:
-                  return null;
-              }
-            });
-            })()}
+            </Box>
+            <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+              {PALETTE.map((p) => (
+                <Box
+                  key={p.type}
+                  onClick={() => addBlock(p.type)}
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.25,
+                    px: 1.5, py: 0.75, mx: 0.5, borderRadius: 1, cursor: 'pointer',
+                    '&:hover': { bgcolor: hoverBg },
+                    transition: 'background 0.1s',
+                  }}
+                >
+                  <Box sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: p.color }}>
+                    {p.icon}
+                  </Box>
+                  <Typography variant="body2" fontSize="0.78rem" fontWeight={500}>{p.label}</Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
+
+      {/* ── Rename dialog ── */}
+      <RenameDialog
+        open={!!renameTarget}
+        initial={renameTarget?.title ?? ''}
+        onClose={() => setRenameTarget(null)}
+        onConfirm={(title) => { if (renameTarget) renameNode(renameTarget.id, title); }}
+      />
     </Box>
   );
 };
