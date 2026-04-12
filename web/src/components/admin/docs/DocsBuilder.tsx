@@ -180,6 +180,32 @@ const DocsBuilder: React.FC<DocsBuilderProps> = ({ editingDocId }) => {
           {(block as ImageBlock).caption && <Typography variant="caption" display="block" mt={1} color="text.secondary">{(block as ImageBlock).caption}</Typography>}
         </Box>
       ) : null;
+      case 'video': {
+        const vb = block as VideoBlock;
+        if (!vb.url) return null;
+        const isYT = /youtu\.be|youtube\.com/.test(vb.url);
+        const embedSrc = (() => {
+          if (!isYT) return null;
+          try {
+            const u = new URL(vb.url);
+            const v = u.searchParams.get('v') || u.pathname.split('/').filter(Boolean)[0];
+            return v ? `https://www.youtube.com/embed/${v}` : null;
+          } catch { return null; }
+        })();
+        return (
+          <Box>
+            <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 2, overflow: 'hidden', bgcolor: '#000' }}>
+              <Box sx={{ position: 'absolute', inset: 0 }}>
+                {isYT && embedSrc
+                  ? <iframe title={vb.caption || 'video'} src={embedSrc} width="100%" height="100%" frameBorder={0} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                  : <video src={vb.url} controls style={{ width: '100%', height: '100%' }} />
+                }
+              </Box>
+            </Box>
+            {vb.caption && <Typography variant="caption" display="block" mt={1} color="text.secondary">{vb.caption}</Typography>}
+          </Box>
+        );
+      }
       default: return null;
     }
   };
