@@ -44,7 +44,7 @@ router.use('/email-ingest', emailIngestRoutes);
 router.use('/features', featureRoutes);
 router.use('/epics', epicRoutes);
 router.use('/epic-templates', epicTemplateRoutes);
-router.use('/docs', docRoutes);
+router.use('/documents', docRoutes);
 router.use('/docsbuilder', docBuilderRoutes);
 
 export default router;

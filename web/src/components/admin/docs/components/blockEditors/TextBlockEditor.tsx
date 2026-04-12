@@ -36,6 +36,8 @@ const TextBlockEditor: React.FC<{
   onSettingsChange: (patch: Partial<BlockSettings>) => void;
 }> = ({ block, onChange, settings, onSettingsChange }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [initialHtml] = React.useState(block.html || '');
+
   return (
     <Box>
       <TextToolbar />
@@ -44,7 +46,7 @@ const TextBlockEditor: React.FC<{
         contentEditable
         suppressContentEditableWarning
         onInput={(e) => onChange({ html: (e.currentTarget as HTMLDivElement).innerHTML })}
-        dangerouslySetInnerHTML={{ __html: block.html || '' }}
+        dangerouslySetInnerHTML={{ __html: initialHtml }}
         sx={{
           border: '1px solid',
           borderColor: 'divider',

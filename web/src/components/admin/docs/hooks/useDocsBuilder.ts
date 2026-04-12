@@ -84,15 +84,25 @@ export const useDocsBuilder = () => {
         try {
           const { docsApi } = await import('../api/docs');
           const fetched = await docsApi.getDoc(currentDocId);
+          console.log('[useDocsBuilder] fetched doc:', fetched);
           const parsed = {
             ...fetched,
+            id: currentDocId, // explicitly enforce the ID
             blocks: typeof fetched.blocks === 'string'
               ? (() => { try { return JSON.parse(fetched.blocks as any); } catch { return []; } })()
               : Array.isArray(fetched.blocks) ? fetched.blocks : [],
+            updatedAt: new Date().toISOString()
           };
-          setDocs((prev) => prev.some(d => d.id === parsed.id) ? prev.map(d => d.id === parsed.id ? parsed : d) : [parsed, ...prev]);
-        } catch { /* ignore */ }
-        return; // user can click again after state updates
+          
+          parsed.blocks = [...(parsed.blocks ?? []), block];
+          setDocs((prev) => {
+            const exists = prev.some(d => d.id === currentDocId);
+            return exists ? prev.map(d => d.id === currentDocId ? parsed : d) : [parsed, ...prev];
+          });
+        } catch (err) { 
+          console.error('[useDocsBuilder] error lazy-fetching doc:', err);
+        }
+        return; // UI will update with fetched doc + new block immediately
       }
       const parent = selectedTreeId ? findNode(tree, selectedTreeId) : null;
       const parentId = parent && parent.type === 'folder' ? parent.id : null;

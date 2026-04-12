@@ -64,6 +64,10 @@ export const updateDoc = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, blocks } = req.body;
+    console.log(`[updateDoc] received for id ${id}. Title: ${title}, blocks length:`, blocks?.length, 'blocks type:', typeof blocks, 'blocks array check:', Array.isArray(blocks));
+    if (blocks && typeof blocks === 'string') {
+      console.log(`[updateDoc] WARNING: blocks is a string! Value:`, blocks);
+    }
     
     // Check if doc exists
     const tenantId = requireTenantAdminScope(req);

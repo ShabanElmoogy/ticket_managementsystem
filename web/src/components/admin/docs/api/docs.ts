@@ -11,7 +11,7 @@ export class DocsApiService extends BaseApiService {
    */
   async saveDoc(doc: Doc): Promise<boolean> {
     try {
-      await this.put(`/docs/${doc.id}`, doc);
+      await this.put(`/documents/${doc.id}`, doc);
       return true;
     } catch (error) {
       console.error('Failed to save document:', error);
@@ -20,11 +20,23 @@ export class DocsApiService extends BaseApiService {
   }
 
   /**
+   * Get a single document from the server
+   */
+  async getDoc(id: string): Promise<Doc> {
+    try {
+      return await this.get<Doc>(`/documents/${id}`);
+    } catch (error) {
+      console.error(`Failed to get document ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Load all documents from the server
    */
   async loadDocs(): Promise<Doc[] | null> {
     try {
-      const result = await this.get<unknown>('/docs');
+      const result = await this.get<unknown>('/documents');
       if (Array.isArray(result)) return result as Doc[];
       // Handle wrapped responses e.g. { data: [...] } or { docs: [...] }
       if (result && typeof result === 'object') {
@@ -68,7 +80,7 @@ export class DocsApiService extends BaseApiService {
    */
   async createDoc(title: string, blocks: DocBlock[]): Promise<Doc> {
     try {
-      return await this.post<Doc>('/docs', { title, blocks });
+      return await this.post<Doc>('/documents', { title, blocks });
     } catch (error) {
       console.error('Failed to create document:', error);
       throw error;

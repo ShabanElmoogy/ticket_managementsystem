@@ -1,0 +1,223 @@
+{
+  "info": {
+    "_postman_id": "docs-api-collection",
+    "name": "Docs API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api" },
+    { "key": "token",   "value": "" },
+    { "key": "docId",   "value": "" },
+    { "key": "nodeId",  "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "List Docs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/docs", "host": ["{{baseUrl}}"], "path": ["docs"] }
+          }
+        },
+        {
+          "name": "Get Doc by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/docs/{{docId}}", "host": ["{{baseUrl}}"], "path": ["docs", "{{docId}}"] }
+          }
+        },
+        {
+          "name": "Create Doc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('docId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My Test Doc\",\n  \"blocks\": []\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs", "host": ["{{baseUrl}}"], "path": ["docs"] }
+          }
+        },
+        {
+          "name": "Update Doc",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Doc Title\",\n  \"blocks\": [{\"id\": \"block-1\", \"type\": \"paragraph\"}]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs/{{docId}}", "host": ["{{baseUrl}}"], "path": ["docs", "{{docId}}"] }
+          }
+        },
+        {
+          "name": "Delete Doc",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/docs/{{docId}}", "host": ["{{baseUrl}}"], "path": ["docs", "{{docId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doc Tree",
+      "item": [
+        {
+          "name": "List Tree",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/docs/tree", "host": ["{{baseUrl}}"], "path": ["docs", "tree"] }
+          }
+        },
+        {
+          "name": "Create Folder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('nodeId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My Folder\",\n  \"parentId\": null\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs/tree/folder", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "folder"] }
+          }
+        },
+        {
+          "name": "Create Doc Node",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('nodeId', json.id);",
+                  "if (json.docId) pm.collectionVariables.set('docId', json.docId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Doc Node\",\n  \"parentId\": null,\n  \"docId\": null\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs/tree/doc", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "doc"] }
+          }
+        },
+        {
+          "name": "Rename Node",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Renamed Node\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs/tree/{{nodeId}}/rename", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "{{nodeId}}", "rename"] }
+          }
+        },
+        {
+          "name": "Move Node",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newParentId\": null,\n  \"newPosition\": 0\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/docs/tree/{{nodeId}}/move", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "{{nodeId}}", "move"] }
+          }
+        },
+        {
+          "name": "Delete Node",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/docs/tree/{{nodeId}}", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "{{nodeId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
