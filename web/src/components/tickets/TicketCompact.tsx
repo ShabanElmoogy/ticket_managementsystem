@@ -3,6 +3,7 @@ import {
   Box, Chip, Typography, Tooltip, IconButton, useTheme,
 } from '@mui/material';
 import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import type { Ticket } from '../../services/api';
 import { formatDate } from '../../utils/dateUtils';
 
@@ -20,6 +21,7 @@ interface Props {
 
 const TicketCompact: React.FC<Props> = ({ ticket, onTicketClick }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isOverdue =
     ticket.dueDate &&
     new Date(ticket.dueDate) < new Date() &&
@@ -106,9 +108,11 @@ const TicketCompact: React.FC<Props> = ({ ticket, onTicketClick }) => {
         {ticket.dueDate ? formatDate(ticket.dueDate) : '—'}
       </Typography>
 
-      <IconButton size="small" onClick={(e) => { e.stopPropagation(); onTicketClick(ticket); }}>
-        <OpenInNewIcon sx={{ fontSize: 14 }} />
-      </IconButton>
+      <Tooltip title="Open full page">
+        <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${ticket.id}`); }}>
+          <OpenInNewIcon sx={{ fontSize: 14 }} />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 };

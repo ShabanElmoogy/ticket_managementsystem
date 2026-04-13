@@ -20,7 +20,7 @@ import ApplicationsManagement from "./applicationsManagement/ApplicationsManagem
 import TicketsManagement from "./ticketsManagement/TicketsManagement";
 import TasksManagement from "./tasksManagement/TasksManagement";
 import UsersManagement from "./usersManagement/UsersManagement";
-import AdminDashboard from "./adminDashboard/AdminDashboard";
+import { AdminDashboard } from './adminDashboard';
 import ReportsManagement from "./reportsManagement/ReportsManagement";
 import AdminTopBar from "./01layout/AdminTopBar";
 import AdminSidebar from "./01layout/AdminSidebar";

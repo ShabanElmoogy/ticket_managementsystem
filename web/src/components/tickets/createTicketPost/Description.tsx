@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Box, Collapse } from "@mui/material";
-import MyTextField from "../../common/MyTextField";
+import MyTextField from "../../common/AppTextField";
 
 export interface DescriptionProps {
   open: boolean;

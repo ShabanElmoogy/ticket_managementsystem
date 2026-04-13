@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import AppTextField from '../../../common/AppTextField';
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -24,15 +25,17 @@ const ResetPasswordDialog: React.FC<ResetPasswordDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableScrollLock>
       <DialogTitle>Reset Password — {userName}</DialogTitle>
       <DialogContent>
-        <TextField
+        <AppTextField
+          fieldType="password"
           inputRef={firstFieldRef}
           label="New Password"
-          type="password"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          maxLength={32}
           fullWidth
           sx={{ mt: 1 }}
           helperText="Minimum 6 characters"
+          showClearButton
         />
       </DialogContent>
       <DialogActions>

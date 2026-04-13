@@ -224,14 +224,76 @@ Phase 1 — Quick wins (rename, no logic change)
   ✅ Delete duplicate services/api.ts entry point
 
 Phase 2 — Page/component separation
-  ⏳ Move EpicsPage, FeaturesPage, EpicDetailPage → pages/
-  ⏳ Move AppRouter → app/ or src/ root
+  ✅ Move EpicsPage, FeaturesPage, EpicDetailPage → pages/
+  ✅ Move AppRouter → src/
+  ✅ Group pages/ into subfolders (admin/, epics/, features/)
 
 Phase 3 — Feature consolidation
-  ⏳ Merge adminSettings/ into features/admin/settings/
-  ⏳ Fix config/statItems.ts — extract hook usage into component
+  ✅ Merge adminSettings/ into features/admin/settings/
+  ✅ Fix config/statItems.ts — extract hook usage into component
+  ✅ Move ThemeProvider → providers/
+  ✅ Extract ticketView from themeStore → uiStore
 
 Phase 4 — Shared layer cleanup
   ⏳ Consolidate components/common/ → shared/components/
   ⏳ Consolidate utils/ → shared/utils/
 ```
+
+---
+
+## Feature Review Checklist
+
+Use this checklist when reviewing any feature folder against the architecture.
+
+### Location
+- [ ] Feature lives in `components/admin/<feature>/` (or `features/<domain>/` in Phase 4)
+- [ ] No numeric prefixes in folder names
+- [ ] Page-level components live in `pages/`, not inside `components/`
+- [ ] Proxy re-export files (`export { default } from '...'`) do not exist
+
+### Folder contract
+- [ ] `index.ts` barrel exists and is the only public export surface
+- [ ] `api/<feature>.ts` — `BaseApiService` subclass + singleton
+- [ ] `api/queryKeys.ts` — typed React Query key factory
+- [ ] `components/` — UI components private to this feature
+- [ ] `hooks/` — custom hooks (if any logic extracted)
+- [ ] `schemas/` — Zod validation schemas (if forms exist)
+- [ ] `types/types.ts` — re-exports from `services/api/types` + feature-local UI types only
+- [ ] `utils/` — pure functions (mappers, formatters)
+
+### Imports
+- [ ] Cross-feature imports go through the barrel (`index.ts`), never internal paths
+- [ ] API singletons imported from feature barrel, not from `services/api` directly
+- [ ] No hooks called inside config files (`config/`)
+- [ ] `services/api/types` imported as folder (resolves to `index.ts`), not flat file
+
+### Data fetching
+- [ ] Server state uses React Query (`useQuery` / `useMutation`)
+- [ ] List data uses `useAuxData` or `useEntityData` — no `useState + useEffect + fetch`
+- [ ] No raw `Promise.all` in components for data loading
+
+### Components
+- [ ] Generic/reusable UI components live in `components/common/`, not inside a feature
+- [ ] No inline component definitions that are used in more than one place
+- [ ] Repeated JSX patterns extracted to a component or driven by a data array
+- [ ] `ErrorBoundary` wraps page-level components
+
+### State
+- [ ] Global UI state (theme, auth, tenant, ui prefs) in Zustand stores
+- [ ] Unrelated concerns not mixed in the same store (e.g. `ticketView` ≠ theme)
+- [ ] Local UI state (dialog open, form values) stays in `useState`
+
+### MUI patterns (see mui-patterns.md)
+- [ ] No `inputProps` / `InputProps` — use `slotProps.htmlInput` / `slotProps.input`
+- [ ] All `<Select>` have `MenuProps={{ disableScrollLock: true }}`
+- [ ] All `<Dialog>` have `disableScrollLock`
+- [ ] No hardcoded hex colors — use `theme.palette.*` tokens
+- [ ] `createTheme` wrapped in `useMemo` if called inside a component
+
+### Naming
+- [ ] Feature folder: `camelCase` (e.g. `customersManagement`)
+- [ ] Component files: `PascalCase.tsx`
+- [ ] Hook files: `camelCase.ts` with `use` prefix
+- [ ] Barrel: always `index.ts`
+- [ ] Page components: `<Name>Page.tsx`
+- [ ] No `index.tsx` for page-level components

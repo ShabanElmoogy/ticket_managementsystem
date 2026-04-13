@@ -1,14 +1,14 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography } from '@mui/material';
 
-export interface StatCardProps {
+export interface MetricCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
+const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, color }) => (
   <Card sx={{ height: '100%' }}>
     <CardContent>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -37,4 +37,4 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
   </Card>
 );
 
-export default StatCard;
+export default MetricCard;

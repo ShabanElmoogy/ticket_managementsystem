@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, Grid, FormControl, InputLabel, Select,
+  Button, Grid, FormControl, InputLabel, Select,
   MenuItem, FormControlLabel, Checkbox, Switch, Radio, RadioGroup,
   FormLabel, FormHelperText, Slider, Typography, Chip, Box,
 } from "@mui/material";
@@ -11,7 +11,8 @@ import type { FieldValues, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodSchema } from "zod";
 import LoadingButton from "../LoadingButton";
-import MySelect from "../MySelect";
+import MySelect from "../AppSelect";
+import AppTextField from "../AppTextField";
 import { getPickerDateFormat } from "../../../stores/tenantStore";
 
 export interface SelectOption {
@@ -37,6 +38,7 @@ export interface FormField<T extends FieldValues> {
   onClear?: () => void; // For customSelect clear button
   dateFormat?: string; // For datepicker format
   renderChip?: (value: string | number, options: SelectOption[]) => string; // For multiSelect chip labels
+  maxLength?: number; // For text fields — shows counter chip, blocks input at limit
 }
 
 export interface ReusableFormDialogProps<T extends FieldValues> {
@@ -358,26 +360,27 @@ function ReusableFormDialog<T extends FieldValues>({
               default:
                 // Text, multiline, number, email, password, date, datetime-local
                 fieldComponent = (
-                  <TextField
+                  <AppTextField
                     label={field.label}
                     {...register(field.name)}
-                    type={field.type === "multiline" ? "text" : field.type || "text"}
+                    fieldType={
+                      field.type === 'password' ? 'password' :
+                      field.type === 'number'   ? 'number'   :
+                      field.type === 'email'    ? 'text'     : 'text'
+                    }
                     required={field.required}
                     multiline={field.type === "multiline"}
                     rows={field.type === "multiline" ? field.rows || 3 : undefined}
-                    slotProps={{
-                      htmlInput: {
-                        min: field.min,
-                        max: field.max,
-                        step: field.step,
-                      },
-                    }}
+                    min={field.min}
+                    max={field.max}
+                    step={field.step}
+                    maxLength={field.maxLength}
                     fullWidth
-                    autoComplete="off"
                     inputRef={field.autoFocus ? autoFocusRef : undefined}
                     error={!!errors[field.name]}
                     helperText={errors[field.name]?.message as string}
                     disabled={submitting}
+                    showClearButton={false}
                   />
                 );
             }

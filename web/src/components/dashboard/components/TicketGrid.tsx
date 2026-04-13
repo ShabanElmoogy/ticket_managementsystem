@@ -1,23 +1,13 @@
 import React from 'react';
 import {
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Button,
-  Box,
-  Chip,
-  Paper,
-  Avatar,
-  Fade,
-  Grow,
+  Grid, Card, CardContent, CardActions, Typography, Button,
+  Box, Chip, Paper, Avatar, Fade, Grow, Tooltip, IconButton,
 } from '@mui/material';
 import {
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
-  Assignment as AssignmentIcon,
+  Person as PersonIcon, Schedule as ScheduleIcon,
+  Assignment as AssignmentIcon, OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import type { Ticket } from '../../../services/api';
 import { formatDate } from '../../../utils/dateUtils';
 
@@ -29,11 +19,9 @@ interface TicketGridProps {
 }
 
 const TicketGrid: React.FC<TicketGridProps> = ({
-  tickets,
-  onTicketClick,
-  onTakeTicket,
-  userRole,
+  tickets, onTicketClick, onTakeTicket, userRole,
 }) => {
+  const navigate = useNavigate();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'OPEN': return 'primary';
@@ -208,24 +196,40 @@ const TicketGrid: React.FC<TicketGridProps> = ({
               </CardContent>
               
               {!ticket.assignedTo && userRole === 'EMPLOYEE' && (
-                <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button 
+                <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+                  <Button
                     variant="contained"
                     size="small"
                     fullWidth
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTakeTicket(ticket.id);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onTakeTicket(ticket.id); }}
                     sx={{
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                      },
+                      '&:hover': { background: 'linear-gradient(135deg, #059669 0%, #047857 100%)' },
                     }}
                   >
                     Take Ticket
                   </Button>
+                  <Tooltip title="Open full page">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${ticket.id}`); }}
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </CardActions>
+              )}
+
+              {(ticket.assignedTo || userRole !== 'EMPLOYEE') && (
+                <CardActions sx={{ p: 2, pt: 0, justifyContent: 'flex-end' }}>
+                  <Tooltip title="Open full page">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${ticket.id}`); }}
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </CardActions>
               )}
             </Card>
