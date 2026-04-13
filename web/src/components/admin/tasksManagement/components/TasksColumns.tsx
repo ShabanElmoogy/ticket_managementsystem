@@ -1,8 +1,8 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
-import { buildActionsColumn } from "../../../common";
+import { buildActionsColumn } from "../../../../shared/components";
 import type { KanbanTask, TaskStatus } from "../../../kanban/types/types";
-import { formatDate } from "../../../../utils/dateUtils";
+import { formatDate } from "../../../../shared/utils/dateUtils";
 
 function getStatusColor(status: TaskStatus): "default" | "success" | "warning" | "info" | "secondary" {
   switch (status) {

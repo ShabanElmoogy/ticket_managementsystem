@@ -5,7 +5,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { epicsApi, type EpicActivityItem } from '../api/epics';
-import { formatDateTime } from '../../../utils/dateUtils';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 
 const ACTION_CONFIG: Record<string, { label: (meta: any) => string; icon: React.ReactNode; color: string }> = {
   STATUS_CHANGED:         { label: (m) => `Status changed from ${m.from ?? '—'} to ${m.to}`, icon: <SwapHoriz fontSize="small" />, color: '#f59e0b' },

@@ -1,5 +1,5 @@
 import type { UserOptions } from 'jspdf-autotable';
-import type { Epic } from '../../services/api/types';
+import type { Epic } from '../../../services/api/types';
 import { createReport, addSectionTitle, addTable, saveReport } from './reportTemplate';
 import { formatDate } from '../dateUtils';
 

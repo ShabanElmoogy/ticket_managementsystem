@@ -1,5 +1,5 @@
 import type { UserOptions } from "jspdf-autotable";
-import type { Ticket } from "../../services/api";
+import type { Ticket } from "../../../services/api";
 import { createReport, addSectionTitle, addTable, saveReport } from "./reportTemplate";
 import { formatDate } from "../dateUtils";
 

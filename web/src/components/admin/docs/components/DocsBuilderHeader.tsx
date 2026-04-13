@@ -6,7 +6,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import MenuIcon from '@mui/icons-material/Menu';
-import MyGridHeader from '../../../common/layout/AppGridHeader';
+import MyGridHeader from '../../../../shared/components/layout/AppGridHeader';
 
 interface Props {
   title: string;

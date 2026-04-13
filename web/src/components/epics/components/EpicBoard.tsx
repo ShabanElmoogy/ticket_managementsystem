@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import { epicsApi } from '../api/epics';
 import EpicPriorityChip from './EpicPriorityChip';
 import EpicHealthScore from './EpicHealthScore';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 import type { Epic } from '../../../services/api/types';
 
 const EPIC_STATUSES: Epic['status'][] = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];

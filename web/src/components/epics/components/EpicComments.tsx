@@ -8,7 +8,7 @@ import MentionTextField, { renderWithMentions, type MentionUser } from '../../ti
 import { usersApi } from '../../admin/usersManagement/api/users';
 import { useQuery } from '@tanstack/react-query';
 import { useEpicComments } from '../hooks/useEpicComments';
-import { formatDateTime } from '../../../utils/dateUtils';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 
 interface Props { epicId: string; }
 

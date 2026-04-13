@@ -1,7 +1,7 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import type { CustomerTicketsSummaryRow } from "../../types";
 import { Chip } from "@mui/material";
-import { formatDateTime } from "../../../../../utils/dateUtils";
+import { formatDateTime } from "../../../../../shared/utils/dateUtils";
 
 const lastTicketValueGetter = (p: any) => {
   const v = p?.row?.lastTicketAt as string | null | undefined;

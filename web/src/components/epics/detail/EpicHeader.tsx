@@ -14,7 +14,7 @@ import EpicPriorityChip from '../components/EpicPriorityChip';
 import EpicHealthScore from '../components/EpicHealthScore';
 import BlockerPickerMenu from './BlockerPickerMenu';
 import EpicContributors from '../components/EpicContributors';
-import { formatDate, formatDateTime } from '../../../utils/dateUtils';
+import { formatDate, formatDateTime } from '../../../shared/utils/dateUtils';
 import type { EpicFeature } from './types';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

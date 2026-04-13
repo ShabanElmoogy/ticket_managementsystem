@@ -22,7 +22,7 @@ import {
   CalendarToday as CalendarIcon
 } from '@mui/icons-material';
 import { isBefore, addDays } from 'date-fns';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../shared/utils/dateUtils';
 import type { Ticket } from '../../services/api';
 import type { KanbanTicket, Priority } from './types/types';
 import TicketDetailsDialog from '../tickets/TicketDetailsDialog';

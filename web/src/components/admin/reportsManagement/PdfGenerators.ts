@@ -1,6 +1,6 @@
 import type { Ticket } from "../../../services/api";
-import { createTableReport } from "../../../utils/reports/reportTemplate";
-import { generateCustomerTicketsSummaryReport, generateTicketsListReport } from "../../../utils/reports/summaryReports";
+import { createTableReport } from "../../../shared/utils/reports/reportTemplate";
+import { generateCustomerTicketsSummaryReport, generateTicketsListReport } from "../../../shared/utils/reports/summaryReports";
 import type { CustomerTicketsSummaryRow, CustomerStatusRow, CustomerActivityRow, ReportType } from "./types";
 
 export function generatePdf(

@@ -11,7 +11,7 @@ import {
 import { Visibility as VisibilityIcon } from "@mui/icons-material";
 import type { Doc, DocBlock } from "../../types";
 import HighlightText from "./HighlightText";
-import { formatDate } from "../../../../../utils/dateUtils";
+import { formatDate } from "../../../../../shared/utils/dateUtils";
 
 interface DocumentCardProps {
   doc: Doc;

@@ -4,10 +4,10 @@ import {
   CountChip,
   StatusCell,
   buildActionsColumn,
-} from "../../../common";
+} from "../../../../shared/components";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Application } from "../../../../services/api";
-import { formatDate } from "../../../../utils/dateUtils";
+import { formatDate } from "../../../../shared/utils/dateUtils";
 
 export const getApplicationsColumns = (handlers: {
   onEdit: (app: Application) => void;

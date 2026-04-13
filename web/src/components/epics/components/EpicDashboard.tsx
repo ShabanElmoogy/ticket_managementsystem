@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { calculateEpicHealthScore } from '../utils/epicHealthScore';
 import EpicPriorityChip from './EpicPriorityChip';
 import EpicStatusChip from './EpicStatusChip';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 import type { Epic } from '../../../services/api/types';
 
 const FEATURE_STATUS_COLORS: Record<string, string> = {

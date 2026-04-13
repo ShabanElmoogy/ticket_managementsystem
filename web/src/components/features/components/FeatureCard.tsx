@@ -4,7 +4,7 @@ import { ThumbUp, ThumbUpOutlined, Edit, Delete, Apps, Person, OpenInNew, Accoun
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { FeatureRequest } from '../../../services/api/types';
 import FeatureStatusChip from './FeatureStatusChip';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 
 interface Props {
   feature: FeatureRequest;

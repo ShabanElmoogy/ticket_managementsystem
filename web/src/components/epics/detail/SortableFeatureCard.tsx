@@ -10,7 +10,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import FeatureStatusChip from '../../features/components/FeatureStatusChip';
 import type { FeatureRequest } from '../../../services/api/types';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 import type { EpicFeature } from './types';
 
 const STATUSES: { value: FeatureRequest['status']; label: string; color: string }[] = [

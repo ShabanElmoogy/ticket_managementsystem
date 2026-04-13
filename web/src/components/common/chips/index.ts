@@ -1,4 +1,4 @@
-export { default as AppChip } from './AppChip';
-export type { AppChipProps, ChipVariant } from './AppChip';
-export { default as AppFilterChip } from './AppFilterChip';
-export type { AppFilterChipProps } from './AppFilterChip';
+export { default as AppChip } from '../../../shared/components/chips/AppChip';
+export type { AppChipProps, ChipVariant } from '../../../shared/components/chips/AppChip';
+export { default as AppFilterChip } from '../../../shared/components/chips/AppFilterChip';
+export type { AppFilterChipProps } from '../../../shared/components/chips/AppFilterChip';

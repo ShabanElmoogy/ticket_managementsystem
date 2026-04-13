@@ -1,6 +1,6 @@
-import { CountChip, buildActionsColumn } from "../../../common";
+import { CountChip, buildActionsColumn } from "../../../../shared/components";
 import type { GridColDef } from "@mui/x-data-grid";
-import { formatDate } from "../../../../utils/dateUtils";
+import { formatDate } from "../../../../shared/utils/dateUtils";
 import { Chip, Box, Typography, IconButton, Tooltip } from "@mui/material";
 import {
   AdminPanelSettings as AdminIcon,

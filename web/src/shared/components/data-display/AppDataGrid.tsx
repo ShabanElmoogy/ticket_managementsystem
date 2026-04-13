@@ -8,8 +8,8 @@ import type {
   GridValidRowModel,
 } from "@mui/x-data-grid";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import { useAdminReadonly } from '../admin/AdminReadonlyContext';
-import AppTextField from './inputs/AppTextField';
+import { useAdminReadonly } from '../../../components/admin/AdminReadonlyContext';
+import AppTextField from '../inputs/AppTextField';
 
 export interface AppDataGridProps<T extends GridValidRowModel = GridValidRowModel>
   extends Omit<DataGridProps, "rows" | "columns"> {

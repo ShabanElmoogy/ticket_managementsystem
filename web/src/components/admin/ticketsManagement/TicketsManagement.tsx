@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Alert, Snackbar } from '@mui/material';
-import DeleteConfirmDialog from '../../common/dialogs/AppDeleteDialog';
+import DeleteConfirmDialog from '../../../shared/components/dialogs/AppDeleteDialog';
 import CreateTicketDialog from '../../tickets/CreateTicketDialog';
 import { TicketsTable } from '.';
 import useTicketsManagement from './hooks/useTicketsManagement';
-import MyGridHeader from '../../common/layout/AppGridHeader';
+import MyGridHeader from '../../../shared/components/layout/AppGridHeader';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 
 const TicketsManagement: React.FC = () => {

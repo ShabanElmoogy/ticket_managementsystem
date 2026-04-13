@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { HexColorPicker } from 'react-colorful';
 import { useKanbanStore } from '../../stores/kanbanStore';
-import { getColorPair } from '../../utils/colorContrast';
+import { getColorPair } from '../../shared/utils/colorContrast';
 import type { BoardType } from './types/types';
 
 interface CreateBoardDialogProps {

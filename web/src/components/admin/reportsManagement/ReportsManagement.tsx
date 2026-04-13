@@ -9,7 +9,7 @@ import { reportTypes, type ReportType } from './types';
 import { buildSummaryRows, buildCustomerStatusRows, buildCustomerActivityRows } from './rowBuilders';
 import { getSummaryColumns, getCustomerStatusColumns, getCustomerActivityColumns, getTicketColumns } from './components/columns';
 import { generatePdf } from './PdfGenerators';
-import MyGridHeader from '../../common/layout/AppGridHeader';
+import MyGridHeader from '../../../shared/components/layout/AppGridHeader';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const ReportsManagement: React.FC = () => {

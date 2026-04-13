@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 import type { TreeNode, Doc } from "../../types";
 import HighlightText from "./HighlightText";
-import { formatDate } from "../../../../../utils/dateUtils";
+import { formatDate } from "../../../../../shared/utils/dateUtils";
 
 interface DocumentTreeProps {
   tree: TreeNode[];

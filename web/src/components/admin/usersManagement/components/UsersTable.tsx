@@ -1,7 +1,7 @@
 import React from "react";
 import type { User } from "../../../../services/api";
 import getUsersColumns from "./UsersColumns";
-import { AdminDataGrid } from "../../../common";
+import { AdminDataGrid } from "../../../../shared/components";
 
 export interface UsersTableProps {
   users: User[];

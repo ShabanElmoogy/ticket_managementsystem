@@ -21,7 +21,7 @@ import { getPickerDateFormat } from '../../stores/tenantStore';
 import { ticketsApi } from '../../components/admin/ticketsManagement/api/tickets';
 import FeatureStatusChip from '../../components/features/components/FeatureStatusChip';
 import type { FeatureStep, CreateStepData, UpdateStepData } from '../../services/api/types';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../shared/utils/dateUtils';
 
 const STEP_STATUS_COLOR: Record<FeatureStep['status'], 'default' | 'warning' | 'success'> = {
   TODO: 'default', IN_PROGRESS: 'warning', DONE: 'success',

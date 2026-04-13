@@ -1,11 +1,11 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip, Tooltip, Box } from "@mui/material";
 import { Warning as WarningIcon } from "@mui/icons-material";
-import { CountChip, buildActionsColumn } from "../../../common";
+import { CountChip, buildActionsColumn } from "../../../../shared/components";
 import type { Customer } from "../../../../services/api";
 import ApplicationsCell from "./ApplicationsCell";
-import { getCustomerStatus, daysUntilExpiry, MAINTENANCE_LABELS, STATUS_CONFIG } from "../../../../utils/subscriptionUtils";
-import { formatDate } from "../../../../utils/dateUtils";
+import { getCustomerStatus, daysUntilExpiry, MAINTENANCE_LABELS, STATUS_CONFIG } from "../../../../shared/utils/subscriptionUtils";
+import { formatDate } from "../../../../shared/utils/dateUtils";
 
 export const getCustomersColumns = (handlers: {
   onEdit: (customer: Customer) => void;

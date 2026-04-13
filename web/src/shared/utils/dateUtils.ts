@@ -3,7 +3,7 @@ import {
   differenceInMinutes, differenceInHours,
   differenceInDays, differenceInMonths, differenceInYears,
 } from 'date-fns';
-import { getDateFormat } from '../stores/tenantStore';
+import { getDateFormat } from '../../stores/tenantStore';
 
 /** Format a date using the tenant's configured date format */
 export const formatDate = (date: string | Date): string =>

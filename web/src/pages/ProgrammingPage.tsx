@@ -22,7 +22,7 @@ import Header from '../components/dashboard/Header';
 import ProgrammingPanel from '../components/programming/ProgrammingPanel';
 import AssignProgrammerDialog from '../components/programming/components/AssignProgrammerDialog';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatDate, formatDateTime } from '../utils/dateUtils';
+import { formatDate, formatDateTime } from '../shared/utils/dateUtils';
 
 // ── Status config ────────────────────────────────────────────────────────────
 

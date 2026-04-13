@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import DocumentViewer from "./DocumentViewer";
 import type { Doc } from "../../types";
-import { formatDate } from "../../../../../utils/dateUtils";
+import { formatDate } from "../../../../../shared/utils/dateUtils";
 
 interface DocumentTabsProps {
   openDocs: Doc[];

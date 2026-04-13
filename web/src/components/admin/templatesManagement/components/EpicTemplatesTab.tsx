@@ -3,7 +3,7 @@ import { Box, Chip, Typography, Snackbar, Alert } from '@mui/material';
 import { AccountTree as EpicsIcon } from '@mui/icons-material';
 import { useIsAdmin } from '../../../../stores/authStore';
 import TemplateFormDialog from '../../../epics/components/TemplateFormDialog';
-import { DeleteConfirmDialog } from '../../../common';
+import { DeleteConfirmDialog } from '../../../../shared/components';
 import TemplatePageLayout, { type TemplateItem } from './TemplatePageLayout';
 import { useEpicTemplates } from '../hooks/useEpicTemplates';
 

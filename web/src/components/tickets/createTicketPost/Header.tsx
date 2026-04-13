@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Box, Avatar, Typography } from "@mui/material";
-import MyTextField from "../../common/inputs/AppTextField";
+import MyTextField from "../../../shared/components/inputs/AppTextField";
 
 export const getInitials = (name: string) =>
   name

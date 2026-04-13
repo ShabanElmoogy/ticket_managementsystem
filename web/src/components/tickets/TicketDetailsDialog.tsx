@@ -21,7 +21,7 @@ import { ticketsApi, type Ticket, type Comment, type TicketActivity } from '../.
 import { useAuthStore } from '../../stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { formatDateTime, formatRelativeDuration } from '../../utils/dateUtils';
+import { formatDateTime, formatRelativeDuration } from '../../shared/utils/dateUtils';
 import AttachmentsPanel from './AttachmentsPanel';
 import { useNavigate } from 'react-router-dom';
 import WatcherButton from './WatcherButton';

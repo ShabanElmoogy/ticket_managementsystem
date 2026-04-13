@@ -22,7 +22,7 @@ import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-materia
 import { useAuthStore } from '../../../stores/authStore';
 import { profileApi, ticketsApi, type Ticket, type ReminderSettings } from '../../../services/api';
 import { Role } from '../../../types/roles';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 
 interface TicketReminderProps {
   onTicketClick: (ticket: Ticket) => void;

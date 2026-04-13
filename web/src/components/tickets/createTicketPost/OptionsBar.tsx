@@ -10,7 +10,7 @@ import {
 } from "@mui/icons-material";
 import type { User } from "../../../services/api";
 import type { Dayjs } from 'dayjs';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 import { getPriorityColor } from "./utils";
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";

@@ -43,12 +43,12 @@ import {
   Email as EmailIcon,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
-import { formatDate, formatDateTime, formatRelativeDuration } from "../../utils/dateUtils";
+import { formatDate, formatDateTime, formatRelativeDuration } from "../../shared/utils/dateUtils";
 import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import MyChip from "../common/chips/AppChip";
+import MyChip from "../../shared/components/chips/AppChip";
 import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
 import ReassignDialog from './ReassignDialog';
@@ -56,7 +56,7 @@ import EditDueDateDialog from './EditDueDateDialog';
 import { useNavigate } from 'react-router-dom';
 import MentionTextField, { renderWithMentions, extractMentionedUsers, type MentionUser } from './MentionTextField';
 import { usersApi } from '../../services/api';
-import { MAINTENANCE_LABELS, STATUS_CONFIG, getCustomerStatus } from '../../utils/subscriptionUtils';
+import { MAINTENANCE_LABELS, STATUS_CONFIG, getCustomerStatus } from '../../shared/utils/subscriptionUtils';
 import SlaTimer from './SlaTimer';
 
 interface TicketPostProps {

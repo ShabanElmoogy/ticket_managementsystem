@@ -7,7 +7,7 @@ import {
   CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from 'recharts';
 import { epicsApi } from '../api/epics';
-import { formatDate } from '../../../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 
 interface Props {
   epicId: string;

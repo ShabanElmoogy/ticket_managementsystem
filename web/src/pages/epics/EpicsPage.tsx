@@ -12,7 +12,7 @@ import EpicBoard from '../../components/epics/components/EpicBoard';
 import EpicDashboard from '../../components/epics/components/EpicDashboard';
 import EpicNetworkView from '../../components/epics/components/EpicNetworkView';
 import { exportMultipleEpicsToCsv } from '../../components/epics/utils/exportEpicCsv';
-import { generateEpicsReport } from '../../utils/reports/epicsReport';
+import { generateEpicsReport } from '../../shared/utils/reports/epicsReport';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from '../../components/epics/api/epics';
@@ -22,7 +22,7 @@ import EpicFormDialog from '../../components/epics/components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
 import { epicTemplatesApi } from '../../components/epics/api/epicTemplates';
 import { useIsAdmin } from '../../stores/authStore';
-import { DeleteConfirmDialog } from '../../components/common';
+import { DeleteConfirmDialog } from '../../shared/components';
 
 const STATUSES: Array<Epic['status'] | ''> = ['', 'DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 

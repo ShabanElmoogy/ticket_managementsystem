@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
-import AppTextField from '../../../common/inputs/AppTextField';
+import AppTextField from '../../../../shared/components/inputs/AppTextField';
 
 interface ResetPasswordDialogProps {
   open: boolean;

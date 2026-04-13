@@ -1,6 +1,6 @@
 import React from "react";
 import { Snackbar, Alert } from "@mui/material";
-import ScrollToTop from "../../common/layout/AppScrollToTop";
+import ScrollToTop from "../../../shared/components/layout/AppScrollToTop";
 import MobileTicketActions from "../../tickets/MobileTicketActions";
 import MobileSearchOverlay from "../../tickets/MobileSearchOverlay";
 import TicketDetailsDialog from "../../tickets/TicketDetailsDialog";

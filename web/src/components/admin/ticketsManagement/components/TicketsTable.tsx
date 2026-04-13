@@ -1,7 +1,7 @@
 import React from "react";
 import type { Ticket } from "../../../../services/api";
 import getTicketsColumns from "./TicketsColumns";
-import { AdminDataGrid } from "../../../common";
+import { AdminDataGrid } from "../../../../shared/components";
 
 export interface TicketsTableProps {
   tickets: Ticket[];

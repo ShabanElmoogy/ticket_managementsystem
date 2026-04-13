@@ -2,8 +2,8 @@ import React from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
-import { MetricCard, OverviewCard } from '../../common';
+import { ErrorBoundary } from '../../../shared/components/feedback/ErrorBoundary';
+import { MetricCard, OverviewCard } from '../../../shared/components';
 import { useAdminDashboard } from './hooks/useAdminDashboard';
 import { STAT_CARDS_CONFIG } from './utils/statCardsConfig';
 

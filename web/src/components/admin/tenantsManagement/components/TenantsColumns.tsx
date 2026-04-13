@@ -1,13 +1,13 @@
 import React from 'react';
 import { Chip, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { ActionsCell } from '../../../common';
+import { ActionsCell } from '../../../../shared/components';
 import type { GridColDef } from '@mui/x-data-grid';
 import type { Tenant } from '../types/types';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import BlockIcon from '@mui/icons-material/Block';
-import { formatDate } from '../../../../utils/dateUtils';
+import { formatDate } from '../../../../shared/utils/dateUtils';
 
 const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'] as const;
 type TenantStatus = typeof STATUSES[number];

@@ -5,7 +5,7 @@ import {
 import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import type { Ticket } from '../../services/api';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../shared/utils/dateUtils';
 
 const STATUS_COLOR: Record<string, 'primary' | 'warning' | 'success' | 'default'> = {
   OPEN: 'primary', IN_PROGRESS: 'warning', RESOLVED: 'success', CLOSED: 'default',

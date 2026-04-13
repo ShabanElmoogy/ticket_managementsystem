@@ -1,5 +1,5 @@
 import React from "react";
-import { AdminDataGrid } from "../../../common";
+import { AdminDataGrid } from "../../../../shared/components";
 import { getApplicationsColumns } from "./ApplicationsColumns";
 import type { Application } from "../../../../services/api";
 

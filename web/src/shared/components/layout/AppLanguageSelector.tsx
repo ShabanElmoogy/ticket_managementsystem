@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
-import { changeLanguage, getCurrentLanguage } from '../../i18n';
+import { changeLanguage, getCurrentLanguage } from '../../../i18n';
 
 const AppLanguageSelector: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());

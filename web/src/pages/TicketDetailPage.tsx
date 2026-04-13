@@ -28,7 +28,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ticketsApi, type TicketWithComments, type Ticket, type TicketActivity } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { formatDateTime, formatDate, formatRelativeDuration } from '../utils/dateUtils';
+import { formatDateTime, formatDate, formatRelativeDuration } from '../shared/utils/dateUtils';
 import AttachmentsPanel from '../components/tickets/AttachmentsPanel';
 import Header from '../components/dashboard/Header';
 import WatcherButton from '../components/tickets/WatcherButton';

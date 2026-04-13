@@ -1,6 +1,6 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Ticket } from "../../../../../services/api";
-import { formatDate, formatDateTime } from "../../../../../utils/dateUtils";
+import { formatDate, formatDateTime } from "../../../../../shared/utils/dateUtils";
 
 export const getTicketColumns = (): GridColDef<Ticket>[] => [
   {

@@ -7,7 +7,7 @@ import { Add, Edit, Delete, LibraryBooks, ExpandMore, ExpandLess } from '@mui/ic
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { epicTemplatesApi, type EpicTemplate, type CreateTemplateData } from '../../components/epics/api/epicTemplates';
 import TemplateFormDialog from '../../components/epics/components/TemplateFormDialog';
-import { DeleteConfirmDialog } from '../../components/common';
+import { DeleteConfirmDialog } from '../../shared/components';
 import { useIsAdmin } from '../../stores/authStore';
 
 const EpicTemplatesPage: React.FC = () => {

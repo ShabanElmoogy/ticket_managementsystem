@@ -3,7 +3,7 @@ import { Card, CardContent, Box, Typography, Tooltip, Button } from '@mui/materi
 import { alpha } from '@mui/material/styles';
 import AddCircleIcon from '@mui/icons-material/Add';
 import type { ReactNode, ElementType } from 'react';
-import { useAdminReadonly } from '../admin/AdminReadonlyContext';
+import { useAdminReadonly } from '../../../components/admin/AdminReadonlyContext';
 
 export interface AppGridHeaderProps {
   title: ReactNode;

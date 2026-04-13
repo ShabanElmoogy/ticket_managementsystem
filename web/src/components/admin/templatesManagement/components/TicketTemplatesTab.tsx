@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { Label as TemplateIcon } from '@mui/icons-material';
 import { useIsAdmin } from '../../../../stores/authStore';
-import { DeleteConfirmDialog } from '../../../common';
+import { DeleteConfirmDialog } from '../../../../shared/components';
 import TemplatePageLayout, { type TemplateItem } from './TemplatePageLayout';
 import { useTicketTemplates } from '../hooks/useTicketTemplates';
 

@@ -1,7 +1,7 @@
 // StatCard.tsx - Mobile Optimized to Prevent Overflow
 import React from "react";
 import { Box } from "@mui/material";
-import { type StatItem } from "../dashboard/types/types";
+import { type StatItem } from "../../../components/dashboard/types/types";
 import StatIcon from "./StatIcon";
 import StatValue from "./StatValue";
 import StatProgress from "./StatProgress";

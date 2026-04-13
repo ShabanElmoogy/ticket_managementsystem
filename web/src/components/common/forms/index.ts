@@ -1,2 +1,2 @@
-export { default as ReusableFormDialog } from './ReusableFormDialog';
-export type { ReusableFormDialogProps, FormField, SelectOption } from './ReusableFormDialog';
+export { default as ReusableFormDialog } from '../../../shared/components/forms/ReusableFormDialog';
+export type { ReusableFormDialogProps, FormField, SelectOption } from '../../../shared/components/forms/ReusableFormDialog';

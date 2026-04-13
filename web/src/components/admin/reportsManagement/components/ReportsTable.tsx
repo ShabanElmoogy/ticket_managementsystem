@@ -1,5 +1,5 @@
 import type { GridColDef } from "@mui/x-data-grid";
-import AdminDataGrid from "../../../common/data-display/AppDataGrid";
+import AdminDataGrid from "../../../../shared/components/data-display/AppDataGrid";
 
 export interface ReportsTableProps {
   rows: unknown[];

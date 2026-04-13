@@ -11,7 +11,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { epicsApi, type EpicActivityItem } from '../api/epics';
-import { formatDateTime } from '../../../utils/dateUtils';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';

@@ -21,7 +21,7 @@ import EpicBurndownChart from '../../components/epics/detail/EpicBurndownChart';
 import { useEpicDetail } from '../../components/epics/hooks/useEpicDetail';
 import { exportEpicToCsv } from '../../components/epics/utils/exportEpicCsv';
 import type { UpdateEpicData, FeatureRequest } from '../../services/api/types';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../shared/utils/dateUtils';
 
 const EpicDetailPage: React.FC = () => {
   const {

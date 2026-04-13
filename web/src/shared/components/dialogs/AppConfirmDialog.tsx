@@ -13,7 +13,7 @@ import {
   Warning as WarningIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import AppTextField from './inputs/AppTextField';
+import AppTextField from '../inputs/AppTextField';
 
 export interface AppConfirmDialogProps {
   open: boolean;

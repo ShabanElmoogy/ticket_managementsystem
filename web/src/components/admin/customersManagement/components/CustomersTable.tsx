@@ -1,7 +1,7 @@
 import React from "react";
 import type { Customer } from "../../../../services/api";
 import getCustomersColumns from "./CustomersColumns";
-import { AdminDataGrid } from "../../../common";
+import { AdminDataGrid } from "../../../../shared/components";
 
 export interface CustomersTableProps {
   customers: Customer[];

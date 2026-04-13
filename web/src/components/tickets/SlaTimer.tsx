@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import { Timer as TimerIcon } from '@mui/icons-material';
-import { formatDateTime } from '../../utils/dateUtils';
+import { formatDateTime } from '../../shared/utils/dateUtils';
 
 interface SlaTimerProps {
   slaDeadline: string;

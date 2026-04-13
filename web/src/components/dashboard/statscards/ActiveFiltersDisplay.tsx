@@ -2,7 +2,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { type ActiveFilters } from "../types/types";
-import FilterChip from "../../common/chips/AppFilterChip";
+import FilterChip from "../../../shared/components/chips/AppFilterChip";
 
 interface ActiveFiltersDisplayProps {
   activeFilters: ActiveFilters;

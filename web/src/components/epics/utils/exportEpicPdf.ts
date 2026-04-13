@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Epic } from '../../../services/api/types';
 import type { EpicFeature } from '../detail/types';
-import { formatDateTime } from '../../../utils/dateUtils';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 
 const STATUS_LABELS: Record<string, string> = {
   UNDER_REVIEW: 'Under Review',
