@@ -26,7 +26,7 @@ const DocsManagement: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0, mt: -3 }}>
       {/* ── Tab bar ── */}
       <Box sx={{
         borderBottom: '1px solid',

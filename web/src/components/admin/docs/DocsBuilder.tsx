@@ -255,7 +255,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
       />
 
       {/* ── Body ── */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', borderRadius: 2, mt: 0.5 }}>
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', borderRadius: 2,mt:-1 }}>
 
         {/* Left: document tree */}
         {sidebarOpen && (

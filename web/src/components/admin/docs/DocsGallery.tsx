@@ -143,32 +143,9 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
             Home
           </Button>
         }
-        rightActions={
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={(_, newView) => {
-              if (newView) {
-                setViewMode(newView);
-                if (newView === 'tree') {
-                  setCurrentPath([]);
-                }
-              }
-            }}
-          >
-            <ToggleButton value="tree">
-              <ViewListIcon sx={{ mr: 1 }} />
-              Tree View
-            </ToggleButton>
-            <ToggleButton value="cards">
-              <ViewModuleIcon sx={{ mr: 1 }} />
-              Card View
-            </ToggleButton>
-          </ToggleButtonGroup>
-        }
       />
 
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 3, display: 'flex', gap: 1.5, alignItems: 'center' }}>
         <TextField
           fullWidth
           variant="outlined"
@@ -183,6 +160,28 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
             ),
           }}
         />
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(_, newView) => {
+            if (newView) {
+              setViewMode(newView);
+              if (newView === 'tree') {
+                setCurrentPath([]);
+              }
+            }
+          }}
+          sx={{ flexShrink: 0 }}
+        >
+          <ToggleButton value="tree">
+            <ViewListIcon sx={{ mr: 1 }} />
+            Tree View
+          </ToggleButton>
+          <ToggleButton value="cards">
+            <ViewModuleIcon sx={{ mr: 1 }} />
+            Card View
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       {viewMode === 'tree' ? (
