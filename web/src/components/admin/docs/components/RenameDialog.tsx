@@ -17,7 +17,7 @@ const RenameDialog: React.FC<Props> = ({ open, initial, onClose, onConfirm }) =>
   }, [open, initial]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableScrollLock>
       <DialogTitle sx={{ pb: 1 }}>Rename</DialogTitle>
       <DialogContent>
         <TextField

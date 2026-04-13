@@ -171,7 +171,7 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
           fullWidth
           margin="normal"
           type="number"
-          inputProps={{ min: 0, step: 0.25 }}
+          slotProps={{ htmlInput: { min: 0, step: 0.25 } }}
           label="Estimated Hours"
           value={estimatedHours}
           onChange={(e) => {

@@ -156,7 +156,7 @@ const BoardSettingsDialog: React.FC<BoardSettingsDialogProps> = ({
   // Safety check for board prop
   if (!board) {
     return (
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
         <DialogTitle>Board Settings</DialogTitle>
         <DialogContent>
           <Alert severity="error">
@@ -171,7 +171,7 @@ const BoardSettingsDialog: React.FC<BoardSettingsDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle>Board Settings</DialogTitle>
 
       <DialogContent>
@@ -315,7 +315,7 @@ const BoardSettingsDialog: React.FC<BoardSettingsDialogProps> = ({
                         wipLimit: e.target.value,
                       }))
                     }
-                    inputProps={{ min: 0 }}
+                    slotProps={{ htmlInput: { min: 0 } }}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>

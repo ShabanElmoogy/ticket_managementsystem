@@ -48,7 +48,7 @@ const AssignProgrammerDialog: React.FC<Props> = ({ open, ticketId, onClose, onAs
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableScrollLock>
       <DialogTitle>Assign Programmer</DialogTitle>
       <DialogContent>
         {loading ? (

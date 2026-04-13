@@ -139,19 +139,21 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({
                 },
               },
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: searchQuery && (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => onSearchChange('')}>
-                    <ClearIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => onSearchChange('')}>
+                      <ClearIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
           />
           <IconButton

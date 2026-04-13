@@ -281,7 +281,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
               }
               size="small"
               fullWidth
-              inputProps={{ min: 0, step: 0.5 }}
+              slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
             />
           </Grid>
 
@@ -298,7 +298,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
               }
               size="small"
               fullWidth
-              inputProps={{ min: 0, step: 0.5 }}
+              slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
             />
           </Grid>
         </Grid>

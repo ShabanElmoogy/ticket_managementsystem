@@ -92,7 +92,7 @@ const CodeSnippetList: React.FC<Props> = ({ snippets: initial, canEdit, onSave }
             label="Code"
             value={draft.code}
             onChange={e => setDraft(prev => ({ ...prev, code: e.target.value }))}
-            inputProps={{ style: { fontFamily: 'monospace', fontSize: '0.85rem' } }}
+            slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontSize: '0.85rem' } } }}
             sx={{ mb: 1 }}
           />
           <Box display="flex" gap={1}>

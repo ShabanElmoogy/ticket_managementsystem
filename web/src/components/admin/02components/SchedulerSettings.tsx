@@ -110,7 +110,7 @@ const SchedulerSettings: React.FC = () => {
           size="small"
           value={intervalMinutes}
           onChange={(e) => setIntervalMinutes(e.target.value === '' ? '' : Number(e.target.value))}
-          inputProps={{ min: 1 }}
+          slotProps={{ htmlInput: { min: 1 } }}
           sx={{ width: 180 }}
           helperText="Min: 1 minute"
         />

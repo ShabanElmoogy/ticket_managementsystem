@@ -159,7 +159,7 @@ const EpicSubEpics: React.FC<Props> = ({ epicId, subEpics, isAdmin }) => {
       )}
 
       {/* Link sub-epic dialog */}
-      <Dialog open={linkOpen} onClose={() => setLinkOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={linkOpen} onClose={() => setLinkOpen(false)} maxWidth="sm" fullWidth disableScrollLock>
         <DialogTitle>Add Sub-Epic</DialogTitle>
         <DialogContent>
           <Autocomplete

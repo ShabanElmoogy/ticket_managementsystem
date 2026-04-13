@@ -117,6 +117,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
         onClose={() => setOpen(false)}
         maxWidth="md"
         fullWidth
+        disableScrollLock
         PaperProps={{
           sx: {
             position: 'fixed',
@@ -197,7 +198,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
       </Dialog>
 
       {/* Settings Dialog */}
-      <Dialog open={showSettings} onClose={() => setShowSettings(false)} maxWidth="sm" fullWidth>
+      <Dialog open={showSettings} onClose={() => setShowSettings(false)} maxWidth="sm" fullWidth disableScrollLock>
         <DialogTitle>Reminder Settings</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
@@ -219,7 +220,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
               onChange={(e) => setTempSettings({ ...tempSettings, reminderInterval: parseInt(e.target.value) || 60 })}
               disabled={!tempSettings.reminderEnabled}
               helperText="How often to check for delayed tickets"
-              inputProps={{ min: 1, max: 1440 }}
+              slotProps={{ htmlInput: { min: 1, max: 1440 } }}
             />
             <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
               Reminders will show tickets that are overdue or haven't been updated within the specified interval.

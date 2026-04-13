@@ -253,7 +253,7 @@ const EpicsPage: React.FC = () => {
             size="small" placeholder="Search epics…" value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ flex: '1 1 160px', minWidth: 0 }}
-            InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
           />
           <FormControl size="small" sx={{ flex: '1 1 120px', minWidth: 0 }}>
             <InputLabel>Status</InputLabel>
@@ -271,7 +271,7 @@ const EpicsPage: React.FC = () => {
               <TextField
                 {...params}
                 placeholder="Tag…"
-                InputProps={{ ...params.InputProps, startAdornment: <><Label fontSize="small" sx={{ ml: 0.5, mr: 0.5, color: 'text.secondary' }} />{params.InputProps.startAdornment}</> }}
+                slotProps={{ input: { ...params.InputProps, startAdornment: <><Label fontSize="small" sx={{ ml: 0.5, mr: 0.5, color: 'text.secondary' }} />{params.InputProps.startAdornment}</> } }}
               />
             )}
             renderOption={(props, option) => (

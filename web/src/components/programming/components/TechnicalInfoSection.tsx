@@ -69,7 +69,7 @@ const TechnicalInfoSection: React.FC<Props> = ({ details, canEdit, onSave, loadi
           disabled={!canEdit}
           size="small"
           sx={{ flex: 1 }}
-          inputProps={{ min: 0, step: 0.5 }}
+          slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
         />
         <TextField
           label="Actual Hours Spent"
@@ -79,7 +79,7 @@ const TechnicalInfoSection: React.FC<Props> = ({ details, canEdit, onSave, loadi
           disabled={!canEdit}
           size="small"
           sx={{ flex: 1 }}
-          inputProps={{ min: 0, step: 0.5 }}
+          slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
         />
       </Box>
       {canEdit && (

@@ -17,7 +17,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   employees,
 }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>Create New Ticketssss</DialogTitle>
       <CreateTicketForm
         open={open}

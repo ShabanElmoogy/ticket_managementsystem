@@ -17,12 +17,14 @@ const HeadingBlockEditor: React.FC<{
         placeholder="Heading"
         value={block.text}
         onChange={(e) => onChange({ text: e.target.value })}
-        InputProps={{
-          sx: {
-            fontSize: 28,
-            fontWeight: 700,
-            textAlign: settings.align || 'left',
-            color: settings.color || 'inherit',
+        slotProps={{
+          input: {
+            sx: {
+              fontSize: 28,
+              fontWeight: 700,
+              textAlign: settings.align || 'left',
+              color: settings.color || 'inherit',
+            },
           },
         }}
       />

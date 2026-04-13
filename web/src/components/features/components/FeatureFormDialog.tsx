@@ -89,7 +89,7 @@ const FeatureFormDialog: React.FC<Props> = ({ open, editing, isAdmin, onClose, o
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>{editing ? 'Edit Feature Request' : 'New Feature Request'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>

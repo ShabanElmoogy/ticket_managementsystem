@@ -43,7 +43,7 @@ const TemplatePicker: React.FC<Props> = ({ selected, onSelect }) => {
         <TextField
           size="small" placeholder="Search templates…" value={search}
           onChange={(e) => setSearch(e.target.value)} sx={{ flex: 1, minWidth: 160 }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+          slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
         />
         {categories.map((cat) => (
           <Chip

@@ -60,11 +60,13 @@ const CodeBlockEditor: React.FC<{
         placeholder="Enter your code here..."
         value={block.code}
         onChange={(e) => onChange({ code: e.target.value })}
-        InputProps={{
-          sx: {
-            fontFamily: 'monospace',
-            textAlign: settings.align || 'left',
-            color: settings.color || 'inherit',
+        slotProps={{
+          input: {
+            sx: {
+              fontFamily: 'monospace',
+              textAlign: settings.align || 'left',
+              color: settings.color || 'inherit',
+            },
           },
         }}
       />

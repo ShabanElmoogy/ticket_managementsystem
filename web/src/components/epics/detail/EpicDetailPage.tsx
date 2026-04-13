@@ -203,7 +203,7 @@ const EpicDetailPage: React.FC = () => {
         <Alert severity={snack?.severity} onClose={() => setSnack(null)}>{snack?.msg}</Alert>
       </Snackbar>
 
-      <Dialog open={suggestActive} onClose={() => setSuggestActive(false)} maxWidth="xs" fullWidth>
+      <Dialog open={suggestActive} onClose={() => setSuggestActive(false)} maxWidth="xs" fullWidth disableScrollLock>
         <DialogTitle>Set Epic to Active?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
@@ -218,7 +218,7 @@ const EpicDetailPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={!!autoCloseData} onClose={() => setAutoCloseData(null)} maxWidth="xs" fullWidth>
+      <Dialog open={!!autoCloseData} onClose={() => setAutoCloseData(null)} maxWidth="xs" fullWidth disableScrollLock>
         <DialogTitle>
           {autoCloseData?.openTickets === 0 ? '🎉 Mark Epic as Completed?' : 'All Features Shipped'}
         </DialogTitle>

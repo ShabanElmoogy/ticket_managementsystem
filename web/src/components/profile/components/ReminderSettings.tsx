@@ -39,7 +39,7 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
         }
         disabled={!reminderSettings.reminderEnabled}
         helperText="How often to check for delayed tickets"
-        inputProps={{ min: 1, max: 1440 }}
+        slotProps={{ htmlInput: { min: 1, max: 1440 } }}
       />
     </>
   );

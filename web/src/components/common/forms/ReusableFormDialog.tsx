@@ -119,7 +119,7 @@ function ReusableFormDialog<T extends FieldValues>({
   const submit = handleSubmit(onSubmit);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ pt: 1 }}>
@@ -382,10 +382,12 @@ function ReusableFormDialog<T extends FieldValues>({
                     required={field.required}
                     multiline={field.type === "multiline"}
                     rows={field.type === "multiline" ? field.rows || 3 : undefined}
-                    inputProps={{
-                      min: field.min,
-                      max: field.max,
-                      step: field.step,
+                    slotProps={{
+                      htmlInput: {
+                        min: field.min,
+                        max: field.max,
+                        step: field.step,
+                      },
                     }}
                     fullWidth
                     autoComplete="off"

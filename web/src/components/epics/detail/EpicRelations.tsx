@@ -146,7 +146,7 @@ const EpicRelations: React.FC<Props> = ({ epicId, isAdmin }) => {
       )}
 
       {/* Add relation dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth disableScrollLock>
         <DialogTitle>Add Relation</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>

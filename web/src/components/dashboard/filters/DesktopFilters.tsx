@@ -99,19 +99,21 @@ const DesktopFilters: React.FC<Props> = memo(({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{ flex: '1 1 180px', minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery && (
-              <InputAdornment position="end">
-                <Button size="small" onClick={() => setSearchQuery('')} sx={{ minWidth: 'auto', p: 0.5 }}>
-                  <ClearIcon sx={{ fontSize: 16 }} />
-                </Button>
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchQuery && (
+                <InputAdornment position="end">
+                  <Button size="small" onClick={() => setSearchQuery('')} sx={{ minWidth: 'auto', p: 0.5 }}>
+                    <ClearIcon sx={{ fontSize: 16 }} />
+                  </Button>
+                </InputAdornment>
+              ),
+            },
           }}
         />
 

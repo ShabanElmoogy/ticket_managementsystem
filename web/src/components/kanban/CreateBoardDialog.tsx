@@ -174,7 +174,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle>Create New Board</DialogTitle>
       
       <DialogContent>
@@ -268,7 +268,7 @@ const CreateBoardDialog: React.FC<CreateBoardDialogProps> = ({
                     fullWidth
                     value={column.wipLimit}
                     onChange={(e) => updateColumn(index, 'wipLimit', e.target.value)}
-                    inputProps={{ min: 0 }}
+                    slotProps={{ htmlInput: { min: 0 } }}
                   />
                 </Grid>
                 <Grid size={{xs:2}}>

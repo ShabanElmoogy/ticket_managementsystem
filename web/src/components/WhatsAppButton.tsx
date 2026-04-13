@@ -129,7 +129,7 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
         </IconButton>
       </Tooltip>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth disableScrollLock>
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
             <WhatsAppIcon sx={{ color: '#25D366' }} />

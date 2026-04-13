@@ -41,7 +41,7 @@ const LinkFeatureDialog: React.FC<Props> = ({ open, epicId, linkedIds, onClose, 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>Link Feature Request</DialogTitle>
       <DialogContent>
         <FormControl fullWidth size="small" sx={{ mt: 1 }}>

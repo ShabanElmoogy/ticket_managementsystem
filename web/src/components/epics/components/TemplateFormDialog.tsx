@@ -86,7 +86,7 @@ const TemplateFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle>{editing ? 'Edit Template' : 'New Epic Template'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -130,7 +130,7 @@ const TemplateFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit 
                   placeholder={`Feature ${fi + 1} title`}
                   size="small" variant="standard"
                   sx={{ flex: 1, '& .MuiInput-root': { fontSize: 14, fontWeight: 600 } }}
-                  inputProps={{ style: { padding: '2px 0' } }}
+                  slotProps={{ htmlInput: { style: { padding: '2px 0' } } }}
                 />
                 <Chip label={`${(feat.steps ?? []).length} steps`} size="small" variant="outlined" sx={{ fontSize: 10 }} />
                 <Tooltip title="Remove feature">

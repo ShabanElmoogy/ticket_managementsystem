@@ -25,7 +25,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ open, onClose }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth disableScrollLock>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         User Profile
         <IconButton onClick={onClose} size="small">

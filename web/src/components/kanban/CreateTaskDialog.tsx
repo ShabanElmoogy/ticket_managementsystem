@@ -96,7 +96,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth disableScrollLock>
         <DialogTitle>Create New Task</DialogTitle>
         
         <DialogContent>

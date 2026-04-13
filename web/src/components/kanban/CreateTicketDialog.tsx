@@ -172,7 +172,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth disableScrollLock>
         <DialogTitle>Create New Ticket</DialogTitle>
         
         <DialogContent>
@@ -295,7 +295,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                 fullWidth
                 value={formData.estimatedHours}
                 onChange={(e) => setFormData(prev => ({ ...prev, estimatedHours: e.target.value }))}
-                inputProps={{ min: 0, step: 0.5 }}
+                slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
               />
             </Grid>
 

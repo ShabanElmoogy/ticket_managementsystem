@@ -138,7 +138,7 @@ const EpicContributors: React.FC<Props> = ({ epicId, isAdmin }) => {
       )}
 
       {/* Add dialog */}
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth disableScrollLock>
         <DialogTitle>Add Contributor</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
@@ -177,7 +177,7 @@ const EpicContributors: React.FC<Props> = ({ epicId, isAdmin }) => {
       </Dialog>
 
       {/* Edit role dialog */}
-      <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} maxWidth="xs" fullWidth>
+      <Dialog open={!!editTarget} onClose={() => setEditTarget(null)} maxWidth="xs" fullWidth disableScrollLock>
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
             <Edit fontSize="small" />

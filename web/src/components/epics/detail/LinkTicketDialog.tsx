@@ -48,7 +48,7 @@ const LinkTicketDialog: React.FC<Props> = ({ open, epicId, linkedTicketIds, onCl
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>Link Ticket to Epic</DialogTitle>
       <DialogContent>
         <Autocomplete

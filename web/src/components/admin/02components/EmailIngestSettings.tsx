@@ -81,13 +81,13 @@ const EmailIngestSettings: React.FC = () => {
           </Typography>
         </Box>
 
-        <TextField label="IMAP Host" value={config.host || '—'} size="small" fullWidth InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_HOST" />
+        <TextField label="IMAP Host" value={config.host || '—'} size="small" fullWidth slotProps={{ input: { readOnly: true } }} helperText="EMAIL_INGEST_HOST" />
         <Box display="flex" gap={2}>
-          <TextField label="Port" value={config.port} size="small" sx={{ width: 100 }} InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_PORT" />
-          <TextField label="Secure (TLS)" value={config.secure ? 'Yes' : 'No'} size="small" sx={{ width: 120 }} InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_SECURE" />
-          <TextField label="Poll Interval" value={`${config.intervalMinutes} min`} size="small" sx={{ flex: 1 }} InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_INTERVAL_MINUTES" />
+          <TextField label="Port" value={config.port} size="small" sx={{ width: 100 }} slotProps={{ input: { readOnly: true } }} helperText="EMAIL_INGEST_PORT" />
+          <TextField label="Secure (TLS)" value={config.secure ? 'Yes' : 'No'} size="small" sx={{ width: 120 }} slotProps={{ input: { readOnly: true } }} helperText="EMAIL_INGEST_SECURE" />
+          <TextField label="Poll Interval" value={`${config.intervalMinutes} min`} size="small" sx={{ flex: 1 }} slotProps={{ input: { readOnly: true } }} helperText="EMAIL_INGEST_INTERVAL_MINUTES" />
         </Box>
-        <TextField label="Mailbox User" value={config.user || '—'} size="small" fullWidth InputProps={{ readOnly: true }} helperText="EMAIL_INGEST_USER" />
+        <TextField label="Mailbox User" value={config.user || '—'} size="small" fullWidth slotProps={{ input: { readOnly: true } }} helperText="EMAIL_INGEST_USER" />
       </Box>
 
       <Divider sx={{ my: 3 }} />

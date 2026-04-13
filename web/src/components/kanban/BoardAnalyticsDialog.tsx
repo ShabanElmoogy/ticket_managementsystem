@@ -137,7 +137,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth disableScrollLock>
         <DialogTitle>Board Analytics</DialogTitle>
         
         <DialogContent>

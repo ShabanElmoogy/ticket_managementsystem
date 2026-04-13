@@ -109,7 +109,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>{editing ? 'Edit Epic' : 'New Epic'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -200,7 +200,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
             size="small"
             fullWidth
             type="number"
-            inputProps={{ min: 1 }}
+            slotProps={{ htmlInput: { min: 1 } }}
             placeholder="e.g. 14"
             helperText="How many working days is this epic expected to take?"
           />

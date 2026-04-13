@@ -133,7 +133,7 @@ const FeaturesPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ flex: '1 1 180px' }}
-            InputProps={{ startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
           />
 
           <FormControl size="small" sx={{ flex: '1 1 140px' }}>

@@ -14,7 +14,7 @@ const EstimatedHoursInput = memo(({ value, onChange }: EstimatedHoursInputProps)
     size="small"
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    inputProps={{ min: 0, step: 0.5 }}
+    slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
     sx={{
       "& .MuiOutlinedInput-root": {
         borderRadius: 2,

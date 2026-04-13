@@ -148,7 +148,7 @@ const ReminderSettings: React.FC = () => {
               onChange={(e) => setTempSettings({ ...tempSettings, reminderInterval: parseInt(e.target.value) || 60 })}
               disabled={!tempSettings.reminderEnabled}
               helperText="How often to check for delayed tickets (1-1440 minutes)"
-              inputProps={{ min: 1, max: 1440 }}
+              slotProps={{ htmlInput: { min: 1, max: 1440 } }}
               sx={{ mb: 2 }}
             />
 

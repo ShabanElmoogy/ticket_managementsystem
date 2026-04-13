@@ -41,13 +41,12 @@ export const getTicketsColumns = (handlers: {
     {
       field: "title",
       headerName: "Title",
-      align : "center",
-      headerAlign : "center",
-      width: 250,
+      flex: 1,
+      minWidth: 200,
       renderCell: (params) => (
-        <Box sx={{ width: "100%",height:"100%", display: "flex", justifyContent: "center",alignItems : "center" }}>
-          <Typography variant="body2" fontWeight="medium" align="center">
-            {params.value || "-"}
+        <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" fontWeight="medium" noWrap title={params.value}>
+            {params.value || '-'}
           </Typography>
         </Box>
       ),

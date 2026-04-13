@@ -74,7 +74,7 @@ const StepDialog: React.FC<StepDialogProps> = ({ open, editing, employees, progr
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle>{editing ? 'Edit Step' : 'Add Step'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -177,7 +177,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <ConfirmationNumber fontSize="small" color="primary" />
         Create Ticket for Step

@@ -99,7 +99,7 @@ const SlaSettings: React.FC = () => {
               size="small"
               value={config[key]}
               onChange={(e) => setConfig((c) => ({ ...c, [key]: Math.max(1, parseInt(e.target.value) || 1) }))}
-              inputProps={{ min: 1 }}
+              slotProps={{ htmlInput: { min: 1 } }}
               sx={{ width: 120 }}
             />
           </Box>

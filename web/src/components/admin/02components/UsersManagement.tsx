@@ -22,7 +22,7 @@ import { isSuperAdmin, isTenantAdmin, Role } from '../../../types/roles';
 const SeatsFullDialog: React.FC<{ open: boolean; onClose: () => void; used: number; total: number }> = ({
   open, onClose, used, total,
 }) => (
-  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableScrollLock>
     <DialogTitle>Seats limit reached</DialogTitle>
     <DialogContent>
       <Alert severity="warning" sx={{ mt: 1 }}>
@@ -292,7 +292,7 @@ export function UsersManagement() {
           loading={forceDeleteLoading}
         />
 
-        <Dialog open={!!resetPwdUser} onClose={() => setResetPwdUser(null)} maxWidth="xs" fullWidth>
+        <Dialog open={!!resetPwdUser} onClose={() => setResetPwdUser(null)} maxWidth="xs" fullWidth disableScrollLock>
           <DialogTitle>Reset Password — {resetPwdUser?.name}</DialogTitle>
           <DialogContent>
             <TextField

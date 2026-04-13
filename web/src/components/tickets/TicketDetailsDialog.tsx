@@ -377,7 +377,7 @@ const TicketDetailsDialog: React.FC<TicketDetailsDialogProps> = ({
                 size="small"
                 value={actualHoursInput}
                 onChange={(e) => setActualHoursInput(e.target.value)}
-                inputProps={{ min: 0, step: 0.5 }}
+                slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
                 sx={{ width: 140 }}
               />
               <Button
