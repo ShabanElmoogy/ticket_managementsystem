@@ -1,17 +1,10 @@
-import React from "react";
+import React from 'react';
 import {
-  Drawer,
-  Toolbar,
-  Divider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
-import type { SxProps, Theme } from "@mui/material/styles";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon,
+  ListItemText, Toolbar, Divider, Typography, Tooltip,
+} from '@mui/material';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 export interface MenuItem {
   id: string;
@@ -22,7 +15,6 @@ export interface MenuItem {
 
 export interface AdminSidebarProps {
   drawerWidth?: number;
-  isMobile?: boolean;
   mobileOpen?: boolean;
   desktopOpen?: boolean;
   items: MenuItem[];
@@ -34,9 +26,63 @@ export interface AdminSidebarProps {
 
 const DEFAULT_DRAWER_WIDTH = 240;
 
+const SidebarContent: React.FC<Pick<AdminSidebarProps, 'items' | 'selectedId' | 'onSelect' | 'onMobileClose'>> = ({
+  items, selectedId, onSelect, onMobileClose,
+}) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Toolbar sx={{ gap: 1 }}>
+      <AdminPanelSettingsIcon color="primary" fontSize="small" />
+      <Typography variant="h6" noWrap fontWeight={700} sx={{ flexGrow: 1 }}>
+        Admin Panel
+      </Typography>
+    </Toolbar>
+
+    <Divider />
+
+    <List sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+      {items.map((item) => (
+        <ListItem key={item.id} disablePadding>
+          <Tooltip
+            title={item.disabled ? 'Not available — account restricted' : ''}
+            placement="right"
+            disableHoverListener={!item.disabled}
+          >
+            <span style={{ width: '100%' }}>
+              <ListItemButton
+                selected={selectedId === item.id}
+                disabled={item.disabled}
+                onClick={() => {
+                  onSelect(item.id);
+                  onMobileClose?.();
+                }}
+                sx={{
+                  mx: 1,
+                  borderRadius: 1.5,
+                  mb: 0.25,
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  slotProps={{ primary: { variant: 'body2', fontWeight: selectedId === item.id ? 700 : 400 } }}
+                />
+              </ListItemButton>
+            </span>
+          </Tooltip>
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+);
+
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
   drawerWidth = DEFAULT_DRAWER_WIDTH,
-  isMobile,
   mobileOpen,
   desktopOpen = true,
   items,
@@ -45,65 +91,29 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onMobileClose,
   sx,
 }) => {
-  const menu = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          Admin Panel
-        </Typography>
-        <AdminPanelSettingsIcon />
-      </Toolbar>
-
-      <Divider sx={{ mt: 0.8  }} />
-
-      <List>
-        {items.map((item) => (
-          <ListItem key={item.id} disablePadding>
-            <ListItemButton
-              selected={selectedId === item.id}
-              disabled={item.disabled}
-              onClick={() => {
-                onSelect(item.id);
-                if (isMobile && onMobileClose) onMobileClose();
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
-  );
+  const paperSx = { boxSizing: 'border-box' as const, width: drawerWidth, ...(sx as any) };
+  const content = <SidebarContent items={items} selectedId={selectedId} onSelect={onSelect} onMobileClose={onMobileClose} />;
 
   return (
     <nav>
-      {/* Mobile: temporary overlay drawer */}
+      {/* Mobile — temporary overlay */}
       <Drawer
         variant="temporary"
         open={!!mobileOpen}
         onClose={onMobileClose}
         ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          ...(sx as any),
-        }}
+        sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': paperSx }}
       >
-        {menu}
+        {content}
       </Drawer>
 
-      {/* Desktop: persistent drawer — MUI handles the reserved space internally */}
+      {/* Desktop — persistent, MUI manages its own space */}
       <Drawer
         variant="persistent"
         open={desktopOpen}
-        sx={{
-          display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          ...(sx as any),
-        }}
+        sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': paperSx }}
       >
-        {menu}
+        {content}
       </Drawer>
     </nav>
   );

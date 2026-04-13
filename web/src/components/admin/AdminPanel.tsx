@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, useTheme, useMediaQuery, Alert } from "@mui/material";
+import { Box, useTheme, Alert } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
@@ -14,7 +14,7 @@ import {
 } from "@mui/icons-material";
 import { useAuthStore } from "../../stores/authStore";
 import { isSuperAdmin } from "../../types/roles";
-import { useTenantSuspended, useTenantStatus } from "../../stores";
+import { useTenantStatus } from "../../stores";
 import CustomersManagement from "./02components/CustomersManagement";
 import ApplicationsManagement from "./02components/ApplicationsManagement";
 import TicketsManagement from "./02components/TicketsManagement";
@@ -39,14 +39,9 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
   const { user } = useAuthStore();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSuperAdminUser = isSuperAdmin(user?.role);
-  const suspended = useTenantSuspended();
   const tenantStatus = useTenantStatus();
-  // SUSPENDED = fully blocked (no view, no actions)
-  // PAST_DUE / EXPIRED = read-only (can view, actions disabled via useAdminReadonly)
   const fullyBlocked = tenantStatus === 'SUSPENDED';
-  const readOnly = suspended && !fullyBlocked; // PAST_DUE or EXPIRED
 
   // Items that make API calls which fail when tenant is suspended
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -77,7 +72,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         { id: "settings", label: "Settings", icon: <SettingsIcon />, disabled: fullyBlocked },
       ];
 
-  const renderContent = () => {
+  const renderView = () => {
     if (fullyBlocked) {
       return (
         <Alert severity="error" sx={{ mt: 2 }}>
@@ -85,25 +80,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         </Alert>
       );
     }
-    if (readOnly) {
-      return renderView();
-    }
-    return renderView();
-  };
-
-  const renderView = () => {
     switch (selectedView) {
-      case "tenants":      return <TenantsManagement />;
-      case "users":        return <UsersManagement />;
-      case "settings":     return <AdminSettings />;
-      case "customers":    return <CustomersManagement />;
-      case "applications": return <ApplicationsManagement />;
-      case "tickets":   return <TicketsManagement />;
-      case "templates":  return <TemplatesManagement />;
-      case "tasks":     return <TasksManagement />;
-      case "reports":   return <ReportsManagement />;
-      case "docs":      return <DocsManagement />;
-      default:          return <AdminDashboard />;
+      case 'tenants':      return <TenantsManagement />;
+      case 'users':        return <UsersManagement />;
+      case 'settings':     return <AdminSettings />;
+      case 'customers':    return <CustomersManagement />;
+      case 'applications': return <ApplicationsManagement />;
+      case 'tickets':      return <TicketsManagement />;
+      case 'templates':    return <TemplatesManagement />;
+      case 'tasks':        return <TasksManagement />;
+      case 'reports':      return <ReportsManagement />;
+      case 'docs':         return <DocsManagement />;
+      default:             return <AdminDashboard />;
     }
   };
 
@@ -114,6 +102,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
       <AdminTopBar
         title={title}
         userEmail={user?.email}
+        userName={user?.name}
         drawerWidth={drawerWidth}
         desktopOpen={desktopOpen}
         onMobileToggle={handleMobileDrawerToggle}
@@ -123,7 +112,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
 
       <AdminSidebar
         drawerWidth={drawerWidth}
-        isMobile={isMobile}
         mobileOpen={mobileOpen}
         desktopOpen={desktopOpen}
         items={menuItems}
@@ -154,7 +142,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
           overflow: 'hidden',
         }}
       >
-        {renderContent()}
+        {renderView()}
       </Box>
     </Box>
   );
