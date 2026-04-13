@@ -1,15 +1,20 @@
 import React from 'react';
 import {
-  Box, Typography, FormControl, InputLabel, Select, MenuItem,
-  Alert, CircularProgress, Paper, Chip,
+  Box, Typography, Alert, CircularProgress, Paper, Chip,
 } from '@mui/material';
 import { AppButton } from '../../../shared/components';
+import { AppSelect } from '../../../shared/components/inputs/AppSelect';
 import { format } from 'date-fns';
 import { DATE_FORMATS } from '../../../stores/tenantStore';
 import type { DateFormatValue } from '../../../stores/tenantStore';
 import { useDateFormatSettings } from './hooks/useDateFormatSettings';
 
 const PREVIEW_DATE = new Date(2025, 11, 31); // 31 Dec 2025
+
+const options = DATE_FORMATS.map((f) => ({
+  value: f.value,
+  label: `${f.label}  →  ${format(PREVIEW_DATE, f.value)}`,
+}));
 
 const DateFormatSettings: React.FC = () => {
   const {
@@ -29,30 +34,14 @@ const DateFormatSettings: React.FC = () => {
       </Typography>
 
       <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, mb: 3 }}>
-
-        <FormControl fullWidth size="small">
-          <InputLabel>Date Format</InputLabel>
-          <Select
-            value={selected}
-            label="Date Format"
-            onChange={(e) => setSelected(e.target.value as DateFormatValue)}
-            MenuProps={{ disableScrollLock: true }}
-          >
-            {DATE_FORMATS.map((f) => (
-              <MenuItem key={f.value} value={f.value}>
-                <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" gap={2}>
-                  <Typography variant="body2">{f.label}</Typography>
-                  <Chip
-                    label={format(PREVIEW_DATE, f.value)}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.7rem', height: 20, fontFamily: 'monospace' }}
-                  />
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <AppSelect
+          label="Date Format"
+          value={selected}
+          onChange={(v) => setSelected(v as DateFormatValue)}
+          options={options}
+          size="small"
+          fullWidth
+        />
 
         <Box mt={2} display="flex" alignItems="center" gap={1}>
           <Typography variant="caption" color="text.secondary">Preview:</Typography>

@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { EscalationConfig } from '../types/types';
+import type { EscalationConfig, AlertState } from '../types/types';
 import { adminSettingsApi } from '../api/adminSettingsApi';
-
-interface AlertState {
-  type: 'success' | 'error';
-  msg: string;
-}
+import { schedulerSchema } from '../schemas/adminSettingsSchemas';
 
 export function useSchedulerSettings() {
   const [intervalMinutes, setIntervalMinutes] = useState<number | ''>('');
@@ -31,7 +27,11 @@ export function useSchedulerSettings() {
   }, []);
 
   const handleSave = async () => {
-    if (!intervalMinutes || Number(intervalMinutes) < 1) return;
+    const result = schedulerSchema.safeParse({ intervalMinutes: Number(intervalMinutes) });
+    if (!result.success) {
+      showAlert('error', result.error.issues[0].message);
+      return;
+    }
     setSaving(true);
     try {
       const r = await adminSettingsApi.saveEscalationSettings(Number(intervalMinutes));

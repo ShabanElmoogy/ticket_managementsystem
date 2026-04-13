@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { SlaConfig } from '../types/types';
+import type { SlaConfig, AlertState } from '../types/types';
 import { adminSettingsApi } from '../api/adminSettingsApi';
-
-interface AlertState {
-  type: 'success' | 'error';
-  msg: string;
-}
+import { slaSchema } from '../schemas/adminSettingsSchemas';
 
 const DEFAULT_CONFIG: SlaConfig = {
   slaUrgentHours: 4,
@@ -33,6 +29,11 @@ export function useSlaSettings() {
   }, []);
 
   const handleSave = async () => {
+    const result = slaSchema.safeParse(config);
+    if (!result.success) {
+      showAlert('error', result.error.issues[0].message);
+      return;
+    }
     setSaving(true);
     try {
       const updated = await adminSettingsApi.saveSlaSettings(config);

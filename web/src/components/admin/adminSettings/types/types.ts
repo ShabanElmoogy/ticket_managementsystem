@@ -22,3 +22,9 @@ export interface EscalationConfig {
 export interface EpicAutoCloseConfig {
   epicAutoClose: boolean;
 }
+
+/** Shared alert state used across all settings hooks */
+export interface AlertState {
+  type: 'success' | 'error' | 'info';
+  msg: string;
+}

@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
+import type { AlertState } from '../types/types';
 import { adminSettingsApi } from '../api/adminSettingsApi';
-
-interface AlertState {
-  type: 'success' | 'error';
-  msg: string;
-}
 
 export function useEpicAutoCloseSettings() {
   const [enabled, setEnabled] = useState(true);

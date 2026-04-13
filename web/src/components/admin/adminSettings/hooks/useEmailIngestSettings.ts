@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { EmailConfig } from '../types/types';
+import type { EmailConfig, AlertState } from '../types/types';
 import { adminSettingsApi } from '../api/adminSettingsApi';
-
-interface AlertState {
-  type: 'success' | 'error' | 'info';
-  msg: string;
-}
 
 export function useEmailIngestSettings() {
   const [config, setConfig] = useState<EmailConfig>({

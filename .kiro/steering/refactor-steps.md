@@ -112,8 +112,8 @@ export const ticketFormSchema = z.object({
   // Optional enum
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
 
-  // Required number
-  estimatedHours: z.number().min(0).max(999),
+  // Required number — use `error` not `invalid_type_error` (Zod v4)
+  estimatedHours: z.number({ error: 'Must be a number' }).min(0).max(999),
 
   // Optional number (null allowed)
   actualHours: z.number().min(0).nullable().optional(),
@@ -391,6 +391,7 @@ const resolvePalette = (palette: Record<string, unknown>, path: string): string 
 | `AppDataGrid` | `AdminDataGrid` | extends `DataGridProps` + `emptyMessage?, searchable?` | DataGrid with built-in search + empty state message |
 | `AppScrollToTop` | `ScrollToTop` | `threshold?, showProgress?, disableFixed?` | Floating scroll-to-top FAB |
 | `AppLanguageSelector` | `LanguageSelector` | — | Language switcher (EN/AR) |
+| `VerticalTabPanel` | — | `tabs: { label, icon, content }[], minHeight?, tabWidth?` | Vertical left-side tab layout — use for any settings/config panel |
 | `AppDashboardHeader` | `DashboardHeader` | `isFiltered?` | Dashboard overview heading |
 | `MetricCard` | — | `title, value, icon, color` | Single stat with icon badge |
 | `OverviewCard` | — | `title, total, active, activeLabel?, metricLabel?` | Summary with active rate % |

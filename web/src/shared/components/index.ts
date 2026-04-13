@@ -43,6 +43,8 @@ export type { AppPageHeaderProps } from './layout/AppPageHeader';
 export { default as AppDashboardHeader } from './layout/AppDashboardHeader';
 export { default as AppScrollToTop } from './layout/AppScrollToTop';
 export { default as AppLanguageSelector } from './layout/AppLanguageSelector';
+export { default as VerticalTabPanel } from './layout/VerticalTabPanel';
+export type { VerticalTab } from './layout/VerticalTabPanel';
 
 // feedback
 export { default as ErrorBoundary } from './feedback/ErrorBoundary';
