@@ -6,10 +6,11 @@ import {
   Settings as GeneralIcon,
   ConfirmationNumber as TicketsIcon,
 } from '@mui/icons-material';
-import EmailIngestSettings from '../adminSettings/EmailIngestSettings';
-import EpicAutoCloseSettings from '../adminSettings/EpicAutoCloseSettings';
-import GeneralSettings from '../adminSettings/GeneralSettings';
-import TicketsSettings from '../adminSettings/TicketsSettings';
+import { ErrorBoundary } from '../../../shared/components/feedback/ErrorBoundary';
+import EmailIngestSettings from './EmailIngestSettings';
+import EpicAutoCloseSettings from './EpicAutoCloseSettings';
+import GeneralSettings from './GeneralSettings';
+import TicketsSettings from './TicketsSettings';
 import { useAuthStore } from '../../../stores/authStore';
 import { isSuperAdmin } from '../../../types/roles';
 
@@ -41,6 +42,7 @@ const AdminSettings: React.FC = () => {
       ];
 
   return (
+    <ErrorBoundary>
     <Box>
       <Typography variant="h5" fontWeight={700} mb={3}>
         ⚙️ Settings
@@ -61,6 +63,7 @@ const AdminSettings: React.FC = () => {
         </TabPanel>
       ))}
     </Box>
+    </ErrorBoundary>
   );
 };
 

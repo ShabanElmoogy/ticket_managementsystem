@@ -27,7 +27,7 @@ import AdminSidebar from "./01layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
 import TenantsManagement from './tenantsManagement/TenantsManagement';
-import AdminSettings from './adminSettings/AdminSettings';
+import { AdminSettings } from './adminSettings';
 import TemplatesManagement from './templatesManagement/TemplatesManagement';
 
 const drawerWidth = 240;
