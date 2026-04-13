@@ -10,9 +10,9 @@ import { useForm, Controller } from "react-hook-form";
 import type { FieldValues, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodSchema } from "zod";
-import LoadingButton from "../LoadingButton";
-import MySelect from "../AppSelect";
-import AppTextField from "../AppTextField";
+import LoadingButton from "../buttons/AppButton";
+import MySelect from "../inputs/AppSelect";
+import AppTextField from "../inputs/AppTextField";
 import { getPickerDateFormat } from "../../../stores/tenantStore";
 
 export interface SelectOption {

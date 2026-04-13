@@ -16,7 +16,7 @@ import { createMenuItems } from '../../config/menuItems';
 // Component imports
 import HeaderLogo from './header/HeaderLogo';
 import UserAvatar from './header/UserAvatar';
-import LanguageSelector from '../common/LanguageSelector';
+import LanguageSelector from '../common/layout/AppLanguageSelector';
 
 import ThemeToggleButton from './header/ThemeToggleButton';
 import MenuButton from './header/MenuButton';

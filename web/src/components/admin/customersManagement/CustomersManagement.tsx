@@ -2,7 +2,7 @@ import { Box, Snackbar, Alert } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import { CustomersTable, CustomerFormDialog } from '.';
 import { customersKeys } from './api/queryKeys';

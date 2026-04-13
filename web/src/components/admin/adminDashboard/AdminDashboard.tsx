@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
 import { MetricCard, OverviewCard } from '../../common';
 import { useAdminDashboard } from './hooks/useAdminDashboard';
 import { STAT_CARDS_CONFIG } from './utils/statCardsConfig';

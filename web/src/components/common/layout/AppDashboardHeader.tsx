@@ -6,7 +6,7 @@ interface DashboardHeaderProps {
   isFiltered?: boolean;
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+const AppDashboardHeader: React.FC<DashboardHeaderProps> = ({
   isFiltered = false,
 }) => {
   return (
@@ -32,4 +32,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   );
 };
 
-export default DashboardHeader;
+export default AppDashboardHeader;
+
+// Legacy alias
+export { AppDashboardHeader as DashboardHeader };

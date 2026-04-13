@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, Box, Fade, useTheme } from "@mui/material";
 import type { UserStats } from "../../../../services/api";
-import StatCard from "../../../common/StatCard";
+import StatCard from "../../../common/data-display/StatCard";
 import type { StatItem } from "../../../dashboard/types/types";
 import {
   PeopleAlt as TotalIcon,

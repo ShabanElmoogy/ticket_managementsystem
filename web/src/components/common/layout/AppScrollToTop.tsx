@@ -8,7 +8,7 @@ interface ScrollToTopProps {
   disableFixed?: boolean; // If true, do not use fixed positioning
 }
 
-const ScrollToTop: React.FC<ScrollToTopProps> = ({ 
+const AppScrollToTop: React.FC<ScrollToTopProps> = ({ 
   threshold = 300, 
   showProgress = true, 
   disableFixed = false
@@ -123,4 +123,7 @@ const ScrollToTop: React.FC<ScrollToTopProps> = ({
   );
 };
 
-export default ScrollToTop;
+export default AppScrollToTop;
+
+// Legacy alias
+export { AppScrollToTop as ScrollToTop };

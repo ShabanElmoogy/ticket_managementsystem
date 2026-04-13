@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,26 +7,34 @@ import {
   Button,
   Typography,
   Box,
-  TextField,
   Alert,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import AppTextField from './inputs/AppTextField';
 
-interface ConfirmTextDialogProps {
+export interface AppConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title?: string;
   message?: React.ReactNode;
-  confirmWord?: string; // Word the user must type to enable confirm
+  /** Word the user must type to enable confirm */
+  confirmWord?: string;
   loading?: boolean;
-  errorText?: string; // Optional extra warning text
+  /** Optional extra warning text */
+  errorText?: string;
+  /** Custom confirm button label. Default: 'Delete Related Data' */
+  confirmLabel?: string;
+  /** Custom cancel button label. Default: 'Cancel' */
+  cancelLabel?: string;
+  /** Custom confirm button color. Default: 'error' */
+  confirmColor?: 'error' | 'warning' | 'primary';
 }
 
-const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
+const AppConfirmDialog: React.FC<AppConfirmDialogProps> = ({
   open,
   onClose,
   onConfirm,
@@ -35,16 +43,23 @@ const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
   confirmWord = 'DELETE',
   loading = false,
   errorText,
+  confirmLabel = 'Delete Related Data',
+  cancelLabel = 'Cancel',
+  confirmColor = 'error',
 }) => {
   const [value, setValue] = useState('');
   const [isValid, setIsValid] = useState(false);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Reset when opened/closed
     if (!open) {
       setValue('');
       setIsValid(false);
     }
+  }, [open]);
+
+  useEffect(() => {
+    if (open) setTimeout(() => firstFieldRef.current?.focus(), 100);
   }, [open]);
 
   useEffect(() => {
@@ -57,6 +72,7 @@ const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      disableScrollLock
       PaperProps={{ sx: { borderRadius: 3 } }}
     >
       <DialogTitle sx={{ pb: 1 }}>
@@ -100,33 +116,37 @@ const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
           This action will also delete related data and cannot be undone.
         </Typography>
 
-        <TextField
+        <AppTextField
+          inputRef={firstFieldRef}
           fullWidth
           label={`Type ${confirmWord} to confirm`}
           placeholder={confirmWord}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          autoFocus
+          showClearButton={false}
         />
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose} disabled={loading} sx={{ borderRadius: 2 }}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button
           onClick={onConfirm}
           variant="contained"
-          color="error"
+          color={confirmColor}
           disabled={!isValid || loading}
           startIcon={loading ? undefined : <DeleteIcon />}
           sx={{ borderRadius: 2, minWidth: 120 }}
         >
-          {loading ? 'Deleting...' : 'Delete Related Data'}
+          {loading ? `${confirmLabel}ing…` : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default ConfirmTextDialog;
+export default AppConfirmDialog;
+
+// Legacy alias
+export { AppConfirmDialog as ConfirmTextDialog };

@@ -11,7 +11,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { changeLanguage, getCurrentLanguage } from '../../i18n';
 
-const LanguageSelector: React.FC = () => {
+const AppLanguageSelector: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());
 
   // Listen for language changes
@@ -143,4 +143,7 @@ const LanguageSelector: React.FC = () => {
   );
 };
 
-export default LanguageSelector;
+export default AppLanguageSelector;
+
+// Legacy alias
+export { AppLanguageSelector as LanguageSelector };

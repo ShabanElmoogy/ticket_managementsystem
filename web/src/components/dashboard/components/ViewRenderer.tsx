@@ -2,7 +2,7 @@ import React from 'react';
 import AdminPanel from '../../admin/AdminPanel';
 import KanbanPage from '../../kanban/KanbanPage';
 import DocsGallery from '../../admin/docs/DocsGallery';
-import ErrorBoundary from '../../common/ErrorBoundary';
+import ErrorBoundary from '../../common/feedback/ErrorBoundary';
 import DashboardContent from './DashboardContent';
 import DashboardOverlays from './DashboardOverlays';
 import type { UseDashboardReturn } from '../hooks';

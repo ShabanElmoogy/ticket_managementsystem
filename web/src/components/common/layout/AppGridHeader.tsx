@@ -5,7 +5,7 @@ import AddCircleIcon from '@mui/icons-material/Add';
 import type { ReactNode, ElementType } from 'react';
 import { useAdminReadonly } from '../admin/AdminReadonlyContext';
 
-interface MyGridHeaderProps {
+export interface AppGridHeaderProps {
   title: ReactNode;
   onAdd?: () => void;
   addButtonText?: string;
@@ -15,20 +15,20 @@ interface MyGridHeaderProps {
   icon?: ElementType;
 }
 
-const MyGridHeader = ({ 
-  title, 
-  onAdd, 
-  addButtonText = "Add", 
+const AppGridHeader = ({
+  title,
+  onAdd,
+  addButtonText = "Add",
   addTooltip = "Add new item",
   leftActions,
   rightActions,
-  icon: Icon 
-}: MyGridHeaderProps) => {
+  icon: Icon,
+}: AppGridHeaderProps) => {
   const readonly = useAdminReadonly();
   return (
-    <Card 
-      elevation={2} 
-      sx={{ 
+    <Card
+      elevation={2}
+      sx={{
         mb: 3,
         background: (theme) => `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.03)} 100%)`,
         borderLeft: (theme) => `4px solid ${theme.palette.primary.main}`,
@@ -38,27 +38,27 @@ const MyGridHeader = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {Icon && (
-              <Box 
-                sx={{ 
-                  p: 1.5, 
-                  borderRadius: 2, 
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
                   backgroundColor: (theme) => theme.palette.primary.main,
                   color: (theme) => theme.palette.primary.contrastText,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
                 }}
               >
                 <Icon />
               </Box>
             )}
-            <Typography 
-              variant="h4" 
-              component="h1" 
-              sx={{ 
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
                 fontWeight: 600,
                 color: (theme) => theme.palette.text.primary,
-                mb: 0
+                mb: 0,
               }}
             >
               {title}
@@ -77,21 +77,21 @@ const MyGridHeader = ({
                     onClick={onAdd}
                     size="large"
                     disabled={readonly}
-                  sx={{ 
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1.5,
-                  boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
-                  '&:hover': {
-                  boxShadow: (theme) => `0 6px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
-                  transform: 'translateY(-1px)',
-                  },
-                  transition: 'all 0.2s ease-in-out',
-                  }}
+                    sx={{
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      px: 3,
+                      py: 1.5,
+                      boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
+                      '&:hover': {
+                        boxShadow: (theme) => `0 6px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
                   >
-                  {addButtonText}
-                </Button>
+                    {addButtonText}
+                  </Button>
                 </span>
               </Tooltip>
             )}
@@ -102,4 +102,7 @@ const MyGridHeader = ({
   );
 };
 
-export default MyGridHeader;
+export default AppGridHeader;
+
+// Legacy alias
+export { AppGridHeader as MyGridHeader };

@@ -3,9 +3,9 @@ import React from "react";
 import { Card, CardContent, Box, Fade, useTheme, useMediaQuery } from "@mui/material";
 import { type StatsCardsProps } from "../types/types";
 import { CreateStatItems } from "../../../config/statItems";
-import DashboardHeader from "../../common/DashboardHeader";
+import DashboardHeader from "../../common/layout/AppDashboardHeader";
 import ActiveFiltersDisplay from "../statscards/ActiveFiltersDisplay";
-import StatCard from "../../common/StatCard";
+import StatCard from "../../common/data-display/StatCard";
 
 const StatsCards: React.FC<StatsCardsProps> = ({
   stats,

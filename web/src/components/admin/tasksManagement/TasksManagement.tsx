@@ -4,7 +4,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import AddTaskIcon from '@mui/icons-material/AddTask';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import { TasksTable, TaskFormDialog } from '.';
 import { tasksApi } from './api/tasks';

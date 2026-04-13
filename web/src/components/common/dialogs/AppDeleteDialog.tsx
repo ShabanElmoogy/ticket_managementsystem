@@ -14,7 +14,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 
-interface DeleteConfirmDialogProps {
+export interface AppDeleteDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -25,9 +25,16 @@ interface DeleteConfirmDialogProps {
   loading?: boolean;
   warningMessage?: string;
   onForceDelete?: () => void;
+  /** Show a secondary "soft delete" option */
+  softDeleteLabel?: string;
+  onSoftDelete?: () => void;
+  /** Custom confirm button label. Default: 'Delete' */
+  confirmLabel?: string;
+  /** Custom cancel button label. Default: 'Cancel' */
+  cancelLabel?: string;
 }
 
-const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
+const AppDeleteDialog: React.FC<AppDeleteDialogProps> = ({
   open,
   onClose,
   onConfirm,
@@ -38,11 +45,17 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   loading = false,
   warningMessage,
   onForceDelete,
+  softDeleteLabel,
+  onSoftDelete,
+  confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
 }) => {
   const defaultTitle = `Delete ${itemType}`;
-  const defaultMessage = itemName 
+  const defaultMessage = itemName
     ? `Are you sure you want to delete "${itemName}"?`
     : `Are you sure you want to delete this ${itemType}?`;
+
+  const showSoftDelete = !!(softDeleteLabel && onSoftDelete);
 
   return (
     <Dialog
@@ -50,10 +63,9 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      disableScrollLock
       PaperProps={{
-        sx: {
-          borderRadius: 3,
-        },
+        sx: { borderRadius: 3 },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
@@ -77,31 +89,43 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           </Typography>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Typography variant="body1" sx={{ mb: 2 }}>
           {message || defaultMessage}
         </Typography>
-        
+
         {warningMessage && (
           <Alert severity="warning" sx={{ mb: 2 }}>
             {warningMessage}
           </Alert>
         )}
-        
+
         <Typography variant="body2" color="text.secondary">
           This action cannot be undone.
         </Typography>
       </DialogContent>
-      
+
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={onClose}
           disabled={loading}
           sx={{ borderRadius: 2 }}
         >
-          Cancel
+          {cancelLabel}
         </Button>
+
+        {showSoftDelete && (
+          <Button
+            onClick={onSoftDelete}
+            variant="outlined"
+            color="warning"
+            disabled={loading}
+            sx={{ borderRadius: 2 }}
+          >
+            {softDeleteLabel}
+          </Button>
+        )}
 
         <Button
           onClick={warningMessage && onForceDelete ? onForceDelete : onConfirm}
@@ -109,16 +133,16 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
           color="error"
           disabled={loading}
           startIcon={loading ? undefined : <DeleteIcon />}
-          sx={{
-            borderRadius: 2,
-            minWidth: 100,
-          }}
+          sx={{ borderRadius: 2, minWidth: 100 }}
         >
-          {loading ? 'Deleting...' : 'Delete'}
+          {loading ? `${confirmLabel}ing…` : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default DeleteConfirmDialog;
+export default AppDeleteDialog;
+
+// Legacy alias
+export { AppDeleteDialog as DeleteConfirmDialog };

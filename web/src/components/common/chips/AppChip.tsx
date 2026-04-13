@@ -9,13 +9,13 @@ export type ChipVariant =
   | "status"
   | "role";
 
-interface MyChipProps extends Omit<ChipProps, "variant"> {
+export interface AppChipProps extends Omit<ChipProps, "variant"> {
   variant: ChipVariant;
   priorityColor?: string;
   statusColor?: string;
 }
 
-const MyChip: React.FC<MyChipProps> = ({
+const AppChip: React.FC<AppChipProps> = ({
   variant,
   priorityColor,
   statusColor,
@@ -285,8 +285,11 @@ const MyChip: React.FC<MyChipProps> = ({
         ...chipProps.sx,
       }}
       label={children || chipProps.label}
-    ></Chip>
+    />
   );
 };
 
-export default MyChip;
+export default AppChip;
+
+// Legacy alias
+export { AppChip as MyChip };

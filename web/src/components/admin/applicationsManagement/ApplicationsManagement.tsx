@@ -1,7 +1,7 @@
 import { Box, Snackbar, Alert } from '@mui/material';
 import ApiIcon from '@mui/icons-material/Api';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import { ApplicationsTable, ApplicationFormDialog } from '.';
 import { applicationsApi } from './api/applications';

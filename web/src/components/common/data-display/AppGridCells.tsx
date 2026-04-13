@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Chip, Typography } from "@mui/material";
-import type { CustomerApplication } from "../../services/api";
+import type { CustomerApplication } from "../../../services/api";
 
 // Reusable DataGrid cell renderers
 

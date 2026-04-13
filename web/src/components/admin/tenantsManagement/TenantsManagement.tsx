@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Snackbar, Alert } from '@mui/material';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
-import { ErrorBoundary } from '../../common/ErrorBoundary';
+import { ErrorBoundary } from '../../common/feedback/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import { TenantsTable, TenantFormDialog } from '.';
 import { tenantsApi } from './api/tenants';

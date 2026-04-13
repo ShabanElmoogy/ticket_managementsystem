@@ -2,19 +2,15 @@ import React from "react";
 import { Box, IconButton } from "@mui/material";
 import { MoreVert as MoreVertIcon } from "@mui/icons-material";
 
-// Props interface
-interface MyMenuButtonProps {
+export interface AppMenuButtonProps {
   /** Function to handle menu click events */
   handleMenuClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 /**
  * Enhanced Menu Button Component with responsive design and theme support
- *
- * @param props - Component props
- * @param props.handleMenuClick - Click handler function for the menu button
  */
-const MyMenuButton: React.FC<MyMenuButtonProps> = ({ handleMenuClick }) => {
+const AppMenuButton: React.FC<AppMenuButtonProps> = ({ handleMenuClick }) => {
   return (
     <Box
       sx={{
@@ -79,4 +75,7 @@ const MyMenuButton: React.FC<MyMenuButtonProps> = ({ handleMenuClick }) => {
   );
 };
 
-export default MyMenuButton;
+export default AppMenuButton;
+
+// Legacy alias
+export { AppMenuButton as MyMenuButton };

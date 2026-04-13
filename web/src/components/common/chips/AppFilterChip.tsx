@@ -1,8 +1,7 @@
-// components/FilterChip.tsx
 import React from "react";
 import { Chip } from "@mui/material";
 
-interface FilterChipProps {
+export interface AppFilterChipProps {
   label: string;
   emoji: string;
   color: "info" | "warning" | "success" | "primary";
@@ -10,7 +9,7 @@ interface FilterChipProps {
   textColor: string;
 }
 
-const FilterChip: React.FC<FilterChipProps> = ({
+const AppFilterChip: React.FC<AppFilterChipProps> = ({
   label,
   emoji,
   color,
@@ -34,4 +33,7 @@ const FilterChip: React.FC<FilterChipProps> = ({
   );
 };
 
-export default FilterChip;
+export default AppFilterChip;
+
+// Legacy alias
+export { AppFilterChip as FilterChip };

@@ -48,7 +48,7 @@ import type { Ticket, Comment } from "../../services/api";
 import { useAuthStore } from "../../stores/authStore";
 import { ticketsApi } from "../../services/api";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import MyChip from "../common/MyChip";
+import MyChip from "../common/chips/AppChip";
 import { type TicketActivity } from '../../services/api';
 import AssignProgrammerDialog from '../programming/components/AssignProgrammerDialog';
 import ReassignDialog from './ReassignDialog';

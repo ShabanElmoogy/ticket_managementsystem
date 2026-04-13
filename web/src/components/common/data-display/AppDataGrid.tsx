@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import React, { useState, useMemo } from "react";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import type {
   GridColDef,
@@ -9,19 +9,24 @@ import type {
 } from "@mui/x-data-grid";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { useAdminReadonly } from '../admin/AdminReadonlyContext';
+import AppTextField from './inputs/AppTextField';
 
-export interface AdminDataGridProps<T extends GridValidRowModel = GridValidRowModel>
+export interface AppDataGridProps<T extends GridValidRowModel = GridValidRowModel>
   extends Omit<DataGridProps, "rows" | "columns"> {
   rows: T[];
   columns: GridColDef<T>[];
-  height?: number; // container height
+  height?: number;
   initialPageSize?: number;
+  /** Message shown when rows is empty and not loading */
+  emptyMessage?: string;
+  /** When true, renders a built-in search field that filters rows client-side */
+  searchable?: boolean;
 }
 
 /**
  * Consistent DataGrid wrapper used across Admin pages
  */
-const AdminDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
+const AppDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
   rows,
   columns,
   loading,
@@ -29,59 +34,115 @@ const AdminDataGrid = <T extends GridValidRowModel = GridValidRowModel>({
   initialPageSize = 7,
   pageSizeOptions = [8, 16, 24],
   sx,
+  emptyMessage,
+  searchable = false,
+  slots,
   ...rest
-}: AdminDataGridProps<T>) => {
+}: AppDataGridProps<T>) => {
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const processedColumns = React.useMemo(() => {
+  const processedColumns = useMemo(() => {
     const hasFlex = columns.some((c) => c && typeof c.flex === "number" && c.flex > 0);
     if (hasFlex) return columns;
     const firstContentIdx = columns.findIndex((c) => c && c.field !== "actions" && c.type !== "actions");
     if (firstContentIdx === -1) return columns;
     return columns.map((c, i: number) => {
       if (i === firstContentIdx) {
-        // Ensure one content column flexes to avoid right-side filler space
         return { ...c, flex: 1 };
       }
       return c;
     });
   }, [columns]);
 
+  const filteredRows = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) return rows;
+    const q = searchQuery.toLowerCase();
+    return rows.filter((row) =>
+      Object.values(row).some((val) =>
+        String(val ?? '').toLowerCase().includes(q)
+      )
+    );
+  }, [rows, searchQuery, searchable]);
+
+  const isEmpty = !loading && filteredRows.length === 0;
+
+  const resolvedSlots = useMemo(() => {
+    if (!emptyMessage || !isEmpty) return slots;
+    return {
+      ...slots,
+      noRowsOverlay: () => (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {emptyMessage}
+          </Typography>
+        </Box>
+      ),
+    };
+  }, [emptyMessage, isEmpty, slots]);
+
   return (
-    <Box sx={{ height, width: "100%" }}>
-      <DataGrid
-        rows={rows}
-        columns={processedColumns}
-        loading={loading}
-        pageSizeOptions={pageSizeOptions}
-        initialState={{
-          pagination: {
-            paginationModel: { pageSize: initialPageSize },
-          },
-        }}
-        disableRowSelectionOnClick
-        rowBufferPx={10}
-        columnBufferPx={2}
-        disableVirtualization={false}
-        sx={{
-          "& .MuiDataGrid-cell": {
-            borderBottom: (theme) =>
-              `1px solid ${theme.palette.mode === "dark" ? "#333" : "#f0f0f0"}`,
-          },
-          "& .MuiDataGrid-row:hover": {
-            backgroundColor: (theme) =>
-              theme.palette.mode === "dark"
-                ? "rgba(255, 255, 255, 0.08)"
-                : "#f5f5f5",
-          },
-          ...sx,
-        }}
-        {...rest}
-      />
+    <Box sx={{ width: "100%" }}>
+      {searchable && (
+        <Box sx={{ mb: 1.5 }}>
+          <AppTextField
+            fieldType="search"
+            size="small"
+            placeholder="Search…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery('')}
+            fullWidth
+          />
+        </Box>
+      )}
+      <Box sx={{ height, width: "100%" }}>
+        <DataGrid
+          rows={filteredRows}
+          columns={processedColumns}
+          loading={loading}
+          pageSizeOptions={pageSizeOptions}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: initialPageSize },
+            },
+          }}
+          disableRowSelectionOnClick
+          rowBufferPx={10}
+          columnBufferPx={2}
+          disableVirtualization={false}
+          slots={resolvedSlots}
+          sx={{
+            "& .MuiDataGrid-cell": {
+              borderBottom: (theme) =>
+                `1px solid ${theme.palette.mode === "dark" ? "#333" : "#f0f0f0"}`,
+            },
+            "& .MuiDataGrid-row:hover": {
+              backgroundColor: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "#f5f5f5",
+            },
+            ...sx,
+          }}
+          {...rest}
+        />
+      </Box>
     </Box>
   );
 };
 
-export default AdminDataGrid;
+export default AppDataGrid;
+
+// Legacy alias
+export { AppDataGrid as AdminDataGrid };
+export type { AppDataGridProps as AdminDataGridProps };
 
 // Reusable Actions Cell and helpers
 export type ActionColor =

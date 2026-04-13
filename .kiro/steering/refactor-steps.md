@@ -378,14 +378,27 @@ const resolvePalette = (palette: Record<string, unknown>, path: string): string 
 
 ### Common components catalogue (already in `components/common/`)
 
-| Component | Props | Use when |
-|---|---|---|
-| `MetricCard` | `title, value, icon, color` | Single stat with icon badge |
-| `OverviewCard` | `title, total, active, activeLabel?, metricLabel?` | Summary with active rate % |
-| `DeleteConfirmDialog` | `open, onClose, onConfirm, itemName, itemType` | Any delete confirmation |
-| `ErrorBoundary` | `children` | Wrap every page-level component |
-| `AppTextField` | extends `TextFieldProps` + `fieldType?, showClearButton?, onClear?, startIcon?, endIcon?, rounded?, min?, max?, step?, maxLength?` | Any text input — replaces raw `<TextField>`. Variants: `search` (SearchIcon + clear), `password` (show/hide toggle), `number` (min/max/step) |
-| `AppSelect` | `value, onChange, options?, placeholder?, label?, showClearButton?, loading?, multiple?, size?, fullWidth?` | Any select/dropdown — replaces `FormControl + InputLabel + Select + MenuItem`. Supports grouped options, color dots, loading state, multi-select with chips |
+| Component | Old name | Props | Use when |
+|---|---|---|---|
+| `AppButton` | `LoadingButton` | extends `ButtonProps` + `loading?, loadingText?, loadingIndicator?` | Any async button — spinner + optional loading text |
+| `AppChip` | `MyChip` | `variant: 'customer'\|'application'\|'priority'\|'status'\|'role'` | Styled domain chip |
+| `AppGridHeader` | `MyGridHeader` | `title, icon?, onAdd?, addButtonText?, leftActions?, rightActions?` | Styled card header with gradient |
+| `AppPageHeader` | `AdminGridHeader` | `title, onAdd?, addLabel?, rightActions?, subtitle?, badge?, loading?` | Simple page header with Add button, subtitle, badge chip |
+| `AppMenuButton` | `MyMenuButton` | `handleMenuClick` | Three-dot menu trigger |
+| `AppFilterChip` | `FilterChip` | `label, emoji, color, backgroundColor, textColor` | Filter status chip |
+| `AppDeleteDialog` | `DeleteConfirmDialog` | `open, onClose, onConfirm, itemName?, itemType?, loading?, warningMessage?, softDeleteLabel?, onSoftDelete?, confirmLabel?, cancelLabel?` | Delete confirmation — supports soft-delete option |
+| `AppConfirmDialog` | `ConfirmTextDialog` | `open, onClose, onConfirm, confirmWord?, loading?, confirmLabel?, cancelLabel?, confirmColor?` | Type-to-confirm destructive action |
+| `AppDataGrid` | `AdminDataGrid` | extends `DataGridProps` + `emptyMessage?, searchable?` | DataGrid with built-in search + empty state message |
+| `AppScrollToTop` | `ScrollToTop` | `threshold?, showProgress?, disableFixed?` | Floating scroll-to-top FAB |
+| `AppLanguageSelector` | `LanguageSelector` | — | Language switcher (EN/AR) |
+| `AppDashboardHeader` | `DashboardHeader` | `isFiltered?` | Dashboard overview heading |
+| `MetricCard` | — | `title, value, icon, color` | Single stat with icon badge |
+| `OverviewCard` | — | `title, total, active, activeLabel?, metricLabel?` | Summary with active rate % |
+| `AppTextField` | `MyTextField` | extends `TextFieldProps` + `fieldType?, showClearButton?, onClear?, startIcon?, endIcon?, rounded?, min?, max?, step?, maxLength?` | Any text input. Variants: `search`, `password`, `number` |
+| `AppSelect` | `MySelect` | `value, onChange, options?, placeholder?, label?, showClearButton?, loading?, multiple?, size?, fullWidth?` | Any select/dropdown — replaces `FormControl + InputLabel + Select + MenuItem` |
+| `ErrorBoundary` | — | `children` | Wrap every page-level component |
+
+**All legacy names still work** — `AdminDataGrid`, `AdminGridHeader`, `LoadingButton`, `DeleteConfirmDialog`, `ConfirmTextDialog`, `MyChip`, `MyGridHeader`, `MyMenuButton`, `FilterChip`, `ScrollToTop`, `LanguageSelector`, `DashboardHeader` are all re-exported as aliases.
 
 Always check this list before creating a new presentational component — it may already exist.
 
@@ -574,21 +587,67 @@ import { OverviewCard } from '../../common';
 
 ---
 
-### `DeleteConfirmDialog` — any delete confirmation
+### `AppDeleteDialog` — any delete confirmation
 
 ```tsx
-import { DeleteConfirmDialog } from '../../common';
+import { AppDeleteDialog } from '../../common';
 
-<DeleteConfirmDialog
+// Basic
+<AppDeleteDialog
   open={deleteDialog.open}
   onClose={closeDeleteDialog}
-  onConfirm={() => handleDeleteConfirm((e) => e.id)}
+  onConfirm={handleDelete}
   itemName={deleteDialog.item?.name}
   itemType="customer"
-  loading={false}
-  // optional:
+  loading={deleting}
   warningMessage="This customer has 3 tickets."
 />
+
+// With soft-delete option (e.g. archive instead of hard delete)
+<AppDeleteDialog
+  open={open}
+  onClose={onClose}
+  onConfirm={handleHardDelete}
+  itemName={item.name}
+  itemType="user"
+  softDeleteLabel="Archive instead"
+  onSoftDelete={handleArchive}
+  confirmLabel="Delete permanently"
+/>
+```
+
+### `AppConfirmDialog` — type-to-confirm destructive action
+
+```tsx
+import { AppConfirmDialog } from '../../common';
+
+<AppConfirmDialog
+  open={forceDeleteOpen}
+  onClose={() => setForceDeleteOpen(false)}
+  onConfirm={handleForceDelete}
+  title="Force Delete User and Related Data"
+  message="This will delete all tickets, comments and activities."
+  confirmWord="DELETE"
+  loading={forceDeleteLoading}
+  confirmLabel="Delete Everything"
+  confirmColor="error"
+/>
+```
+
+### `AppButton` — async action button
+
+```tsx
+import { AppButton } from '../../common';
+
+// Basic loading state
+<AppButton loading={saving} onClick={handleSave} variant="contained">
+  Save
+</AppButton>
+
+// With custom loading text
+<AppButton loading={saving} loadingText="Saving…" onClick={handleSave} variant="contained">
+  Save Changes
+</AppButton>
 ```
 
 ---
