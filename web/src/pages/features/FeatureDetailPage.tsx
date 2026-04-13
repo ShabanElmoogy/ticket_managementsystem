@@ -11,17 +11,17 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { featuresApi } from './api/features';
-import { usersApi } from '../admin/usersManagement/api/users';
+import { featuresApi } from '../components/features/api/features';
+import { usersApi } from '../components/admin/usersManagement/api/users';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { type Dayjs } from 'dayjs';
-import { getPickerDateFormat } from '../../stores/tenantStore';
-import { ticketsApi } from '../admin/ticketsManagement/api/tickets';
-import FeatureStatusChip from './components/FeatureStatusChip';
-import type { FeatureStep, CreateStepData, UpdateStepData } from '../../services/api/types';
-import { formatDate } from '../../utils/dateUtils';
+import { getPickerDateFormat } from '../stores/tenantStore';
+import { ticketsApi } from '../components/admin/ticketsManagement/api/tickets';
+import FeatureStatusChip from '../components/features/components/FeatureStatusChip';
+import type { FeatureStep, CreateStepData, UpdateStepData } from '../services/api/types';
+import { formatDate } from '../utils/dateUtils';
 
 const STEP_STATUS_COLOR: Record<FeatureStep['status'], 'default' | 'warning' | 'success'> = {
   TODO: 'default', IN_PROGRESS: 'warning', DONE: 'success',

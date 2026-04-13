@@ -5,9 +5,9 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete, LibraryBooks, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { epicTemplatesApi, type EpicTemplate, type CreateTemplateData } from './api/epicTemplates';
-import TemplateFormDialog from './components/TemplateFormDialog';
-import { DeleteConfirmDialog } from '../common';
+import { epicTemplatesApi, type EpicTemplate, type CreateTemplateData } from '../../components/epics/api/epicTemplates';
+import TemplateFormDialog from '../../components/epics/components/TemplateFormDialog';
+import { DeleteConfirmDialog } from '../../components/common';
 import { useIsAdmin } from '../../stores/authStore';
 
 const EpicTemplatesPage: React.FC = () => {

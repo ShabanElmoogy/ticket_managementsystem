@@ -9,10 +9,8 @@ import {
   Timer as ResolutionIcon,
 } from "@mui/icons-material";
 import { type StatItem, type DashboardStats } from "../components/dashboard/types/types";
-import useMediaQuery from "@mui/material/useMediaQuery";
 
-export const CreateStatItems = (stats: DashboardStats): StatItem[] => {
-  const isMobile = useMediaQuery("(max-width: 800px)");
+export const CreateStatItems = (stats: DashboardStats, isMobile = false): StatItem[] => {
   return [
     {
       title: isMobile ? "Tickets" : "Total Tickets",

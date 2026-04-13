@@ -5,23 +5,23 @@ import {
   Tabs, Tab, Paper, Chip,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { epicsApi } from '../api/epics';
-import EpicFormDialog from '../components/EpicFormDialog';
-import EpicComments from '../components/EpicComments';
-import EpicChangelog from '../components/EpicChangelog';
-import FeatureFormDialog from '../../features/components/FeatureFormDialog';
-import EpicHeader from './EpicHeader';
-import EpicFeaturesList from './EpicFeaturesList';
-import EpicLinkedTickets from './EpicLinkedTickets';
-import EpicBreadcrumb from './EpicBreadcrumb';
-import EpicSubEpics from './EpicSubEpics';
-import EpicRelations from './EpicRelations';
-import LinkFeatureDialog from './LinkFeatureDialog';
-import EpicBurndownChart from './EpicBurndownChart';
-import { useEpicDetail } from '../hooks/useEpicDetail';
-import { exportEpicToCsv } from '../utils/exportEpicCsv';
-import type { UpdateEpicData, FeatureRequest } from '../../../services/api/types';
-import { formatDate } from '../../../utils/dateUtils';
+import { epicsApi } from '../../components/epics/api/epics';
+import EpicFormDialog from '../../components/epics/components/EpicFormDialog';
+import EpicComments from '../../components/epics/components/EpicComments';
+import EpicChangelog from '../../components/epics/components/EpicChangelog';
+import FeatureFormDialog from '../../components/features/components/FeatureFormDialog';
+import EpicHeader from '../../components/epics/detail/EpicHeader';
+import EpicFeaturesList from '../../components/epics/detail/EpicFeaturesList';
+import EpicLinkedTickets from '../../components/epics/detail/EpicLinkedTickets';
+import EpicBreadcrumb from '../../components/epics/detail/EpicBreadcrumb';
+import EpicSubEpics from '../../components/epics/detail/EpicSubEpics';
+import EpicRelations from '../../components/epics/detail/EpicRelations';
+import LinkFeatureDialog from '../../components/epics/detail/LinkFeatureDialog';
+import EpicBurndownChart from '../../components/epics/detail/EpicBurndownChart';
+import { useEpicDetail } from '../../components/epics/hooks/useEpicDetail';
+import { exportEpicToCsv } from '../../components/epics/utils/exportEpicCsv';
+import type { UpdateEpicData, FeatureRequest } from '../../services/api/types';
+import { formatDate } from '../../utils/dateUtils';
 
 const EpicDetailPage: React.FC = () => {
   const {

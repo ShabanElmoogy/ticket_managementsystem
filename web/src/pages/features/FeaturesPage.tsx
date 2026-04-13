@@ -6,14 +6,14 @@ import {
 } from '@mui/material';
 import { Add, Search, Lightbulb } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { featuresApi } from './api/features';
-import { applicationsApi } from '../admin/applicationsManagement/api/applications';
-import { customersApi } from '../admin/customersManagement/api/customers';
-import FeatureCard from './components/FeatureCard';
-import FeatureFormDialog from './components/FeatureFormDialog';
-import { epicsApi } from '../epics/api/epics';
-import { useIsAdmin } from '../../stores/authStore';
-import type { FeatureRequest, CreateFeatureData, UpdateFeatureData } from '../../services/api/types';
+import { featuresApi } from '../components/features/api/features';
+import { applicationsApi } from '../components/admin/applicationsManagement';
+import { customersApi } from '../components/admin/customersManagement';
+import FeatureCard from '../components/features/components/FeatureCard';
+import FeatureFormDialog from '../components/features/components/FeatureFormDialog';
+import { epicsApi } from '../components/epics/api/epics';
+import { useIsAdmin } from '../stores/authStore';
+import type { FeatureRequest, CreateFeatureData, UpdateFeatureData } from '../services/api/types';
 
 const STATUSES: Array<FeatureRequest['status'] | ''> = ['', 'UNDER_REVIEW', 'PLANNED', 'IN_PROGRESS', 'SHIPPED', 'DECLINED'];
 

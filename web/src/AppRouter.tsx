@@ -4,22 +4,24 @@ import {
   DialogActions, Button, Typography,
 } from '@mui/material';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
-import { useTenantSuspended, useTenantStatus } from '../stores';
-import { isSuperAdmin, isProgrammerRole, isTenantAdmin } from '../types/roles';
-import LoginForm from './auth/LoginForm';
-import DashboardPage from '../pages/DashboardPage';
-import SuperAdminDashboardPage from '../pages/SuperAdminDashboardPage';
-import ProfilePage from '../pages/ProfilePage';
-import KanbanPage from '../pages/KanbanPage';
-import DocumentsPage from '../pages/DocumentsPage';
-import AdminPage from '../pages/AdminPage';
-import ProgrammingPage from '../pages/ProgrammingPage';
-import TicketDetailPage from '../pages/TicketDetailPage';
-import FeaturesPageRoute from '../pages/FeaturesPageRoute';
-import FeatureDetailRoute from '../pages/FeatureDetailRoute';
-import EpicsPageRoute from '../pages/EpicsPageRoute';
-import EpicDetailRoute from '../pages/EpicDetailRoute';
+import { useAuthStore } from './stores/authStore';
+import { useTenantSuspended, useTenantStatus } from './stores';
+import { isSuperAdmin, isProgrammerRole, isTenantAdmin } from './types/roles';
+import LoginForm from './components/auth/LoginForm';
+import DashboardPage from './pages/DashboardPage';
+import SuperAdminDashboardPage from './pages/admin/SuperAdminDashboardPage';
+import ProfilePage from './pages/ProfilePage';
+import KanbanPage from './pages/KanbanPage';
+import DocumentsPage from './pages/DocumentsPage';
+import AdminPage from './pages/admin/AdminPage';
+import ProgrammingPage from './pages/ProgrammingPage';
+import TicketDetailPage from './pages/TicketDetailPage';
+import FeaturesPage from './pages/features/FeaturesPage';
+import FeatureDetailPage from './pages/features/FeatureDetailPage';
+import EpicsPage from './pages/epics/EpicsPage';
+import EpicDetailPage from './pages/epics/EpicDetailPage';
+import EpicTemplatesPage from './pages/epics/EpicTemplatesPage';
+import Header from './components/dashboard/Header';
 
 // Per-status dialog content — only for statuses that restrict access
 const STATUS_CONTENT: Record<string, { icon: string; title: string; body: string; btnColor: 'error' | 'warning' }> = {
@@ -124,10 +126,11 @@ const AppRouter: React.FC = () => {
         <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
         <Route path="/admin"     element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
-        <Route path="/features"     element={<ProtectedRoute><FeaturesPageRoute /></ProtectedRoute>} />
-        <Route path="/features/:id"  element={<ProtectedRoute><FeatureDetailRoute /></ProtectedRoute>} />
-        <Route path="/epics"         element={<ProtectedRoute><EpicsPageRoute /></ProtectedRoute>} />
-        <Route path="/epics/:id"     element={<ProtectedRoute><EpicDetailRoute /></ProtectedRoute>} />
+        <Route path="/features"     element={<ProtectedRoute><Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}><Header /><Box sx={{ pt: { xs: 8, sm: 9, md: 10 } }}><FeaturesPage /></Box></Box></ProtectedRoute>} />
+        <Route path="/features/:id"  element={<ProtectedRoute><Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}><Header /><Box sx={{ pt: { xs: 8, sm: 9, md: 10 } }}><FeatureDetailPage /></Box></Box></ProtectedRoute>} />
+        <Route path="/epics"         element={<ProtectedRoute><Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}><Header /><Box sx={{ pt: { xs: 8, sm: 9, md: 10 } }}><EpicsPage /></Box></Box></ProtectedRoute>} />
+        <Route path="/epics/:id"     element={<ProtectedRoute><Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}><Header /><Box sx={{ pt: { xs: 8, sm: 9, md: 10 } }}><EpicDetailPage /></Box></Box></ProtectedRoute>} />
+        <Route path="/epics/templates" element={<ProtectedRoute><Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}><Header /><Box sx={{ pt: { xs: 8, sm: 9, md: 10 } }}><EpicTemplatesPage /></Box></Box></ProtectedRoute>} />
 
         <Route
           path="/programming"

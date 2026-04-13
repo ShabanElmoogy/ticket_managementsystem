@@ -6,23 +6,23 @@ import {
   ToggleButton, ToggleButtonGroup, Checkbox, Collapse, Autocomplete,
 } from '@mui/material';
 import { Add, Search, Edit, Delete, OpenInNew, Apps, Person, CalendarToday, AccountTree, ViewList, Timeline, CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox, ArrowUpward, ArrowDownward, Lock, Label, FileDownload, ViewModule, Dashboard, PictureAsPdf, Hub } from '@mui/icons-material';
-import EpicRoadmap from './components/EpicRoadmap';
-import EpicHealthScore from './components/EpicHealthScore';
-import EpicBoard from './components/EpicBoard';
-import EpicDashboard from './components/EpicDashboard';
-import EpicNetworkView from './components/EpicNetworkView';
-import { exportMultipleEpicsToCsv } from './utils/exportEpicCsv';
+import EpicRoadmap from '../../components/epics/components/EpicRoadmap';
+import EpicHealthScore from '../../components/epics/components/EpicHealthScore';
+import EpicBoard from '../../components/epics/components/EpicBoard';
+import EpicDashboard from '../../components/epics/components/EpicDashboard';
+import EpicNetworkView from '../../components/epics/components/EpicNetworkView';
+import { exportMultipleEpicsToCsv } from '../../components/epics/utils/exportEpicCsv';
 import { generateEpicsReport } from '../../utils/reports/epicsReport';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { epicsApi } from './api/epics';
-import EpicStatusChip from './components/EpicStatusChip';
-import EpicPriorityChip from './components/EpicPriorityChip';
-import EpicFormDialog from './components/EpicFormDialog';
+import { epicsApi } from '../../components/epics/api/epics';
+import EpicStatusChip from '../../components/epics/components/EpicStatusChip';
+import EpicPriorityChip from '../../components/epics/components/EpicPriorityChip';
+import EpicFormDialog from '../../components/epics/components/EpicFormDialog';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../services/api/types';
-import { epicTemplatesApi } from './api/epicTemplates';
+import { epicTemplatesApi } from '../../components/epics/api/epicTemplates';
 import { useIsAdmin } from '../../stores/authStore';
-import { DeleteConfirmDialog } from '../common';
+import { DeleteConfirmDialog } from '../../components/common';
 
 const STATUSES: Array<Epic['status'] | ''> = ['', 'DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 

@@ -1,6 +1,6 @@
 // StatsCards.tsx - Mobile Optimized Container
 import React from "react";
-import { Card, CardContent, Box, Fade, useTheme } from "@mui/material";
+import { Card, CardContent, Box, Fade, useTheme, useMediaQuery } from "@mui/material";
 import { type StatsCardsProps } from "../types/types";
 import { CreateStatItems } from "../../../config/statItems";
 import DashboardHeader from "../../common/DashboardHeader";
@@ -14,9 +14,10 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === "dark";
+  const isMobile = useMediaQuery("(max-width: 800px)");
 
   // Create stat items and ensure ALL have percentage
-  const statItems = CreateStatItems(stats).map((item) => {
+  const statItems = CreateStatItems(stats, isMobile).map((item) => {
     if (item.percentage === undefined) {
       return {
         ...item,
