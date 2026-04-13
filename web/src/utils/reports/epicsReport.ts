@@ -1,6 +1,7 @@
 import type { UserOptions } from 'jspdf-autotable';
 import type { Epic } from '../../services/api/types';
 import { createReport, addSectionTitle, addTable, saveReport } from './reportTemplate';
+import { formatDate } from '../dateUtils';
 
 export type EpicsReportOptions = {
   title?: string;
@@ -12,8 +13,7 @@ export type EpicsReportOptions = {
 
 function fmt(value?: string | null): string {
   if (!value) return '—';
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? value : d.toLocaleDateString();
+  return formatDate(value);
 }
 
 function safe(v: unknown, fallback = '—'): string {

@@ -13,9 +13,15 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { featuresApi } from './api/features';
 import { usersApi } from '../admin/usersManagement/api/users';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { type Dayjs } from 'dayjs';
+import { getPickerDateFormat } from '../../stores/tenantStore';
 import { ticketsApi } from '../admin/ticketsManagement/api/tickets';
 import FeatureStatusChip from './components/FeatureStatusChip';
 import type { FeatureStep, CreateStepData, UpdateStepData } from '../../services/api/types';
+import { formatDate } from '../../utils/dateUtils';
 
 const STEP_STATUS_COLOR: Record<FeatureStep['status'], 'default' | 'warning' | 'success'> = {
   TODO: 'default', IN_PROGRESS: 'warning', DONE: 'success',
@@ -137,7 +143,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
   const [assignedToId, setAssignedToId] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [saving, setSaving] = useState(false);
 
   const allAssignees = [
@@ -152,7 +158,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       // Pre-select assignee if step already has one
       setAssignedToId(step.assignedToId ?? step.assignedProgrammerId ?? '');
       setPriority('MEDIUM');
-      setDueDate('');
+      setDueDate(null);
     }
   }, [step, open, featureTitle]);
 
@@ -167,7 +173,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         assignedToId: assignedToId || undefined,
         applicationId: applicationId ?? undefined,
         customerId: customerId ?? undefined,
-        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+        dueDate: dueDate ? dueDate.toISOString() : undefined,
       });
       await onCreated(step.id, ticket.id);
       onClose();
@@ -222,14 +228,15 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Select>
           </FormControl>
 
-          <TextField
-            label="Due Date"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            fullWidth size="small"
-            InputLabelProps={{ shrink: true }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="Due Date"
+              value={dueDate}
+              onChange={(val) => setDueDate(val as Dayjs | null)}
+              format={getPickerDateFormat()}
+              slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+            />
+          </LocalizationProvider>
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -397,7 +404,7 @@ const FeatureDetailPage: React.FC = () => {
             </Typography>
             <br />
             <Typography variant="caption" color="text.secondary">
-              {new Date(feature.createdAt).toLocaleDateString()}
+              {formatDate(feature.createdAt)}
             </Typography>
           </Box>
         </Box>

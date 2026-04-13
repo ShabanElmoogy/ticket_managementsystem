@@ -19,6 +19,7 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import type { Ticket } from '../../../services/api';
+import { formatDate } from '../../../utils/dateUtils';
 
 interface TicketGridProps {
   tickets: Ticket[];
@@ -200,7 +201,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <ScheduleIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
                     <Typography variant="caption" color="textSecondary">
-                      {new Date(ticket.createdAt).toLocaleDateString()}
+                      {formatDate(ticket.createdAt)}
                     </Typography>
                   </Box>
                 </Box>

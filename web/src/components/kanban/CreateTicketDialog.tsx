@@ -23,6 +23,7 @@ import type { Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { Priority } from './types/types';
 import { ticketsApi, usersApi, customersApi, applicationsApi } from '../../services/api';
+import { getPickerDateFormat } from '../../stores/tenantStore';
 
 interface CreateTicketDialogProps {
   open: boolean;
@@ -284,6 +285,7 @@ const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                 label="Due Date"
                 value={formData.dueDate}
                 onChange={(val) => setFormData(prev => ({ ...prev, dueDate: val as Dayjs | null }))}
+                format={getPickerDateFormat()}
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>

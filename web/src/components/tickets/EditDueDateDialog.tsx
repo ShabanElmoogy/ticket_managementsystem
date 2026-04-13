@@ -10,6 +10,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { ticketsApi } from '../../services/api';
 import type { Ticket } from '../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
+import { getPickerDateFormat } from '../../stores/tenantStore';
 
 interface EditDueDateDialogProps {
   open: boolean;
@@ -53,7 +54,7 @@ const EditDueDateDialog: React.FC<EditDueDateDialogProps> = ({ open, onClose, ti
             label="Due Date"
             value={date}
             onChange={(val) => setDate(val as Dayjs | null)}
-            format="dd/MM/yyyy"
+            format={getPickerDateFormat()}
             slotProps={{
               textField: { fullWidth: true, size: 'small' },
               actionBar: { actions: ['clear', 'today'] },

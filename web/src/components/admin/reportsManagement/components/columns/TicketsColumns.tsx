@@ -1,5 +1,6 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Ticket } from "../../../../../services/api";
+import { formatDate, formatDateTime } from "../../../../../utils/dateUtils";
 
 export const getTicketColumns = (): GridColDef<Ticket>[] => [
   {
@@ -55,7 +56,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     align: "center",
     width: 160,
     valueGetter: (_, row) => {
-      return row.createdAt ? new Date(row.createdAt).toLocaleString() : "-";
+      return row.createdAt ? formatDateTime(row.createdAt) : "-";
     },
   },
   {
@@ -65,7 +66,7 @@ export const getTicketColumns = (): GridColDef<Ticket>[] => [
     align: "center",
     width: 140,
     valueGetter: (_, row) => {
-      return row.dueDate ? new Date(row.dueDate).toLocaleDateString() : "-";
+      return row.dueDate ? formatDate(row.dueDate) : "-";
     },
   },
 ];

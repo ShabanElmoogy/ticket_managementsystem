@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab, Typography } from '@mui/material';
 import {
-  Schedule as ScheduleIcon,
-  Timer as TimerIcon,
   Email as EmailIcon,
   AccountTree as EpicsIcon,
+  Settings as GeneralIcon,
+  ConfirmationNumber as TicketsIcon,
 } from '@mui/icons-material';
-import SchedulerSettings from './SchedulerSettings';
-import SlaSettings from './SlaSettings';
-import EmailIngestSettings from './EmailIngestSettings';
-import EpicAutoCloseSettings from './EpicAutoCloseSettings';
+import EmailIngestSettings from '../adminSettings/EmailIngestSettings';
+import EpicAutoCloseSettings from '../adminSettings/EpicAutoCloseSettings';
+import GeneralSettings from '../adminSettings/GeneralSettings';
+import TicketsSettings from '../adminSettings/TicketsSettings';
 import { useAuthStore } from '../../../stores/authStore';
 import { isSuperAdmin } from '../../../types/roles';
 
@@ -20,7 +20,7 @@ interface TabPanelProps {
 }
 
 const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
-  <Box role="tabpanel" hidden={value !== index} sx={{ pt: 3 }}>
+  <Box role="tabpanel" sx={{ pt: 1 }}>
     {value === index && children}
   </Box>
 );
@@ -35,8 +35,8 @@ const AdminSettings: React.FC = () => {
         { label: 'Email Ingest', icon: <EmailIcon fontSize="small" />, content: <EmailIngestSettings /> },
       ]
     : [
-        { label: 'Scheduler',       icon: <ScheduleIcon fontSize="small" />, content: <SchedulerSettings /> },
-        { label: 'SLA Timers',      icon: <TimerIcon fontSize="small" />,    content: <SlaSettings /> },
+        { label: 'General',         icon: <GeneralIcon fontSize="small" />,  content: <GeneralSettings /> },
+        { label: 'Tickets',         icon: <TicketsIcon fontSize="small" />,  content: <TicketsSettings /> },
         { label: 'Epic Auto-Close', icon: <EpicsIcon fontSize="small" />,    content: <EpicAutoCloseSettings /> },
       ];
 

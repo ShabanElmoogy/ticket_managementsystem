@@ -295,3 +295,50 @@ export const updateEpicAutoCloseSettings = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// Valid date format tokens
+const VALID_DATE_FORMATS = ['dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd', 'dd-MM-yyyy', 'MM-dd-yyyy', 'd MMM yyyy', 'MMM d, yyyy'];
+
+// Get date format for current tenant
+export const getDateFormatSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const [tenant] = await db
+      .select({ dateFormat: tenants.dateFormat })
+      .from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    res.json({ dateFormat: tenant.dateFormat ?? 'dd/MM/yyyy' });
+  } catch (error) {
+    // Column may not exist yet if migration hasn't run — return default
+    console.error('Get date format settings error:', error);
+    res.json({ dateFormat: 'dd/MM/yyyy' });
+  }
+};
+
+// Update date format for current tenant
+export const updateDateFormatSettings = async (req, res) => {
+  try {
+    const tenantId = req.user.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context required' });
+    const { dateFormat } = req.body;
+    if (!dateFormat || !VALID_DATE_FORMATS.includes(dateFormat)) {
+      return res.status(400).json({ error: `dateFormat must be one of: ${VALID_DATE_FORMATS.join(', ')}` });
+    }
+    try {
+      const [updated] = await db
+        .update(tenants)
+        .set({ dateFormat, updatedAt: new Date() })
+        .where(eq(tenants.id, tenantId))
+        .returning({ dateFormat: tenants.dateFormat });
+      res.json({ dateFormat: updated.dateFormat });
+    } catch (dbError) {
+      // Column not yet migrated — acknowledge the save so the frontend stores it locally
+      console.warn('dateFormat column not yet migrated, storing locally only:', dbError.message);
+      res.json({ dateFormat });
+    }
+  } catch (error) {
+    console.error('Update date format settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

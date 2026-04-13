@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../stores/authStore';
 import { useThemeStore } from '../../../stores/themeStore';
+import { useTenantStore, type DateFormatValue } from '../../../stores/tenantStore';
 import { authApi, tenantsApi, type Tenant } from '../../../services/api';
 
 export const useLoginForm = () => {
@@ -15,6 +16,7 @@ export const useLoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
   const { login } = useAuthStore();
+  const { setDateFormat } = useTenantStore();
   const { mode, toggleTheme } = useThemeStore();
 
   useEffect(() => {
@@ -48,6 +50,9 @@ export const useLoginForm = () => {
       const response = await authApi.login({ email, password });
       const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
       if (responseTenantSlug) localStorage.setItem('tenantSlug', String(responseTenantSlug));
+
+      const dateFormat = (response as any)?.tenant?.dateFormat as DateFormatValue | undefined;
+      if (dateFormat) setDateFormat(dateFormat);
 
       login(response.user, response.token, response.refreshToken,
         !!(response as any).tenantSuspended,
@@ -86,6 +91,9 @@ export const useLoginForm = () => {
       });
       const responseTenantSlug = (response as any)?.tenant?.slug || (response as any)?.user?.tenantSlug;
       if (responseTenantSlug) localStorage.setItem('tenantSlug', String(responseTenantSlug));
+
+      const dateFormat = (response as any)?.tenant?.dateFormat as DateFormatValue | undefined;
+      if (dateFormat) setDateFormat(dateFormat);
 
       login(response.user, response.token, response.refreshToken,
         !!(response as any).tenantSuspended,

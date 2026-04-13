@@ -8,6 +8,11 @@ import PrioritySelect from "./createTicketForm/PrioritySelect";
 import AssignSelect from "./createTicketForm/AssignSelect";
 import TemplatePickerButton from "./TemplatePickerButton";
 import type { TicketTemplate } from "../../services/api/types";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { type Dayjs } from "dayjs";
+import { getPickerDateFormat } from "../../stores/tenantStore";
 
 export interface CreateTicketFormProps {
   open?: boolean;
@@ -34,7 +39,7 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
   // New fields
   const [customerId, setCustomerId] = useState("");
   const [applicationId, setApplicationId] = useState("");
-  const [dueDate, setDueDate] = useState(""); // yyyy-mm-dd
+  const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [estimatedHours, setEstimatedHours] = useState<number | "">("");
 
   // Options
@@ -48,7 +53,7 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
     setAssignedTo("");
     setCustomerId("");
     setApplicationId("");
-    setDueDate("");
+    setDueDate(null);
     setEstimatedHours("");
   };
 
@@ -92,7 +97,7 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
       assignedToId: assignedTo || undefined,
       customerId: customerId || undefined,
       applicationId: applicationId || undefined,
-      dueDate: dueDate || undefined,
+      dueDate: dueDate ? dueDate.toISOString() : undefined,
       estimatedHours:
         estimatedHours === "" || Number.isNaN(Number(estimatedHours))
           ? undefined
@@ -158,15 +163,15 @@ const CreateTicketForm: React.FC<CreateTicketFormProps> = ({
         </FormControl>
 
         {/* Other details */}
-        <TextField
-          fullWidth
-          margin="normal"
-          type="date"
-          label="Due Date"
-          InputLabelProps={{ shrink: true }}
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label="Due Date"
+            value={dueDate}
+            onChange={(val) => setDueDate(val as Dayjs | null)}
+            format={getPickerDateFormat()}
+            slotProps={{ textField: { fullWidth: true, margin: "normal" } }}
+          />
+        </LocalizationProvider>
         <TextField
           fullWidth
           margin="normal"

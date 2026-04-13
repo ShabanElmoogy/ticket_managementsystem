@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable, { type UserOptions, type HookData } from "jspdf-autotable";
+import { formatDateTime } from "../dateUtils";
 
 // Margins for the PDF content area (in points since we use unit: 'pt')
 export interface Margins {
@@ -82,7 +83,7 @@ function buildHeaderFooterHook(
       doc.setFontSize(9);
 
       if (options.showGeneratedAt) {
-        const generatedAt = new Date().toLocaleString();
+        const generatedAt = formatDateTime(new Date());
         doc.text(`Generated: ${generatedAt}`.trim(), headerLeft, headerY + 16);
       }
 

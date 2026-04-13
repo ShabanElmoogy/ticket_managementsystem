@@ -7,6 +7,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import BlockIcon from '@mui/icons-material/Block';
+import { formatDate } from '../../../../utils/dateUtils';
 
 const STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED'] as const;
 type TenantStatus = typeof STATUSES[number];
@@ -130,7 +131,7 @@ export const getTenantsColumns = (handlers: {
       width: 120,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => params.value ? new Date(params.value).toLocaleDateString() : '—',
+      renderCell: (params) => params.value ? formatDate(params.value) : '—',
     },
     {
       field: 'subscriptionEnd',
@@ -143,7 +144,7 @@ export const getTenantsColumns = (handlers: {
         const expired = new Date(params.value) < new Date();
         return (
           <Chip
-            label={new Date(params.value).toLocaleDateString()}
+            label={formatDate(params.value)}
             size="small"
             color={expired ? 'error' : 'default'}
             variant={expired ? 'filled' : 'outlined'}
@@ -157,7 +158,7 @@ export const getTenantsColumns = (handlers: {
       width: 120,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => params.value ? new Date(params.value).toLocaleDateString() : '—',
+      renderCell: (params) => params.value ? formatDate(params.value) : '—',
     },
     {
       field: '_stats.userCount',

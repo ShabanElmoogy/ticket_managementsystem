@@ -12,6 +12,11 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { epicsApi, type EpicActivityItem } from '../api/epics';
 import { formatDateTime } from '../../../utils/dateUtils';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { type Dayjs } from 'dayjs';
+import { getPickerDateFormat } from '../../../stores/tenantStore';
 
 // ── Action metadata ──────────────────────────────────────────────────────────
 
@@ -187,8 +192,8 @@ interface Props { epicId: string }
 const EpicChangelog: React.FC<Props> = ({ epicId }) => {
   const [typeFilter, setTypeFilter] = useState('');
   const [datePreset, setDatePreset] = useState(0);
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTo, setCustomTo] = useState('');
+  const [customFrom, setCustomFrom] = useState<Dayjs | null>(null);
+  const [customTo, setCustomTo]     = useState<Dayjs | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -202,7 +207,10 @@ const EpicChangelog: React.FC<Props> = ({ epicId }) => {
   const actionTypes = useMemo(() => [...new Set(items.map((i) => i.action))].sort(), [items]);
 
   const { from, to } = useMemo(() => {
-    if (datePreset === 4) return { from: customFrom, to: customTo };
+    if (datePreset === 4) return {
+      from: customFrom ? customFrom.format('YYYY-MM-DD') : '',
+      to:   customTo   ? customTo.format('YYYY-MM-DD')   : '',
+    };
     return { from: DATE_PRESETS[datePreset]?.from ?? '', to: DATE_PRESETS[datePreset]?.to ?? '' };
   }, [datePreset, customFrom, customTo]);
 
@@ -273,12 +281,20 @@ const EpicChangelog: React.FC<Props> = ({ epicId }) => {
 
           {datePreset === 4 && (
             <Box display="flex" gap={1}>
-              <TextField size="small" type="date" label="From" value={customFrom}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                InputLabelProps={{ shrink: true }} sx={{ flex: 1 }} />
-              <TextField size="small" type="date" label="To" value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-                InputLabelProps={{ shrink: true }} sx={{ flex: 1 }} />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="From" value={customFrom}
+                  onChange={(val) => setCustomFrom(val as Dayjs | null)}
+                  format={getPickerDateFormat()}
+                  slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+                />
+                <DatePicker
+                  label="To" value={customTo}
+                  onChange={(val) => setCustomTo(val as Dayjs | null)}
+                  format={getPickerDateFormat()}
+                  slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+                />
+              </LocalizationProvider>
             </Box>
           )}
 
@@ -289,8 +305,10 @@ const EpicChangelog: React.FC<Props> = ({ epicId }) => {
               )}
               {datePreset !== 0 && (
                 <Chip
-                  label={datePreset === 4 ? `${customFrom} → ${customTo}` : DATE_PRESETS[datePreset].label}
-                  size="small" onDelete={() => { setDatePreset(0); setCustomFrom(''); setCustomTo(''); }}
+                  label={datePreset === 4
+                    ? `${customFrom?.format('YYYY-MM-DD') ?? ''} → ${customTo?.format('YYYY-MM-DD') ?? ''}`
+                    : DATE_PRESETS[datePreset].label}
+                  size="small" onDelete={() => { setDatePreset(0); setCustomFrom(null); setCustomTo(null); }}
                 />
               )}
             </Box>

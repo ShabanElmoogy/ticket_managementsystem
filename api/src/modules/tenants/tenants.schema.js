@@ -16,6 +16,7 @@ export const tenants = pgTable('tenants', {
   slaMediumHours: integer('sla_medium_hours').notNull().default(24),
   slaLowHours: integer('sla_low_hours').notNull().default(72),
   epicAutoClose: boolean('epic_auto_close').notNull().default(true),
+  dateFormat: text('date_format').notNull().default('dd/MM/yyyy'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Epic } from '../../../services/api/types';
 import type { EpicFeature } from '../detail/types';
+import { formatDateTime } from '../../../utils/dateUtils';
 
 const STATUS_LABELS: Record<string, string> = {
   UNDER_REVIEW: 'Under Review',
@@ -29,7 +30,7 @@ export function exportEpicPdf(epic: Epic, features: EpicFeature[]) {
   doc.text('Epic Report', margin, 14);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Generated ${new Date().toLocaleString()}`, pageW - margin, 14, { align: 'right' });
+  doc.text(`Generated ${formatDateTime(new Date())}`, pageW - margin, 14, { align: 'right' });
 
   y = 30;
   doc.setTextColor(0, 0, 0);

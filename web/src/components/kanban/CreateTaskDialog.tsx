@@ -19,6 +19,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import type { Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
 import type { TaskStatus } from './types/types';
+import { getPickerDateFormat } from '../../stores/tenantStore';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -168,11 +169,8 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 label="Due Date"
                 value={formData.dueDate}
                 onChange={(val) => setFormData(prev => ({ ...prev, dueDate: val as Dayjs | null }))}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                  },
-                }}
+                format={getPickerDateFormat()}
+                slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
           </Grid>

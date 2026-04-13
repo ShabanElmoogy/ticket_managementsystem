@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import DocumentViewer from "./DocumentViewer";
 import type { Doc } from "../../types";
+import { formatDate } from "../../../../../utils/dateUtils";
 
 interface DocumentTabsProps {
   openDocs: Doc[];
@@ -72,7 +73,7 @@ const DocumentTabs: React.FC<DocumentTabsProps> = ({
               {currentDoc.title}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Updated: {new Date(currentDoc.updatedAt).toLocaleDateString()}
+              Updated: {formatDate(currentDoc.updatedAt)}
             </Typography>
             <Box sx={{ mt: 2 }}>
               <DocumentViewer blocks={currentDoc.blocks || []} />

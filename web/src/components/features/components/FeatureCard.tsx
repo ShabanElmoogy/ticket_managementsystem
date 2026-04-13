@@ -4,6 +4,7 @@ import { ThumbUp, ThumbUpOutlined, Edit, Delete, Apps, Person, OpenInNew, Accoun
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { FeatureRequest } from '../../../services/api/types';
 import FeatureStatusChip from './FeatureStatusChip';
+import { formatDate } from '../../../utils/dateUtils';
 
 interface Props {
   feature: FeatureRequest;
@@ -49,7 +50,7 @@ const FeatureCard: React.FC<Props> = ({ feature, isAdmin, onVote, onEdit, onDele
                 {feature.submittedBy.name.charAt(0)}
               </Avatar>
               <Typography variant="caption" color="text.secondary">
-                {feature.submittedBy.name} · {new Date(feature.createdAt).toLocaleDateString()}
+                {feature.submittedBy.name} · {formatDate(feature.createdAt)}
               </Typography>
               {feature.epicTitle && (
                 <Chip

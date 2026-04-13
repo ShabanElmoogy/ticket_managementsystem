@@ -17,6 +17,7 @@ import { epicsApi } from '../api/epics';
 import TemplatePicker from './TemplatePicker';
 import type { EpicTemplate } from '../api/epicTemplates';
 import type { Epic, CreateEpicData, UpdateEpicData } from '../../../services/api/types';
+import { getPickerDateFormat } from '../../../stores/tenantStore';
 
 const STATUSES: Epic['status'][] = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 const PRIORITIES: Epic['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -189,7 +190,7 @@ const EpicFormDialog: React.FC<Props> = ({ open, editing, onClose, onSubmit }) =
             label="Target Date"
             value={targetDate}
             onChange={(val) => setTargetDate(val as Dayjs | null)}
-            format="DD/MM/YYYY"
+            format={getPickerDateFormat()}
             slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
 

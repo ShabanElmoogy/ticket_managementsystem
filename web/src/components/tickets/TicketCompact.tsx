@@ -4,6 +4,7 @@ import {
 } from '@mui/material';
 import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import type { Ticket } from '../../services/api';
+import { formatDate } from '../../utils/dateUtils';
 
 const STATUS_COLOR: Record<string, 'primary' | 'warning' | 'success' | 'default'> = {
   OPEN: 'primary', IN_PROGRESS: 'warning', RESOLVED: 'success', CLOSED: 'default',
@@ -102,7 +103,7 @@ const TicketCompact: React.FC<Props> = ({ ticket, onTicketClick }) => {
         color={isOverdue ? 'error.main' : 'text.secondary'}
         sx={{ flexShrink: 0, minWidth: 72, textAlign: 'right', display: { xs: 'none', lg: 'block' } }}
       >
-        {ticket.dueDate ? new Date(ticket.dueDate).toLocaleDateString() : '—'}
+        {ticket.dueDate ? formatDate(ticket.dueDate) : '—'}
       </Typography>
 
       <IconButton size="small" onClick={(e) => { e.stopPropagation(); onTicketClick(ticket); }}>

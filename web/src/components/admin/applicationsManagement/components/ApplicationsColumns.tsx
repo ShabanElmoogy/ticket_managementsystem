@@ -7,6 +7,7 @@ import {
 } from "../../../common";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { Application } from "../../../../services/api";
+import { formatDate } from "../../../../utils/dateUtils";
 
 export const getApplicationsColumns = (handlers: {
   onEdit: (app: Application) => void;
@@ -82,7 +83,7 @@ export const getApplicationsColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       width: 120,
-      renderCell: (params) => new Date(params.value).toLocaleDateString(),
+      renderCell: (params) => params.value ? formatDate(params.value) : '—',
     },
     buildActionsColumn<Application>({
       headerName: "Actions",

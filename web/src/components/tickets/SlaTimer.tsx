@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import { Timer as TimerIcon } from '@mui/icons-material';
+import { formatDateTime } from '../../utils/dateUtils';
 
 interface SlaTimerProps {
   slaDeadline: string;
@@ -50,7 +51,7 @@ const SlaTimer: React.FC<SlaTimerProps> = ({ slaDeadline, status }) => {
   const label = resolved ? 'SLA: Resolved' : breached ? `SLA Breached ${formatDuration(remaining)}` : `SLA: ${formatDuration(remaining)}`;
 
   return (
-    <Tooltip title={`SLA deadline: ${new Date(slaDeadline).toLocaleString()}`}>
+    <Tooltip title={`SLA deadline: ${formatDateTime(slaDeadline)}`}>
       <Box
         display="flex"
         alignItems="center"

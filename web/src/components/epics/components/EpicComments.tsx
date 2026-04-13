@@ -8,6 +8,7 @@ import MentionTextField, { renderWithMentions, type MentionUser } from '../../ti
 import { usersApi } from '../../admin/usersManagement/api/users';
 import { useQuery } from '@tanstack/react-query';
 import { useEpicComments } from '../hooks/useEpicComments';
+import { formatDateTime } from '../../../utils/dateUtils';
 
 interface Props { epicId: string; }
 
@@ -83,7 +84,7 @@ const EpicComments: React.FC<Props> = ({ epicId }) => {
                     <Box display="flex" alignItems="center" gap={1} mb={0.5}>
                       <Typography variant="subtitle2" fontWeight={600}>{comment.user.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {new Date(comment.createdAt).toLocaleString()}
+                        {formatDateTime(comment.createdAt)}
                       </Typography>
                     </Box>
                     <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: isOwn ? 'primary.50' : 'background.paper' }}>

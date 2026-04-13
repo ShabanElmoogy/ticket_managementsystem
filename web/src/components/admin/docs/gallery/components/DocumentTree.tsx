@@ -22,6 +22,7 @@ import {
 } from "@mui/icons-material";
 import type { TreeNode, Doc } from "../../types";
 import HighlightText from "./HighlightText";
+import { formatDate } from "../../../../../utils/dateUtils";
 
 interface DocumentTreeProps {
   tree: TreeNode[];
@@ -96,7 +97,7 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
             </ListItemIcon>
             <ListItemText
               primary={<HighlightText text={doc.title} query={searchQuery} />}
-              secondary={`Updated: ${new Date(doc.updatedAt).toLocaleDateString()}`}
+              secondary={`Updated: ${formatDate(doc.updatedAt)}`}
             />
           </ListItemButton>
           <Box sx={{ display: 'flex', gap: 1, mr: 1 }}>

@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "date_format" text DEFAULT 'dd/MM/yyyy' NOT NULL;

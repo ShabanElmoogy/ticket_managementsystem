@@ -3,6 +3,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import type { Dayjs } from "dayjs";
+import { getPickerDateFormat } from "../../../../stores/tenantStore";
 
 export interface DueDatePickerProps {
   value: Dayjs | null;
@@ -15,7 +16,7 @@ const DueDatePicker = memo(({ value, onChange }: DueDatePickerProps) => (
       label="Due Date"
       value={value}
       onChange={(val) => onChange(val as Dayjs | null)}
-      format="DD/MM/YYYY"
+      format={getPickerDateFormat()}
       slotProps={{
         textField: {
           fullWidth: true,

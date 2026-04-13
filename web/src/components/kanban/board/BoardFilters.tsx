@@ -19,6 +19,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import type { Dayjs } from 'dayjs';
+import { getPickerDateFormat } from "../../../stores/tenantStore";
 
 interface BoardFiltersProps {
   filtersOpen: boolean;
@@ -151,6 +152,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
               label="Due Date From"
               value={dueDateFrom}
               onChange={(val) => onDueDateFromChange(val as Dayjs | null)}
+              format={getPickerDateFormat()}
               slotProps={{ textField: { size: "small", fullWidth: true } }}
             />
             </LocalizationProvider>
@@ -163,6 +165,7 @@ const BoardFilters: React.FC<BoardFiltersProps> = ({
               label="Due Date To"
               value={dueDateTo}
               onChange={(val) => onDueDateToChange(val as Dayjs | null)}
+              format={getPickerDateFormat()}
               slotProps={{ textField: { size: "small", fullWidth: true } }}
             />
             </LocalizationProvider>

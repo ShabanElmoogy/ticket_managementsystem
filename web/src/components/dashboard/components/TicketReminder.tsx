@@ -22,6 +22,7 @@ import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-materia
 import { useAuthStore } from '../../../stores/authStore';
 import { profileApi, ticketsApi, type Ticket, type ReminderSettings } from '../../../services/api';
 import { Role } from '../../../types/roles';
+import { formatDate } from '../../../utils/dateUtils';
 
 interface TicketReminderProps {
   onTicketClick: (ticket: Ticket) => void;
@@ -173,7 +174,7 @@ const TicketReminder: React.FC<TicketReminderProps> = ({ onTicketClick }) => {
                         <Chip label={ticket.status.replace('_', ' ')} color={getStatusColor(ticket.status)} size="small" />
                         <Chip label={ticket.priority} color={getPriorityColor(ticket.priority)} variant="outlined" size="small" />
                         {ticket.dueDate && (
-                          <Chip label={`Due: ${new Date(ticket.dueDate).toLocaleDateString()}`} size="small" variant="outlined" />
+                          <Chip label={`Due: ${formatDate(ticket.dueDate)}`} size="small" variant="outlined" />
                         )}
                       </Box>
                       <Box sx={{ display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>

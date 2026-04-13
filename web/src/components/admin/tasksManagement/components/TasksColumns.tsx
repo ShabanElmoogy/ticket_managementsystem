@@ -1,8 +1,8 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { Chip } from "@mui/material";
-import dayjs from "dayjs";
 import { buildActionsColumn } from "../../../common";
 import type { KanbanTask, TaskStatus } from "../../../kanban/types/types";
+import { formatDate } from "../../../../utils/dateUtils";
 
 function getStatusColor(status: TaskStatus): "default" | "success" | "warning" | "info" | "secondary" {
   switch (status) {
@@ -68,8 +68,7 @@ export const getTasksColumns = (handlers: {
       headerAlign: "center",
       renderCell: (params) => {
         const v = params.value as string | undefined;
-        const d = v ? dayjs(v) : null;
-        return d && d.isValid() ? d.format("DD/MM/YYYY") : "-";
+        return v ? formatDate(v) : '-';
       },
     },
     {
@@ -80,8 +79,7 @@ export const getTasksColumns = (handlers: {
       headerAlign: "center",
       renderCell: (params) => {
         const v = params.value as string | undefined;
-        const d = v ? dayjs(v) : null;
-        return d && d.isValid() ? d.format("DD/MM/YYYY") : "-";
+        return v ? formatDate(v) : '-';
       },
     },
     buildActionsColumn<KanbanTask>({ headerName: "Actions", width: 140, onEdit, onDelete }),

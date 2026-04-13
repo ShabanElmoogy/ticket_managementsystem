@@ -67,4 +67,7 @@ router.put('/sla-settings', authenticateToken, requireAdmin, remindersController
 router.get('/epic-auto-close-settings', authenticateToken, requireAdmin, remindersController.getEpicAutoCloseSettings);
 router.put('/epic-auto-close-settings', authenticateToken, requireAdmin, remindersController.updateEpicAutoCloseSettings);
 
+router.get('/date-format-settings', authenticateToken, requireAdmin, remindersController.getDateFormatSettings);
+router.put('/date-format-settings', authenticateToken, requireAdmin, remindersController.updateDateFormatSettings);
+
 export default router;

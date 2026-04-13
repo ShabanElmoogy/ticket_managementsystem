@@ -7,6 +7,7 @@ import {
   defaultFileName,
   type ReportTemplateOptions,
 } from "./reportTemplate";
+import { formatDate, formatDateTime } from "../dateUtils";
 
 export type ReportCommonOptions = {
   title?: string;
@@ -15,13 +16,6 @@ export type ReportCommonOptions = {
   orientation?: "portrait" | "landscape";
   filename?: string;
 };
-
-function formatDate(value?: string | null): string {
-  if (!value) return "-";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString();
-}
 
 export interface CustomerTicketsSummaryRow {
   customerName: string;
@@ -70,7 +64,7 @@ export function generateCustomerTicketsSummaryReport(
       r.inProgress,
       r.resolved,
       r.closed,
-      r.lastTicketAt ? new Date(r.lastTicketAt).toLocaleString() : "-",
+      r.lastTicketAt ? formatDateTime(r.lastTicketAt) : "-",
     ]),
     styles: { fontSize: 9, cellPadding: 6, halign: "center" } as UserOptions["styles"],
     headStyles: {

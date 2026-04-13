@@ -1,5 +1,6 @@
 import { CountChip, buildActionsColumn } from "../../../common";
 import type { GridColDef } from "@mui/x-data-grid";
+import { formatDate } from "../../../../utils/dateUtils";
 import { Chip, Box, Typography, IconButton, Tooltip } from "@mui/material";
 import {
   AdminPanelSettings as AdminIcon,
@@ -88,7 +89,7 @@ export const getUsersColumns = (handlers: {
       headerAlign: "center",
       align: "center",
       width: 130,
-      renderCell: (params) => new Date(params.value).toLocaleDateString(),
+      renderCell: (params) => params.value ? formatDate(params.value) : '—',
     },
     ...(onResetPassword
       ? [{

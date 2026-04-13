@@ -5,6 +5,7 @@ import { CountChip, buildActionsColumn } from "../../../common";
 import type { Customer } from "../../../../services/api";
 import ApplicationsCell from "./ApplicationsCell";
 import { getCustomerStatus, daysUntilExpiry, MAINTENANCE_LABELS, STATUS_CONFIG } from "../../../../utils/subscriptionUtils";
+import { formatDate } from "../../../../utils/dateUtils";
 
 export const getCustomersColumns = (handlers: {
   onEdit: (customer: Customer) => void;
@@ -78,7 +79,7 @@ export const getCustomersColumns = (handlers: {
       headerAlign: "center",
       width: 120,
       renderCell: (params) =>
-        params.value ? new Date(params.value).toLocaleDateString('en-GB') : "-",
+        params.value ? formatDate(params.value) : "-",
     },
     {
       field: "applications",
@@ -104,7 +105,7 @@ export const getCustomersColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       width: 120,
-      renderCell: (params) => new Date(params.value).toLocaleDateString('en-GB'),
+      renderCell: (params) => params.value ? formatDate(params.value) : "-",
     },
     buildActionsColumn<Customer>({
       headerName: "Actions",

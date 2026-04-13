@@ -2,6 +2,7 @@ import { Chip, Box, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { buildActionsColumn } from "../../../common";
 import type { Ticket } from "../../../../services/api";
+import { formatDate, formatDateTime } from "../../../../utils/dateUtils";
 
 function getStatusColor(status: Ticket["status"]): "default" | "success" | "warning" | "info" {
   switch (status) {
@@ -101,7 +102,7 @@ export const getTicketsColumns = (handlers: {
       width: 120,
       align: "center",
       headerAlign: "center",
-      renderCell: (params) => new Date(params.value as string).toLocaleDateString(),
+      renderCell: (params) => params.value ? formatDate(params.value as string) : '—',
     },
     buildActionsColumn<Ticket>({ headerName: "Actions", width: 140, onEdit, onDelete }),
   ];

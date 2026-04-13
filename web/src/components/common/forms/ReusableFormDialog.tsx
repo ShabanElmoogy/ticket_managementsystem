@@ -1,27 +1,9 @@
 import { useRef, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-  Switch,
-  Radio,
-  RadioGroup,
-  FormLabel,
-  FormHelperText,
-  Slider,
-  Typography,
-  Chip,
-  Box,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, Button, Grid, FormControl, InputLabel, Select,
+  MenuItem, FormControlLabel, Checkbox, Switch, Radio, RadioGroup,
+  FormLabel, FormHelperText, Slider, Typography, Chip, Box,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useForm, Controller } from "react-hook-form";
@@ -30,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodSchema } from "zod";
 import LoadingButton from "../LoadingButton";
 import MySelect from "../MySelect";
+import { getPickerDateFormat } from "../../../stores/tenantStore";
 
 export interface SelectOption {
   value: string | number | boolean;
@@ -204,7 +187,7 @@ function ReusableFormDialog<T extends FieldValues>({
                     render={({ field: controllerField }) => (
                       <DatePicker
                         label={field.label}
-                        format={field.dateFormat || "dd/MM/yyyy"}
+                        format={getPickerDateFormat()}
                         value={controllerField.value || null}
                         onChange={controllerField.onChange}
                         disabled={submitting}

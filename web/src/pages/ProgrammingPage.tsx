@@ -22,6 +22,7 @@ import Header from '../components/dashboard/Header';
 import ProgrammingPanel from '../components/programming/ProgrammingPanel';
 import AssignProgrammerDialog from '../components/programming/components/AssignProgrammerDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatDate, formatDateTime } from '../utils/dateUtils';
 
 // ── Status config ────────────────────────────────────────────────────────────
 
@@ -362,7 +363,7 @@ const ProgrammingPage: React.FC = () => {
                           <Typography variant="caption" color="text.disabled">Due Date</Typography>
                           <Typography variant="body2" fontWeight={500} mt={0.5}
                             sx={{ color: selectedTicket.dueDate && new Date(selectedTicket.dueDate) < new Date() ? 'error.main' : 'text.primary' }}>
-                            {selectedTicket.dueDate ? new Date(selectedTicket.dueDate).toLocaleDateString() : '—'}
+                          {selectedTicket.dueDate ? formatDate(selectedTicket.dueDate) : '—'}
                           </Typography>
                         </Box>
                         <Box>
@@ -371,7 +372,7 @@ const ProgrammingPage: React.FC = () => {
                         </Box>
                         <Box>
                           <Typography variant="caption" color="text.disabled">Created At</Typography>
-                          <Typography variant="body2" fontWeight={500} mt={0.5}>{new Date(selectedTicket.createdAt).toLocaleDateString()}</Typography>
+                          <Typography variant="body2" fontWeight={500} mt={0.5}>{formatDate(selectedTicket.createdAt)}</Typography>
                         </Box>
                       </Box>
                     </Paper>
@@ -456,7 +457,7 @@ const ProgrammingPage: React.FC = () => {
                                   <Box display="flex" alignItems="center" gap={1}>
                                     <Typography variant="body2" fontWeight={600}>{comment.user.name}</Typography>
                                     <Typography variant="caption" color="text.disabled">
-                                      {new Date(comment.createdAt).toLocaleString()}
+                                      {formatDateTime(comment.createdAt)}
                                     </Typography>
                                   </Box>
                                   {(comment.userId === user?.id || comment.user?.id === user?.id) && (

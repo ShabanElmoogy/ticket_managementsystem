@@ -34,6 +34,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useKanbanStore } from '../../stores/kanbanStore';
+import { getPickerDateFormat } from '../../stores/tenantStore';
 
 interface BoardAnalyticsDialogProps {
   open: boolean;
@@ -168,6 +169,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                       label="Start Date"
                       value={startDate}
                       onChange={(val) => setStartDate(val as Dayjs | null)}
+                      format={getPickerDateFormat()}
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   </Grid>
@@ -176,6 +178,7 @@ const BoardAnalyticsDialog: React.FC<BoardAnalyticsDialogProps> = ({
                       label="End Date"
                       value={endDate}
                       onChange={(val) => setEndDate(val as Dayjs | null)}
+                      format={getPickerDateFormat()}
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   </Grid>

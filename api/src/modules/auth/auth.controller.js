@@ -262,7 +262,7 @@ export const login = async (req, res) => {
     }
 
     const [tenant] = await db
-      .select({ id: tenants.id, slug: tenants.slug, subscriptionStatus: tenants.subscriptionStatus, subscriptionEnd: tenants.subscriptionEnd })
+      .select({ id: tenants.id, slug: tenants.slug, subscriptionStatus: tenants.subscriptionStatus, subscriptionEnd: tenants.subscriptionEnd, dateFormat: tenants.dateFormat })
       .from(tenants)
       .where(eq(tenants.slug, tenantSlug))
       .limit(1);
@@ -339,6 +339,7 @@ export const login = async (req, res) => {
       tenant: {
         id: tenantId,
         slug: tenant.slug,
+        dateFormat: tenant.dateFormat ?? 'dd/MM/yyyy',
       },
     });
   } catch (error) {

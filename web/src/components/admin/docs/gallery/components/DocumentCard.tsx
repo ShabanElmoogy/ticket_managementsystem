@@ -11,6 +11,7 @@ import {
 import { Visibility as VisibilityIcon } from "@mui/icons-material";
 import type { Doc, DocBlock } from "../../types";
 import HighlightText from "./HighlightText";
+import { formatDate } from "../../../../../utils/dateUtils";
 
 interface DocumentCardProps {
   doc: Doc;
@@ -71,7 +72,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onPreview, searchQuery
             <HighlightText text={doc.title} query={searchQuery} />
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+            Updated: {formatDate(doc.updatedAt)}
           </Typography>
           <Box sx={{ mt: 1, maxHeight: 120, overflow: "hidden" }}>
             {renderPreview(doc.blocks)}

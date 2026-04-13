@@ -1,6 +1,7 @@
 import type { UserOptions } from "jspdf-autotable";
 import type { Ticket } from "../../services/api";
 import { createReport, addSectionTitle, addTable, saveReport } from "./reportTemplate";
+import { formatDate } from "../dateUtils";
 
 export type CustomersTicketReportOptions = {
   title?: string;
@@ -9,13 +10,6 @@ export type CustomersTicketReportOptions = {
   orientation?: "portrait" | "landscape";
   filename?: string;
 };
-
-function formatDate(value?: string): string {
-  if (!value) return "-";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString();
-}
 
 function safe<T>(v: T | undefined | null, fallback = "-"): string {
   if (v === undefined || v === null) return fallback;
