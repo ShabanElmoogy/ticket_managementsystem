@@ -1,22 +1,13 @@
 import React from 'react';
 import {
-  Box,
-  Typography,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  InputAdornment,
-  IconButton,
+  Box, Typography, Button, FormControl, InputLabel, Select,
+  MenuItem, TextField, InputAdornment, IconButton,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Schedule as ScheduleIcon,
+  Search as SearchIcon, Clear as ClearIcon, Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { type User, type Customer, type Application, type Ticket } from '../../../services/api';
+import TicketViewToggle from '../../tickets/TicketViewToggle';
 
 interface MobileFiltersProps {
   statusFilter: Ticket['status'] | "";
@@ -117,19 +108,18 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
           )}
         </Box>
         
-        <Button
-          variant="outlined"
-          onClick={onRefresh}
-          disabled={loading}
-          size="small"
-          sx={{ 
-            borderRadius: 2,
-            minWidth: 'auto',
-            px: 2
-          }}
-        >
-          🔄
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TicketViewToggle />
+          <Button
+            variant="outlined"
+            onClick={onRefresh}
+            disabled={loading}
+            size="small"
+            sx={{ borderRadius: 2, minWidth: 'auto', px: 2 }}
+          >
+            🔄
+          </Button>
+        </Box>
       </Box>
 
       {/* Filter Grid Layout */}

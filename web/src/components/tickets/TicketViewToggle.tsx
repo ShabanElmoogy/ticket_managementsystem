@@ -1,10 +1,10 @@
 import React from 'react';
 import { ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { ViewList, GridView, TableRows } from '@mui/icons-material';
-import { useThemeStore, type TicketView } from '../../stores/themeStore';
+import { useUiStore, type TicketView } from '../../stores/uiStore';
 
 const TicketViewToggle: React.FC = () => {
-  const { ticketView, setTicketView } = useThemeStore();
+  const { ticketView, setTicketView } = useUiStore();
 
   return (
     <ToggleButtonGroup

@@ -23,7 +23,7 @@ import TicketPost from './TicketPost';
 import TicketGrid from '../dashboard/components/TicketGrid';
 import TicketCompact from './TicketCompact';
 import BulkActionBar from './BulkActionBar';
-import type { TicketView } from '../../stores/themeStore';
+import type { TicketView } from '../../stores/uiStore';
 
 interface TicketFeedProps {
   tickets: Ticket[];

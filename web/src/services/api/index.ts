@@ -1,5 +1,5 @@
 // Export all types
-export * from "./types";
+export * from "./types/index";
 
 // Export base HTTP client
 export { api } from "./base";

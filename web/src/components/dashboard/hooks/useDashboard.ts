@@ -29,7 +29,7 @@ export type UseDashboardReturn = ReturnType<typeof useDashboard>;
 export const useDashboard = () => {
   const { user, token } = useAuthStore();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("xl"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const queryClient = useQueryClient();
 
   const [defaultBoard, setDefaultBoard] = useState<KanbanBoard | null>(null);

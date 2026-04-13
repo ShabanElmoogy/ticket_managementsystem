@@ -11,10 +11,10 @@ import {
 } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { useNavigate } from "react-router-dom";
-import { AdminDataGrid } from "../components/common";
-import Header from "../components/dashboard/Header";
-import SuperAdminCharts from "../components/superadmin/SuperAdminCharts";
-import { tenantsApi, type Tenant } from "../services/api";
+import { AdminDataGrid } from "../../components/common";
+import Header from "../../components/dashboard/Header";
+import SuperAdminCharts from "../../components/superadmin/SuperAdminCharts";
+import { tenantsApi, type Tenant } from "../../services/api";
 
 type TenantRow = Tenant;
 
