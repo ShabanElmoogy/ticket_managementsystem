@@ -3,13 +3,13 @@ import ApiIcon from '@mui/icons-material/Api';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
-import { ApplicationsTable, ApplicationFormDialog } from '../applicationsManagement';
-import { applicationsApi } from '../applicationsManagement/api/applications';
-import { applicationsKeys } from '../applicationsManagement/api/queryKeys';
-import { applicationToFormValues } from '../applicationsManagement/utils/toFormValues';
+import { ApplicationsTable, ApplicationFormDialog } from '.';
+import { applicationsApi } from './api/applications';
+import { applicationsKeys } from './api/queryKeys';
+import { applicationToFormValues } from './utils/toFormValues';
 import type { Application, CreateApplicationData } from '../../../services/api';
 
-export function ApplicationsManagement() {
+export default function ApplicationsManagement() {
   const f = useAdminFeature<Application, CreateApplicationData>({
     entityName: 'applications',
     queryKey: applicationsKeys.all,
@@ -71,5 +71,3 @@ export function ApplicationsManagement() {
     </ErrorBoundary>
   );
 }
-
-export default ApplicationsManagement;

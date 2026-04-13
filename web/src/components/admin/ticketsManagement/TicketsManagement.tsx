@@ -1,11 +1,11 @@
-import React from "react";
-import { Box, Alert, Snackbar } from "@mui/material";
-import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
-import CreateTicketDialog from "../../tickets/CreateTicketDialog";
-import { TicketsTable } from "../ticketsManagement";
-import useTicketsManagement from "../ticketsManagement/hooks/useTicketsManagement";
-import MyGridHeader from "../../common/MyGridHeader";
-import BookOnlineIcon from "@mui/icons-material/BookOnline";
+import React from 'react';
+import { Box, Alert, Snackbar } from '@mui/material';
+import DeleteConfirmDialog from '../../common/DeleteConfirmDialog';
+import CreateTicketDialog from '../../tickets/CreateTicketDialog';
+import { TicketsTable } from '.';
+import useTicketsManagement from './hooks/useTicketsManagement';
+import MyGridHeader from '../../common/MyGridHeader';
+import BookOnlineIcon from '@mui/icons-material/BookOnline';
 
 const TicketsManagement: React.FC = () => {
   const {
@@ -49,10 +49,9 @@ const TicketsManagement: React.FC = () => {
         open={dialogOpen}
         onClose={handleCloseDialog}
         onSubmit={handleCreateSubmit}
-        employees={users.filter((u) => u.role === "EMPLOYEE")}
+        employees={users.filter((u) => u.role === 'EMPLOYEE')}
       />
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
@@ -62,12 +61,7 @@ const TicketsManagement: React.FC = () => {
         loading={deleteDialog.loading}
       />
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleSnackbarClose}>
         <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>

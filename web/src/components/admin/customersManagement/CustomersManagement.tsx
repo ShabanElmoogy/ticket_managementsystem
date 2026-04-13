@@ -4,10 +4,10 @@ import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
-import { CustomersTable, CustomerFormDialog } from '../customersManagement';
-import { customersKeys } from '../customersManagement/api/queryKeys';
+import { CustomersTable, CustomerFormDialog } from '.';
+import { customersKeys } from './api/queryKeys';
 import { applicationsKeys } from '../applicationsManagement/api/queryKeys';
-import { customerToFormValues } from '../customersManagement/utils/toFormValues';
+import { customerToFormValues } from './utils/toFormValues';
 import { type Customer, type CreateCustomerData, type Application, customersApi, applicationsApi } from '../../../services/api';
 
 export default function CustomersManagement() {

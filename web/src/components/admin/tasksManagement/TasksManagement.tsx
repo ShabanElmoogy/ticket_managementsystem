@@ -1,17 +1,17 @@
 import { Box, Snackbar, Alert } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import AddTaskIcon from '@mui/icons-material/AddTask';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
-import { TasksTable, TaskFormDialog } from '../tasksManagement';
-import { tasksApi } from '../tasksManagement/api/tasks';
-import { tasksKeys } from '../tasksManagement/api/queryKeys';
-import { taskToFormValues } from '../tasksManagement/utils/toFormValues';
+import { TasksTable, TaskFormDialog } from '.';
+import { tasksApi } from './api/tasks';
+import { tasksKeys } from './api/queryKeys';
+import { taskToFormValues } from './utils/toFormValues';
 import type { KanbanTask, KanbanBoard, User, TaskStatus } from '../../kanban/types/types';
-import type { TaskFormValues } from '../tasksManagement/types/types';
+import type { TaskFormValues } from './types/types';
 
 export default function TasksManagement() {
   const f = useAdminFeature<KanbanTask, Partial<KanbanTask>>({
@@ -57,7 +57,7 @@ export default function TasksManagement() {
 
   return (
     <ErrorBoundary>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Box>
           <MyGridHeader
             title="Tasks Management"

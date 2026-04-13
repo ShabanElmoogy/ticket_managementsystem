@@ -15,19 +15,19 @@ import {
 import { useAuthStore } from "../../stores/authStore";
 import { isSuperAdmin } from "../../types/roles";
 import { useTenantStatus } from "../../stores";
-import CustomersManagement from "./02components/CustomersManagement";
-import ApplicationsManagement from "./02components/ApplicationsManagement";
-import TicketsManagement from "./02components/TicketsManagement";
-import TasksManagement from "./02components/TasksManagement";
-import UsersManagement from "./02components/UsersManagement";
-import AdminDashboard from "./02components/AdminDashboard";
-import ReportsManagement from "./02components/ReportsManagement";
+import CustomersManagement from "./customersManagement/CustomersManagement";
+import ApplicationsManagement from "./applicationsManagement/ApplicationsManagement";
+import TicketsManagement from "./ticketsManagement/TicketsManagement";
+import TasksManagement from "./tasksManagement/TasksManagement";
+import UsersManagement from "./usersManagement/UsersManagement";
+import AdminDashboard from "./adminDashboard/AdminDashboard";
+import ReportsManagement from "./reportsManagement/ReportsManagement";
 import AdminTopBar from "./01layout/AdminTopBar";
 import AdminSidebar from "./01layout/AdminSidebar";
 import NotesIcon from "@mui/icons-material/Notes";
 import DocsManagement from "./docs/DocsManagement";
-import TenantsManagement from './02components/TenantsManagement';
-import AdminSettings from './02components/AdminSettings';
+import TenantsManagement from './tenantsManagement/TenantsManagement';
+import AdminSettings from './adminSettings/AdminSettings';
 import TemplatesManagement from './templatesManagement/TemplatesManagement';
 
 const drawerWidth = 240;

@@ -4,20 +4,13 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
-import { TenantsTable, TenantFormDialog } from '../tenantsManagement';
-import { tenantsApi } from '../tenantsManagement/api/tenants';
-import { tenantsKeys } from '../tenantsManagement/api/queryKeys';
-import { tenantToFormValues } from '../tenantsManagement/utils/toFormValues';
-import type { Tenant, TenantFormValues } from '../tenantsManagement/types/types';
+import { TenantsTable, TenantFormDialog } from '.';
+import { tenantsApi } from './api/tenants';
+import { tenantsKeys } from './api/queryKeys';
+import { tenantToFormValues, toISO } from './utils/toFormValues';
+import type { Tenant, TenantFormValues } from './types/types';
 
-const toISO  = (val: string) => (val ? new Date(val).toISOString() : null);
-const toDate = (iso?: string | null) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
-};
-
-function TenantsPageComponent() {
+function TenantsManagement() {
   const f = useAdminFeature<Tenant, TenantFormValues>({
     entityName: 'tenants',
     queryKey: tenantsKeys.all,
@@ -98,34 +91,7 @@ function TenantsPageComponent() {
           editing={!!f.ui.editingItem}
           initialValues={initialValues}
           onClose={f.closeDialog}
-          onSubmit={async (values) => {
-            f.setSubmitting(true);
-            try {
-              const payload = {
-                name:               values.name,
-                slug:               values.slug || undefined,
-                subscriptionPlan:   values.subscriptionPlan,
-                subscriptionStatus: values.subscriptionStatus,
-                subscriptionSeats:  values.subscriptionSeats || undefined,
-                subscriptionStart:  values.subscriptionStart ? toISO(values.subscriptionStart) ?? undefined : undefined,
-                subscriptionEnd:    values.subscriptionEnd   ? toISO(values.subscriptionEnd)   ?? undefined : undefined,
-                supportEmail:       values.supportEmail || undefined,
-              };
-              if (f.ui.editingItem) {
-                await f.update(f.ui.editingItem.id, values);
-                f.showSnackbar(f.messages.success.updated, 'success');
-              } else {
-                await f.create(payload as unknown as TenantFormValues);
-                f.showSnackbar(f.messages.success.created, 'success');
-              }
-              f.closeDialog();
-            } catch (error) {
-              f.showSnackbar(f.handleError(error, f.ui.editingItem ? f.messages.error.update : f.messages.error.create), 'error');
-              f.logError(f.ui.editingItem ? 'Update' : 'Create', error);
-            } finally {
-              f.setSubmitting(false);
-            }
-          }}
+          onSubmit={(values) => f.handleSubmit(values)}
           submitting={f.ui.submitting}
         />
 
@@ -148,5 +114,4 @@ function TenantsPageComponent() {
   );
 }
 
-export { TenantsPageComponent as TenantsManagement };
-export default TenantsPageComponent;
+export default TenantsManagement;

@@ -1,44 +1,23 @@
 import React from 'react';
-import {
-  Box, Snackbar, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button,
-} from '@mui/material';
+import { Box, Snackbar, Alert } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { ErrorBoundary } from '../../common/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../common';
 import ConfirmTextDialog from '../../common/ConfirmTextDialog';
-import { UsersTable, UserFormDialog } from '../usersManagement';
-import { usersKeys } from '../usersManagement/api/queryKeys';
-import { userToFormValues } from '../usersManagement/utils/toFormValues';
-import type { UserFormValues } from '../usersManagement/types/types';
+import { UsersTable, UserFormDialog } from '.';
+import { usersKeys } from './api/queryKeys';
+import { userToFormValues } from './utils/toFormValues';
+import type { UserFormValues } from './types/types';
 import { type User, type CreateUserData, usersApi } from '../../../services/api';
 import { useAuthStore } from '../../../stores/authStore';
 import { isSuperAdmin, isTenantAdmin, Role } from '../../../types/roles';
+import SeatsFullDialog from './components/SeatsFullDialog';
+import ResetPasswordDialog from './components/ResetPasswordDialog';
 
-// ── Seats-full dialog ────────────────────────────────────────────────────────
+// ── Query key resolver (plain function, not a hook) ──────────────────────────
 
-const SeatsFullDialog: React.FC<{ open: boolean; onClose: () => void; used: number; total: number }> = ({
-  open, onClose, used, total,
-}) => (
-  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth disableScrollLock>
-    <DialogTitle>Seats limit reached</DialogTitle>
-    <DialogContent>
-      <Alert severity="warning" sx={{ mt: 1 }}>
-        Your tenant has reached the maximum number of users for the current subscription.
-        {total > 0 ? ` (${used}/${total} seats used)` : ''}
-      </Alert>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} variant="contained">OK</Button>
-    </DialogActions>
-  </Dialog>
-);
-
-// ── Query key factory ────────────────────────────────────────────────────────
-
-const getUsersQueryKey = () => {
+const resolveUsersQueryKey = () => {
   const user = useAuthStore.getState().user;
   if (isTenantAdmin(user?.role)) {
     const slug = localStorage.getItem('tenantSlug') ?? '';
@@ -50,13 +29,13 @@ const getUsersQueryKey = () => {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export function UsersManagement() {
-  const authUser       = useAuthStore((s) => s.user);
-  const isSuper        = isSuperAdmin(authUser?.role);
+  const authUser          = useAuthStore((s) => s.user);
+  const isSuper           = isSuperAdmin(authUser?.role);
   const isTenantAdminUser = isTenantAdmin(authUser?.role);
 
   const f = useAdminFeature<User, CreateUserData>({
     entityName: 'users',
-    queryKey: getUsersQueryKey,
+    queryKey: resolveUsersQueryKey,
     api: {
       getAll: async () => {
         if (isTenantAdmin(useAuthStore.getState().user?.role)) {
@@ -99,8 +78,8 @@ export function UsersManagement() {
   // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (values: UserFormValues) => {
-    const prevSlug  = localStorage.getItem('tenantSlug');
-    const nextSlug  = values.tenantSlug ? String(values.tenantSlug) : '';
+    const prevSlug = localStorage.getItem('tenantSlug');
+    const nextSlug = values.tenantSlug ? String(values.tenantSlug) : '';
     if (nextSlug) localStorage.setItem('tenantSlug', nextSlug);
 
     if (isSuper && !f.ui.editingItem && !nextSlug) {
@@ -193,7 +172,7 @@ export function UsersManagement() {
     }
   };
 
-  // ── Seats message ──────────────────────────────────────────────────────────
+  // ── Derived state ──────────────────────────────────────────────────────────
   const seatsMessage = isTenantAdminUser && seats
     ? seatLimitReached
       ? `Seats full: ${seats.used}/${seats.total}. You cannot add more users.`
@@ -292,27 +271,15 @@ export function UsersManagement() {
           loading={forceDeleteLoading}
         />
 
-        <Dialog open={!!resetPwdUser} onClose={() => setResetPwdUser(null)} maxWidth="xs" fullWidth disableScrollLock>
-          <DialogTitle>Reset Password — {resetPwdUser?.name}</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="New Password"
-              type="password"
-              value={resetPwdValue}
-              onChange={(e) => setResetPwdValue(e.target.value)}
-              fullWidth
-              autoFocus
-              sx={{ mt: 1 }}
-              helperText="Minimum 6 characters"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setResetPwdUser(null)}>Cancel</Button>
-            <Button onClick={handleResetPassword} disabled={resetPwdValue.length < 6 || resetPwdLoading} variant="contained">
-              {resetPwdLoading ? 'Resetting…' : 'Reset'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ResetPasswordDialog
+          open={!!resetPwdUser}
+          userName={resetPwdUser?.name}
+          value={resetPwdValue}
+          loading={resetPwdLoading}
+          onChange={setResetPwdValue}
+          onClose={() => setResetPwdUser(null)}
+          onConfirm={handleResetPassword}
+        />
 
         <Snackbar open={f.ui.snackbar.open} autoHideDuration={6000} onClose={f.closeSnackbar}>
           <Alert onClose={f.closeSnackbar} severity={f.ui.snackbar.severity}>
