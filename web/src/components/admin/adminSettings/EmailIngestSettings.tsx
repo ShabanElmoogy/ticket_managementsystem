@@ -1,52 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
-  Box, Typography, TextField, Button, Alert, CircularProgress,
+  Box, Typography, TextField, Alert, CircularProgress,
   Paper, Switch, FormControlLabel, Divider, Chip,
 } from '@mui/material';
+import { AppButton } from '../../../shared/components';
 import { Email as EmailIcon, PlayArrow as RunIcon } from '@mui/icons-material';
-import { api } from '../../../services/api';
-
-interface EmailConfig {
-  enabled: boolean;
-  host: string;
-  port: string;
-  secure: boolean;
-  user: string;
-  intervalMinutes: string;
-}
+import { useEmailIngestSettings } from './hooks/useEmailIngestSettings';
 
 const EmailIngestSettings: React.FC = () => {
-  const [config, setConfig] = useState<EmailConfig>({
-    enabled: false, host: '', port: '993', secure: true,
-    user: '', intervalMinutes: '5',
-  });
-  const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-
-  const showAlert = (type: 'success' | 'error' | 'info', msg: string) => {
-    setAlert({ type, msg });
-    setTimeout(() => setAlert(null), 5000);
-  };
-
-  useEffect(() => {
-    api.get<EmailConfig>('/email-ingest/settings')
-      .then(setConfig)
-      .catch(() => showAlert('error', 'Failed to load email settings'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleRunNow = async () => {
-    setRunning(true);
-    try {
-      const r = await api.post<{ message: string }>('/email-ingest/run-now', {});
-      showAlert('success', r.message);
-    } catch (e: any) {
-      showAlert('error', e?.message ?? 'Failed to trigger ingestion');
-    } finally {
-      setRunning(false);
-    }
-  };
+  const { config, loading, running, alert, handleRunNow } = useEmailIngestSettings();
 
   if (loading) return <CircularProgress size={24} />;
 
@@ -96,15 +58,17 @@ const EmailIngestSettings: React.FC = () => {
         <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={1}>
           MANUAL TRIGGER
         </Typography>
-        <Button
+        <AppButton
           variant="outlined"
           color="primary"
-          startIcon={running ? <CircularProgress size={16} /> : <RunIcon />}
+          loading={running}
+          loadingText="Running…"
+          startIcon={<RunIcon />}
           onClick={handleRunNow}
-          disabled={running || !config.enabled}
+          disabled={!config.enabled}
         >
-          {running ? 'Running...' : 'Fetch Emails Now'}
-        </Button>
+          Fetch Emails Now
+        </AppButton>
         <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
           Immediately checks the inbox for unseen emails and creates tickets.
           {!config.enabled && ' Enable ingestion first.'}

@@ -1,61 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Box, Typography, FormControl, InputLabel, Select, MenuItem,
-  Button, Alert, CircularProgress, Paper, Chip,
+  Alert, CircularProgress, Paper, Chip,
 } from '@mui/material';
+import { AppButton } from '../../../shared/components';
 import { format } from 'date-fns';
-import { api } from '../../../services/api/base';
-import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '../../../stores/tenantStore';
+import { DATE_FORMATS } from '../../../stores/tenantStore';
+import type { DateFormatValue } from '../../../stores/tenantStore';
+import { useDateFormatSettings } from './hooks/useDateFormatSettings';
 
 const PREVIEW_DATE = new Date(2025, 11, 31); // 31 Dec 2025
 
 const DateFormatSettings: React.FC = () => {
-  const { dateFormat, setDateFormat } = useTenantStore();
-  const [selected, setSelected] = useState<DateFormatValue>(dateFormat);
-  const [saving, setSaving]     = useState(false);
-  const [loading, setLoading]   = useState(true);
-  const [success, setSuccess]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-
-  useEffect(() => {
-    api.get<{ dateFormat: DateFormatValue }>('/reminders/date-format-settings')
-      .then((res) => {
-        // Only use the API value if it's a real persisted value (not the fallback default)
-        // The store value wins if it was explicitly saved by the user this session
-        const apiFormat = res.dateFormat;
-        // Always sync store → selected; API value only wins if store is still at default
-        if (dateFormat === 'dd/MM/yyyy') {
-          setSelected(apiFormat);
-          setDateFormat(apiFormat);
-        } else {
-          // User already saved a format this session — keep it
-          setSelected(dateFormat);
-        }
-      })
-      .catch(() => setSelected(dateFormat))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
-    try {
-      const res = await api.put<{ dateFormat: DateFormatValue }>(
-        '/reminders/date-format-settings', { dateFormat: selected }
-      );
-      // Use the value the server echoes back (or fall back to what we sent)
-      const saved = res?.dateFormat ?? selected;
-      setSelected(saved);
-      setDateFormat(saved);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    selected, setSelected,
+    saving, loading,
+    success, error,
+    handleSave,
+  } = useDateFormatSettings();
 
   if (loading) return <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>;
 
@@ -104,17 +66,17 @@ const DateFormatSettings: React.FC = () => {
         </Box>
       </Paper>
 
-      {error   && <Alert severity="error"   sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+      {error   && <Alert severity="error"   sx={{ mb: 2 }} onClose={() => {}}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>Date format saved successfully.</Alert>}
 
-      <Button
+      <AppButton
         variant="contained"
+        loading={saving}
+        loadingText="Saving…"
         onClick={handleSave}
-        disabled={saving}
-        startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
       >
-        {saving ? 'Saving…' : 'Save'}
-      </Button>
+        Save
+      </AppButton>
     </Box>
   );
 };

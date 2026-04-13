@@ -1,41 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Box, Typography, Paper, Switch, FormControlLabel,
   Alert, CircularProgress, Divider,
 } from '@mui/material';
 import { AccountTree as EpicsIcon } from '@mui/icons-material';
-import { api } from '../../../services/api';
+import { useEpicAutoCloseSettings } from './hooks/useEpicAutoCloseSettings';
 
 const EpicAutoCloseSettings: React.FC = () => {
-  const [enabled, setEnabled] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-
-  const showAlert = (type: 'success' | 'error', msg: string) => {
-    setAlert({ type, msg });
-    setTimeout(() => setAlert(null), 4000);
-  };
-
-  useEffect(() => {
-    api.get<{ epicAutoClose: boolean }>('/reminders/epic-auto-close-settings')
-      .then((r) => setEnabled(r.epicAutoClose))
-      .catch(() => showAlert('error', 'Failed to load settings'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleToggle = async (value: boolean) => {
-    setSaving(true);
-    try {
-      const r = await api.put<{ epicAutoClose: boolean }>('/reminders/epic-auto-close-settings', { epicAutoClose: value });
-      setEnabled(r.epicAutoClose);
-      showAlert('success', `Epic auto-close ${r.epicAutoClose ? 'enabled' : 'disabled'}`);
-    } catch (e: any) {
-      showAlert('error', e?.message ?? 'Failed to update setting');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { enabled, loading, saving, alert, handleToggle } = useEpicAutoCloseSettings();
 
   if (loading) return <CircularProgress size={24} />;
 

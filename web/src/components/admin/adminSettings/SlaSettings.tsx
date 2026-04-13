@@ -1,23 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
-  Box, Typography, TextField, Button, Alert, CircularProgress, Paper, Chip,
+  Box, Typography, Alert, Paper, Chip, useTheme, CircularProgress,
 } from '@mui/material';
+import { AppButton, AppTextField } from '../../../shared/components';
 import { Timer as TimerIcon } from '@mui/icons-material';
-import { api } from '../../../services/api';
+import { useSlaSettings } from './hooks/useSlaSettings';
+import type { SlaConfig } from './types/types';
 
-interface SlaConfig {
-  slaUrgentHours: number;
-  slaHighHours: number;
-  slaMediumHours: number;
-  slaLowHours: number;
-}
-
-const PRIORITIES = [
-  { key: 'slaUrgentHours', label: '🔴 URGENT', color: '#ef4444' },
-  { key: 'slaHighHours',   label: '🟠 HIGH',   color: '#f97316' },
-  { key: 'slaMediumHours', label: '🟡 MEDIUM', color: '#f59e0b' },
-  { key: 'slaLowHours',    label: '🟢 LOW',    color: '#10b981' },
-] as const;
 
 const PRESETS = [
   { label: '1h',  value: 1 },
@@ -30,35 +19,15 @@ const PRESETS = [
 ];
 
 const SlaSettings: React.FC = () => {
-  const [config, setConfig] = useState<SlaConfig>({ slaUrgentHours: 4, slaHighHours: 8, slaMediumHours: 24, slaLowHours: 72 });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [alert, setAlert] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const theme = useTheme();
+  const { config, setConfig, loading, saving, alert, handleSave } = useSlaSettings();
 
-  const showAlert = (type: 'success' | 'error', msg: string) => {
-    setAlert({ type, msg });
-    setTimeout(() => setAlert(null), 4000);
-  };
-
-  useEffect(() => {
-    api.get<SlaConfig>('/reminders/sla-settings')
-      .then(setConfig)
-      .catch(() => showAlert('error', 'Failed to load SLA settings'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const updated = await api.put<SlaConfig>('/reminders/sla-settings', config);
-      setConfig(updated);
-      showAlert('success', 'SLA settings saved successfully');
-    } catch (e: any) {
-      showAlert('error', e?.message ?? 'Failed to save SLA settings');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const PRIORITIES: { key: keyof SlaConfig; label: string; color: string }[] = [
+    { key: 'slaUrgentHours', label: '🔴 URGENT', color: theme.palette.error.main },
+    { key: 'slaHighHours',   label: '🟠 HIGH',   color: theme.palette.warning.dark },
+    { key: 'slaMediumHours', label: '🟡 MEDIUM', color: theme.palette.warning.main },
+    { key: 'slaLowHours',    label: '🟢 LOW',    color: theme.palette.success.main },
+  ];
 
   if (loading) return <CircularProgress size={24} />;
 
@@ -93,13 +62,13 @@ const SlaSettings: React.FC = () => {
                 />
               ))}
             </Box>
-            <TextField
+            <AppTextField
+              fieldType="number"
               label="Hours"
-              type="number"
               size="small"
               value={config[key]}
               onChange={(e) => setConfig((c) => ({ ...c, [key]: Math.max(1, parseInt(e.target.value) || 1) }))}
-              slotProps={{ htmlInput: { min: 1 } }}
+              min={1}
               sx={{ width: 120 }}
             />
           </Box>
@@ -107,9 +76,14 @@ const SlaSettings: React.FC = () => {
       </Box>
 
       <Box mt={3}>
-        <Button variant="contained" onClick={handleSave} disabled={saving}>
-          {saving ? <CircularProgress size={18} color="inherit" /> : 'Save SLA Settings'}
-        </Button>
+        <AppButton
+          variant="contained"
+          loading={saving}
+          loadingText="Saving…"
+          onClick={handleSave}
+        >
+          Save SLA Settings
+        </AppButton>
       </Box>
     </Paper>
   );
