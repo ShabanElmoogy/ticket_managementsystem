@@ -1,34 +1,16 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  TextField,
-  InputAdornment,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
-import {
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-  ViewList as ViewListIcon,
-  ViewModule as ViewModuleIcon,
-  ArrowBack as ArrowBackIcon,
-  Home as HomeIcon,
-} from "@mui/icons-material";
-import MyGridHeader from "../../common/MyGridHeader";
-import DeleteConfirmDialog from "../../common/DeleteConfirmDialog";
+import React, { useMemo, useState } from 'react';
+import { Box, Button } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import HomeIcon from '@mui/icons-material/Home';
 import { useNavigate } from 'react-router-dom';
-import { useDocsBuilder } from "./hooks/useDocsBuilder";
-import {
-  DocumentCard,
-  FolderCard,
-  DocumentTree,
-  DocumentTabs,
-  DocumentPreviewDialog,
-} from "./gallery/components";
-import type { Doc, TreeNode } from "./types";
+import MyGridHeader from '../../common/MyGridHeader';
+import DeleteConfirmDialog from '../../common/DeleteConfirmDialog';
+import { DocumentPreviewDialog } from './gallery/components';
+import GalleryToolbar from './gallery/GalleryToolbar';
+import CardsBrowser from './gallery/CardsBrowser';
+import TreeBrowser from './gallery/TreeBrowser';
+import { useDocsBuilder } from './hooks/useDocsBuilder';
+import type { Doc, FolderNode, TreeNode } from './types';
 
 interface DocsGalleryProps {
   onEditDoc?: (docId: string) => void;
@@ -38,36 +20,57 @@ interface DocsGalleryProps {
 const DocsGallery: React.FC<DocsGalleryProps> = () => {
   const navigate = useNavigate();
   const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsBuilder();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>(
-    { open: false, doc: null }
-  );
-  const [viewMode, setViewMode] = useState<'tree' | 'cards'>('tree');
+
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [previewDoc, setPreviewDoc]   = useState<Doc | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>({ open: false, doc: null });
+  const [viewMode, setViewMode]       = useState<'tree' | 'cards'>('tree');
   const [currentPath, setCurrentPath] = useState<string[]>([]);
-  const [openDocs, setOpenDocs] = useState<Doc[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
+  const [openDocs, setOpenDocs]       = useState<Doc[]>([]);
+  const [activeTab, setActiveTab]     = useState(0);
   const [treeOpenMode, setTreeOpenMode] = useState<'tab' | 'dialog'>('tab');
 
+  // ── Search helpers ──────────────────────────────────────────────────────────
+  const query = searchTerm.trim().toLowerCase();
+
+  /** Recursively filter a tree to only nodes whose docs match the query */
+  const filterTree = (nodes: TreeNode[]): TreeNode[] => {
+    if (!query) return nodes;
+    return nodes.reduce<TreeNode[]>((acc, node) => {
+      if (node.type === 'doc') {
+        const doc = docs.find(d => d.id === node.docId);
+        if (doc && doc.title.toLowerCase().includes(query)) acc.push(node);
+      } else {
+        const filteredChildren = filterTree(node.children);
+        // Keep folder if it has matching descendants
+        if (filteredChildren.length > 0) {
+          acc.push({ ...node, children: filteredChildren } as FolderNode);
+        }
+      }
+      return acc;
+    }, []);
+  };
+
+  const filteredTree = useMemo(() => filterTree(tree), [tree, docs, query]);
+
+  // ── Card-view navigation helpers ────────────────────────────────────────────
   const getCurrentNode = (): TreeNode | null => {
-    if (currentPath.length === 0) return null; // root
+    if (currentPath.length === 0) return null;
     let current = tree.find(n => n.id === currentPath[0]);
     for (let i = 1; i < currentPath.length; i++) {
-      if (current && current.type === 'folder') {
+      if (current?.type === 'folder') {
         current = current.children.find(c => c.id === currentPath[i]);
-      } else {
-        return null;
-      }
+      } else return null;
     }
     return current || null;
   };
 
   const getItemsInCurrentPath = (): (TreeNode | Doc)[] => {
+    let items: (TreeNode | Doc)[];
+
     if (currentPath.length === 0) {
-      // Root: show all top-level folders and docs not in folders
       const topLevelFolders = tree.filter(n => n.type === 'folder');
       const docsNotInFolders = docs.filter(doc => {
-        // Check if doc is not in any folder
         const isInFolder = tree.some(node => {
           const findDoc = (n: TreeNode): boolean => {
             if (n.type === 'doc' && n.docId === doc.id) return true;
@@ -78,43 +81,68 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
         });
         return !isInFolder;
       });
-      return [...topLevelFolders, ...docsNotInFolders];
+      items = [...topLevelFolders, ...docsNotInFolders];
     } else {
       const currentNode = getCurrentNode();
       if (!currentNode || currentNode.type !== 'folder') return [];
-      return currentNode.children.map(child => {
-        if (child.type === 'doc') {
-          const doc = docs.find(d => d.id === child.docId);
-          return doc || child;
-        }
+      items = currentNode.children.map(child => {
+        if (child.type === 'doc') return docs.find(d => d.id === child.docId) || child;
         return child;
-      }).filter(Boolean);
+      }).filter(Boolean) as (TreeNode | Doc)[];
     }
+
+    if (!query) return items;
+
+    // When searching in card view: show matching docs from ALL folders flat, ignore path
+    if (currentPath.length === 0) {
+      const matchingDocs = docs.filter(d => d.title.toLowerCase().includes(query));
+      return matchingDocs;
+    }
+
+    // Inside a folder: filter docs by title, keep sub-folders that have matches
+    return items.filter(item => {
+      if ('blocks' in item) return item.title.toLowerCase().includes(query);
+      // folder: keep if any descendant doc matches
+      const hasMatch = (n: TreeNode): boolean => {
+        if (n.type === 'doc') {
+          const doc = docs.find(d => d.id === n.docId);
+          return !!doc && doc.title.toLowerCase().includes(query);
+        }
+        return n.children.some(hasMatch);
+      };
+      return hasMatch(item as TreeNode);
+    });
   };
 
-
-
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handlePreview = (doc: Doc) => {
-    if (viewMode === 'tree') {
-      if (treeOpenMode === 'tab') {
-        // Add doc to open docs if not already open
-        setOpenDocs(prev => {
-          const exists = prev.find(d => d.id === doc.id);
-          if (!exists) {
-            const newDocs = [...prev, doc];
-            setActiveTab(newDocs.length - 1);
-            return newDocs;
-          } else {
-            setActiveTab(prev.indexOf(exists));
-            return prev;
-          }
-        });
-      } else {
-        setPreviewDoc(doc);
-      }
+    if (viewMode === 'tree' && treeOpenMode === 'tab') {
+      setOpenDocs(prev => {
+        const exists = prev.find(d => d.id === doc.id);
+        if (!exists) {
+          const next = [...prev, doc];
+          setActiveTab(next.length - 1);
+          return next;
+        }
+        setActiveTab(prev.indexOf(exists));
+        return prev;
+      });
     } else {
       setPreviewDoc(doc);
     }
+  };
+
+  const handleCloseTab = (index: number) => {
+    const next = openDocs.filter((_, i) => i !== index);
+    setOpenDocs(next);
+    if (activeTab >= next.length) setActiveTab(Math.max(0, next.length - 1));
+    else if (activeTab > index) setActiveTab(activeTab - 1);
+  };
+
+  const handleViewModeChange = (mode: 'tree' | 'cards') => {
+    setViewMode(mode);
+    setSearchTerm('');
+    if (mode === 'tree') setCurrentPath([]);
   };
 
   const confirmDelete = async () => {
@@ -124,159 +152,51 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
     }
   };
 
-
-
-  const displayedItems = getItemsInCurrentPath();
-
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
       <MyGridHeader
         title="Document Gallery"
         icon={VisibilityIcon}
         leftActions={
-          <Button
-            startIcon={<HomeIcon />}
-            onClick={() => navigate('/dashboard')}
-            variant="outlined"
-            size="small"
-          >
-            Home
+          <Button startIcon={<HomeIcon />} onClick={() => navigate('/dashboard')} variant="outlined" size="small">
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Home</Box>
           </Button>
         }
       />
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 1.5, alignItems: 'center' }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search documents..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, newView) => {
-            if (newView) {
-              setViewMode(newView);
-              if (newView === 'tree') {
-                setCurrentPath([]);
-              }
-            }
-          }}
-          sx={{ flexShrink: 0 }}
-        >
-          <ToggleButton value="tree">
-            <ViewListIcon sx={{ mr: 1 }} />
-            Tree View
-          </ToggleButton>
-          <ToggleButton value="cards">
-            <ViewModuleIcon sx={{ mr: 1 }} />
-            Card View
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
+      <GalleryToolbar
+        searchTerm={searchTerm}
+        viewMode={viewMode}
+        onSearchChange={setSearchTerm}
+        onViewModeChange={handleViewModeChange}
+      />
 
       {viewMode === 'tree' ? (
-        <Box sx={{ display: 'flex', gap: 2, height: '70vh' }}>
-          <DocumentTree
-            tree={tree}
-            docs={docs}
-            expanded={expanded}
-            treeOpenMode={treeOpenMode}
-            onToggleExpand={toggleExpand}
-            onPreview={handlePreview}
-            onTreeOpenModeChange={setTreeOpenMode}
-          />
-          <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <DocumentTabs
-              openDocs={openDocs}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              onCloseTab={(index) => {
-                const newDocs = openDocs.filter((_, i) => i !== index);
-                setOpenDocs(newDocs);
-                if (activeTab >= newDocs.length) {
-                  setActiveTab(Math.max(0, newDocs.length - 1));
-                } else if (activeTab > index) {
-                  setActiveTab(activeTab - 1);
-                }
-              }}
-            />
-          </Box>
-        </Box>
+        <TreeBrowser
+          tree={filteredTree}
+          docs={docs}
+          expanded={expanded}
+          treeOpenMode={treeOpenMode}
+          searchQuery={query}
+          openDocs={openDocs}
+          activeTab={activeTab}
+          onToggleExpand={toggleExpand}
+          onPreview={handlePreview}
+          onTreeOpenModeChange={setTreeOpenMode}
+          onTabChange={setActiveTab}
+          onCloseTab={handleCloseTab}
+        />
       ) : (
-        <Box>
-          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-            {currentPath.length > 0 && (
-              <Button
-                startIcon={<ArrowBackIcon />}
-                onClick={() => {
-                  const newPath = [...currentPath];
-                  newPath.pop();
-                  setCurrentPath(newPath);
-                }}
-                sx={{ mr: 2 }}
-              >
-                Back
-              </Button>
-            )}
-            <Typography variant="h6">
-              {currentPath.length > 0
-                ? `Documents in ${getCurrentNode()?.title || 'Folder'}`
-                : 'All Documents'
-              }
-            </Typography>
-            {currentPath.length > 0 && (
-              <Button
-                size="small"
-                onClick={() => setCurrentPath([])}
-                sx={{ ml: 'auto' }}
-              >
-                Show All
-              </Button>
-            )}
-          </Box>
-
-          <Grid container spacing={3}>
-            {displayedItems.map((item) => {
-              if ('blocks' in item) {
-                return (
-                  <DocumentCard
-                    key={item.id}
-                    doc={item}
-                    onPreview={handlePreview}
-                  />
-                );
-              } else {
-                return (
-                  <FolderCard
-                    key={item.id}
-                    folder={item}
-                    onNavigate={(folderId) => setCurrentPath([...currentPath, folderId])}
-                  />
-                );
-              }
-            })}
-          </Grid>
-
-          {displayedItems.length === 0 && (
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ textAlign: "center", mt: 6, py: 4 }}
-            >
-              {currentPath.length > 0 ? 'No items in this folder.' : 'No documents found.'}
-            </Typography>
-          )}
-        </Box>
+        <CardsBrowser
+          items={getItemsInCurrentPath()}
+          currentPath={currentPath}
+          currentFolderTitle={getCurrentNode()?.title}
+          searchQuery={query}
+          onNavigateInto={(id) => setCurrentPath([...currentPath, id])}
+          onNavigateBack={() => setCurrentPath(p => p.slice(0, -1))}
+          onNavigateRoot={() => setCurrentPath([])}
+          onPreview={handlePreview}
+        />
       )}
 
       <DocumentPreviewDialog
@@ -294,6 +214,6 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
       />
     </Box>
   );
-}
+};
 
 export default DocsGallery;

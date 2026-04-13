@@ -36,30 +36,56 @@ interface Props {
   sidebarBg: string;
   sidebarBorder: string;
   hoverBg: string;
+  horizontal?: boolean;
 }
 
-const BlockPalette: React.FC<Props> = ({ onAdd, sidebarBg, sidebarBorder, hoverBg }) => (
-  <Box sx={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', bgcolor: sidebarBg, borderLeft: `1px solid ${sidebarBorder}`, overflow: 'hidden' }}>
-    <Box sx={{ px: 1.5, py: 1.25, borderBottom: `1px solid ${sidebarBorder}` }}>
-      <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
-        Blocks
-      </Typography>
-    </Box>
-    <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
-      {PALETTE.map((p) => (
-        <Box
-          key={p.type}
-          onClick={() => onAdd(p.type)}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, py: 0.75, mx: 0.5, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: hoverBg }, transition: 'background 0.1s' }}
-        >
-          <Box sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: p.color }}>
-            {p.icon}
+const BlockPalette: React.FC<Props> = ({ onAdd, sidebarBg, sidebarBorder, hoverBg, horizontal }) => {
+  if (horizontal) {
+    return (
+      <>
+        {PALETTE.map((p) => (
+          <Box
+            key={p.type}
+            onClick={() => onAdd(p.type)}
+            sx={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5,
+              px: 1.5, py: 1, borderRadius: 1, cursor: 'pointer', flexShrink: 0,
+              '&:hover': { bgcolor: hoverBg }, transition: 'background 0.1s',
+            }}
+          >
+            <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.color }}>
+              {p.icon}
+            </Box>
+            <Typography variant="caption" fontSize="0.65rem" fontWeight={500} noWrap>{p.label}</Typography>
           </Box>
-          <Typography variant="body2" fontSize="0.78rem" fontWeight={500}>{p.label}</Typography>
-        </Box>
-      ))}
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <Box sx={{ width: 160, flexShrink: 0, display: 'flex', flexDirection: 'column', bgcolor: sidebarBg, borderLeft: `1px solid ${sidebarBorder}`, overflow: 'hidden' }}>
+      <Box sx={{ px: 1.5, py: 1.25, borderBottom: `1px solid ${sidebarBorder}` }}>
+        <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
+          Blocks
+        </Typography>
+      </Box>
+      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+        {PALETTE.map((p) => (
+          <Box
+            key={p.type}
+            onClick={() => onAdd(p.type)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, py: 0.75, mx: 0.5, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: hoverBg }, transition: 'background 0.1s' }}
+          >
+            <Box sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: p.color }}>
+              {p.icon}
+            </Box>
+            <Typography variant="body2" fontSize="0.78rem" fontWeight={500}>{p.label}</Typography>
+          </Box>
+        ))}
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 export default BlockPalette;

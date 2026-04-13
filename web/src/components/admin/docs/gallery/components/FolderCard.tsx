@@ -8,13 +8,15 @@ import {
 } from "@mui/material";
 import { Folder as FolderIcon } from "@mui/icons-material";
 import type { TreeNode } from "../../types";
+import HighlightText from "./HighlightText";
 
 interface FolderCardProps {
   folder: TreeNode;
   onNavigate: (folderId: string) => void;
+  searchQuery?: string;
 }
 
-const FolderCard: React.FC<FolderCardProps> = ({ folder, onNavigate }) => {
+const FolderCard: React.FC<FolderCardProps> = ({ folder, onNavigate, searchQuery = '' }) => {
   return (
     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
       <Card
@@ -35,7 +37,7 @@ const FolderCard: React.FC<FolderCardProps> = ({ folder, onNavigate }) => {
           <Box sx={{ textAlign: 'center' }}>
             <FolderIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
             <Typography variant="h6">
-              {folder.title}
+              <HighlightText text={folder.title} query={searchQuery} />
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Folder

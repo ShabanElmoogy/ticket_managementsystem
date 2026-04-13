@@ -77,26 +77,29 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   );
 
   return (
-    <nav style={{ width: desktopOpen ? drawerWidth : 0 }}>
+    <nav>
+      {/* Mobile: temporary overlay drawer */}
       <Drawer
         variant="temporary"
         open={!!mobileOpen}
         onClose={onMobileClose}
         ModalProps={{ keepMounted: true }}
         sx={{
-          display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           ...(sx as any),
         }}
       >
         {menu}
       </Drawer>
+
+      {/* Desktop: persistent drawer — MUI handles the reserved space internally */}
       <Drawer
         variant="persistent"
         open={desktopOpen}
         sx={{
-          display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          display: { xs: 'none', md: 'block' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           ...(sx as any),
         }}
       >

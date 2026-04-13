@@ -10,13 +10,15 @@ import {
 } from "@mui/material";
 import { Visibility as VisibilityIcon } from "@mui/icons-material";
 import type { Doc, DocBlock } from "../../types";
+import HighlightText from "./HighlightText";
 
 interface DocumentCardProps {
   doc: Doc;
   onPreview: (doc: Doc) => void;
+  searchQuery?: string;
 }
 
-const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onPreview }) => {
+const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onPreview, searchQuery = '' }) => {
   const renderPreview = (blocks: DocBlock[]) => {
     if (!blocks || blocks.length === 0)
       return <Typography>No content</Typography>;
@@ -66,7 +68,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onPreview }) => {
       >
         <CardContent sx={{ flexGrow: 1 }}>
           <Typography variant="h6" gutterBottom>
-            {doc.title}
+            <HighlightText text={doc.title} query={searchQuery} />
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             Updated: {new Date(doc.updatedAt).toLocaleDateString()}

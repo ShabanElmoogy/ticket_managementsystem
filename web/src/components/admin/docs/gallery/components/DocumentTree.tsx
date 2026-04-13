@@ -21,12 +21,14 @@ import {
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import type { TreeNode, Doc } from "../../types";
+import HighlightText from "./HighlightText";
 
 interface DocumentTreeProps {
   tree: TreeNode[];
   docs: Doc[];
   expanded: Record<string, boolean>;
   treeOpenMode: 'tab' | 'dialog';
+  searchQuery?: string;
   onToggleExpand: (nodeId: string) => void;
   onPreview: (doc: Doc) => void;
   onTreeOpenModeChange: (mode: 'tab' | 'dialog') => void;
@@ -37,6 +39,7 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
   docs,
   expanded,
   treeOpenMode,
+  searchQuery = '',
   onToggleExpand,
   onPreview,
   onTreeOpenModeChange,
@@ -56,7 +59,9 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
               <ListItemIcon>
                 {isExpanded ? <FolderOpenIcon /> : <FolderIcon />}
               </ListItemIcon>
-              <ListItemText primary={node.title} />
+              <ListItemText
+                primary={<HighlightText text={node.title} query={searchQuery} />}
+              />
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
           </ListItem>
@@ -68,18 +73,29 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
         </Box>
       );
     } else {
-      // Doc node
       const doc = docs.find((d) => d.id === node.docId);
       if (!doc) return null;
 
+      const isMatch = searchQuery.trim() !== '' && doc.title.toLowerCase().includes(searchQuery.toLowerCase());
+
       return (
         <ListItem key={node.id} disablePadding>
-          <ListItemButton sx={{ pl: paddingLeft / 8 }} onClick={() => onPreview(doc)}>
+          <ListItemButton
+            sx={{
+              pl: paddingLeft / 8,
+              ...(isMatch && {
+                bgcolor: 'primary.light',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.main' },
+              }),
+            }}
+            onClick={() => onPreview(doc)}
+          >
             <ListItemIcon>
               <DescriptionIcon />
             </ListItemIcon>
             <ListItemText
-              primary={doc.title}
+              primary={<HighlightText text={doc.title} query={searchQuery} />}
               secondary={`Updated: ${new Date(doc.updatedAt).toLocaleDateString()}`}
             />
           </ListItemButton>
@@ -94,11 +110,9 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
   };
 
   return (
-    <Box sx={{ width: 320, flexShrink: 0 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">
-          Document Tree
-        </Typography>
+    <Box sx={{ width: { xs: '100%', md: 300 }, flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h6">Document Tree</Typography>
         <ToggleButtonGroup
           value={treeOpenMode}
           exclusive
@@ -109,7 +123,7 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
           <ToggleButton value="dialog">Dialog</ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+      <List sx={{ maxHeight: { xs: 260, md: '60vh' }, overflow: 'auto' }}>
         {tree.map((node) => renderTreeNode(node))}
       </List>
     </Box>

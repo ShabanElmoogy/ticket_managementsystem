@@ -26,6 +26,7 @@ interface Props {
   sidebarBorder: string;
   hoverBg: string;
   selectedBg: string;
+  overlay?: boolean;
   onSelectDoc: (docId: string, nodeId: string) => void;
   onSelectFolder: (nodeId: string) => void;
   onToggleExpand: (id: string) => void;
@@ -37,7 +38,7 @@ interface Props {
 
 const DocTreeSidebar: React.FC<Props> = ({
   tree, docs, currentDocId, selectedTreeId, expanded,
-  sidebarBg, sidebarBorder, hoverBg, selectedBg,
+  sidebarBg, sidebarBorder, hoverBg, selectedBg, overlay = false,
   onSelectDoc, onSelectFolder, onToggleExpand,
   onAddFolder, onAddDoc, onRenameRequest, onDelete,
 }) => {
@@ -103,7 +104,23 @@ const DocTreeSidebar: React.FC<Props> = ({
     });
 
   return (
-    <Box sx={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', bgcolor: sidebarBg, borderRight: `1px solid ${sidebarBorder}`, overflow: 'hidden' }}>
+    <Box sx={{
+      width: 240,
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      bgcolor: sidebarBg,
+      borderRight: `1px solid ${sidebarBorder}`,
+      overflow: 'hidden',
+      ...(overlay && {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 10,
+        boxShadow: '4px 0 12px rgba(0,0,0,0.15)',
+      }),
+    }}>
       <Box sx={{ px: 1.5, py: 1.25, borderBottom: `1px solid ${sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <NotesIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
         <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5} sx={{ flex: 1 }}>

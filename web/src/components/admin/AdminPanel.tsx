@@ -138,7 +138,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
           flexGrow: 1,
           p: 3,
           mt: 10,
-          width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : "100%" },
+          // Shift content right by the drawer width on desktop when open.
+          // transition matches MUI Drawer's default slide animation.
+          ml: { md: desktopOpen ? `${drawerWidth}px` : 0 },
+          width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
+          transition: theme.transitions.create(['margin', 'width'], {
+            easing: desktopOpen
+              ? theme.transitions.easing.easeOut
+              : theme.transitions.easing.sharp,
+            duration: desktopOpen
+              ? theme.transitions.duration.enteringScreen
+              : theme.transitions.duration.leavingScreen,
+          }),
+          minWidth: 0,
+          overflow: 'hidden',
         }}
       >
         {renderContent()}
