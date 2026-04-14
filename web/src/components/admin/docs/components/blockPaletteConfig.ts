@@ -18,6 +18,7 @@ export const PALETTE_ITEMS: PaletteItem[] = [
   { type: 'tabs',         label: 'Tabs',          color: '#a855f7' },
   { type: 'table',        label: 'Table',         color: '#ec4899' },
   { type: 'image',        label: 'Image',         color: '#0ea5e9' },
-  { type: 'video',        label: 'Video',         color: '#ef4444' },
-  { type: 'divider',      label: 'Divider',       color: '#6b7280' },
+  { type: 'video',         label: 'Video',          color: '#ef4444' },
+  { type: 'videoCarousel', label: 'Video Carousel', color: '#f43f5e' },
+  { type: 'divider',       label: 'Divider',        color: '#6b7280' },
 ];

@@ -83,6 +83,7 @@ function makeBlock(type: BlockType): DocBlock {
     case 'table':        return { ...base, type: 'table',        headers: ['Column 1', 'Column 2'], rows: [['', '']] } as DocBlock;
     case 'toggle':       return { ...base, type: 'toggle',       summary: '', content: '' } as DocBlock;
     case 'tabs':         return { ...base, type: 'tabs',         tabs: [{ id: newId(), label: 'Tab 1', content: '' }, { id: newId(), label: 'Tab 2', content: '' }] } as DocBlock;
+    case 'videoCarousel': return { ...base, type: 'videoCarousel', videos: [] } as DocBlock;
     default:             return base;
   }
 }

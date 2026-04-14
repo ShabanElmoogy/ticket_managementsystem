@@ -178,8 +178,14 @@ export const useAuthStore = create<AuthState>()(
 
           try {
             if (import.meta.env.DEV) console.log('⏰ Token expired, attempting refresh...');
-            const { api } = await import('../services/api');
-            const data = await api.post<{ token: string; refreshToken?: string; user?: User }>('/auth/refresh', { refreshToken: rt });
+            // Use the raw http client directly — bypasses the response interceptor
+            // to avoid a recursive refresh loop when the refresh token is also invalid
+            const { http } = await import('../services/api/httpClient');
+            const response = await http.post<{ token: string; refreshToken?: string; user?: User }>(
+              '/auth/refresh',
+              { refreshToken: rt },
+            );
+            const data = response.data;
 
             const newPayload = decodeToken(data.token);
             if (!newPayload) throw new Error('Invalid refreshed token');

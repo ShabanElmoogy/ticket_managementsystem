@@ -3,6 +3,7 @@ import { Box, Typography, Divider, Chip, Tabs, Tab, useTheme } from "@mui/materi
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { DocBlock } from "../../types";
+import VideoCarouselView from '../../components/VideoCarouselView';
 
 const CALLOUT_COLORS: Record<string, string> = {
   info: '#3b82f6', success: '#10b981', warning: '#f59e0b', error: '#ef4444',
@@ -126,6 +127,9 @@ const DocumentViewer: React.FC<Props> = ({ blocks }) => {
       case 'tabs':
         return <TabsBlock tabs={block.tabs ?? []} />;
 
+      case 'videoCarousel':
+        return <VideoCarouselView videos={block.videos ?? []} />;
+
       case 'divider':
         return <Divider sx={{ borderColor: block.settings?.dividerColor, borderBottomWidth: block.settings?.dividerThickness || 1 }} />;
 
@@ -139,26 +143,28 @@ const DocumentViewer: React.FC<Props> = ({ blocks }) => {
 
       case 'video':
         return block.url ? (
-          <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 1, overflow: 'hidden', bgcolor: '#000' }}>
-            <Box sx={{ position: 'absolute', inset: 0 }}>
-              {/youtu\.be|youtube\.com/.test(block.url) ? (
-                <iframe
-                  title={block.caption || 'video'}
-                  src={(() => {
-                    try {
-                      const u = new URL(block.url);
-                      const v = u.searchParams.get('v') || u.pathname.split('/').filter(Boolean)[0];
-                      return `https://www.youtube.com/embed/${v}`;
-                    } catch { return block.url; }
-                  })()}
-                  width="100%" height="100%"
-                  style={{ border: 0 }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <video src={block.url} controls style={{ width: '100%', height: '100%' }} />
-              )}
+          <Box sx={{ maxWidth: 960, mx: 'auto' }}>
+            <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 1, overflow: 'hidden', bgcolor: '#000' }}>
+              <Box sx={{ position: 'absolute', inset: 0 }}>
+                {/youtu\.be|youtube\.com/.test(block.url) ? (
+                  <iframe
+                    title={block.caption || 'video'}
+                    src={(() => {
+                      try {
+                        const u = new URL(block.url);
+                        const v = u.searchParams.get('v') || u.pathname.split('/').filter(Boolean)[0];
+                        return `https://www.youtube.com/embed/${v}`;
+                      } catch { return block.url; }
+                    })()}
+                    width="100%" height="100%"
+                    style={{ border: 0 }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={block.url} controls style={{ width: '100%', height: '100%' }} />
+                )}
+              </Box>
             </Box>
           </Box>
         ) : null;

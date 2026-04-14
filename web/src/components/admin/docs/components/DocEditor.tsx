@@ -4,7 +4,7 @@ import NotesIcon from '@mui/icons-material/Notes';
 import type {
   DocBlock, HeadingBlock, TextBlock, BulletedListBlock, NumberedListBlock,
   ImageBlock, VideoBlock, CodeBlock, QuoteBlock, CalloutBlock, TableBlock,
-  ToggleBlock, TabsBlock,
+  ToggleBlock, TabsBlock, VideoCarouselBlock,
 } from '../types';
 import BlockContainer from './BlockContainer';
 import BlockSettingsBar from './BlockSettingsBar';
@@ -12,7 +12,7 @@ import AddBlockDivider from './AddBlockDivider';
 import {
   HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor,
   NumberedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor,
-  QuoteEditor, CalloutEditor, TableEditor, ToggleEditor, TabsEditor,
+  QuoteEditor, CalloutEditor, TableEditor, ToggleEditor, TabsEditor, VideoCarouselEditor,
 } from './blockEditors';
 
 interface Props {
@@ -56,7 +56,8 @@ const DocEditor: React.FC<Props> = ({
       case 'tabs':         return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><TabsEditor block={block as TabsBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
       case 'divider':      return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><DividerBlockView settings={settings} /><BlockSettingsBar settings={settings} onSettingsChange={onSC} enableDivider /></BlockContainer>;
       case 'image':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><ImageBlockEditor block={block as ImageBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
-      case 'video':        return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoBlockEditor block={block as VideoBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+      case 'video':         return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoBlockEditor block={block as VideoBlock} onChange={onChange} settings={settings} onSettingsChange={onSC} /></BlockContainer>;
+      case 'videoCarousel': return <BlockContainer key={block.id} {...actions} draggable dragHandlers={dnd}><VideoCarouselEditor block={block as VideoCarouselBlock} onChange={onChange} /></BlockContainer>;
       default: return null;
     }
   };

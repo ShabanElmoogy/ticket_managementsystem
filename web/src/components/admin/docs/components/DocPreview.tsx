@@ -5,9 +5,10 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type {
   DocBlock, HeadingBlock, TextBlock, BulletedListBlock, NumberedListBlock,
   ImageBlock, VideoBlock, CodeBlock, QuoteBlock, CalloutBlock, TableBlock,
-  ToggleBlock, TabsBlock,
-} from '../types';
+  ToggleBlock, TabsBlock, VideoCarouselBlock,
+} from '../types/types.ts';
 import TabsPreview from './TabsPreview';
+import VideoCarouselView from './VideoCarouselView';
 
 interface Props {
   blocks: DocBlock[];
@@ -151,6 +152,9 @@ function renderPreviewBlock(block: DocBlock): React.ReactNode {
     case 'tabs':
       return <TabsPreview tabs={(block as TabsBlock).tabs ?? []} />;
 
+    case 'videoCarousel':
+      return <VideoCarouselView videos={(block as VideoCarouselBlock).videos ?? []} />;
+
     case 'divider':
       return (
         <Divider
@@ -187,7 +191,7 @@ function renderPreviewBlock(block: DocBlock): React.ReactNode {
         } catch { return null; }
       })();
       return (
-        <Box>
+        <Box sx={{ maxWidth: 960, mx: 'auto' }}>
           <Box sx={{ position: 'relative', pt: '56.25%', borderRadius: 2, overflow: 'hidden', bgcolor: '#000' }}>
             <Box sx={{ position: 'absolute', inset: 0 }}>
               {isYT && embedSrc

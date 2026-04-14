@@ -5,6 +5,7 @@ import TextFieldsIcon from '@mui/icons-material/TextFields';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import ImageIcon from '@mui/icons-material/Image';
 import MovieIcon from '@mui/icons-material/Movie';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
@@ -15,20 +16,38 @@ import CodeIcon from '@mui/icons-material/Code';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import type { BlockType } from '../types';
 
-const PALETTE: { type: BlockType; label: string; icon: React.ReactNode; color: string }[] = [
-  { type: 'heading',      label: 'Heading',       icon: <TitleIcon sx={{ fontSize: 16 }} />,                color: '#f59e0b' },
-  { type: 'text',         label: 'Text',          icon: <TextFieldsIcon sx={{ fontSize: 16 }} />,           color: '#3b82f6' },
-  { type: 'quote',        label: 'Quote',         icon: <FormatQuoteIcon sx={{ fontSize: 16 }} />,          color: '#8b5cf6' },
-  { type: 'callout',      label: 'Callout',       icon: <InfoIcon sx={{ fontSize: 16 }} />,                 color: '#06b6d4' },
-  { type: 'code',         label: 'Code',          icon: <CodeIcon sx={{ fontSize: 16 }} />,                 color: '#6366f1' },
-  { type: 'bulletedList', label: 'Bullet List',   icon: <FormatListBulletedIcon sx={{ fontSize: 16 }} />,   color: '#10b981' },
-  { type: 'numberedList', label: 'Numbered List', icon: <FormatListNumberedIcon sx={{ fontSize: 16 }} />,   color: '#14b8a6' },
-  { type: 'toggle',       label: 'Toggle',        icon: <ExpandMoreIcon sx={{ fontSize: 16 }} />,           color: '#f97316' },
-  { type: 'tabs',         label: 'Tabs',          icon: <TabIcon sx={{ fontSize: 16 }} />,                  color: '#a855f7' },
-  { type: 'table',        label: 'Table',         icon: <TableChartIcon sx={{ fontSize: 16 }} />,           color: '#ec4899' },
-  { type: 'image',        label: 'Image',         icon: <ImageIcon sx={{ fontSize: 16 }} />,                color: '#0ea5e9' },
-  { type: 'video',        label: 'Video',         icon: <MovieIcon sx={{ fontSize: 16 }} />,                color: '#ef4444' },
-  { type: 'divider',      label: 'Divider',       icon: <HorizontalRuleIcon sx={{ fontSize: 16 }} />,       color: '#6b7280' },
+const ICON_MAP: Record<BlockType, React.ReactNode> = {
+  heading:       <TitleIcon sx={{ fontSize: 16 }} />,
+  text:          <TextFieldsIcon sx={{ fontSize: 16 }} />,
+  quote:         <FormatQuoteIcon sx={{ fontSize: 16 }} />,
+  callout:       <InfoIcon sx={{ fontSize: 16 }} />,
+  code:          <CodeIcon sx={{ fontSize: 16 }} />,
+  bulletedList:  <FormatListBulletedIcon sx={{ fontSize: 16 }} />,
+  numberedList:  <FormatListNumberedIcon sx={{ fontSize: 16 }} />,
+  toggle:        <ExpandMoreIcon sx={{ fontSize: 16 }} />,
+  tabs:          <TabIcon sx={{ fontSize: 16 }} />,
+  table:         <TableChartIcon sx={{ fontSize: 16 }} />,
+  image:         <ImageIcon sx={{ fontSize: 16 }} />,
+  video:         <MovieIcon sx={{ fontSize: 16 }} />,
+  videoCarousel: <VideoLibraryIcon sx={{ fontSize: 16 }} />,
+  divider:       <HorizontalRuleIcon sx={{ fontSize: 16 }} />,
+};
+
+const PALETTE: { type: BlockType; label: string; color: string }[] = [
+  { type: 'heading',       label: 'Heading',        color: '#f59e0b' },
+  { type: 'text',          label: 'Text',           color: '#3b82f6' },
+  { type: 'quote',         label: 'Quote',          color: '#8b5cf6' },
+  { type: 'callout',       label: 'Callout',        color: '#06b6d4' },
+  { type: 'code',          label: 'Code',           color: '#6366f1' },
+  { type: 'bulletedList',  label: 'Bullet List',    color: '#10b981' },
+  { type: 'numberedList',  label: 'Numbered List',  color: '#14b8a6' },
+  { type: 'toggle',        label: 'Toggle',         color: '#f97316' },
+  { type: 'tabs',          label: 'Tabs',           color: '#a855f7' },
+  { type: 'table',         label: 'Table',          color: '#ec4899' },
+  { type: 'image',         label: 'Image',          color: '#0ea5e9' },
+  { type: 'video',         label: 'Video',          color: '#ef4444' },
+  { type: 'videoCarousel', label: 'Video Carousel', color: '#f43f5e' },
+  { type: 'divider',       label: 'Divider',        color: '#6b7280' },
 ];
 
 interface Props {
@@ -54,7 +73,7 @@ const BlockPalette: React.FC<Props> = ({ onAdd, sidebarBg, sidebarBorder, hoverB
             }}
           >
             <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.color }}>
-              {p.icon}
+              {ICON_MAP[p.type]}
             </Box>
             <Typography variant="caption" fontSize="0.65rem" fontWeight={500} noWrap>{p.label}</Typography>
           </Box>
@@ -78,7 +97,7 @@ const BlockPalette: React.FC<Props> = ({ onAdd, sidebarBg, sidebarBorder, hoverB
             sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, py: 0.75, mx: 0.5, borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: hoverBg }, transition: 'background 0.1s' }}
           >
             <Box sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: alpha(p.color, 0.12), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: p.color }}>
-              {p.icon}
+              {ICON_MAP[p.type]}
             </Box>
             <Typography variant="body2" fontSize="0.78rem" fontWeight={500}>{p.label}</Typography>
           </Box>

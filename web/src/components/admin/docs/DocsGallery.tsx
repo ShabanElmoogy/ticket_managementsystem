@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Box, Button } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import HomeIcon from '@mui/icons-material/Home';
@@ -23,6 +23,12 @@ const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc: _onEditDoc }) => {
   const tree         = useDocsStore((s) => s.tree);
   const expanded     = useDocsStore((s) => s.expanded);
   const toggleExpand = useDocsStore((s) => s.toggleExpand);
+  const loadAll      = useDocsStore((s) => s.loadAll);
+
+  // Load data if not already loaded (e.g. when accessed directly without builder)
+  useEffect(() => {
+    if (docs.length === 0 && tree.length === 0) void loadAll();
+  }, []);
 
   const [searchTerm,   setSearchTerm]   = useState('');
   const [previewDoc,   setPreviewDoc]   = useState<Doc | null>(null);
