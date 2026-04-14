@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { usersApi } from '../../services/api';
 import { ticketsApi } from '../../services/api';
-import type { Ticket, User } from '../../services/api';
+import type { Ticket } from '../../services/api';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 interface ReassignDialogProps {

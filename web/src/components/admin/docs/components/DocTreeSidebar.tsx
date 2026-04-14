@@ -37,7 +37,7 @@ interface Props {
 }
 
 const DocTreeSidebar: React.FC<Props> = ({
-  tree, docs, currentDocId, selectedTreeId, expanded,
+  tree, currentDocId, selectedTreeId, expanded,
   sidebarBg, sidebarBorder, hoverBg, selectedBg, overlay = false,
   onSelectDoc, onSelectFolder, onToggleExpand,
   onAddFolder, onAddDoc, onRenameRequest, onDelete,

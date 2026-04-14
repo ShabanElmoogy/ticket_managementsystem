@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Box, Tabs, Tab, TextField, IconButton, Button, Tooltip,
+  Box, Tabs, Tab, TextField, IconButton, Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { TabsBlock, TabItem, BlockSettings } from '../../types';
-import { newId } from '../../types';
+import { newId } from '../../utils/idUtils';
 
 interface Props {
   block: TabsBlock;
@@ -51,16 +51,21 @@ const TabsEditor: React.FC<Props> = ({ block, onChange }) => {
             <Tab
               key={tab.id}
               label={
-                <Box display="flex" alignItems="center" gap={0.5}>
+                <Box display="flex" alignItems="center" gap={0.5} component="span">
                   <span>{tab.label || `Tab ${i + 1}`}</span>
                   {tabs.length > 1 && (
                     <Tooltip title="Remove tab">
-                      <IconButton
-                        size="small" sx={{ p: 0.1, ml: 0.25 }}
+                      <Box
+                        component="span"
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Remove tab"
                         onClick={e => { e.stopPropagation(); removeTab(i); }}
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeTab(i); } }}
+                        sx={{ display: 'inline-flex', alignItems: 'center', ml: 0.25, p: 0.1, borderRadius: '50%', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
                       >
                         <DeleteIcon sx={{ fontSize: 12 }} />
-                      </IconButton>
+                      </Box>
                     </Tooltip>
                   )}
                 </Box>

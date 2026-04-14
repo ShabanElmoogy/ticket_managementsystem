@@ -32,7 +32,7 @@ import { formatDateTime, formatDate, formatRelativeDuration } from '../shared/ut
 import AttachmentsPanel from '../components/tickets/AttachmentsPanel';
 import Header from '../components/dashboard/Header';
 import WatcherButton from '../components/tickets/WatcherButton';
-import MentionTextField, { renderWithMentions, type MentionUser } from '../components/tickets/MentionTextField';
+import MentionTextField, { renderWithMentions } from '../components/tickets/MentionTextField';
 import { usersApi } from '../services/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

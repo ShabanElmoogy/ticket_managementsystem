@@ -128,5 +128,5 @@ export type ServerDocNode = {
   docId?: string | null;
 };
 
-// Helpers
-export const newId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+// Helpers — moved to utils/idUtils.ts
+// import { newId } from '../utils/idUtils';

@@ -6,7 +6,7 @@ import BlockPalette from './components/BlockPalette';
 import DocsBuilderHeader from './components/DocsBuilderHeader';
 import DocPreview from './components/DocPreview';
 import DocEditor from './components/DocEditor';
-import { useDocsBuilder } from './hooks/useDocsBuilder';
+import { useDocsContext } from './hooks/DocsContext';
 
 interface Props { onBackToGallery?: () => void; editingDocId?: string | null; }
 
@@ -18,7 +18,6 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const theme  = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
-  // Single JS breakpoint — all layout decisions derive from this one value
   const compact = useMediaQuery(COMPACT_QUERY);
 
   const {
@@ -26,7 +25,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
     preview, setPreview, tree, selectedTreeId, setSelectedTreeId, expanded,
     addBlock, updateBlock, updateBlockSettings, removeBlock, moveBlock, dndHandlers,
     addFolder, addDocUnder, renameNode, deleteNodeAndDocs, toggleExpand, saveCurrentDoc,
-  } = useDocsBuilder();
+  } = useDocsContext();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);

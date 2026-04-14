@@ -1,4 +1,4 @@
-import type { KanbanTask } from '../../kanban/types/types';
+import type { KanbanTask } from '../../../kanban/types/types';
 import type { TaskFormValues } from '../types/types';
 
 export function taskToFormValues(t: KanbanTask): TaskFormValues {

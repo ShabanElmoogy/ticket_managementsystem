@@ -131,7 +131,7 @@ export function generateTicketsListReport(
       t.application?.name || "-",
       t.assignedTo?.name || "Unassigned",
       formatDate(t.createdAt),
-      formatDate(t.dueDate),
+      formatDate(t.dueDate ?? ''),
     ]);
 
   addTable(ctx, {

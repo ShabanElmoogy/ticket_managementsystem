@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
   Box, Typography, CircularProgress, Avatar, Tooltip, Chip,
-  TextField, MenuItem, Select, FormControl, InputLabel,
-  InputAdornment, Collapse, IconButton,
+  MenuItem, Select, FormControl, InputLabel,
+  Collapse, IconButton,
 } from '@mui/material';
 import {
   SwapHoriz, Edit, Link, LinkOff, History, Lightbulb,

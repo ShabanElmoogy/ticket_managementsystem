@@ -2,7 +2,7 @@ import { Chip, Box, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { buildActionsColumn } from "../../../../shared/components";
 import type { Ticket } from "../../../../services/api";
-import { formatDate, formatDateTime } from "../../../../shared/utils/dateUtils";
+import { formatDate } from "../../../../shared/utils/dateUtils";
 
 function getStatusColor(status: Ticket["status"]): "default" | "success" | "warning" | "info" {
   switch (status) {

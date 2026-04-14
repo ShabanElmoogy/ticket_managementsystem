@@ -1,4 +1,4 @@
-import type { Customer, SubscriptionStatus } from '../services/api/types';
+import type { Customer, SubscriptionStatus } from '../../services/api/types';
 
 export const getCustomerStatus = (customer: Customer): SubscriptionStatus => {
   const now = new Date();

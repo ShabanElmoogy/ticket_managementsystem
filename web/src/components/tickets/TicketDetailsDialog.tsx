@@ -25,7 +25,7 @@ import { formatDateTime, formatRelativeDuration } from '../../shared/utils/dateU
 import AttachmentsPanel from './AttachmentsPanel';
 import { useNavigate } from 'react-router-dom';
 import WatcherButton from './WatcherButton';
-import MentionTextField, { renderWithMentions, extractMentionedUsers, type MentionUser } from './MentionTextField';
+import MentionTextField, { renderWithMentions, extractMentionedUsers } from './MentionTextField';
 import { usersApi } from '../../services/api';
 
 interface TicketDetailsDialogProps {

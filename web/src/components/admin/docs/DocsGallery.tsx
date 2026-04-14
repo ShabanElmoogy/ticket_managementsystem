@@ -9,31 +9,29 @@ import { DocumentPreviewDialog } from './gallery/components';
 import GalleryToolbar from './gallery/GalleryToolbar';
 import CardsBrowser from './gallery/CardsBrowser';
 import TreeBrowser from './gallery/TreeBrowser';
-import { useDocsBuilder } from './hooks/useDocsBuilder';
+import { useDocsContext } from './hooks/DocsContext';
 import type { Doc, FolderNode, TreeNode } from './types';
 
 interface DocsGalleryProps {
   onEditDoc?: (docId: string) => void;
-  viewOnly?: boolean;
 }
 
-const DocsGallery: React.FC<DocsGalleryProps> = () => {
+const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc: _onEditDoc }) => {
   const navigate = useNavigate();
-  const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsBuilder();
+  const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsContext();
 
-  const [searchTerm, setSearchTerm]   = useState('');
-  const [previewDoc, setPreviewDoc]   = useState<Doc | null>(null);
+  const [searchTerm,   setSearchTerm]   = useState('');
+  const [previewDoc,   setPreviewDoc]   = useState<Doc | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; doc: Doc | null }>({ open: false, doc: null });
-  const [viewMode, setViewMode]       = useState<'tree' | 'cards'>('tree');
-  const [currentPath, setCurrentPath] = useState<string[]>([]);
-  const [openDocs, setOpenDocs]       = useState<Doc[]>([]);
-  const [activeTab, setActiveTab]     = useState(0);
+  const [viewMode,     setViewMode]     = useState<'tree' | 'cards'>('tree');
+  const [currentPath,  setCurrentPath]  = useState<string[]>([]);
+  const [openDocs,     setOpenDocs]     = useState<Doc[]>([]);
+  const [activeTab,    setActiveTab]    = useState(0);
   const [treeOpenMode, setTreeOpenMode] = useState<'tab' | 'dialog'>('tab');
 
-  // ── Search helpers ──────────────────────────────────────────────────────────
   const query = searchTerm.trim().toLowerCase();
 
-  /** Recursively filter a tree to only nodes whose docs match the query */
+  // ── Tree search filter ─────────────────────────────────────────────────────
   const filterTree = (nodes: TreeNode[]): TreeNode[] => {
     if (!query) return nodes;
     return nodes.reduce<TreeNode[]>((acc, node) => {
@@ -42,79 +40,56 @@ const DocsGallery: React.FC<DocsGalleryProps> = () => {
         if (doc && doc.title.toLowerCase().includes(query)) acc.push(node);
       } else {
         const filteredChildren = filterTree(node.children);
-        // Keep folder if it has matching descendants
-        if (filteredChildren.length > 0) {
-          acc.push({ ...node, children: filteredChildren } as FolderNode);
-        }
+        if (filteredChildren.length > 0) acc.push({ ...node, children: filteredChildren } as FolderNode);
       }
       return acc;
     }, []);
   };
 
-  const filteredTree = useMemo(() => filterTree(tree), [tree, docs, query]);
+  const filteredTree = useMemo(() => filterTree(tree), [tree, docs, query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Card-view navigation helpers ────────────────────────────────────────────
+  // ── Card-view navigation ───────────────────────────────────────────────────
   const getCurrentNode = (): TreeNode | null => {
     if (currentPath.length === 0) return null;
     let current = tree.find(n => n.id === currentPath[0]);
     for (let i = 1; i < currentPath.length; i++) {
-      if (current?.type === 'folder') {
-        current = current.children.find(c => c.id === currentPath[i]);
-      } else return null;
+      if (current?.type === 'folder') current = current.children.find(c => c.id === currentPath[i]);
+      else return null;
     }
-    return current || null;
+    return current ?? null;
   };
 
   const getItemsInCurrentPath = (): (TreeNode | Doc)[] => {
-    let items: (TreeNode | Doc)[];
-
     if (currentPath.length === 0) {
-      const topLevelFolders = tree.filter(n => n.type === 'folder');
-      const docsNotInFolders = docs.filter(doc => {
-        const isInFolder = tree.some(node => {
-          const findDoc = (n: TreeNode): boolean => {
-            if (n.type === 'doc' && n.docId === doc.id) return true;
-            if (n.type === 'folder') return n.children.some(findDoc);
-            return false;
-          };
-          return findDoc(node);
-        });
-        return !isInFolder;
-      });
-      items = [...topLevelFolders, ...docsNotInFolders];
-    } else {
-      const currentNode = getCurrentNode();
-      if (!currentNode || currentNode.type !== 'folder') return [];
-      items = currentNode.children.map(child => {
-        if (child.type === 'doc') return docs.find(d => d.id === child.docId) || child;
-        return child;
-      }).filter(Boolean) as (TreeNode | Doc)[];
+      const topFolders = tree.filter(n => n.type === 'folder');
+      const orphanDocs = docs.filter(doc => !tree.some(node => {
+        const findDoc = (n: TreeNode): boolean =>
+          n.type === 'doc' ? n.docId === doc.id : n.children.some(findDoc);
+        return findDoc(node);
+      }));
+      const items = [...topFolders, ...orphanDocs];
+      if (!query) return items;
+      return docs.filter(d => d.title.toLowerCase().includes(query));
     }
+
+    const currentNode = getCurrentNode();
+    if (!currentNode || currentNode.type !== 'folder') return [];
+    const items = currentNode.children
+      .map(child => child.type === 'doc' ? (docs.find(d => d.id === child.docId) ?? child) : child)
+      .filter(Boolean) as (TreeNode | Doc)[];
 
     if (!query) return items;
-
-    // When searching in card view: show matching docs from ALL folders flat, ignore path
-    if (currentPath.length === 0) {
-      const matchingDocs = docs.filter(d => d.title.toLowerCase().includes(query));
-      return matchingDocs;
-    }
-
-    // Inside a folder: filter docs by title, keep sub-folders that have matches
     return items.filter(item => {
       if ('blocks' in item) return item.title.toLowerCase().includes(query);
-      // folder: keep if any descendant doc matches
-      const hasMatch = (n: TreeNode): boolean => {
-        if (n.type === 'doc') {
-          const doc = docs.find(d => d.id === n.docId);
-          return !!doc && doc.title.toLowerCase().includes(query);
-        }
-        return n.children.some(hasMatch);
-      };
+      const hasMatch = (n: TreeNode): boolean =>
+        n.type === 'doc'
+          ? !!(docs.find(d => d.id === n.docId)?.title.toLowerCase().includes(query))
+          : n.children.some(hasMatch);
       return hasMatch(item as TreeNode);
     });
   };
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handlePreview = (doc: Doc) => {
     if (viewMode === 'tree' && treeOpenMode === 'tab') {
       setOpenDocs(prev => {

@@ -2,8 +2,9 @@
 export type {
   Application,
   CreateApplicationData,
-  CustomerApplication,
 } from '../../../../services/api/types/application.ts';
+
+export type { CustomerApplication } from '../../../../services/api/types/customer.ts';
 
 // ── Feature-local types ──────────────────────────────────────────────────────
 
@@ -11,6 +12,13 @@ import type { Application } from '../../../../services/api/types/application.ts'
 import type { CreateApplicationData } from '../../../../services/api/types/application.ts';
 
 export type ApplicationFormValues = CreateApplicationData;
+
+export interface ApplicationsTableProps {
+  applications: Application[];
+  loading: boolean;
+  onEdit:   (app: Application) => void;
+  onDelete: (app: Application) => void;
+}
 
 export interface ApplicationFormDialogProps {
   open: boolean;

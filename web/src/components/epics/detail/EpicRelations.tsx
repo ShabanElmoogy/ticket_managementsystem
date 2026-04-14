@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { epicsApi } from '../api/epics';
 import EpicStatusChip from '../components/EpicStatusChip';
-import type { Epic, EpicRelation, EpicRelationType } from '../../../services/api/types';
+import type { Epic, EpicRelationType } from '../../../services/api/types';
 
 const RELATION_CONFIG: Record<EpicRelationType, { label: string; color: string }> = {
   RELATES_TO:  { label: 'Relates to',  color: '#1976d2' },
@@ -72,13 +72,6 @@ const EpicRelations: React.FC<Props> = ({ epicId, isAdmin }) => {
 
   const existingIds = new Set(relations.map((r) => r.epicId));
   const candidates = allEpics.filter((e) => e.id !== epicId && !existingIds.has(e.id));
-
-  // Group by relation type
-  const grouped = relations.reduce<Record<string, EpicRelation[]>>((acc, r) => {
-    const key = r.direction === 'outgoing' ? r.relationType : `${r.relationType}_INCOMING`;
-    (acc[key] ??= []).push(r);
-    return acc;
-  }, {});
 
   return (
     <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', mt: 3 }}>

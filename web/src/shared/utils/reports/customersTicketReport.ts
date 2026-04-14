@@ -65,7 +65,7 @@ export function generateCustomersTicketReport(
         safe(t.application?.name),
         safe(t.assignedTo?.name, "Unassigned"),
         formatDate(t.createdAt),
-        formatDate(t.dueDate),
+        formatDate(t.dueDate ?? ''),
       ]);
 
     const head = [[

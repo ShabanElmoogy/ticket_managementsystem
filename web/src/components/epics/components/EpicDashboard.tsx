@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   Box, Paper, Typography, LinearProgress, Chip, Tooltip,
-  useTheme, alpha, Grid,
+  useTheme, alpha,
 } from '@mui/material';
 import {
   CheckCircle, Cancel, PlayArrow, DraftsTwoTone,

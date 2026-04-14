@@ -65,7 +65,7 @@ const DocumentViewer: React.FC<Props> = ({ blocks }) => {
           <Box sx={{ color: block.settings?.color || 'inherit' }}>
             {block.title && <Typography variant="subtitle2" fontWeight={600} mb={0.5}>{block.title}</Typography>}
             <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              {block.items.filter(Boolean).map((item, i) => <li key={i}><Typography variant="body2">{item}</Typography></li>)}
+              {block.items.filter(Boolean).map((item, i) => <li key={`b-${i}`}><Typography variant="body2">{item}</Typography></li>)}
             </ul>
           </Box>
         );
@@ -75,7 +75,7 @@ const DocumentViewer: React.FC<Props> = ({ blocks }) => {
           <Box sx={{ color: block.settings?.color || 'inherit' }}>
             {block.title && <Typography variant="subtitle2" fontWeight={600} mb={0.5}>{block.title}</Typography>}
             <ol style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              {block.items.filter(Boolean).map((item, i) => <li key={i}><Typography variant="body2">{item}</Typography></li>)}
+              {block.items.filter(Boolean).map((item, i) => <li key={`n-${i}`}><Typography variant="body2">{item}</Typography></li>)}
             </ol>
           </Box>
         );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, TextField, IconButton, Button, Typography, Tooltip } from '@mui/material';
+import { Box, TextField, IconButton, Button, Tooltip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { TableBlock, BlockSettings } from '../../types';

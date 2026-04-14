@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const EpicBurndownChart: React.FC<Props> = ({ epicId, targetDate }) => {
+const EpicBurndownChart: React.FC<Props> = ({ epicId }) => {
   const theme = useTheme();
 
   const { data, isLoading } = useQuery({

@@ -1,5 +1,4 @@
 // utils/notificationUtils.ts
-import { type Notification } from "../types/header";
 
 export const formatNotificationTime = (timestamp: string): string => {
   const date = new Date(timestamp);
@@ -16,7 +15,7 @@ export const formatNotificationTime = (timestamp: string): string => {
 
 export const createNotificationFromSocketData = (
   socketNotification: any
-): Notification => {
+) => {
   const { type, data } = socketNotification || {};
   const safeData: any = data || {};
   const safeTicket = safeData.ticket || {};

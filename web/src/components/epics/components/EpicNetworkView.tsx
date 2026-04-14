@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { Box, Paper, Typography, Chip, Tooltip, CircularProgress } from '@mui/material';
+import React, { useRef, useMemo } from 'react';
+import { Box, Paper, Typography, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { epicsApi } from '../api/epics';
-import type { EpicNetworkNode, EpicNetworkEdge } from '../../../services/api/types';
+import type { EpicNetworkNode } from '../../../services/api/types';
 
 // ── Layout constants ─────────────────────────────────────────────────────────
 const NODE_W = 160;
@@ -58,7 +58,6 @@ interface Props {
 const EpicNetworkView: React.FC<Props> = () => {
   const navigate = useNavigate();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [tooltip, setTooltip] = React.useState<{ x: number; y: number; label: string } | null>(null);
 
   const { data: graph, isLoading } = useQuery({
     queryKey: ['epics', 'network'],
