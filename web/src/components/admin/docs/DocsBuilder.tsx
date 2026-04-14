@@ -28,6 +28,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const updateBlock     = useDocsStore((s) => s.updateBlock);
   const updateBlockSettings = useDocsStore((s) => s.updateBlockSettings);
   const removeBlock     = useDocsStore((s) => s.removeBlock);
+  const duplicateBlock  = useDocsStore((s) => s.duplicateBlock);
   const moveBlock       = useDocsStore((s) => s.moveBlock);
   const setDragId       = useDocsStore((s) => s.setDragId);
   const dropBlock       = useDocsStore((s) => s.dropBlock);
@@ -134,6 +135,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
                 onUpdateBlock={updateBlock}
                 onUpdateBlockSettings={updateBlockSettings}
                 onRemoveBlock={removeBlock}
+                onDuplicateBlock={duplicateBlock}
                 onMoveBlock={moveBlock}
                 dndHandlers={dndHandlers}
               />

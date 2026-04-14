@@ -35,6 +35,7 @@ interface DocsState {
   updateBlock:         <T extends DocBlock>(id: string, patch: Partial<T>) => void;
   updateBlockSettings: (id: string, patch: Partial<BlockSettings>) => void;
   removeBlock:         (id: string) => void;
+  duplicateBlock:      (id: string) => void;
   moveBlock:           (id: string, dir: -1 | 1) => void;
   setDragId:           (id: string | null) => void;
   dropBlock:           (targetId: string) => void;
@@ -257,6 +258,23 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     if (!currentDoc) return;
     const updated: Doc = { ...currentDoc, blocks: currentDoc.blocks.filter((b: DocBlock) => b.id !== id), updatedAt: new Date().toISOString() };
     set((s) => ({ docs: s.docs.map((d) => d.id === currentDoc.id ? updated : d) }));
+    scheduleSave();
+  },
+
+  duplicateBlock: (id) => {
+    const { docs, currentDocId } = get();
+    const currentDoc = docs.find((d) => d.id === currentDocId);
+    if (!currentDoc) return;
+    const idx = currentDoc.blocks.findIndex((b) => b.id === id);
+    if (idx === -1) return;
+    const clone = { ...currentDoc.blocks[idx], id: newId() };
+    const blocks = [...currentDoc.blocks];
+    blocks.splice(idx + 1, 0, clone);
+    set((s) => ({
+      docs: s.docs.map((d) =>
+        d.id === currentDoc.id ? { ...d, blocks, updatedAt: new Date().toISOString() } : d,
+      ),
+    }));
     scheduleSave();
   },
 

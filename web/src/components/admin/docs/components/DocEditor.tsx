@@ -20,18 +20,20 @@ interface Props {
   onUpdateBlock: (id: string, patch: Partial<DocBlock>) => void;
   onUpdateBlockSettings: (id: string, patch: any) => void;
   onRemoveBlock: (id: string) => void;
+  onDuplicateBlock: (id: string) => void;
   onMoveBlock: (id: string, dir: -1 | 1) => void;
   dndHandlers: (id: string) => any;
 }
 
 const DocEditor: React.FC<Props> = ({
-  blocks, hasDoc, onUpdateBlock, onUpdateBlockSettings, onRemoveBlock, onMoveBlock, dndHandlers,
+  blocks, hasDoc, onUpdateBlock, onUpdateBlockSettings, onRemoveBlock, onDuplicateBlock, onMoveBlock, dndHandlers,
 }) => {
   const renderBlock = (block: DocBlock, idx: number): React.ReactNode => {
     const actions = {
-      onMoveUp:   idx > 0               ? () => onMoveBlock(block.id, -1) : undefined,
-      onMoveDown: idx < blocks.length - 1 ? () => onMoveBlock(block.id, 1)  : undefined,
-      onDelete:   () => onRemoveBlock(block.id),
+      onMoveUp:    idx > 0                ? () => onMoveBlock(block.id, -1)    : undefined,
+      onMoveDown:  idx < blocks.length - 1 ? () => onMoveBlock(block.id, 1)    : undefined,
+      onDelete:    () => onRemoveBlock(block.id),
+      onDuplicate: () => onDuplicateBlock(block.id),
     };
     const dnd      = dndHandlers(block.id);
     const settings = block.settings || {};

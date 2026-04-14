@@ -4,19 +4,21 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const BlockContainer: React.FC<{
   children: React.ReactNode;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
+  onDuplicate?: () => void;
   draggable?: boolean;
   dragHandlers?: {
     onDragStart: (e: React.DragEvent) => void;
     onDragOver: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
   };
-}> = ({ children, onMoveUp, onMoveDown, onDelete, draggable, dragHandlers }) => {
+}> = ({ children, onMoveUp, onMoveDown, onDelete, onDuplicate, draggable, dragHandlers }) => {
   const theme = useTheme();
 
   return (
@@ -28,9 +30,11 @@ const BlockContainer: React.FC<{
       sx={{
         position: 'relative',
         mb: 1.5,
+        mt: 1,           // room for the action bar floating above
         borderRadius: 1.5,
         border: '1px solid transparent',
         transition: 'border-color 0.15s',
+        overflow: 'visible',
         '&:hover': {
           borderColor: alpha(theme.palette.primary.main, 0.2),
           '& .block-actions': { opacity: 1 },
@@ -50,17 +54,17 @@ const BlockContainer: React.FC<{
         <DragIndicatorIcon sx={{ fontSize: 18 }} />
       </Box>
 
-      {/* Block actions */}
+      {/* Block actions — floats above the top-right corner, never overlaps content */}
       <Box
         className="block-actions"
         sx={{
-          position: 'absolute', top: 6, right: 6, zIndex: 1,
+          position: 'absolute', top: -16, right: 4, zIndex: 10,
           opacity: 0, transition: 'opacity 0.15s',
           display: 'flex', gap: 0.25,
           bgcolor: 'background.paper',
           border: '1px solid', borderColor: 'divider',
           borderRadius: 1, p: 0.25,
-          boxShadow: 1,
+          boxShadow: 2,
         }}
       >
         {onMoveUp && (
@@ -74,6 +78,13 @@ const BlockContainer: React.FC<{
           <Tooltip title="Move down" placement="top">
             <IconButton size="small" sx={{ p: 0.25 }} onMouseDown={e => e.stopPropagation()} onClick={onMoveDown}>
               <ArrowDownwardIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Tooltip>
+        )}
+        {onDuplicate && (
+          <Tooltip title="Duplicate" placement="top">
+            <IconButton size="small" sx={{ p: 0.25 }} onMouseDown={e => e.stopPropagation()} onClick={onDuplicate}>
+              <ContentCopyIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Tooltip>
         )}
