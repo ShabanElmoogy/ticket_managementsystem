@@ -1,16 +1,12 @@
-import { api } from '../../../../services/api/base';
+import { BaseApiService } from '../../../../services/api/base';
 import type { TicketTemplate } from '../../../../services/api/types';
+import type { TicketTemplatePayload } from '../types/types';
 
-export interface TemplatePayload {
-  name: string;
-  description?: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  estimatedHours?: number | null;
+export class TicketTemplatesApiService extends BaseApiService {
+  list   = ()                                          => this.get<TicketTemplate[]>('/templates');
+  create = (data: TicketTemplatePayload)               => this.post<TicketTemplate>('/templates', data);
+  update = (id: string, data: Partial<TicketTemplatePayload>) => this.put<TicketTemplate>(`/templates/${id}`, data);
+  remove = (id: string)                               => this.delete<{ message: string }>(`/templates/${id}`);
 }
 
-export const templatesApi = {
-  list:   ()                              => api.get<TicketTemplate[]>('/templates'),
-  create: (data: TemplatePayload)         => api.post<TicketTemplate>('/templates', data),
-  update: (id: string, data: Partial<TemplatePayload>) => api.put<TicketTemplate>(`/templates/${id}`, data),
-  delete: (id: string)                    => api.delete<{ message: string }>(`/templates/${id}`),
-};
+export const ticketTemplatesApi = new TicketTemplatesApiService();

@@ -115,6 +115,9 @@ export const ticketFormSchema = z.object({
   // Required number — use `error` not `invalid_type_error` (Zod v4)
   estimatedHours: z.number({ error: 'Must be a number' }).min(0).max(999),
 
+  // Number from a form input (HTML inputs always return strings) — use z.coerce.number()
+  estimatedHoursFromInput: z.coerce.number().min(0).max(999).nullable().optional(),
+
   // Optional number (null allowed)
   actualHours: z.number().min(0).nullable().optional(),
 

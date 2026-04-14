@@ -4,16 +4,9 @@ import {
   Tooltip, CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import type { TemplateItem } from '../types/types';
 
-export interface TemplateItem {
-  id: string;
-  name: string;
-  description?: string | null;
-  /** Rendered below the name/description as metadata chips */
-  meta?: React.ReactNode;
-  /** Rendered as an expandable detail section */
-  detail?: React.ReactNode;
-}
+export type { TemplateItem };
 
 interface Props {
   title: string;
