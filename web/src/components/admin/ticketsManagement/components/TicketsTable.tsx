@@ -1,21 +1,11 @@
-import React from "react";
-import type { Ticket } from "../../../../services/api";
-import getTicketsColumns from "./TicketsColumns";
-import { AdminDataGrid } from "../../../../shared/components";
-
-export interface TicketsTableProps {
-  tickets: Ticket[];
-  loading: boolean;
-  onEdit: (ticket: Ticket) => void;
-  onDelete: (ticket: Ticket) => void;
-}
+import React from 'react';
+import getTicketsColumns from './TicketsColumns';
+import { AdminDataGrid } from '../../../../shared/components';
+import type { TicketsTableProps } from '../types/types';
 
 const TicketsTable: React.FC<TicketsTableProps> = ({ tickets, loading, onEdit, onDelete }) => {
   const columns = getTicketsColumns({ onEdit, onDelete });
-
-  return (
-    <AdminDataGrid rows={tickets} columns={columns} loading={loading} />
-  );
+  return <AdminDataGrid rows={tickets} columns={columns} loading={loading} />;
 };
 
 export default TicketsTable;

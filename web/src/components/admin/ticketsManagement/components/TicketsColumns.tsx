@@ -59,7 +59,7 @@ export const getTicketsColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
-        <Chip label={params.value} color={getStatusColor(params.value as Ticket["status"]) as any} size="small" />
+        <Chip label={params.value} color={getStatusColor(params.value as Ticket["status"])} size="small" />
       ),
     },
     {
@@ -69,7 +69,7 @@ export const getTicketsColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
-        <Chip label={params.value} color={getPriorityColor(params.value as Ticket["priority"]) as any} size="small" />
+        <Chip label={params.value} color={getPriorityColor(params.value as Ticket["priority"])} size="small" />
       ),
     },
     {

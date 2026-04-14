@@ -41,7 +41,7 @@ const TicketsManagement: React.FC = () => {
       <TicketsTable
         tickets={tickets}
         loading={loading}
-        onEdit={() => handleOpenDialog()}
+        onEdit={(t) => handleOpenDialog(t)}
         onDelete={(t) => handleDeleteClick(t)}
       />
 

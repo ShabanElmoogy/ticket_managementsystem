@@ -1,149 +1,106 @@
-import { useEffect, useState, useCallback } from "react";
-import { useAuthStore } from "../../../../stores/authStore";
-import { ticketsApi, usersApi, type Ticket, type User, type CreateTicketData } from "../../../../services/api";
-
-export type SnackbarState = {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-};
-
-export type DeleteDialogState = {
-  open: boolean;
-  ticket: Ticket | null;
-  loading: boolean;
-};
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ticketsApi } from '../api/tickets';
+import { ticketsKeys } from '../api/queryKeys';
+import { usersApi } from '../../usersManagement/api/users';
+import { useAuxData } from '../../../../shared/hooks/useAuxData';
+import type { Ticket, CreateTicketData, User } from '../../../../services/api/types';
+import type { SnackbarState, DeleteDialogState } from '../types/types';
 
 export interface TicketsControllerReturn {
   tickets: Ticket[];
   users: User[];
   loading: boolean;
-
   dialogOpen: boolean;
   editingTicket: Ticket | null;
-
   snackbar: SnackbarState;
   deleteDialog: DeleteDialogState;
-
   handleOpenDialog: (ticket?: Ticket) => void;
   handleCloseDialog: () => void;
   handleCreateSubmit: (values: CreateTicketData) => Promise<void>;
-
   handleDeleteClick: (ticket: Ticket) => void;
   handleDeleteConfirm: () => Promise<void>;
   handleDeleteCancel: () => void;
-
   handleSnackbarClose: () => void;
-  refetch: () => Promise<void>;
+  refetch: () => void;
 }
 
 export function useTicketsManagement(): TicketsControllerReturn {
-  const { token } = useAuthStore();
+  const qc = useQueryClient();
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen]     = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar]         = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({ open: false, ticket: null, loading: false });
 
-  const showSnackbar = useCallback((message: string, severity: "success" | "error") => {
+  const showSnackbar = useCallback((message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
   }, []);
 
-  const fetchData = useCallback(async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const [ticketsData, usersData] = await Promise.all([
-        ticketsApi.getTickets(),
-        usersApi.getTenantUsers(),
-      ]);
-      setTickets(ticketsData);
-      setUsers(usersData);
-    } catch {
-      showSnackbar("Error fetching data", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [token, showSnackbar]);
+  // ── Data fetching ──────────────────────────────────────────────────────────
+  const { data: tickets = [], isLoading: ticketsLoading, refetch } = useQuery({
+    queryKey: ticketsKeys.all,
+    queryFn: () => ticketsApi.getTickets(),
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { data: users = [], isLoading: usersLoading } = useAuxData<User[]>(
+    ['admin-ticket-users'],
+    () => usersApi.getTenantUsers(),
+  );
 
-  const handleOpenDialog = useCallback((ticket?: Ticket) => {
-    setEditingTicket(ticket || null);
-    setDialogOpen(true);
-  }, []);
+  const loading = ticketsLoading || usersLoading;
 
-  const handleCloseDialog = useCallback(() => {
-    setDialogOpen(false);
-    setEditingTicket(null);
-  }, []);
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: (data: CreateTicketData) => ticketsApi.createTicket(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ticketsKeys.all });
+      showSnackbar('Ticket created successfully', 'success');
+      setDialogOpen(false);
+      setEditingTicket(null);
+    },
+    onError: (e: unknown) => showSnackbar(e instanceof Error ? e.message : 'Error creating ticket', 'error'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => ticketsApi.deleteTicket(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ticketsKeys.all });
+      showSnackbar('Ticket deleted successfully', 'success');
+      setDeleteDialog({ open: false, ticket: null, loading: false });
+    },
+    onError: (e: unknown) => {
+      showSnackbar(e instanceof Error ? e.message : 'Error deleting ticket', 'error');
+      setDeleteDialog((prev) => ({ ...prev, loading: false }));
+    },
+  });
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleOpenDialog  = useCallback((ticket?: Ticket) => { setEditingTicket(ticket ?? null); setDialogOpen(true); }, []);
+  const handleCloseDialog = useCallback(() => { setDialogOpen(false); setEditingTicket(null); }, []);
 
   const handleCreateSubmit = useCallback(async (data: CreateTicketData) => {
-    if (!token) return;
-    try {
-      await ticketsApi.createTicket(data);
-      showSnackbar("Ticket created successfully", "success");
-      handleCloseDialog();
-      fetchData();
-    } catch (error) {
-      showSnackbar(error instanceof Error ? error.message : "Error creating ticket", "error");
-    }
-  }, [token, fetchData, handleCloseDialog, showSnackbar]);
+    await createMutation.mutateAsync(data);
+  }, [createMutation]);
 
-  const handleDeleteClick = useCallback((ticket: Ticket) => {
-    setDeleteDialog({ open: true, ticket, loading: false });
-  }, []);
-
+  const handleDeleteClick   = useCallback((ticket: Ticket) => setDeleteDialog({ open: true, ticket, loading: false }), []);
+  const handleDeleteCancel  = useCallback(() => setDeleteDialog({ open: false, ticket: null, loading: false }), []);
   const handleDeleteConfirm = useCallback(async () => {
-    if (!token || !deleteDialog.ticket) return;
-
+    if (!deleteDialog.ticket) return;
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
-    try {
-      await ticketsApi.deleteTicket(deleteDialog.ticket.id);
-      showSnackbar("Ticket deleted successfully", "success");
-      setDeleteDialog({ open: false, ticket: null, loading: false });
-      fetchData();
-    } catch (error) {
-      showSnackbar(error instanceof Error ? error.message : "Error deleting ticket", "error");
-      setDeleteDialog((prev) => ({ ...prev, loading: false }));
-    }
-  }, [token, deleteDialog.ticket, fetchData, showSnackbar]);
+    await deleteMutation.mutateAsync(deleteDialog.ticket.id);
+  }, [deleteDialog.ticket, deleteMutation]);
 
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteDialog({ open: false, ticket: null, loading: false });
-  }, []);
-
-  const handleSnackbarClose = useCallback(() => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  }, []);
+  const handleSnackbarClose = useCallback(() => setSnackbar((prev) => ({ ...prev, open: false })), []);
 
   return {
-    tickets,
-    users,
-    loading,
-
-    dialogOpen,
-    editingTicket,
-
-    snackbar,
-    deleteDialog,
-
-    handleOpenDialog,
-    handleCloseDialog,
-    handleCreateSubmit,
-
-    handleDeleteClick,
-    handleDeleteConfirm,
-    handleDeleteCancel,
-
+    tickets, users, loading,
+    dialogOpen, editingTicket,
+    snackbar, deleteDialog,
+    handleOpenDialog, handleCloseDialog, handleCreateSubmit,
+    handleDeleteClick, handleDeleteConfirm, handleDeleteCancel,
     handleSnackbarClose,
-    refetch: fetchData,
+    refetch: () => { void refetch(); },
   };
 }
 
