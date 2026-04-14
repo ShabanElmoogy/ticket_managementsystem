@@ -146,8 +146,9 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
       const created = await docsApi.createDoc('Untitled', initialBlocks);
       const node    = await docsApi.createDocNode(created.title, parentId, created.id);
       const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+      const parsedDoc = { ...created, blocks: parseBlocks(created.blocks) };
       set((s) => ({
-        docs:         [created, ...s.docs],
+        docs:         [parsedDoc, ...s.docs],
         tree:         insertChild(s.tree, parentId, localNode),
         currentDocId: created.id,
       }));
@@ -253,10 +254,13 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     const created   = await docsApi.createDoc('Untitled', initialBlocks);
     const node      = await docsApi.createDocNode(created.title, parentId, created.id);
     const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+    // Ensure blocks are always a parsed array — server may return them as a JSON string
+    const parsedDoc = { ...created, blocks: parseBlocks(created.blocks) };
     set((s) => ({
-      docs:         [created, ...s.docs],
+      docs:         [parsedDoc, ...s.docs],
       tree:         insertChild(s.tree, parentId, localNode),
       currentDocId: created.id,
+      expanded:     parentId ? { ...s.expanded, [parentId]: true } : s.expanded,
     }));
   },
 

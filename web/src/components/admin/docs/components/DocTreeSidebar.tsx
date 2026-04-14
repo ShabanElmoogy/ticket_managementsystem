@@ -46,6 +46,9 @@ const DocTreeSidebar: React.FC<Props> = ({
     nodes.map((node) => {
       if (node.type === 'folder') {
         const open = !!expanded[node.id];
+        const hasDocs    = node.children.some((c) => c.type === 'doc');
+        const hasSubfolders = node.children.some((c) => c.type === 'folder');
+        const canAddSubfolder = !hasDocs;
         return (
           <Box key={node.id}>
             <ListItem disablePadding sx={{ '&:hover .tree-actions': { opacity: 1 } }}>
@@ -63,13 +66,36 @@ const DocTreeSidebar: React.FC<Props> = ({
                 {open ? <ExpandLessIcon sx={{ fontSize: 14, opacity: 0.5 }} /> : <ExpandMoreIcon sx={{ fontSize: 14, opacity: 0.5 }} />}
               </ListItemButton>
               <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 8, opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1 }}>
-                <Tooltip title="Add doc"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => onAddDoc(node.id)}><AddIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+                {canAddSubfolder && (
+                  <Tooltip title="Add subfolder"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => onAddFolder(node.id)}><CreateNewFolderIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+                )}
+                {!hasSubfolders && (
+                  <Tooltip title="Add doc"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => onAddDoc(node.id)}><AddIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
+                )}
                 <Tooltip title="Rename"><IconButton size="small" sx={{ p: 0.25 }} onClick={() => onRenameRequest(node.id, node.title)}><DriveFileRenameOutlineIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
                 <Tooltip title="Delete"><IconButton size="small" sx={{ p: 0.25 }} color="error" onClick={() => onDelete(node.id)}><DeleteIcon sx={{ fontSize: 13 }} /></IconButton></Tooltip>
               </Stack>
             </ListItem>
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <List dense disablePadding>{renderTree(node.children, depth + 1)}</List>
+              {node.children.length === 0 ? (
+                <Box sx={{ pl: 3 + depth * 1.5, pr: 1, py: 1, display: 'flex', gap: 0.5 }}>
+                  <Tooltip title="Add subfolder">
+                    <IconButton size="small" sx={{ p: 0.5, opacity: 0.5, '&:hover': { opacity: 1 } }} onClick={() => onAddFolder(node.id)}>
+                      <CreateNewFolderIcon sx={{ fontSize: 13 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Add doc">
+                    <IconButton size="small" sx={{ p: 0.5, opacity: 0.5, '&:hover': { opacity: 1 } }} onClick={() => onAddDoc(node.id)}>
+                      <AddIcon sx={{ fontSize: 13 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Typography variant="caption" color="text.disabled" sx={{ alignSelf: 'center', fontSize: '0.7rem' }}>
+                    Empty folder
+                  </Typography>
+                </Box>
+              ) : (
+                <List dense disablePadding>{renderTree(node.children, depth + 1)}</List>
+              )}
             </Collapse>
           </Box>
         );
