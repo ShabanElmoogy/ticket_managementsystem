@@ -1,6 +1,7 @@
-import React from "react";
-import { Stack, TextField, MenuItem, Button } from "@mui/material";
-import type { ReportType } from "./types";
+import React from 'react';
+import { Stack } from '@mui/material';
+import { AppSelect, AppButton } from '../../../shared/components';
+import type { ReportType } from './types';
 
 interface Props {
   reportType: ReportType;
@@ -11,31 +12,26 @@ interface Props {
   disabled?: boolean;
 }
 
-const ReportsToolbar: React.FC<Props> = ({ reportType, setReportType, reportTypes, onGeneratePdf, onRefresh, disabled }) => {
-  return (
-    <Stack direction="row" spacing={1}>
-      <TextField
-        select
-        size="small"
-        label="Report"
-        value={reportType}
-        onChange={(e) => setReportType(e.target.value as ReportType)}
-        sx={{ minWidth: 300 }}
-      >
-        {reportTypes.map((rt) => (
-          <MenuItem key={rt.id} value={rt.id}>
-            {rt.label}
-          </MenuItem>
-        ))}
-      </TextField>
-      <Button variant="outlined" onClick={onGeneratePdf} disabled={disabled}>
-        Generate PDF
-      </Button>
-      <Button variant="outlined" onClick={onRefresh}>
-        Refresh
-      </Button>
-    </Stack>
-  );
-};
+const ReportsToolbar: React.FC<Props> = ({
+  reportType, setReportType, reportTypes, onGeneratePdf, onRefresh, disabled,
+}) => (
+  <Stack direction="row" spacing={1} alignItems="center">
+    <AppSelect
+      label="Report"
+      value={reportType}
+      onChange={(v) => setReportType(v as ReportType)}
+      options={reportTypes.map((rt) => ({ value: rt.id, label: rt.label }))}
+      size="small"
+      fullWidth={false}
+      sx={{ minWidth: 300 }}
+    />
+    <AppButton variant="outlined" onClick={onGeneratePdf} disabled={disabled}>
+      Generate PDF
+    </AppButton>
+    <AppButton variant="outlined" onClick={onRefresh} disabled={disabled}>
+      Refresh
+    </AppButton>
+  </Stack>
+);
 
 export default ReportsToolbar;
