@@ -77,11 +77,12 @@ function ReusableFormDialog<T extends FieldValues>({
     reset,
     control,
     watch,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<T>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema as any) as any,
     mode: "onChange",
+    reValidateMode: "onChange",
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     defaultValues: initialValues as any,
   });
@@ -400,7 +401,6 @@ function ReusableFormDialog<T extends FieldValues>({
         <LoadingButton
           onClick={submit}
           variant="contained"
-          disabled={!isValid}
           loading={submitting}
         >
           {submitLabel || (editing ? "Update" : "Create")}
