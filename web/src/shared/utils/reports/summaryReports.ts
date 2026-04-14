@@ -131,7 +131,7 @@ export function generateTicketsListReport(
       t.application?.name || "-",
       t.assignedTo?.name || "Unassigned",
       formatDate(t.createdAt),
-      formatDate(t.dueDate ?? ''),
+      t.dueDate ? formatDate(t.dueDate) : '-',
     ]);
 
   addTable(ctx, {
@@ -145,15 +145,15 @@ export function generateTicketsListReport(
     } as UserOptions["headStyles"],
     alternateRowStyles: { fillColor: [245, 245, 245] },
     columnStyles: {
-      0: { cellWidth: 70 },
-      1: { cellWidth: 220 },
-      2: { cellWidth: 80 },
-      3: { cellWidth: 70 },
-      4: { cellWidth: 140 },
-      5: { cellWidth: 140 },
-      6: { cellWidth: 140 },
-      7: { cellWidth: 80 },
-      8: { cellWidth: 80 },
+      0: { cellWidth: 60 },
+      1: { cellWidth: 200 },
+      2: { cellWidth: 75 },
+      3: { cellWidth: 65 },
+      4: { cellWidth: 110 },
+      5: { cellWidth: 110 },
+      6: { cellWidth: 110 },
+      7: { cellWidth: 75 },
+      8: { cellWidth: 75 },
     },
   } as Omit<UserOptions, "margin" | "didDrawPage">);
 
