@@ -1,63 +1,34 @@
-import React, { useEffect, useMemo } from 'react';
-import { CacheProvider } from '@emotion/react';
-import createCache from '@emotion/cache';
-import rtlPlugin from 'stylis-plugin-rtl';
+/**
+ * I18nProvider — handles language and direction.
+ *
+ * Direction strategy: set document.dir only — no Emotion cache swap.
+ * MUI v6 uses CSS logical properties (margin-inline-start, padding-inline-end, etc.)
+ * which respond to dir="rtl" natively in all modern browsers.
+ * This is instant vs the stylis-plugin-rtl approach which re-injects all CSS.
+ */
+
+import React, { useEffect } from 'react';
 import i18n from '../i18n';
-import { getCurrentLanguage, isRTL } from '../i18n';
+import { useThemeStore } from '../stores/themeStore';
 
-// Create caches once and reuse
-const rtlCache = createCache({
-  key: 'muirtl',
-  stylisPlugins: [rtlPlugin],
-});
+const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const direction = useThemeStore((s) => s.direction);
 
-const ltrCache = createCache({
-  key: 'muiltr',
-});
-
-interface I18nProviderProps {
-  children: React.ReactNode;
-}
-
-const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());
-  const isRtl = isRTL();
-
-  // Listen for language changes
+  // Sync document attributes — this is all that's needed for RTL
   useEffect(() => {
-    const handleLanguageChange = (lng: string) => {
-      setCurrentLanguage(lng);
-    };
-    
-    i18n.on('languageChanged', handleLanguageChange);
-    return () => {
-      i18n.off('languageChanged', handleLanguageChange);
-    };
+    document.documentElement.dir  = direction;
+    document.body.style.direction = direction;
+  }, [direction]);
+
+  // Keep document.lang in sync with i18n language
+  useEffect(() => {
+    document.documentElement.lang = i18n.language || 'en';
+    const onLangChange = (lng: string) => { document.documentElement.lang = lng; };
+    i18n.on('languageChanged', onLangChange);
+    return () => { i18n.off('languageChanged', onLangChange); };
   }, []);
 
-  // Memoize cache selection to prevent unnecessary re-renders
-  const cache = useMemo(() => {
-    return isRtl ? rtlCache : ltrCache;
-  }, [isRtl]);
-
-  useEffect(() => {
-    // Batch DOM updates for better performance
-    const html = document.documentElement;
-    const body = document.body;
-    
-    // Use requestAnimationFrame for smooth transition
-    requestAnimationFrame(() => {
-      html.dir = isRtl ? 'rtl' : 'ltr';
-      html.lang = currentLanguage;
-      body.style.direction = isRtl ? 'rtl' : 'ltr';
-    });
-  }, [currentLanguage, isRtl]);
-
-  return (
-    <CacheProvider value={cache}>
-      {children}
-    </CacheProvider>
-  );
+  return <>{children}</>;
 };
 
 export default I18nProvider;

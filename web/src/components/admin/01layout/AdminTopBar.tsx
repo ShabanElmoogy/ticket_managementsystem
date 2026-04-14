@@ -4,10 +4,13 @@ import {
   Chip, Tooltip, Box, Avatar, useTheme,
 } from '@mui/material';
 import { Menu as MenuIcon, Home as HomeIcon } from '@mui/icons-material';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import BlockIcon from '@mui/icons-material/Block';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useTenantStatus } from '../../../stores';
+import { useThemeStore } from '../../../stores/themeStore';
 
 const DEFAULT_DRAWER_WIDTH = 240;
 
@@ -65,6 +68,7 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
 }) => {
   const theme = useTheme();
   const tenantStatus = useTenantStatus();
+  const { mode, toggleTheme } = useThemeStore();
   const badge = tenantStatus ? STATUS_BADGE[tenantStatus] ?? null : null;
   const centerMessage = tenantStatus ? STATUS_MESSAGES[tenantStatus] ?? null : null;
 
@@ -155,6 +159,13 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
             </Avatar>
           </Tooltip>
         )}
+
+        {/* Theme toggle */}
+        <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <IconButton color="inherit" onClick={toggleTheme} size="small">
+            {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
 
         {/* Home */}
         <Tooltip title="Back to Dashboard">

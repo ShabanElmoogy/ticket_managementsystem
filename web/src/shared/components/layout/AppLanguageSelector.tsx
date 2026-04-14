@@ -10,19 +10,16 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { changeLanguage, getCurrentLanguage } from '../../../i18n';
+import i18n from '../../../i18n';
 
 const AppLanguageSelector: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = React.useState(getCurrentLanguage());
 
-  // Listen for language changes
+  // Listen for language changes via i18n event
   React.useEffect(() => {
-    const handleLanguageChange = () => {
-      setCurrentLanguage(getCurrentLanguage());
-    };
-    
-    // Listen to i18n language changes
-    const interval = setInterval(handleLanguageChange, 100);
-    return () => clearInterval(interval);
+    const handleLanguageChange = (lng: string) => setCurrentLanguage(lng);
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => { i18n.off('languageChanged', handleLanguageChange); };
   }, []);
 
   const handleLanguageChange = (event: SelectChangeEvent<string>) => {

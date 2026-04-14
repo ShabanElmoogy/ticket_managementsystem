@@ -31,26 +31,14 @@ export default i18n;
 // Language utilities
 export const changeLanguage = (lng: string) => {
   const isRtl = lng === 'ar';
-  
-  // Update i18n first
+
   i18n.changeLanguage(lng);
   localStorage.setItem('i18nextLng', lng);
-  
-  // Force re-render by dispatching custom event
-  window.dispatchEvent(new CustomEvent('languageChanged', { detail: lng }));
-  
-  // Use requestAnimationFrame for smooth DOM updates
-  requestAnimationFrame(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    
-    // Update direction and language atomically
-    html.dir = isRtl ? 'rtl' : 'ltr';
-    html.lang = lng;
-    body.style.direction = isRtl ? 'rtl' : 'ltr';
-    
-    // Force immediate style recalculation
-    body.offsetHeight;
+
+  // Sync direction into themeStore — single source of truth
+  // Dynamic import avoids circular dependency
+  import('../stores/themeStore').then(({ useThemeStore }) => {
+    useThemeStore.getState().setDirection(isRtl ? 'rtl' : 'ltr');
   });
 };
 
