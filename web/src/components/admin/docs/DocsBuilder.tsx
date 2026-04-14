@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Box, useTheme, useMediaQuery, alpha } from '@mui/material';
 import DocTreeSidebar from './components/DocTreeSidebar';
-import RenameDialog from './components/RenameDialog';
 import BlockPalette from './components/BlockPalette';
 import DocsBuilderHeader from './components/DocsBuilderHeader';
 import DocPreview from './components/DocPreview';
 import DocEditor from './components/DocEditor';
-import { useDocsStore, useCurrentDoc, useDndHandlers } from './hooks/useDocsStore';
+import { useDocsStore, useCurrentDoc } from './hooks/useDocsStore';
 
 interface Props { onBackToGallery?: () => void; editingDocId?: string | null; }
 
@@ -37,7 +36,11 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const renameNode      = useDocsStore((s) => s.renameNode);
   const deleteNodeAndDocs = useDocsStore((s) => s.deleteNodeAndDocs);
   const toggleExpand    = useDocsStore((s) => s.toggleExpand);
-  const saveCurrentDoc  = useDocsStore((s) => s.saveCurrentDoc);
+  const setFolderIcon   = useDocsStore((s) => s.setFolderIcon);
+  const saveCurrentDoc    = useDocsStore((s) => s.saveCurrentDoc);
+  const renameCurrentDoc  = useDocsStore((s) => s.renameCurrentDoc);
+  const saveStatus        = useDocsStore((s) => s.saveStatus);
+  const setSaveStatus     = useDocsStore((s) => s.setSaveStatus);
   const currentDoc      = useCurrentDoc();
 
   // dndHandlers now built inline using store actions
@@ -48,18 +51,14 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
-  const [saved, setSaved] = useState(false);
 
-  // Keep sidebar closed whenever we're in compact mode
   useEffect(() => { if (compact) setSidebarOpen(false); }, [compact]);
-
-  useEffect(() => { if (editingDocId) setCurrentDocId(editingDocId); }, [editingDocId, setCurrentDocId]);
+  useEffect(() => { if (editingDocId) { setCurrentDocId(editingDocId); setPreview(false); } }, [editingDocId, setCurrentDocId, setPreview]);
 
   const handleSave = async () => {
     await saveCurrentDoc();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2000);
   };
 
   const sidebarBg     = isDark ? '#0f172a' : '#f8fafc';
@@ -75,12 +74,13 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
       <DocsBuilderHeader
         title={currentDoc?.title || 'Documentation Builder'}
         preview={preview}
-        saved={saved}
+        saveStatus={saveStatus}
         hasDoc={!!currentDoc}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(v => !v)}
-        onTogglePreview={() => setPreview(p => !p)}
+        onTogglePreview={() => setPreview(!preview)}
         onSave={handleSave}
+        onRenameTitle={renameCurrentDoc}
       />
 
       {/* ── Main body ── */}
@@ -110,8 +110,9 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
             onToggleExpand={toggleExpand}
             onAddFolder={addFolder}
             onAddDoc={addDocUnder}
-            onRenameRequest={(id, title) => setRenameTarget({ id, title })}
+            onRenameRequest={(id, title) => renameNode(id, title)}
             onDelete={deleteNodeAndDocs}
+            onSetFolderIcon={setFolderIcon}
           />
         )}
 
@@ -170,12 +171,6 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
         </Box>
       )}
 
-      <RenameDialog
-        open={!!renameTarget}
-        initial={renameTarget?.title ?? ''}
-        onClose={() => setRenameTarget(null)}
-        onConfirm={title => { if (renameTarget) renameNode(renameTarget.id, title); }}
-      />
     </Box>
   );
 };

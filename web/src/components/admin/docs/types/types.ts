@@ -109,6 +109,7 @@ export interface FolderNode {
   id: string;
   type: 'folder';
   title: string;
+  icon?: string;   // emoji or short string, stored in localStorage
   children: TreeNode[];
 }
 

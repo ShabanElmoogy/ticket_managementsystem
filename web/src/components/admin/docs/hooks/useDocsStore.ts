@@ -9,6 +9,8 @@ import { buildTree, findNode, insertChild, mapTree, removeNode, collectDocIds } 
 
 // ── State shape ───────────────────────────────────────────────────────────────
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 interface DocsState {
   docs:           Doc[];
   currentDocId:   string | null;
@@ -17,11 +19,13 @@ interface DocsState {
   tree:           TreeNode[];
   expanded:       Record<string, boolean>;
   selectedTreeId: string | null;
+  saveStatus:     SaveStatus;
 
   // ── Setters ────────────────────────────────────────────────────────────────
   setCurrentDocId:   (id: string | null) => void;
   setPreview:        (v: boolean) => void;
   setSelectedTreeId: (id: string | null) => void;
+  setSaveStatus:     (s: SaveStatus) => void;
 
   // ── Init ───────────────────────────────────────────────────────────────────
   loadAll: () => Promise<void>;
@@ -41,9 +45,11 @@ interface DocsState {
   renameNode:        (id: string, newTitle: string) => Promise<void>;
   deleteNodeAndDocs: (id: string) => Promise<void>;
   toggleExpand:      (id: string) => void;
+  setFolderIcon:     (id: string, icon: string) => void;
 
   // ── Doc operations ─────────────────────────────────────────────────────────
   saveCurrentDoc: () => Promise<void>;
+  renameCurrentDoc: (title: string) => Promise<void>;
   deleteDoc:      (docId: string) => Promise<void>;
   resetCurrent:   () => void;
 }
@@ -77,6 +83,56 @@ function makeBlock(type: BlockType): DocBlock {
   }
 }
 
+// ── Folder icon persistence (localStorage, no backend change needed) ─────────
+
+const ICONS_KEY = 'docs_folder_icons';
+
+function loadFolderIcons(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(ICONS_KEY) ?? '{}'); } catch { return {}; }
+}
+
+function saveFolderIcons(icons: Record<string, string>) {
+  localStorage.setItem(ICONS_KEY, JSON.stringify(icons));
+}
+
+function applyIcons(nodes: TreeNode[], icons: Record<string, string>): TreeNode[] {
+  return nodes.map((n) => {
+    if (n.type !== 'folder') return n;
+    return { ...n, icon: icons[n.id], children: applyIcons(n.children, icons) };
+  });
+}
+
+// ── Inline debounce ───────────────────────────────────────────────────────────
+
+function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
+  let timer: ReturnType<typeof setTimeout>;
+  return ((...args: unknown[]) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  }) as T;
+}
+
+// Module-level debounced save — reads from the store directly so it never
+// captures a stale closure. 1.5 s after the last edit, persists to the server.
+const scheduleSave = debounce(async () => {
+  const { docs, currentDocId, setSaveStatus } = useDocsStore.getState();
+  const doc = docs.find((d) => d.id === currentDocId);
+  if (!doc) return;
+  setSaveStatus('saving');
+  try {
+    await docsApi.saveDoc(doc);
+    setSaveStatus('saved');
+    // Reset to idle after 2 s so the indicator fades away
+    setTimeout(() => {
+      if (useDocsStore.getState().saveStatus === 'saved') {
+        useDocsStore.getState().setSaveStatus('idle');
+      }
+    }, 2000);
+  } catch {
+    setSaveStatus('error');
+  }
+}, 1500);
+
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 export const useDocsStore = create<DocsState>()((set, get) => ({
@@ -87,11 +143,13 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
   tree:           [],
   expanded:       {},
   selectedTreeId: null,
+  saveStatus:     'idle',
 
   setCurrentDocId:   (id) => set({ currentDocId: id }),
   setPreview:        (v)  => set({ preview: v }),
   setSelectedTreeId: (id) => set({ selectedTreeId: id }),
   setDragId:         (id) => set({ dragId: id }),
+  setSaveStatus:     (s)  => set({ saveStatus: s }),
 
   // ── Init ───────────────────────────────────────────────────────────────────
   loadAll: async () => {
@@ -108,7 +166,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     set({
       docs,
       currentDocId: docs.length ? docs[0].id : null,
-      tree: serverNodes ? buildTree(serverNodes) : [],
+      tree: serverNodes ? applyIcons(buildTree(serverNodes), loadFolderIcons()) : [],
     });
   },
 
@@ -162,6 +220,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
           : d,
       ),
     }));
+    scheduleSave();
   },
 
   updateBlock: (id, patch) => {
@@ -175,6 +234,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
           : d,
       ),
     }));
+    scheduleSave();
   },
 
   updateBlockSettings: (id, patch) => {
@@ -188,6 +248,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
           : d,
       ),
     }));
+    scheduleSave();
   },
 
   removeBlock: (id) => {
@@ -196,7 +257,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     if (!currentDoc) return;
     const updated: Doc = { ...currentDoc, blocks: currentDoc.blocks.filter((b: DocBlock) => b.id !== id), updatedAt: new Date().toISOString() };
     set((s) => ({ docs: s.docs.map((d) => d.id === currentDoc.id ? updated : d) }));
-    docsApi.saveDoc(updated); // fire-and-forget
+    scheduleSave();
   },
 
   moveBlock: (id, dir) => {
@@ -216,6 +277,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
         return { ...d, blocks: copy, updatedAt: new Date().toISOString() };
       }),
     }));
+    scheduleSave();
   },
 
   dropBlock: (targetId) => {
@@ -235,6 +297,7 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
         return { ...d, blocks: copy, updatedAt: new Date().toISOString() };
       }),
     }));
+    scheduleSave();
   },
 
   // ── Tree operations ────────────────────────────────────────────────────────
@@ -296,11 +359,43 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
 
   toggleExpand: (id) => set((s) => ({ expanded: { ...s.expanded, [id]: !s.expanded[id] } })),
 
+  setFolderIcon: (id, icon) => {
+    const icons = loadFolderIcons();
+    if (icon) icons[id] = icon; else delete icons[id];
+    saveFolderIcons(icons);
+    set((s) => ({ tree: mapTree(s.tree, (n) => n.id === id ? { ...n, icon: icon || undefined } : n) }));
+  },
+
   // ── Doc operations ─────────────────────────────────────────────────────────
   saveCurrentDoc: async () => {
     const { docs, currentDocId } = get();
     const currentDoc = docs.find((d) => d.id === currentDocId);
     if (currentDoc) await docsApi.saveDoc(currentDoc);
+  },
+
+  renameCurrentDoc: async (title: string) => {
+    const { docs, currentDocId, tree } = get();
+    if (!currentDocId || !title.trim()) return;
+    // Update local doc title
+    set((s) => ({
+      docs: s.docs.map((d) =>
+        d.id === currentDocId ? { ...d, title, updatedAt: new Date().toISOString() } : d,
+      ),
+    }));
+    // Find the tree node that references this doc and rename it on the server
+    const allNodes = tree.flatMap((n) => n.type === 'folder' ? [n, ...n.children] : [n]);
+    const node = allNodes.find((n) => n.type === 'doc' && n.docId === currentDocId);
+    if (node) {
+      try {
+        await docsApi.renameNode(node.id, title);
+        set((s) => ({ tree: mapTree(s.tree, (n) => n.id === node.id ? { ...n, title } : n) }));
+      } catch (e) {
+        console.error('[useDocsStore] renameCurrentDoc failed:', e);
+      }
+    }
+    // Also persist the doc itself
+    const updated = docs.find((d) => d.id === currentDocId);
+    if (updated) await docsApi.saveDoc({ ...updated, title });
   },
 
   deleteDoc: async (docId) => {
