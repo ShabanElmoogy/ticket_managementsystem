@@ -71,7 +71,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
         { id: "templates",    label: "Templates",    icon: <TemplateIcon />,    disabled: fullyBlocked },
         { id: "tasks",        label: "Tasks",        icon: <TaskIcon />,        disabled: fullyBlocked },
         { id: "reports",  label: "Reports",  icon: <ReportsIcon />,  disabled: fullyBlocked },
-        { id: "docs",     label: "Docs",     icon: <NotesIcon />,    disabled: fullyBlocked },
+        { id: "docs",     label: "Docs Builder", icon: <NotesIcon />,    disabled: fullyBlocked },
         { id: "settings", label: "Settings", icon: <SettingsIcon />, disabled: fullyBlocked },
       ];
 
