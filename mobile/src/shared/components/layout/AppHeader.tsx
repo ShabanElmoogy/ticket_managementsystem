@@ -127,7 +127,7 @@ export const AppDrawerOverlay: React.FC = () => {
         onPress={() => setOpen(false)}
       />
 
-      {/* Drawer panel */}
+      {/* Drawer panel — always opens from right, content direction follows isRtl */}
       <View
         style={{
           position: 'absolute',
@@ -135,7 +135,8 @@ export const AppDrawerOverlay: React.FC = () => {
           bottom: 0,
           width: 288,
           backgroundColor: drawerBg,
-          ...(isRtl ? { left: 0 } : { right: 0 }),
+          right: 0,
+          direction: isRtl ? 'rtl' : 'ltr',
         }}
       >
         {/* User card */}
@@ -148,13 +149,14 @@ export const AppDrawerOverlay: React.FC = () => {
             borderBottomColor: 'rgba(255,255,255,0.1)',
           }}
         >
-          <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          {/* Row direction inherited from parent direction style */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: getRoleColor(user.role), alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{getInitials(user.name)}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14, textAlign: isRtl ? 'right' : 'left' }}>{user.name}</Text>
-              <View style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', backgroundColor: `${getRoleColor(user.role)}44`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 }}>
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{user.name}</Text>
+              <View style={{ alignSelf: 'flex-start', backgroundColor: `${getRoleColor(user.role)}44`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 }}>
                 <Text style={{ color: '#fff', fontSize: 11 }}>{user.role}</Text>
               </View>
             </View>
@@ -178,7 +180,7 @@ export const AppDrawerOverlay: React.FC = () => {
           </View>
         </View>
 
-        {/* Nav list */}
+        {/* Nav list — direction inherited, items flow RTL automatically */}
         <ScrollView style={{ flex: 1 }}>
           {visibleItems.map((item) => (
             <React.Fragment key={item.label}>
@@ -186,11 +188,11 @@ export const AppDrawerOverlay: React.FC = () => {
                 <View style={{ marginHorizontal: 16, marginVertical: 4, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
               )}
               <Pressable
-                style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
                 onPress={() => handleNav(item.route)}
               >
                 <Text style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{item.icon}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '500', flex: 1, color: item.color ?? '#fff', textAlign: isRtl ? 'right' : 'left' }}>
+                <Text style={{ fontSize: 14, fontWeight: '500', flex: 1, color: item.color ?? '#fff' }}>
                   {item.label}
                 </Text>
               </Pressable>
