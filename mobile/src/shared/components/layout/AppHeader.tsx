@@ -127,7 +127,7 @@ export const AppDrawerOverlay: React.FC = () => {
         onPress={() => setOpen(false)}
       />
 
-      {/* Drawer panel — always opens from right, content direction follows isRtl */}
+      {/* Drawer panel — LTR: left, RTL: right */}
       <View
         style={{
           position: 'absolute',
@@ -135,8 +135,7 @@ export const AppDrawerOverlay: React.FC = () => {
           bottom: 0,
           width: 288,
           backgroundColor: drawerBg,
-          right: 0,
-          direction: isRtl ? 'rtl' : 'ltr',
+          ...(isRtl ? { right: 0 } : { left: 0 }),
         }}
       >
         {/* User card */}

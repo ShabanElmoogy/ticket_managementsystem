@@ -16,7 +16,7 @@ import type { Direction } from '../../../stores/uiStore';
 
 // ── Tenant picker ──────────────────────────────────────────────────────────
 
-import { Modal, FlatList } from 'react-native';
+import { Modal, FlatList, TextInput } from 'react-native';
 import { useState } from 'react';
 import type { PublicTenant } from '../api/tenants';
 
@@ -29,43 +29,184 @@ interface TenantPickerProps {
 }
 
 const TenantPicker: React.FC<TenantPickerProps> = ({ tenants, value, loading, disabled, onChange }) => {
-  const [open, setOpen] = useState(false);
-  const selected = tenants.find((t) => t.slug === value);
+  const [open, setOpen]       = useState(false);
+  const [search, setSearch]   = useState('');
+  const selected              = tenants.find((t) => t.slug === value);
+
+  const filtered = search.trim()
+    ? tenants.filter((t) =>
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.slug.toLowerCase().includes(search.toLowerCase())
+      )
+    : tenants;
+
+  const handleOpen = () => {
+    if (disabled) return;
+    setSearch('');
+    setOpen(true);
+  };
+
+  const handleSelect = (slug: string) => {
+    onChange(slug);
+    setOpen(false);
+  };
 
   return (
     <>
+      {/* Trigger button */}
       <Pressable
-        onPress={() => !disabled && setOpen(true)}
-        className={`border-2 rounded-lg px-3 py-3 flex-row items-center justify-between mb-3 ${disabled ? 'opacity-50 bg-gray-50' : 'bg-white border-gray-300'}`}
+        onPress={handleOpen}
+        className={`rounded-xl border-2 px-4 py-3 flex-row items-center justify-between mb-3 ${
+          disabled
+            ? 'opacity-40 bg-gray-100 border-gray-200'
+            : selected
+            ? 'bg-blue-50 border-blue-300'
+            : 'bg-white border-gray-300'
+        }`}
       >
-        <Text className={selected ? 'text-gray-900 text-base' : 'text-gray-400 text-base'}>
-          {loading ? 'Loading tenants…' : selected ? selected.name : 'Select tenant (optional)'}
+        <View className="flex-row items-center gap-2 flex-1">
+          {selected ? (
+            <>
+              <View className="w-7 h-7 rounded-full bg-blue-600 items-center justify-center">
+                <Text className="text-white text-xs font-bold">
+                  {selected.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-900 text-sm font-semibold">{selected.name}</Text>
+                <Text className="text-gray-400 text-xs">{selected.slug}</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View className="w-7 h-7 rounded-full bg-gray-200 items-center justify-center">
+                <Text className="text-gray-400 text-sm">🏢</Text>
+              </View>
+              <Text className="text-gray-400 text-sm flex-1">
+                {loading ? 'Loading tenants…' : 'Select tenant (optional)'}
+              </Text>
+            </>
+          )}
+        </View>
+        <Text className={`text-sm ml-2 ${selected ? 'text-blue-400' : 'text-gray-300'}`}>
+          {selected ? '✕' : '▼'}
         </Text>
-        <Text className="text-gray-400">▼</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setOpen(false)}>
-          <View className="bg-white rounded-t-2xl max-h-96">
-            <View className="p-4 border-b border-gray-100">
-              <Text className="text-base font-bold text-gray-900 text-center">Select Tenant</Text>
+      {/* Clear button if selected */}
+      {selected && !disabled && (
+        <Pressable
+          className="mb-3 -mt-2 self-end"
+          onPress={() => onChange('')}
+        >
+          <Text className="text-xs text-gray-400 underline">Clear selection</Text>
+        </Pressable>
+      )}
+
+      {/* Bottom sheet modal */}
+      <Modal
+        visible={open}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setOpen(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 justify-end"
+          onPress={() => setOpen(false)}
+        >
+          {/* Sheet — stop propagation so tapping inside doesn't close */}
+          <Pressable
+            className="bg-white rounded-t-3xl"
+            style={{ maxHeight: '70%' }}
+            onPress={() => {}}
+          >
+            {/* Handle bar */}
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-gray-300" />
             </View>
+
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-5 py-3 border-b border-gray-100">
+              <Text className="text-lg font-bold text-gray-900">Select Tenant</Text>
+              <Pressable
+                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                onPress={() => setOpen(false)}
+              >
+                <Text className="text-gray-500 text-base">✕</Text>
+              </Pressable>
+            </View>
+
+            {/* Search */}
+            <View className="px-4 py-3 border-b border-gray-100">
+              <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2 gap-2">
+                <Text className="text-gray-400">🔍</Text>
+                <TextInput
+                  className="flex-1 text-sm text-gray-900"
+                  placeholder="Search tenants…"
+                  placeholderTextColor="#9ca3af"
+                  value={search}
+                  onChangeText={setSearch}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {search.length > 0 && (
+                  <Pressable onPress={() => setSearch('')}>
+                    <Text className="text-gray-400 text-sm">✕</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+
+            {/* List */}
             <FlatList
-              data={tenants}
+              data={filtered}
               keyExtractor={(t) => t.id}
-              renderItem={({ item }) => (
-                <Pressable
-                  className={`px-4 py-3 border-b border-gray-50 ${item.slug === value ? 'bg-blue-50' : ''}`}
-                  onPress={() => { onChange(item.slug); setOpen(false); }}
-                >
-                  <Text className={`text-base font-semibold ${item.slug === value ? 'text-blue-600' : 'text-gray-900'}`}>
-                    {item.name}
-                  </Text>
-                  <Text className="text-xs text-gray-400 mt-0.5">{item.slug}</Text>
-                </Pressable>
-              )}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View className="items-center py-10">
+                  <Text className="text-3xl mb-2">🔍</Text>
+                  <Text className="text-gray-400 text-sm">No tenants found</Text>
+                </View>
+              }
+              renderItem={({ item }) => {
+                const isSelected = item.slug === value;
+                return (
+                  <Pressable
+                    className={`flex-row items-center gap-3 px-5 py-3.5 border-b border-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                    onPress={() => handleSelect(item.slug)}
+                  >
+                    {/* Avatar */}
+                    <View
+                      className="w-10 h-10 rounded-full items-center justify-center"
+                      style={{ backgroundColor: isSelected ? '#2563eb' : '#e5e7eb' }}
+                    >
+                      <Text
+                        className="font-bold text-sm"
+                        style={{ color: isSelected ? '#fff' : '#6b7280' }}
+                      >
+                        {item.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+
+                    {/* Info */}
+                    <View className="flex-1">
+                      <Text className={`text-sm font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                        {item.name}
+                      </Text>
+                      <Text className="text-xs text-gray-400 mt-0.5">{item.slug}</Text>
+                    </View>
+
+                    {/* Check */}
+                    {isSelected && (
+                      <View className="w-6 h-6 rounded-full bg-blue-600 items-center justify-center">
+                        <Text className="text-white text-xs font-bold">✓</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              }}
             />
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </>
