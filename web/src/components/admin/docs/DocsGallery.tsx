@@ -9,7 +9,7 @@ import { DocumentPreviewDialog } from './gallery/components';
 import GalleryToolbar from './gallery/GalleryToolbar';
 import CardsBrowser from './gallery/CardsBrowser';
 import TreeBrowser from './gallery/TreeBrowser';
-import { useDocsContext } from './hooks/DocsContext';
+import { useDocsStore } from './hooks/useDocsStore';
 import type { Doc, FolderNode, TreeNode } from './types';
 
 interface DocsGalleryProps {
@@ -17,8 +17,12 @@ interface DocsGalleryProps {
 }
 
 const DocsGallery: React.FC<DocsGalleryProps> = ({ onEditDoc: _onEditDoc }) => {
-  const navigate = useNavigate();
-  const { docs, deleteDoc, tree, expanded, toggleExpand } = useDocsContext();
+  const navigate     = useNavigate();
+  const docs         = useDocsStore((s) => s.docs);
+  const deleteDoc    = useDocsStore((s) => s.deleteDoc);
+  const tree         = useDocsStore((s) => s.tree);
+  const expanded     = useDocsStore((s) => s.expanded);
+  const toggleExpand = useDocsStore((s) => s.toggleExpand);
 
   const [searchTerm,   setSearchTerm]   = useState('');
   const [previewDoc,   setPreviewDoc]   = useState<Doc | null>(null);

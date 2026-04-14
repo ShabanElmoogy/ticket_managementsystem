@@ -6,26 +6,46 @@ import BlockPalette from './components/BlockPalette';
 import DocsBuilderHeader from './components/DocsBuilderHeader';
 import DocPreview from './components/DocPreview';
 import DocEditor from './components/DocEditor';
-import { useDocsContext } from './hooks/DocsContext';
+import { useDocsStore, useCurrentDoc, useDndHandlers } from './hooks/useDocsStore';
 
 interface Props { onBackToGallery?: () => void; editingDocId?: string | null; }
 
-// Breakpoint at which the 3-column layout collapses.
-// 900px accounts for the 240px admin sidebar leaving ~660px — not enough for 3 columns.
 const COMPACT_QUERY = '(max-width: 900px)';
 
 const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const theme  = useTheme();
   const isDark = theme.palette.mode === 'dark';
-
   const compact = useMediaQuery(COMPACT_QUERY);
 
-  const {
-    currentDocId, setCurrentDocId, currentDoc,
-    preview, setPreview, tree, selectedTreeId, setSelectedTreeId, expanded,
-    addBlock, updateBlock, updateBlockSettings, removeBlock, moveBlock, dndHandlers,
-    addFolder, addDocUnder, renameNode, deleteNodeAndDocs, toggleExpand, saveCurrentDoc,
-  } = useDocsContext();
+  const currentDocId    = useDocsStore((s) => s.currentDocId);
+  const setCurrentDocId = useDocsStore((s) => s.setCurrentDocId);
+  const preview         = useDocsStore((s) => s.preview);
+  const setPreview      = useDocsStore((s) => s.setPreview);
+  const tree            = useDocsStore((s) => s.tree);
+  const selectedTreeId  = useDocsStore((s) => s.selectedTreeId);
+  const setSelectedTreeId = useDocsStore((s) => s.setSelectedTreeId);
+  const expanded        = useDocsStore((s) => s.expanded);
+  const addBlock        = useDocsStore((s) => s.addBlock);
+  const updateBlock     = useDocsStore((s) => s.updateBlock);
+  const updateBlockSettings = useDocsStore((s) => s.updateBlockSettings);
+  const removeBlock     = useDocsStore((s) => s.removeBlock);
+  const moveBlock       = useDocsStore((s) => s.moveBlock);
+  const setDragId       = useDocsStore((s) => s.setDragId);
+  const dropBlock       = useDocsStore((s) => s.dropBlock);
+  const addFolder       = useDocsStore((s) => s.addFolder);
+  const addDocUnder     = useDocsStore((s) => s.addDocUnder);
+  const renameNode      = useDocsStore((s) => s.renameNode);
+  const deleteNodeAndDocs = useDocsStore((s) => s.deleteNodeAndDocs);
+  const toggleExpand    = useDocsStore((s) => s.toggleExpand);
+  const saveCurrentDoc  = useDocsStore((s) => s.saveCurrentDoc);
+  const currentDoc      = useCurrentDoc();
+
+  // dndHandlers now built inline using store actions
+  const dndHandlers = (blockId: string) => ({
+    onDragStart: (e: React.DragEvent) => { setDragId(blockId); e.dataTransfer.effectAllowed = 'move'; },
+    onDragOver:  (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
+    onDrop:      (e: React.DragEvent) => { e.preventDefault(); dropBlock(blockId); },
+  });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
