@@ -4,7 +4,7 @@ import {
   CircularProgress, List, ListItemButton, ListItemText,
 } from '@mui/material';
 import { Label as TemplateIcon } from '@mui/icons-material';
-import { templatesApi } from '../admin/templatesManagement/api/templates';
+import { ticketTemplatesApi } from '../admin/templatesManagement';
 import type { TicketTemplate } from '../../services/api/types';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -22,7 +22,7 @@ const TemplatePickerButton: React.FC<Props> = ({ onSelect }) => {
 
   useEffect(() => {
     setLoading(true);
-    templatesApi.list()
+    ticketTemplatesApi.list()
       .then(setTemplates)
       .finally(() => setLoading(false));
   }, []);

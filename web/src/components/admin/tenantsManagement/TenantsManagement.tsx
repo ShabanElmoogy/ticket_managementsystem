@@ -7,7 +7,8 @@ import { DeleteConfirmDialog, MyGridHeader } from '../../../shared/components';
 import { TenantsTable, TenantFormDialog } from '.';
 import { tenantsApi } from './api/tenants';
 import { tenantsKeys } from './api/queryKeys';
-import { tenantToFormValues, toISO } from './utils/toFormValues';
+import { tenantToFormValues, tenantFormValuesToPayload } from './utils/toFormValues';
+import { useTenantsStats } from './hooks/useTenantsStats';
 import type { Tenant, TenantFormValues } from './types/types';
 
 function TenantsManagement() {
@@ -17,17 +18,8 @@ function TenantsManagement() {
     api: {
       getAll:  tenantsApi.list.bind(tenantsApi),
       create:  tenantsApi.create.bind(tenantsApi),
-      update:  (id, data) => tenantsApi.update(id, {
-        name:               data.name,
-        slug:               data.slug || undefined,
-        subscriptionPlan:   data.subscriptionPlan,
-        subscriptionStatus: data.subscriptionStatus,
-        subscriptionSeats:  data.subscriptionSeats || undefined,
-        subscriptionStart:  data.subscriptionStart ? toISO(data.subscriptionStart) ?? undefined : undefined,
-        subscriptionEnd:    data.subscriptionEnd   ? toISO(data.subscriptionEnd)   ?? undefined : undefined,
-        supportEmail:       data.supportEmail || undefined,
-      }),
-      delete: (id) => tenantsApi.delete(id),
+      update:  (id, data) => tenantsApi.update(id, tenantFormValuesToPayload(data)),
+      delete:  (id) => tenantsApi.delete(id),
     },
     messages: {
       success: { created: 'Tenant created successfully', updated: 'Tenant updated successfully', deleted: 'Tenant deleted successfully' },
@@ -36,17 +28,7 @@ function TenantsManagement() {
     },
   });
 
-  const [statsMap, setStatsMap] = React.useState<Record<string, { userCount: number; ticketCount: number }>>({});
-
-  React.useEffect(() => {
-    if (!f.entities.length) return;
-    f.entities.forEach((t) => {
-      tenantsApi.getStats(t.id)
-        .then((s) => setStatsMap((prev) => ({ ...prev, [t.id]: s })))
-        .catch(() => {});
-    });
-  }, [f.entities]);
-
+  const statsMap = useTenantsStats(f.entities);
   const tenantsWithStats = f.entities.map((t) => ({ ...t, _stats: statsMap[t.id] }));
 
   const handleStatusChange = async (tenant: Tenant, status: string) => {
@@ -62,10 +44,6 @@ function TenantsManagement() {
       f.showSnackbar(f.handleError(error, 'Error updating tenant status'), 'error');
     }
   };
-
-  const initialValues = f.ui.editingItem
-    ? tenantToFormValues(f.ui.editingItem)
-    : undefined;
 
   return (
     <ErrorBoundary>
@@ -89,7 +67,7 @@ function TenantsManagement() {
         <TenantFormDialog
           open={f.ui.dialogOpen}
           editing={!!f.ui.editingItem}
-          initialValues={initialValues}
+          initialValues={f.ui.editingItem ? tenantToFormValues(f.ui.editingItem) : undefined}
           onClose={f.closeDialog}
           onSubmit={(values) => f.handleSubmit(values)}
           submitting={f.ui.submitting}

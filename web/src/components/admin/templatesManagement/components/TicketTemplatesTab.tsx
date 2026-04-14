@@ -15,7 +15,7 @@ const TicketTemplatesTab: React.FC = () => {
   const isAdmin = useIsAdmin();
   const {
     templates, isLoading,
-    dialogOpen, editing, deleteTarget, snack, saving, deleting,
+    dialogOpen, editing, deleteTarget, snack, deleting,
     openCreate, openEdit, handleSubmit, handleDelete,
     setDialogOpen, setDeleteTarget, setSnack,
   } = useTicketTemplates();

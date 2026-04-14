@@ -1,3 +1,23 @@
+export interface TenantStats {
+  userCount: number;
+  ticketCount: number;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string;
+  subscriptionStart?: string | null;
+  subscriptionEnd?: string | null;
+  subscriptionSeats?: number;
+  supportEmail?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  _stats?: TenantStats;
+}
+
 export interface TenantFormValues {
   name: string;
   slug?: string;
@@ -18,23 +38,10 @@ export interface TenantFormDialogProps {
   submitting?: boolean;
 }
 
-export interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  subscriptionPlan?: string;
-  subscriptionStatus?: string;
-  subscriptionStart?: string | null;
-  subscriptionEnd?: string | null;
-  subscriptionSeats?: number;
-  supportEmail?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  _stats?: { userCount: number; ticketCount: number };
+export interface TenantsTableProps {
+  tenants: Tenant[];
+  loading: boolean;
+  onEdit: (tenant: Tenant) => void;
+  onDelete: (tenant: Tenant) => void;
+  onStatusChange: (tenant: Tenant, status: string) => void;
 }
-
-export type SnackbarState = {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
-};

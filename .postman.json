@@ -5,10 +5,12 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3001/api" },
-    { "key": "token",   "value": "" },
-    { "key": "docId",   "value": "" },
-    { "key": "nodeId",  "value": "" }
+    { "key": "baseUrl",   "value": "http://localhost:3001/api" },
+    { "key": "token",     "value": "" },
+    { "key": "docId",     "value": "" },
+    { "key": "nodeId",    "value": "" },
+    { "key": "tenantId",  "value": "" },
+    { "key": "tenantSlug","value": "" }
   ],
   "item": [
     {
@@ -38,6 +40,136 @@
               "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "List Tenants (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/tenants/public", "host": ["{{baseUrl}}"], "path": ["tenants", "public"] }
+          }
+        },
+        {
+          "name": "Get Tenant by Slug (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/by-slug/{{tenantSlug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "by-slug", "{{tenantSlug}}"]
+            }
+          }
+        },
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/tenants", "host": ["{{baseUrl}}"], "path": ["tenants"] }
+          }
+        },
+        {
+          "name": "Create Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('tenantId', json.id);",
+                  "  pm.collectionVariables.set('tenantSlug', json.slug);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Tenant\",\n  \"slug\": \"test-tenant\",\n  \"subscriptionPlan\": \"FREE\",\n  \"subscriptionStatus\": \"ACTIVE\",\n  \"subscriptionSeats\": 5,\n  \"supportEmail\": \"support@test-tenant.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tenants", "host": ["{{baseUrl}}"], "path": ["tenants"] }
+          }
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Tenant Name\",\n  \"subscriptionPlan\": \"PRO\",\n  \"subscriptionSeats\": 10,\n  \"supportEmail\": \"support@updated.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Tenant Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Activate Tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}"]
+            }
           }
         }
       ]

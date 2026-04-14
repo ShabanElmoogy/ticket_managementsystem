@@ -1,6 +1,6 @@
 import React from 'react';
-import { ReusableFormDialog } from '../../../common/forms';
-import type { FormField, SelectOption } from '../../../common/forms';
+import ReusableFormDialog from '../../../../shared/components/forms/ReusableFormDialog';
+import type { FormField, SelectOption } from '../../../../shared/components/forms/ReusableFormDialog';
 import { tenantFormSchema } from '../schemas/tenantSchema';
 import type { TenantFormDialogProps, TenantFormValues } from '../types/types';
 
