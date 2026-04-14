@@ -38,8 +38,10 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const deleteNodeAndDocs = useDocsStore((s) => s.deleteNodeAndDocs);
   const toggleExpand    = useDocsStore((s) => s.toggleExpand);
   const setFolderIcon   = useDocsStore((s) => s.setFolderIcon);
-  const saveCurrentDoc    = useDocsStore((s) => s.saveCurrentDoc);
-  const renameCurrentDoc  = useDocsStore((s) => s.renameCurrentDoc);
+  const saveCurrentDoc      = useDocsStore((s) => s.saveCurrentDoc);
+  const renameCurrentDoc    = useDocsStore((s) => s.renameCurrentDoc);
+  const duplicateCurrentDoc = useDocsStore((s) => s.duplicateCurrentDoc);
+  const duplicateDoc        = useDocsStore((s) => s.duplicateDoc);
   const saveStatus        = useDocsStore((s) => s.saveStatus);
   const setSaveStatus     = useDocsStore((s) => s.setSaveStatus);
   const currentDoc      = useCurrentDoc();
@@ -82,6 +84,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
         onTogglePreview={() => setPreview(!preview)}
         onSave={handleSave}
         onRenameTitle={renameCurrentDoc}
+        onDuplicate={duplicateCurrentDoc}
       />
 
       {/* ── Main body ── */}
@@ -114,6 +117,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
             onRenameRequest={(id, title) => renameNode(id, title)}
             onDelete={deleteNodeAndDocs}
             onSetFolderIcon={setFolderIcon}
+            onDuplicateDoc={duplicateDoc}
           />
         )}
 

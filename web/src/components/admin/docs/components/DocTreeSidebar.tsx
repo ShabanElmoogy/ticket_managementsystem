@@ -12,6 +12,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import type { TreeNode, Doc } from '../types';
 import { findNode } from '../utils/treeUtils';
 
@@ -72,6 +73,7 @@ interface Props {
   onRenameRequest: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onSetFolderIcon: (id: string, icon: string) => void;
+  onDuplicateDoc: (docId: string) => void;
 }
 
 // ── Inline rename input ───────────────────────────────────────────────────────
@@ -162,7 +164,7 @@ const DocTreeSidebar: React.FC<Props> = ({
   tree, currentDocId, selectedTreeId, expanded,
   sidebarBg, sidebarBorder, hoverBg, selectedBg, overlay = false,
   onSelectDoc, onSelectFolder, onToggleExpand,
-  onAddFolder, onAddDoc, onRenameRequest, onDelete, onSetFolderIcon,
+  onAddFolder, onAddDoc, onRenameRequest, onDelete, onSetFolderIcon, onDuplicateDoc,
 }) => {
   const [iconPickerAnchor, setIconPickerAnchor] = useState<{ el: HTMLElement; nodeId: string; current?: string } | null>(null);
   const renderTree = (nodes: TreeNode[], depth = 0): React.ReactNode =>
@@ -175,7 +177,7 @@ const DocTreeSidebar: React.FC<Props> = ({
 
         return (
           <Box key={node.id}>
-            <ListItem disablePadding sx={{ '&:hover .tree-actions': { opacity: 1 } }}>
+            <ListItem disablePadding sx={{ position: 'relative', overflow: 'hidden', '&:hover .tree-actions': { opacity: 1 } }}>
               {/* Folder icon — outside ListItemButton so click doesn't bubble to expand */}
               <Tooltip title="Click to change icon" placement="right">
                 <Box
@@ -216,7 +218,7 @@ const DocTreeSidebar: React.FC<Props> = ({
                   : <ExpandMoreIcon sx={{ fontSize: 14, opacity: 0.5, flexShrink: 0 }} />}
               </ListItemButton>
 
-              <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 8, opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1 }}>
+              <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1, zIndex: 2 }}>
                 {canAddSubfolder && (
                   <Tooltip title="Add subfolder">
                     <IconButton size="small" sx={{ p: 0.25 }} onClick={() => onAddFolder(node.id)}>
@@ -267,12 +269,13 @@ const DocTreeSidebar: React.FC<Props> = ({
       // ── Doc node ────────────────────────────────────────────────────────────
       const isSelected = currentDocId === node.docId;
       return (
-        <ListItem key={node.id} disablePadding sx={{ '&:hover .tree-actions': { opacity: 1 } }}>
+        <ListItem key={node.id} disablePadding sx={{ position: 'relative', overflow: 'hidden', '&:hover .tree-actions': { opacity: 1 } }}>
           <ListItemButton
             selected={isSelected}
             onClick={() => node.docId && onSelectDoc(node.docId, node.id)}
             sx={{
               pl: 2 + depth * 1.5, py: 0.5, borderRadius: 1, mx: 0.5, gap: 0.75,
+              pr: 6, // reserve space for action buttons so title doesn't overlap them
               '&:hover': { bgcolor: hoverBg },
               '&.Mui-selected': { bgcolor: selectedBg, '&:hover': { bgcolor: selectedBg } },
             }}
@@ -291,7 +294,12 @@ const DocTreeSidebar: React.FC<Props> = ({
             />
           </ListItemButton>
 
-          <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 8, opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1 }}>
+          <Stack className="tree-actions" direction="row" sx={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', opacity: 0, transition: 'opacity 0.15s', bgcolor: sidebarBg, borderRadius: 1, zIndex: 2 }}>
+            <Tooltip title="Duplicate">
+              <IconButton size="small" sx={{ p: 0.25 }} onClick={() => node.docId && onDuplicateDoc(node.docId)}>
+                <ContentCopyIcon sx={{ fontSize: 13 }} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Delete">
               <IconButton size="small" sx={{ p: 0.25 }} color="error" onClick={() => onDelete(node.id)}>
                 <DeleteIcon sx={{ fontSize: 13 }} />

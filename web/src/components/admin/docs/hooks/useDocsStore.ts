@@ -51,6 +51,8 @@ interface DocsState {
   // ── Doc operations ─────────────────────────────────────────────────────────
   saveCurrentDoc: () => Promise<void>;
   renameCurrentDoc: (title: string) => Promise<void>;
+  duplicateCurrentDoc: () => Promise<void>;
+  duplicateDoc: (docId: string) => Promise<void>;
   deleteDoc:      (docId: string) => Promise<void>;
   resetCurrent:   () => void;
 }
@@ -391,6 +393,49 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     if (currentDoc) await docsApi.saveDoc(currentDoc);
   },
 
+  duplicateCurrentDoc: async () => {
+    const { docs, currentDocId, tree } = get();
+    const currentDoc = docs.find((d) => d.id === currentDocId);
+    if (!currentDoc) return;
+
+    const newTitle = `${currentDoc.title} (Copy)`;
+    // Deep-clone blocks with new ids
+    const newBlocks = currentDoc.blocks.map((b) => ({ ...b, id: newId() }));
+
+    // Create the new doc on the server
+    const created = await docsApi.createDoc(newTitle, newBlocks);
+    const parsedDoc = { ...created, blocks: parseBlocks(created.blocks) };
+
+    // Find the parent folder of the current doc in the tree
+    const allNodes = tree.flatMap((n) => n.type === 'folder' ? [n, ...n.children] : [n]);
+    const currentNode = allNodes.find((n) => n.type === 'doc' && n.docId === currentDocId);
+    const parentId = currentNode
+      ? (() => {
+          const findParent = (nodes: TreeNode[], childId: string): string | null => {
+            for (const n of nodes) {
+              if (n.type === 'folder') {
+                if (n.children.some((c) => c.id === childId)) return n.id;
+                const found = findParent(n.children, childId);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          return findParent(tree, currentNode.id);
+        })()
+      : null;
+
+    // Create tree node next to the original
+    const node = await docsApi.createDocNode(newTitle, parentId, created.id);
+    const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+
+    set((s) => ({
+      docs:         [...s.docs, parsedDoc],
+      tree:         insertChild(s.tree, parentId, localNode),
+      currentDocId: created.id,
+    }));
+  },
+
   renameCurrentDoc: async (title: string) => {
     const { docs, currentDocId, tree } = get();
     if (!currentDocId || !title.trim()) return;
@@ -414,6 +459,39 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
     // Also persist the doc itself
     const updated = docs.find((d) => d.id === currentDocId);
     if (updated) await docsApi.saveDoc({ ...updated, title });
+  },
+
+  duplicateDoc: async (docId: string) => {
+    const { docs, tree } = get();
+    const source = docs.find((d) => d.id === docId);
+    if (!source) return;
+
+    const newTitle  = `${source.title} (Copy)`;
+    const newBlocks = source.blocks.map((b) => ({ ...b, id: newId() }));
+    const created   = await docsApi.createDoc(newTitle, newBlocks);
+    const parsedDoc = { ...created, blocks: parseBlocks(created.blocks) };
+
+    // Find the parent folder of the source doc
+    const findParent = (nodes: TreeNode[], childDocId: string): string | null => {
+      for (const n of nodes) {
+        if (n.type === 'folder') {
+          if (n.children.some((c) => c.type === 'doc' && c.docId === childDocId)) return n.id;
+          const found = findParent(n.children, childDocId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    const parentId = findParent(tree, docId);
+
+    const node      = await docsApi.createDocNode(newTitle, parentId, created.id);
+    const localNode: DocRefNode = { id: node.id, type: 'doc', title: node.title, docId: created.id };
+
+    set((s) => ({
+      docs:         [...s.docs, parsedDoc],
+      tree:         insertChild(s.tree, parentId, localNode),
+      currentDocId: created.id,
+    }));
   },
 
   deleteDoc: async (docId) => {

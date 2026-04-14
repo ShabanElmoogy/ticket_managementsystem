@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Box, Button, Divider, IconButton, InputBase, Tooltip } from '@mui/material';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import SaveIcon from '@mui/icons-material/Save';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
@@ -21,6 +22,7 @@ interface Props {
   onTogglePreview: () => void;
   onSave: () => void;
   onRenameTitle: (title: string) => void;
+  onDuplicate: () => void;
 }
 
 const STATUS_CONFIG: Record<SaveStatus, {
@@ -109,7 +111,7 @@ const EditableTitle: React.FC<{ value: string; onChange: (v: string) => void }> 
 
 const DocsBuilderHeader: React.FC<Props> = ({
   title, preview, saveStatus, hasDoc, sidebarOpen,
-  onToggleSidebar, onTogglePreview, onSave, onRenameTitle,
+  onToggleSidebar, onTogglePreview, onSave, onRenameTitle, onDuplicate,
 }) => {
   const cfg = STATUS_CONFIG[saveStatus];
 
@@ -125,6 +127,19 @@ const DocsBuilderHeader: React.FC<Props> = ({
             </IconButton>
           </Tooltip>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Tooltip title="Duplicate document">
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<ContentCopyIcon />}
+                onClick={onDuplicate}
+                disabled={!hasDoc}
+              >
+                Duplicate
+              </Button>
+            </span>
+          </Tooltip>
           <Button
             size="small"
             variant="outlined"
