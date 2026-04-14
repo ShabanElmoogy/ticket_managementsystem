@@ -1,5 +1,4 @@
 import React from "react";
-import type { Customer } from "../../../../services/api";
 import getCustomersColumns from "./CustomersColumns";
 import { AdminDataGrid } from "../../../../shared/components";
 import type { CustomersTableProps } from "../types/types";
