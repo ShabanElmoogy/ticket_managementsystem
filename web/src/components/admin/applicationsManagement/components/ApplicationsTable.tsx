@@ -2,13 +2,7 @@ import React from "react";
 import { AdminDataGrid } from "../../../../shared/components";
 import { getApplicationsColumns } from "./ApplicationsColumns";
 import type { Application } from "../../../../services/api";
-
-export interface ApplicationsTableProps {
-  applications: Application[];
-  loading: boolean;
-  onEdit: (app: Application) => void;
-  onDelete: (app: Application) => void;
-}
+import type { ApplicationsTableProps } from "../types/types";
 
 const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   applications,
@@ -17,10 +11,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onDelete,
 }) => {
   const columns = getApplicationsColumns({ onEdit, onDelete });
-
-  return (
-    <AdminDataGrid rows={applications} columns={columns} loading={loading} />
-  );
+  return <AdminDataGrid rows={applications} columns={columns} loading={loading} />;
 };
 
 export default ApplicationsTable;

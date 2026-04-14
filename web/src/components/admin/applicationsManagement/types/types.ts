@@ -26,22 +26,3 @@ export interface UseApplicationFormArgs {
   initialValues?: ApplicationFormValues;
   onSubmit: (values: ApplicationFormValues) => void;
 }
-
-export interface ApplicationsTableProps {
-  applications: Application[];
-  loading: boolean;
-  onEdit: (app: Application) => void;
-  onDelete: (app: Application) => void;
-}
-
-export type SnackbarState = {
-  open: boolean;
-  message: string;
-  severity: 'success' | 'error';
-};
-
-export type DeleteDialogState = {
-  open: boolean;
-  application: Application | null;
-  loading: boolean;
-};

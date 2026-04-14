@@ -1,6 +1,6 @@
 import React from "react";
-import { ReusableFormDialog } from "../../../common/forms";
-import type { FormField } from "../../../common/forms";
+import ReusableFormDialog from "../../../../shared/components/forms/ReusableFormDialog";
+import type { FormField } from "../../../../shared/components/forms/ReusableFormDialog";
 import type { CreateApplicationData } from "../../../../services/api";
 import { applicationFormSchema } from "../schemas/applicationSchema";
 

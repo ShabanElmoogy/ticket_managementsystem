@@ -19,9 +19,8 @@ export const getApplicationsColumns = (handlers: {
     {
       field: "name",
       headerName: "Name",
-      align: "center",
-      headerAlign: "center",
-      width: 200,
+      flex: 1,
+      minWidth: 200,
     },
     {
       field: "description",
