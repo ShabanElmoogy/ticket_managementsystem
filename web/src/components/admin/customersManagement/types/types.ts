@@ -11,7 +11,7 @@ export type { Application } from '../../../../services/api/types/application.ts'
 
 // ── Feature-local types ──────────────────────────────────────────────────────
 
-import type { CreateCustomerData } from '../../../../services/api/types/customer.ts';
+import type { Customer, CreateCustomerData } from '../../../../services/api/types/customer.ts';
 import type { Application } from '../../../../services/api/types/application.ts';
 
 export type CustomerFormValues = CreateCustomerData;
@@ -31,4 +31,11 @@ export interface UseCustomerFormArgs {
   open: boolean;
   initialValues?: CustomerFormValues;
   onSubmit: (values: CustomerFormValues) => void;
+}
+
+export interface CustomersTableProps {
+  customers: Customer[];
+  loading: boolean;
+  onEdit: (customer: Customer) => void;
+  onDelete: (customer: Customer) => void;
 }

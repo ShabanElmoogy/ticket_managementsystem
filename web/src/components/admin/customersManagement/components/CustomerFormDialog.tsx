@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { ReusableFormDialog } from "../../../common/forms";
-import type { FormField, SelectOption } from "../../../common/forms";
+import ReusableFormDialog from "../../../../shared/components/forms/ReusableFormDialog";
+import type { FormField, SelectOption } from "../../../../shared/components/forms/ReusableFormDialog";
 import type { CustomerFormDialogProps, CustomerFormValues } from "../types/types";
 import { customerFormSchema } from "../schemas/customerSchema";
 

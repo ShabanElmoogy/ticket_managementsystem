@@ -72,7 +72,6 @@ function ReusableFormDialog<T extends FieldValues>({
   const autoFocusField = fields.find(f => f.autoFocus);
 
   const {
-    register,
     handleSubmit,
     reset,
     control,
@@ -220,6 +219,7 @@ function ReusableFormDialog<T extends FieldValues>({
                           multiple
                           value={controllerField.value || []}
                           onChange={controllerField.onChange}
+                          MenuProps={{ disableScrollLock: true }}
                           renderValue={(selected) => (
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                               {(selected as (string | number)[]).map((value) => {
@@ -237,11 +237,15 @@ function ReusableFormDialog<T extends FieldValues>({
                             </Box>
                           )}
                         >
-                          {field.options?.map((option) => (
-                            <MenuItem key={String(option.value)} value={String(option.value)}>
-                              {option.label}
-                            </MenuItem>
-                          ))}
+                          {field.options?.map((option) => {
+                            const selected = ((controllerField.value || []) as string[]).includes(String(option.value));
+                            return (
+                              <MenuItem key={String(option.value)} value={String(option.value)}>
+                                <Checkbox checked={selected} size="small" sx={{ mr: 1, p: 0 }} />
+                                {option.label}
+                              </MenuItem>
+                            );
+                          })}
                         </MySelect>
                         {errors[field.name] && (
                           <FormHelperText>{errors[field.name]?.message as string}</FormHelperText>
@@ -361,27 +365,34 @@ function ReusableFormDialog<T extends FieldValues>({
               default:
                 // Text, multiline, number, email, password, date, datetime-local
                 fieldComponent = (
-                  <AppTextField
-                    label={field.label}
-                    {...register(field.name)}
-                    fieldType={
-                      field.type === 'password' ? 'password' :
-                      field.type === 'number'   ? 'number'   :
-                      field.type === 'email'    ? 'text'     : 'text'
-                    }
-                    required={field.required}
-                    multiline={field.type === "multiline"}
-                    rows={field.type === "multiline" ? field.rows || 3 : undefined}
-                    min={field.min}
-                    max={field.max}
-                    step={field.step}
-                    maxLength={field.maxLength}
-                    fullWidth
-                    inputRef={field.autoFocus ? autoFocusRef : undefined}
-                    error={!!errors[field.name]}
-                    helperText={errors[field.name]?.message as string}
-                    disabled={submitting}
-                    showClearButton={false}
+                  <Controller
+                    name={field.name}
+                    control={control}
+                    render={({ field: controllerField }) => (
+                      <AppTextField
+                        label={field.label}
+                        value={controllerField.value ?? ''}
+                        onChange={controllerField.onChange}
+                        onBlur={controllerField.onBlur}
+                        inputRef={field.autoFocus ? autoFocusRef : controllerField.ref}
+                        fieldType={
+                          field.type === 'password' ? 'password' :
+                          field.type === 'number'   ? 'number'   : 'text'
+                        }
+                        required={field.required}
+                        multiline={field.type === "multiline"}
+                        rows={field.type === "multiline" ? field.rows || 3 : undefined}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
+                        maxLength={field.maxLength}
+                        fullWidth
+                        error={!!errors[field.name]}
+                        helperText={errors[field.name]?.message as string}
+                        disabled={submitting}
+                        showClearButton={field.type !== 'password' && field.type !== 'number' && field.type !== 'multiline'}
+                      />
+                    )}
                   />
                 );
             }

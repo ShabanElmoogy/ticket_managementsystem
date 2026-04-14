@@ -5,10 +5,11 @@ import { useAuxData } from '../../../shared/hooks/useAuxData';
 import { ErrorBoundary } from '../../../shared/components/feedback/ErrorBoundary';
 import { DeleteConfirmDialog, MyGridHeader } from '../../../shared/components';
 import { CustomersTable, CustomerFormDialog } from '.';
+import { customersApi } from './api/customers';
 import { customersKeys } from './api/queryKeys';
-import { applicationsKeys } from '../applicationsManagement/api/queryKeys';
+import { applicationsApi, applicationsKeys } from '../applicationsManagement';
 import { customerToFormValues } from './utils/toFormValues';
-import { type Customer, type CreateCustomerData, type Application, customersApi, applicationsApi } from '../../../services/api';
+import type { Customer, CreateCustomerData, Application } from '../../../services/api';
 
 export default function CustomersManagement() {
   const f = useAdminFeature<Customer, CreateCustomerData>({

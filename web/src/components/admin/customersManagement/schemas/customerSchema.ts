@@ -8,8 +8,9 @@ export const customerFormSchema = z.object({
   description: z.string().trim().max(500).optional().or(z.literal("")),
   applicationIds: z.array(z.string()).optional().default([]),
   maintenanceType: z.enum(['MONTHLY_SUBSCRIPTION', 'FREE_TRIAL', 'PAY_AS_YOU_GO']).nullable().optional(),
-  subscriptionStartDate: z.union([z.string(), z.date()]).nullable().optional(),
-  subscriptionEndDate: z.union([z.string(), z.date()]).nullable().optional(),
+  // DatePicker returns Dayjs | null — accept any value, validate presence in refine
+  subscriptionStartDate: z.any().nullable().optional(),
+  subscriptionEndDate: z.any().nullable().optional(),
 }).refine(
   (data) => {
     if (data.maintenanceType === 'MONTHLY_SUBSCRIPTION' || data.maintenanceType === 'FREE_TRIAL') {

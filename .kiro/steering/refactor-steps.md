@@ -130,6 +130,10 @@ export const ticketFormSchema = z.object({
   // Date string (ISO)
   dueDate: z.string().datetime().nullable().optional(),
 
+  // Date from MUI DatePicker (returns Dayjs, not string/Date)
+  // Use z.any() — validate presence in .refine(), convert to ISO on submit
+  subscriptionStartDate: z.any().nullable().optional(),
+
   // Boolean
   isActive: z.boolean().default(true),
 
