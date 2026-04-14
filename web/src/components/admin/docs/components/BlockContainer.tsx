@@ -8,6 +8,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const BlockContainer: React.FC<{
   children: React.ReactNode;
+  'data-block-id'?: string;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
@@ -18,11 +19,12 @@ const BlockContainer: React.FC<{
     onDragOver: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
   };
-}> = ({ children, onMoveUp, onMoveDown, onDelete, onDuplicate, draggable, dragHandlers }) => {
+}> = ({ children, 'data-block-id': blockId, onMoveUp, onMoveDown, onDelete, onDuplicate, draggable, dragHandlers }) => {
   const theme = useTheme();
 
   return (
     <Box
+      data-block-id={blockId}
       draggable={draggable}
       onDragStart={dragHandlers?.onDragStart}
       onDragOver={dragHandlers?.onDragOver}

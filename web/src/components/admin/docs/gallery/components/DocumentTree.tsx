@@ -1,28 +1,19 @@
-import React from "react";
+/**
+ * DocumentTree — read-only tree for the gallery view.
+ * Matches DocTreeSidebar's visual style but has no edit actions.
+ */
+import React from 'react';
 import {
-  Box,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  IconButton,
-  Typography,
-  ToggleButtonGroup,
-  ToggleButton,
-} from "@mui/material";
-import {
-  Folder as FolderIcon,
-  FolderOpen as FolderOpenIcon,
-  Description as DescriptionIcon,
-  ExpandLess,
-  ExpandMore,
-  Visibility as VisibilityIcon,
-} from "@mui/icons-material";
-import type { TreeNode, Doc } from "../../types";
-import HighlightText from "./HighlightText";
-import { formatDate } from "../../../../../shared/utils/dateUtils";
+  Box, List, ListItem, ListItemButton, ListItemIcon, Collapse,
+  Typography, ToggleButtonGroup, ToggleButton, alpha, useTheme,
+} from '@mui/material';
+import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import DescriptionIcon from '@mui/icons-material/Description';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import type { TreeNode, Doc } from '../../types';
+import HighlightText from './HighlightText';
 
 interface DocumentTreeProps {
   tree: TreeNode[];
@@ -36,18 +27,17 @@ interface DocumentTreeProps {
 }
 
 const DocumentTree: React.FC<DocumentTreeProps> = ({
-  tree,
-  docs,
-  expanded,
-  treeOpenMode,
-  searchQuery = '',
-  onToggleExpand,
-  onPreview,
-  onTreeOpenModeChange,
+  tree, docs, expanded, treeOpenMode, searchQuery = '',
+  onToggleExpand, onPreview, onTreeOpenModeChange,
 }) => {
-  const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
-    const isExpanded = expanded[node.id];
-    const paddingLeft = level * 24;
+  const theme  = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const hoverBg    = isDark ? alpha('#fff', 0.05) : alpha('#000', 0.04);
+  const selectedBg = isDark ? alpha('#3b82f6', 0.15) : alpha('#3b82f6', 0.08);
+
+  const renderNode = (node: TreeNode, depth = 0): React.ReactNode => {
+    const open = !!expanded[node.id];
 
     if (node.type === 'folder') {
       return (
@@ -55,78 +45,93 @@ const DocumentTree: React.FC<DocumentTreeProps> = ({
           <ListItem disablePadding>
             <ListItemButton
               onClick={() => onToggleExpand(node.id)}
-              sx={{ pl: paddingLeft / 8 }}
+              sx={{ pl: 1.5 + depth * 1.5, py: 0.5, borderRadius: 1, mx: 0.5, gap: 0.75, '&:hover': { bgcolor: hoverBg } }}
             >
-              <ListItemIcon>
-                {isExpanded ? <FolderOpenIcon /> : <FolderIcon />}
+              <ListItemIcon sx={{ minWidth: 20 }}>
+                {node.icon
+                  ? <Box component="span" sx={{ fontSize: '0.95rem', lineHeight: 1 }}>{node.icon}</Box>
+                  : open
+                    ? <FolderOpenIcon sx={{ fontSize: 15, color: '#f59e0b' }} />
+                    : <FolderIcon     sx={{ fontSize: 15, color: '#f59e0b' }} />}
               </ListItemIcon>
-              <ListItemText
-                primary={<HighlightText text={node.title} query={searchQuery} />}
-              />
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              <Typography variant="body2" noWrap sx={{ flex: 1, fontSize: '0.8rem', fontWeight: 500 }}>
+                <HighlightText text={node.title} query={searchQuery} />
+              </Typography>
+              {open
+                ? <ExpandLessIcon sx={{ fontSize: 14, opacity: 0.5, flexShrink: 0 }} />
+                : <ExpandMoreIcon sx={{ fontSize: 14, opacity: 0.5, flexShrink: 0 }} />}
             </ListItemButton>
           </ListItem>
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              {node.children.map((child) => renderTreeNode(child, level + 1))}
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <List dense disablePadding>
+              {node.children.map((child) => renderNode(child, depth + 1))}
             </List>
           </Collapse>
         </Box>
       );
-    } else {
-      const doc = docs.find((d) => d.id === node.docId);
-      if (!doc) return null;
-
-      const isMatch = searchQuery.trim() !== '' && doc.title.toLowerCase().includes(searchQuery.toLowerCase());
-
-      return (
-        <ListItem key={node.id} disablePadding>
-          <ListItemButton
-            sx={{
-              pl: paddingLeft / 8,
-              ...(isMatch && {
-                bgcolor: 'primary.light',
-                color: 'primary.contrastText',
-                '&:hover': { bgcolor: 'primary.main' },
-              }),
-            }}
-            onClick={() => onPreview(doc)}
-          >
-            <ListItemIcon>
-              <DescriptionIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={<HighlightText text={doc.title} query={searchQuery} />}
-              secondary={`Updated: ${formatDate(doc.updatedAt)}`}
-            />
-          </ListItemButton>
-          <Box sx={{ display: 'flex', gap: 1, mr: 1 }}>
-            <IconButton size="small" onClick={() => onPreview(doc)}>
-              <VisibilityIcon />
-            </IconButton>
-          </Box>
-        </ListItem>
-      );
     }
+
+    const doc = docs.find((d) => d.id === node.docId);
+    if (!doc) return null;
+
+    const isMatch = searchQuery.trim() !== '' && doc.title.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return (
+      <ListItem key={node.id} disablePadding>
+        <ListItemButton
+          onClick={() => onPreview(doc)}
+          sx={{
+            pl: 2 + depth * 1.5, py: 0.5, borderRadius: 1, mx: 0.5, gap: 0.75,
+            '&:hover': { bgcolor: hoverBg },
+            ...(isMatch && { bgcolor: selectedBg }),
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 20 }}>
+            <DescriptionIcon sx={{ fontSize: 14, color: isMatch ? 'primary.main' : 'text.disabled' }} />
+          </ListItemIcon>
+          <Typography
+            variant="body2" noWrap
+            sx={{ flex: 1, fontSize: '0.8rem', color: isMatch ? 'primary.main' : 'text.primary', fontWeight: isMatch ? 600 : 400 }}
+          >
+            <HighlightText text={doc.title} query={searchQuery} />
+          </Typography>
+        </ListItemButton>
+      </ListItem>
+    );
   };
 
   return (
-    <Box sx={{ width: { xs: '100%', md: 300 }, flexShrink: 0 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6">Document Tree</Typography>
+    <Box sx={{ width: { xs: '100%', md: 280 }, flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary"
+          sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.7rem' }}>
+          Documents
+        </Typography>
         <ToggleButtonGroup
-          value={treeOpenMode}
-          exclusive
-          onChange={(_, newMode) => newMode && onTreeOpenModeChange(newMode)}
-          size="small"
+          value={treeOpenMode} exclusive size="small"
+          onChange={(_, v) => v && onTreeOpenModeChange(v)}
+          sx={{ '& .MuiToggleButton-root': { py: 0.25, px: 1, fontSize: '0.7rem', textTransform: 'none' } }}
         >
           <ToggleButton value="tab">Tab</ToggleButton>
           <ToggleButton value="dialog">Dialog</ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      <List sx={{ maxHeight: { xs: 260, md: '60vh' }, overflow: 'auto' }}>
-        {tree.map((node) => renderTreeNode(node))}
-      </List>
+
+      <Box sx={{
+        border: '1px solid', borderColor: 'divider', borderRadius: 1,
+        maxHeight: { xs: 260, md: '65vh' }, overflowY: 'auto',
+        bgcolor: isDark ? '#0f172a' : '#f8fafc',
+      }}>
+        {tree.length === 0 ? (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.disabled">No documents</Typography>
+          </Box>
+        ) : (
+          <List dense disablePadding sx={{ py: 0.5 }}>
+            {tree.map((node) => renderNode(node))}
+          </List>
+        )}
+      </Box>
     </Box>
   );
 };

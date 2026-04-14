@@ -168,7 +168,9 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          // Token expired — attempt refresh
+          // Token expired but we have a refresh token.
+          // Don't refresh here — the HTTP interceptor will handle it on the first API call.
+          // Restoring the session now prevents the login redirect while the interceptor refreshes.
           const rt = refreshToken || get().refreshToken;
           if (!rt) {
             localStorage.removeItem('token');
@@ -176,39 +178,18 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          try {
-            if (import.meta.env.DEV) console.log('⏰ Token expired, attempting refresh...');
-            // Use the raw http client directly — bypasses the response interceptor
-            // to avoid a recursive refresh loop when the refresh token is also invalid
-            const { http } = await import('../services/api/httpClient');
-            const response = await http.post<{ token: string; refreshToken?: string; user?: User }>(
-              '/auth/refresh',
-              { refreshToken: rt },
-            );
-            const data = response.data;
-
-            const newPayload = decodeToken(data.token);
-            if (!newPayload) throw new Error('Invalid refreshed token');
-
-            localStorage.setItem('token', data.token);
-            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-
-            const expiresIn = getTokenExpiresIn(data.token);
-            set({
-              user: data.user ?? { id: newPayload.userId, email: newPayload.email, name: newPayload.name ?? newPayload.email, role: newPayload.role },
-              token: data.token,
-              refreshToken: data.refreshToken || rt,
-              isAuthenticated: true,
-              isLoading: false,
-              tenantSuspended: storedSuspended,
-              tenantStatus: storedStatus,
-            });
-            if (import.meta.env.DEV) console.log(`✅ Token refreshed. Expires in ${Math.round(expiresIn / 60)}m`);
-          } catch {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
-          }
+          // Restore session with expired token — interceptor will swap it on first request
+          const currentUser = get().user;
+          set({
+            user: currentUser ?? { id: payload.userId, email: payload.email, name: payload.name ?? payload.email, role: payload.role },
+            token,
+            refreshToken: rt,
+            isAuthenticated: true,
+            isLoading: false,
+            tenantSuspended: storedSuspended,
+            tenantStatus: storedStatus,
+          });
+          if (import.meta.env.DEV) console.log('⏰ Token expired — session restored, interceptor will refresh on first request');
         } catch {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
