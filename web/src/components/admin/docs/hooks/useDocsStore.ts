@@ -32,6 +32,7 @@ interface DocsState {
 
   // ── Block operations ───────────────────────────────────────────────────────
   addBlock:            (type: BlockType) => Promise<void>;
+  insertBlock:         (type: BlockType, afterIndex: number) => Promise<void>;
   updateBlock:         <T extends DocBlock>(id: string, patch: Partial<T>) => void;
   updateBlockSettings: (id: string, patch: Partial<BlockSettings>) => void;
   removeBlock:         (id: string) => void;
@@ -221,6 +222,25 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
         d.id === currentDoc.id
           ? { ...d, blocks: [...(d.blocks ?? []), block], updatedAt: new Date().toISOString() }
           : d,
+      ),
+    }));
+    scheduleSave();
+  },
+
+  insertBlock: async (type, afterIndex) => {
+    const { docs, currentDocId } = get();
+    const currentDoc = docs.find((d) => d.id === currentDocId);
+    if (!currentDoc) {
+      // No doc yet — fall back to addBlock which handles creation
+      await get().addBlock(type);
+      return;
+    }
+    const block = makeBlock(type);
+    const blocks = [...currentDoc.blocks];
+    blocks.splice(afterIndex + 1, 0, block);
+    set((s) => ({
+      docs: s.docs.map((d) =>
+        d.id === currentDoc.id ? { ...d, blocks, updatedAt: new Date().toISOString() } : d,
       ),
     }));
     scheduleSave();

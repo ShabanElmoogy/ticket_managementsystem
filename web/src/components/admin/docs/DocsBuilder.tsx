@@ -25,6 +25,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
   const setSelectedTreeId = useDocsStore((s) => s.setSelectedTreeId);
   const expanded        = useDocsStore((s) => s.expanded);
   const addBlock        = useDocsStore((s) => s.addBlock);
+  const insertBlock     = useDocsStore((s) => s.insertBlock);
   const updateBlock     = useDocsStore((s) => s.updateBlock);
   const updateBlockSettings = useDocsStore((s) => s.updateBlockSettings);
   const removeBlock     = useDocsStore((s) => s.removeBlock);
@@ -53,7 +54,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
     onDrop:      (e: React.DragEvent) => { e.preventDefault(); dropBlock(blockId); },
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // open by default on desktop
 
   useEffect(() => { if (compact) setSidebarOpen(false); }, [compact]);
   useEffect(() => { if (editingDocId) { setCurrentDocId(editingDocId); setPreview(false); } }, [editingDocId, setCurrentDocId, setPreview]);
@@ -79,20 +80,15 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
         preview={preview}
         saveStatus={saveStatus}
         hasDoc={!!currentDoc}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen(v => !v)}
         onTogglePreview={() => setPreview(!preview)}
         onSave={handleSave}
         onRenameTitle={renameCurrentDoc}
-        onDuplicate={duplicateCurrentDoc}
       />
 
       {/* ── Main body ── */}
       <Box sx={{ position: 'relative', display: 'flex', flex: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', borderRadius: 2, mt: -1 }}>
 
-        {/* Doc tree sidebar
-            compact  → position:absolute, overlays editor, zero flex space
-            desktop  → position:relative, normal flex item */}
+        {/* Sidebar */}
         {sidebarOpen && (
           <DocTreeSidebar
             tree={tree}
@@ -129,6 +125,45 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
           />
         )}
 
+        {/* Sidebar toggle tab — always visible on the left edge of the editor */}
+        {!compact && (
+          <Box
+            onClick={() => setSidebarOpen(v => !v)}
+            title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            sx={{
+              position: 'absolute',
+              left: sidebarOpen ? 240 : 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 20,
+              width: 16,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderLeft: sidebarOpen ? '1px solid' : 'none',
+              borderRight: sidebarOpen ? 'none' : '1px solid',
+              borderRadius: sidebarOpen ? '0 4px 4px 0' : '4px 0 0 4px',
+              cursor: 'pointer',
+              transition: 'left 0.2s',
+              '&:hover': { bgcolor: 'action.hover' },
+              boxShadow: 1,
+            }}
+          >
+            <Box sx={{
+              fontSize: 10,
+              color: 'text.secondary',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}>
+              {sidebarOpen ? '‹' : '›'}
+            </Box>
+          </Box>
+        )}
+
         {/* Editor / Preview — always flex:1, never shrinks */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           {preview
@@ -141,6 +176,7 @@ const DocsBuilder: React.FC<Props> = ({ editingDocId }) => {
                 onRemoveBlock={removeBlock}
                 onDuplicateBlock={duplicateBlock}
                 onMoveBlock={moveBlock}
+                onInsertBlock={insertBlock}
                 dndHandlers={dndHandlers}
               />
           }

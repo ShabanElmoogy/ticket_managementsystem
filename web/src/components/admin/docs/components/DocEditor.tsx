@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import BlockContainer from './BlockContainer';
 import BlockSettingsBar from './BlockSettingsBar';
+import AddBlockDivider from './AddBlockDivider';
 import {
   HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, BulletedListEditor,
   NumberedListEditor, DividerBlockView, ImageBlockEditor, VideoBlockEditor,
@@ -22,11 +23,13 @@ interface Props {
   onRemoveBlock: (id: string) => void;
   onDuplicateBlock: (id: string) => void;
   onMoveBlock: (id: string, dir: -1 | 1) => void;
+  onInsertBlock: (type: import('../types').BlockType, afterIndex: number) => void;
   dndHandlers: (id: string) => any;
 }
 
 const DocEditor: React.FC<Props> = ({
-  blocks, hasDoc, onUpdateBlock, onUpdateBlockSettings, onRemoveBlock, onDuplicateBlock, onMoveBlock, dndHandlers,
+  blocks, hasDoc, onUpdateBlock, onUpdateBlockSettings, onRemoveBlock,
+  onDuplicateBlock, onMoveBlock, onInsertBlock, dndHandlers,
 }) => {
   const renderBlock = (block: DocBlock, idx: number): React.ReactNode => {
     const actions = {
@@ -79,7 +82,15 @@ const DocEditor: React.FC<Props> = ({
             </Typography>
           </Box>
         ) : (
-          blocks.map((block, idx) => renderBlock(block, idx))
+          <>
+            <AddBlockDivider onAdd={(type) => onInsertBlock(type, -1)} />
+            {blocks.map((block, idx) => (
+              <React.Fragment key={block.id}>
+                {renderBlock(block, idx)}
+                <AddBlockDivider onAdd={(type) => onInsertBlock(type, idx)} />
+              </React.Fragment>
+            ))}
+          </>
         )}
       </Box>
     </Box>
