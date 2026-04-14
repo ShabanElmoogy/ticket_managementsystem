@@ -131,71 +131,102 @@ export const useAuthStore = create<AuthState>()(
 
       initializeAuth: async () => {
         try {
-          const token = localStorage.getItem('token');
+          const token       = localStorage.getItem('token');
           const refreshToken = localStorage.getItem('refreshToken');
-          const storedStatus = (localStorage.getItem('tenantStatus') || null) as TenantStatus;
+          const storedStatus    = (localStorage.getItem('tenantStatus') || null) as TenantStatus;
           const storedSuspended = localStorage.getItem('tenantSuspended') === '1';
 
-          if (!token) { set({ isAuthenticated: false, isLoading: false }); return; }
+          // No token at all — not logged in
+          if (!token) {
+            set({ isAuthenticated: false, isLoading: false });
+            return;
+          }
 
           const payload = decodeToken(token);
           if (!payload) {
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
-            set({ isAuthenticated: false, isLoading: false });
+            set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
             return;
           }
 
-          if (isTokenExpired(token)) {
-            if (refreshToken) {
-              try {
-                if (import.meta.env.DEV) console.log('⏰ Token expired, attempting refresh...');
-                const { api } = await import('../services/api');
-                const data = await api.post<{ token: string; refreshToken?: string; user?: any }>('/auth/refresh', { refreshToken });
-                localStorage.setItem('token', data.token);
-                if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
-                const newPayload = decodeToken(data.token);
-                if (!newPayload) throw new Error('Invalid refreshed token');
-                const expiresIn = getTokenExpiresIn(data.token);
-                set({ user: data.user, token: data.token,
-                      refreshToken: data.refreshToken || refreshToken,
-                      isAuthenticated: true, isLoading: false,
-                      tenantSuspended: storedSuspended, tenantStatus: storedStatus });
-                if (import.meta.env.DEV) console.log(`✅ Auth refreshed. Expires in ${Math.round(expiresIn / 60)}m`);
-                return;
-              } catch {
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                set({ isAuthenticated: false, isLoading: false });
-                return;
-              }
-            } else {
-              localStorage.removeItem('token');
-              set({ isAuthenticated: false, isLoading: false });
-              return;
-            }
+          // Token still valid — restore session from persisted state (already done by Zustand persist)
+          // Just ensure isLoading is false and user is set from payload if missing
+          if (!isTokenExpired(token)) {
+            const currentUser = get().user;
+            const expiresIn = getTokenExpiresIn(token);
+            set({
+              user: currentUser ?? { id: payload.userId, email: payload.email, name: payload.name ?? payload.email, role: payload.role },
+              token,
+              refreshToken: refreshToken || get().refreshToken || null,
+              isAuthenticated: true,
+              isLoading: false,
+              tenantSuspended: storedSuspended,
+              tenantStatus: storedStatus,
+            });
+            if (import.meta.env.DEV) console.log(`✅ Auth restored from storage. Expires in ${Math.round(expiresIn / 60)}m`);
+            return;
           }
 
-          const expiresIn = getTokenExpiresIn(token);
-          set({ user: { id: payload.userId, email: payload.email, name: payload.email, role: payload.role },
-                token, refreshToken: refreshToken || null,
-                isAuthenticated: true, isLoading: false,
-                tenantSuspended: storedSuspended, tenantStatus: storedStatus });
-          if (import.meta.env.DEV) console.log(`✅ Auth initialized. Expires in ${Math.round(expiresIn / 60)}m`);
+          // Token expired — attempt refresh
+          const rt = refreshToken || get().refreshToken;
+          if (!rt) {
+            localStorage.removeItem('token');
+            set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
+            return;
+          }
+
+          try {
+            if (import.meta.env.DEV) console.log('⏰ Token expired, attempting refresh...');
+            const { api } = await import('../services/api');
+            const data = await api.post<{ token: string; refreshToken?: string; user?: User }>('/auth/refresh', { refreshToken: rt });
+
+            const newPayload = decodeToken(data.token);
+            if (!newPayload) throw new Error('Invalid refreshed token');
+
+            localStorage.setItem('token', data.token);
+            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+
+            const expiresIn = getTokenExpiresIn(data.token);
+            set({
+              user: data.user ?? { id: newPayload.userId, email: newPayload.email, name: newPayload.name ?? newPayload.email, role: newPayload.role },
+              token: data.token,
+              refreshToken: data.refreshToken || rt,
+              isAuthenticated: true,
+              isLoading: false,
+              tenantSuspended: storedSuspended,
+              tenantStatus: storedStatus,
+            });
+            if (import.meta.env.DEV) console.log(`✅ Token refreshed. Expires in ${Math.round(expiresIn / 60)}m`);
+          } catch {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
+          }
         } catch {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
-          set({ isAuthenticated: false, isLoading: false });
+          set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
         }
       },
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        token: state.token,
+        token:           state.token,
+        refreshToken:    state.refreshToken,   // ← persist refresh token too
+        user:            state.user,           // ← persist user so ProtectedRoute works instantly
+        isAuthenticated: state.isAuthenticated,
         tenantSuspended: state.tenantSuspended,
-        tenantStatus: state.tenantStatus,
+        tenantStatus:    state.tenantStatus,
       }),
+      // On rehydration, if we have a token set isLoading=false immediately
+      // so the spinner doesn't flash on every page load with a valid session
+      onRehydrateStorage: () => (state) => {
+        if (state && state.token && state.user) {
+          state.isLoading = false;
+        }
+      },
     }
   )
 );

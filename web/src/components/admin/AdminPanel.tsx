@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, useTheme, Alert } from "@mui/material";
+import { useThemeStore } from "../../stores/themeStore";
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
@@ -38,7 +39,9 @@ interface AdminPanelProps {
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
   const { user } = useAuthStore();
-  const theme = useTheme();
+  const theme     = useTheme();
+  const direction = useThemeStore((s) => s.direction);
+  const isRtl     = direction === 'rtl';
   const isSuperAdminUser = isSuperAdmin(user?.role);
   const tenantStatus = useTenantStatus();
   const fullyBlocked = tenantStatus === 'SUSPENDED';
@@ -128,7 +131,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBackToDashboard }) => {
           mt: 10,
           // Shift content right by the drawer width on desktop when open.
           // transition matches MUI Drawer's default slide animation.
-          ml: { md: desktopOpen ? `${drawerWidth}px` : 0 },
+          ml: { md: !isRtl && desktopOpen ? `${drawerWidth}px` : 0 },
+          mr: { md:  isRtl && desktopOpen ? `${drawerWidth}px` : 0 },
           width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
           transition: theme.transitions.create(['margin', 'width'], {
             easing: desktopOpen

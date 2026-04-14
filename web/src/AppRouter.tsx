@@ -46,13 +46,15 @@ const STATUS_CONTENT: Record<string, { icon: string; title: string; body: string
 };
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuthStore();
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return null; // AppRouter already shows spinner — don't double-render
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuthStore();
-  return !user ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return null;
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
 const AppRouter: React.FC = () => {

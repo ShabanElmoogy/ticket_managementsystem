@@ -68,7 +68,8 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
 }) => {
   const theme = useTheme();
   const tenantStatus = useTenantStatus();
-  const { mode, toggleTheme } = useThemeStore();
+  const { mode, toggleTheme, direction, toggleDirection } = useThemeStore();
+  const isRtl = direction === 'rtl';
   const badge = tenantStatus ? STATUS_BADGE[tenantStatus] ?? null : null;
   const centerMessage = tenantStatus ? STATUS_MESSAGES[tenantStatus] ?? null : null;
 
@@ -81,7 +82,8 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
       position="fixed"
       sx={{
         width: { md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%' },
-        ml:    { md: desktopOpen ? `${drawerWidth}px` : 0 },
+        ml:    { md: !isRtl && desktopOpen ? `${drawerWidth}px` : 0 },
+        mr:    { md:  isRtl && desktopOpen ? `${drawerWidth}px` : 0 },
         transition: theme.transitions.create(['width', 'margin'], {
           easing: desktopOpen ? theme.transitions.easing.easeOut : theme.transitions.easing.sharp,
           duration: desktopOpen
@@ -159,6 +161,14 @@ const AdminTopBar: React.FC<AdminTopBarProps> = ({
             </Avatar>
           </Tooltip>
         )}
+
+        {/* Direction toggle */}
+        <Tooltip title={direction === 'ltr' ? 'Switch to RTL' : 'Switch to LTR'}>
+          <IconButton color="inherit" onClick={toggleDirection} size="small"
+            sx={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: 0.5 }}>
+            {direction === 'ltr' ? 'RTL' : 'LTR'}
+          </IconButton>
+        </Tooltip>
 
         {/* Theme toggle */}
         <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>

@@ -24,6 +24,8 @@ export interface AdminSidebarProps {
   sx?: SxProps<Theme>;
 }
 
+import { useThemeStore } from '../../../stores/themeStore';
+
 const DEFAULT_DRAWER_WIDTH = 240;
 
 const SidebarContent: React.FC<Pick<AdminSidebarProps, 'items' | 'selectedId' | 'onSelect' | 'onMobileClose'>> = ({
@@ -91,14 +93,17 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onMobileClose,
   sx,
 }) => {
-  const paperSx = { boxSizing: 'border-box' as const, width: drawerWidth, ...(sx as any) };
-  const content = <SidebarContent items={items} selectedId={selectedId} onSelect={onSelect} onMobileClose={onMobileClose} />;
+  const direction = useThemeStore((s) => s.direction);
+  const anchor    = direction === 'rtl' ? 'right' : 'left';
+  const paperSx   = { boxSizing: 'border-box' as const, width: drawerWidth, ...(sx as any) };
+  const content   = <SidebarContent items={items} selectedId={selectedId} onSelect={onSelect} onMobileClose={onMobileClose} />;
 
   return (
     <nav>
       {/* Mobile — temporary overlay */}
       <Drawer
         variant="temporary"
+        anchor={anchor}
         open={!!mobileOpen}
         onClose={onMobileClose}
         ModalProps={{ keepMounted: true }}
@@ -107,9 +112,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {content}
       </Drawer>
 
-      {/* Desktop — persistent, MUI manages its own space */}
+      {/* Desktop — persistent */}
       <Drawer
         variant="persistent"
+        anchor={anchor}
         open={desktopOpen}
         sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': paperSx }}
       >
