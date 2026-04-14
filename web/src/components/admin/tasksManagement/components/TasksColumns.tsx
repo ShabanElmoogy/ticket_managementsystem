@@ -29,7 +29,8 @@ export const getTasksColumns = (handlers: {
     {
       field: "title",
       headerName: "Title",
-      width: 250,
+      flex: 1,
+      minWidth: 200,
       renderCell: (params) => params.value || "-",
     },
     {
@@ -39,7 +40,7 @@ export const getTasksColumns = (handlers: {
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
-        <Chip label={params.value} color={getStatusColor(params.value as TaskStatus) as any} size="small" />
+        <Chip label={params.value} color={getStatusColor(params.value as TaskStatus)} size="small" />
       ),
     },
     {

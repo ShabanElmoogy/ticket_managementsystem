@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { ReusableFormDialog } from "../../../common/forms";
-import type { FormField, SelectOption } from "../../../common/forms";
+import ReusableFormDialog from "../../../../shared/components/forms/ReusableFormDialog";
+import type { FormField, SelectOption } from "../../../../shared/components/forms/ReusableFormDialog";
 import type { TaskFormValues } from "../types/types";
 import { taskFormSchema } from "../schemas/taskSchema";
 
@@ -74,9 +74,6 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
       required: true,
       options: taskBoards,
       width: 2,
-      onClear: () => {
-        // Board clear will be handled by form reset
-      },
     },
     {
       name: "columnId",
@@ -104,9 +101,6 @@ const TaskFormDialog: React.FC<TaskFormDialogProps> = ({
       type: "customSelect",
       options: userOptions,
       width: 2,
-      onClear: () => {
-        // Assignee clear will be handled by form
-      },
     },
     {
       name: "dueDate",

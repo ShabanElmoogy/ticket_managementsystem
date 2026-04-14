@@ -1,6 +1,4 @@
 import { Box, Snackbar, Alert } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import AddTaskIcon from '@mui/icons-material/AddTask';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
@@ -57,8 +55,7 @@ export default function TasksManagement() {
 
   return (
     <ErrorBoundary>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <Box>
+      <Box>
           <MyGridHeader
             title="Tasks Management"
             onAdd={() => f.openDialog()}
@@ -99,8 +96,7 @@ export default function TasksManagement() {
               {f.ui.snackbar.message}
             </Alert>
           </Snackbar>
-        </Box>
-      </LocalizationProvider>
+      </Box>
     </ErrorBoundary>
   );
 }
