@@ -93,15 +93,14 @@ const TenantPicker: React.FC<TenantPickerProps> = ({ tenants, value, loading, di
         </Text>
       </Pressable>
 
-      {/* Clear button if selected */}
-      {selected && !disabled && (
+      {selected && !disabled ? (
         <Pressable
           className="mb-3 -mt-2 self-end"
           onPress={() => onChange('')}
         >
           <Text className="text-xs text-gray-400 underline">Clear selection</Text>
         </Pressable>
-      )}
+      ) : null}
 
       {/* Bottom sheet modal */}
       <Modal
@@ -241,8 +240,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({ tenantSlug, tenants, loading,
         <View className="flex-1 h-px bg-gray-200" />
       </View>
 
-      {/* Tenant role buttons */}
-      {tenantSlug && roles.length > 0 && (
+      {tenantSlug && roles.length > 0 ? (
         <View className="flex-row gap-2 mb-3">
           {roles.map((r) => (
             <AppButton
@@ -258,7 +256,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({ tenantSlug, tenants, loading,
             </AppButton>
           ))}
         </View>
-      )}
+      ) : null}
 
       {/* System admin demo card */}
       <Pressable
@@ -372,8 +370,12 @@ const LoginScreen: React.FC = () => {
         </View>
 
         {/* Login card */}
-        <View className={`mx-4 mb-8 rounded-2xl p-6 shadow-xl ${isDark ? 'bg-gray-900/80' : 'bg-white/90'}`}
-          style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 8 }}
+        <View
+          className={`mx-4 mb-8 rounded-2xl p-6 ${isDark ? 'bg-gray-900/80' : 'bg-white/90'}`}
+          style={{
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            elevation: 8,
+          } as any}
         >
           {/* Welcome text */}
           <Text className="text-xs font-semibold text-blue-600 uppercase tracking-widest text-center mb-1">

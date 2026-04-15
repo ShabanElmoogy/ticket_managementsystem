@@ -114,8 +114,8 @@ export const AppDrawerOverlay: React.FC = () => {
         left: 0,
         right: 0,
         zIndex: 999,
+        pointerEvents: 'box-none',
       }}
-      pointerEvents="box-none"
     >
       {/* Full-screen backdrop */}
       <Pressable
