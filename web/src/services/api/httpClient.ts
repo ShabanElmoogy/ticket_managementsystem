@@ -45,7 +45,13 @@ export const http = axios.create({
 
 http.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Read token from Zustand persist storage (single source of truth)
+    let token: string | null = null;
+    try {
+      const stored = localStorage.getItem('auth-storage');
+      if (stored) token = JSON.parse(stored)?.state?.token ?? null;
+    } catch { /* ignore */ }
+
     if (token) {
       config.headers = config.headers ?? {};
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
@@ -121,7 +127,12 @@ http.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const refreshToken = localStorage.getItem('refreshToken');
+          // Read refresh token from Zustand persist (single source of truth)
+          let refreshToken: string | null = null;
+          try {
+            const stored = localStorage.getItem('auth-storage');
+            if (stored) refreshToken = JSON.parse(stored)?.state?.refreshToken ?? null;
+          } catch { /* ignore */ }
           if (!refreshToken) throw new Error('No refresh token available');
 
           const response = await http.post<{ token: string; refreshToken?: string }>(
@@ -132,11 +143,7 @@ http.interceptors.response.use(
           const newToken = response.data.token;
           const newRefreshToken = response.data.refreshToken;
 
-          localStorage.setItem('token', newToken);
-          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-          (http.defaults.headers.common as Record<string, string>).Authorization =
-            `Bearer ${newToken}`;
-
+          // Update Zustand store — persist middleware handles localStorage
           try {
             const { useAuthStore } = await import('../../stores/authStore');
             useAuthStore.getState().setToken(newToken);
@@ -144,6 +151,9 @@ http.interceptors.response.use(
           } catch (e) {
             console.error('Failed to update auth store:', e);
           }
+
+          (http.defaults.headers.common as Record<string, string>).Authorization =
+            `Bearer ${newToken}`;
 
           if (import.meta.env.DEV) console.log('✅ Token refreshed successfully');
 

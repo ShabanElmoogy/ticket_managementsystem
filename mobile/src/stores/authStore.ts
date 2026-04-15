@@ -3,9 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserRole } from '../types/roles';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ============================================================================
+// Types  — identical to web/src/stores/authStore.ts
+// ============================================================================
 
-interface User {
+export interface AuthUser {
   id: string;
   email: string;
   name: string;
@@ -13,19 +15,21 @@ interface User {
   phone?: string;
 }
 
-interface TokenPayload {
+export interface TokenPayload {
   userId: string;
   email: string;
   name?: string;
   role: UserRole;
   exp: number;
   iat: number;
+  iss?: string;
+  sub?: string;
 }
 
 export type TenantStatus = 'ACTIVE' | 'TRIAL' | 'PAST_DUE' | 'SUSPENDED' | 'EXPIRED' | null;
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
   refreshToken: string | null;
   isLoading: boolean;
@@ -33,26 +37,22 @@ interface AuthState {
   tenantSuspended: boolean;
   tenantStatus: TenantStatus;
 
-  login: (
-    userData: User,
-    authToken: string,
-    refreshToken?: string,
-    tenantSuspended?: boolean,
-    tenantStatus?: TenantStatus,
-  ) => void;
+  login: (userData: AuthUser, authToken: string, refreshToken?: string, tenantSuspended?: boolean, tenantStatus?: TenantStatus) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   initializeAuth: () => Promise<void>;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<AuthUser>) => void;
   isTokenExpired: () => boolean;
   getTokenPayload: () => TokenPayload | null;
   setToken: (token: string) => void;
-  setRefreshToken: (token: string) => void;
+  setRefreshToken: (refreshToken: string) => void;
 }
 
-// ── Token helpers ──────────────────────────────────────────────────────────
+// ============================================================================
+// Shared token helpers — identical logic to web/src/stores/authStore.ts
+// ============================================================================
 
-function decodeToken(token: string): TokenPayload | null {
+export function decodeToken(token: string): TokenPayload | null {
   try {
     if (!token || typeof token !== 'string') return null;
     const parts = token.split('.');
@@ -65,13 +65,32 @@ function decodeToken(token: string): TokenPayload | null {
   }
 }
 
-function isExpired(token: string): boolean {
+/** Returns true if token is expired or expires within 60 seconds. */
+export function isTokenExpired(token: string): boolean {
   const payload = decodeToken(token);
   if (!payload) return true;
   return payload.exp - Date.now() / 1000 < 60;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────
+export function getTokenExpiresIn(token: string): number {
+  const payload = decodeToken(token);
+  if (!payload) return 0;
+  return Math.max(0, payload.exp - Date.now() / 1000);
+}
+
+/** Build a minimal User from a JWT payload (used when full user object is unavailable). */
+export function buildUserFromPayload(payload: TokenPayload): AuthUser {
+  return {
+    id:    payload.userId,
+    email: payload.email,
+    name:  payload.name ?? payload.email,
+    role:  payload.role,
+  };
+}
+
+// ============================================================================
+// Auth Store
+// ============================================================================
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -90,6 +109,7 @@ export const useAuthStore = create<AuthState>()(
           if (__DEV__) console.error('Invalid token received during login');
           return;
         }
+        // Single source of truth: Zustand persist handles AsyncStorage
         set({
           user: userData,
           token: authToken,
@@ -103,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Single source of truth: Zustand persist handles AsyncStorage cleanup
         set({
           user: null,
           token: null,
@@ -115,28 +136,22 @@ export const useAuthStore = create<AuthState>()(
         if (__DEV__) console.log('🚪 User logged out');
       },
 
-      setToken: (token) => set({ token }),
+      setToken:        (token)        => set({ token }),
       setRefreshToken: (refreshToken) => set({ refreshToken }),
-      setLoading: (isLoading) => set({ isLoading }),
+      setLoading:      (isLoading)    => set({ isLoading }),
 
       updateUser: (userData) => {
         const current = get().user;
         if (current) set({ user: { ...current, ...userData } });
       },
 
-      isTokenExpired: () => {
-        const t = get().token;
-        return t ? isExpired(t) : true;
-      },
-
-      getTokenPayload: () => {
-        const t = get().token;
-        return t ? decodeToken(t) : null;
-      },
+      isTokenExpired:  () => { const t = get().token; return t ? isTokenExpired(t) : true; },
+      getTokenPayload: () => { const t = get().token; return t ? decodeToken(t) : null; },
 
       initializeAuth: async () => {
         try {
-          const token = get().token;
+          // Read from Zustand store (already rehydrated by persist middleware via AsyncStorage)
+          const token        = get().token;
           const refreshToken = get().refreshToken;
 
           if (!token) {
@@ -150,36 +165,27 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          if (!isExpired(token)) {
-            const currentUser = get().user;
+          // Token valid — restore session
+          if (!isTokenExpired(token)) {
+            const expiresIn = getTokenExpiresIn(token);
             set({
-              user: currentUser ?? {
-                id: payload.userId,
-                email: payload.email,
-                name: payload.name ?? payload.email,
-                role: payload.role,
-              },
+              user: get().user ?? buildUserFromPayload(payload),
               isAuthenticated: true,
               isLoading: false,
             });
-            if (__DEV__) console.log('✅ Auth restored from storage');
+            if (__DEV__) console.log(`✅ Auth restored. Expires in ${Math.round(expiresIn / 60)}m`);
             return;
           }
 
-          // Token expired — restore session anyway, interceptor will refresh on first request
+          // Token expired — restore session with expired token.
+          // HTTP interceptor will refresh on the first API call.
           if (!refreshToken) {
             set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
             return;
           }
 
-          const currentUser = get().user;
           set({
-            user: currentUser ?? {
-              id: payload.userId,
-              email: payload.email,
-              name: payload.name ?? payload.email,
-              role: payload.role,
-            },
+            user: get().user ?? buildUserFromPayload(payload),
             isAuthenticated: true,
             isLoading: false,
           });
@@ -201,7 +207,6 @@ export const useAuthStore = create<AuthState>()(
         tenantStatus:    state.tenantStatus,
       }),
       onRehydrateStorage: () => (state) => {
-        // If we have a valid persisted session, skip the loading spinner
         if (state?.token && state?.user) {
           state.isLoading = false;
         }
@@ -210,13 +215,14 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// ── Selectors ──────────────────────────────────────────────────────────────
+// ============================================================================
+// Selectors — identical to web/src/stores/authStore.ts
+// ============================================================================
 
 export const useIsAuthenticated = () => useAuthStore((s) => s.isAuthenticated);
-export const useUser             = () => useAuthStore((s) => s.user);
-export const useToken            = () => useAuthStore((s) => s.token);
-export const useIsLoading        = () => useAuthStore((s) => s.isLoading);
-export const useTenantSuspended  = () => useAuthStore((s) => s.tenantSuspended);
-export const useTenantStatus     = () => useAuthStore((s) => s.tenantStatus);
-export const useIsAdmin          = () =>
-  useAuthStore((s) => s.user?.role === 'SUPER_ADMIN' || s.user?.role === 'TENANT_ADMIN');
+export const useUser            = () => useAuthStore((s) => s.user);
+export const useToken           = () => useAuthStore((s) => s.token);
+export const useIsLoading       = () => useAuthStore((s) => s.isLoading);
+export const useIsAdmin         = () => useAuthStore((s) => s.user?.role === 'SUPER_ADMIN' || s.user?.role === 'TENANT_ADMIN');
+export const useTenantSuspended = () => useAuthStore((s) => s.tenantSuspended);
+export const useTenantStatus    = () => useAuthStore((s) => s.tenantStatus);

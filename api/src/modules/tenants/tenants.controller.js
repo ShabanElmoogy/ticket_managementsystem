@@ -21,30 +21,34 @@ const parseOptionalDate = (value) => {
 };
 
 export const listTenantsPublic = async (req, res) => {
-  const rows = await db
-    .select({ id: tenants.id, name: tenants.name, slug: tenants.slug })
-    .from(tenants)
-    .orderBy(tenants.name);
+  try {
+    const rows = await db
+      .select({ id: tenants.id, name: tenants.name, slug: tenants.slug })
+      .from(tenants)
+      .orderBy(tenants.name);
 
-  // Attach first user email per role for each tenant (dev convenience)
-  const withAdmin = await Promise.all(
-    rows.map(async (t) => {
-      const [admin] = await db.select({ email: users.email }).from(users)
-        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN))).limit(1);
-      const [employee] = await db.select({ email: users.email }).from(users)
-        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.EMPLOYEE))).limit(1);
-      const [programmer] = await db.select({ email: users.email }).from(users)
-        .where(and(eq(users.tenantId, t.id), eq(users.role, Role.PROGRAMMER))).limit(1);
-      return {
-        ...t,
-        adminEmail:      admin?.email ?? null,
-        employeeEmail:   employee?.email ?? null,
-        programmerEmail: programmer?.email ?? null,
-      };
-    })
-  );
+    const withAdmin = await Promise.all(
+      rows.map(async (t) => {
+        const [admin] = await db.select({ email: users.email }).from(users)
+          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN))).limit(1);
+        const [employee] = await db.select({ email: users.email }).from(users)
+          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.EMPLOYEE))).limit(1);
+        const [programmer] = await db.select({ email: users.email }).from(users)
+          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.PROGRAMMER))).limit(1);
+        return {
+          ...t,
+          adminEmail:      admin?.email ?? null,
+          employeeEmail:   employee?.email ?? null,
+          programmerEmail: programmer?.email ?? null,
+        };
+      })
+    );
 
-  return res.json(withAdmin);
+    return res.json(withAdmin);
+  } catch (error) {
+    console.error('listTenantsPublic error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 export const listTenants = async (req, res) => {
