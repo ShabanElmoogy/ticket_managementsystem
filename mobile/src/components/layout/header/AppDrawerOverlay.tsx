@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../../../stores/authStore';
-import { useUiStore } from '../../../../stores/uiStore';
-import { useDirection } from '../../../../providers/DirectionProvider';
+import { useAuthStore } from '../../../stores/authStore';
+import { useUiStore } from '../../../stores/uiStore';
+import { useDirection } from '../../../providers/DirectionProvider';
 import { useDrawer } from './DrawerContext';
 import DrawerUserCard from './DrawerUserCard';
 import DrawerNavList from './DrawerNavList';

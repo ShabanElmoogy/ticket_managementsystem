@@ -5,8 +5,8 @@ import AppHeader, {
   DrawerProvider,
   AppDrawerOverlay,
   useDrawer,
-} from '../../src/shared/components/layout/AppHeader';
-import AppBottomNav from '../../src/shared/components/layout/AppBottomNav';
+} from '../../src/components/layout/AppHeader';
+import AppBottomNav from '../../src/components/layout/AppBottomNav';
 
 // Inner component so it can access DrawerContext
 function AppShell() {

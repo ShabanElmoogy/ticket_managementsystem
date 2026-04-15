@@ -34,5 +34,5 @@ export type { OverviewCardProps }       from './OverviewCard';
 
 export { HapticTab }                    from './HapticTab';
 export { IconSymbol }                   from './IconSymbol';
-export { default as AppHeader }         from './layout/AppHeader';
-export { default as AppBottomNav }      from './layout/AppBottomNav';
+// Layout components moved to src/components/layout/
+// Import directly from there: import AppHeader from '../../components/layout/AppHeader'

@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../../../stores/authStore';
-import { useUiStore } from '../../../../stores/uiStore';
+import { useAuthStore } from '../../../stores/authStore';
+import { useUiStore } from '../../../stores/uiStore';
 import { useDrawer } from './DrawerContext';
 import { getInitials, getRoleColor } from './navItems';
 
