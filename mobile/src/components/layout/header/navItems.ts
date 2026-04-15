@@ -15,8 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Feature Requests', icon: '💡', route: '/(app)/features'    },
   { label: 'Documents',        icon: '📄', route: '/(app)/documents',   roles: ['TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER'] },
   { label: 'Programming',      icon: '💻', route: '/(app)/programming', roles: ['PROGRAMMER', 'TENANT_ADMIN', 'SUPER_ADMIN'] },
-  { label: 'Admin Panel',      icon: '⚙️', route: '/(app)/admin',      roles: ['TENANT_ADMIN', 'SUPER_ADMIN'] },
-  { label: 'Profile',          icon: '👤', route: '/(app)/profile',    dividerBefore: true },
+  { label: 'Admin Panel',      icon: '⚙️', route: '/(app)/admin',      roles: ['TENANT_ADMIN', 'SUPER_ADMIN'] },  { label: 'Profile',          icon: '👤', route: '/(app)/profile',    dividerBefore: true },
   { label: 'Logout',           icon: '🚪', route: '__logout__',        color: '#ef4444', dividerBefore: true },
 ];
 

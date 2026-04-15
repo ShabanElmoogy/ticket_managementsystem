@@ -3,13 +3,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DATE_FORMATS = [
-  { value: 'DD/MM/YYYY',  label: 'DD/MM/YYYY  (31/12/2025)' },
-  { value: 'MM/DD/YYYY',  label: 'MM/DD/YYYY  (12/31/2025)' },
-  { value: 'YYYY-MM-DD',  label: 'YYYY-MM-DD  (2025-12-31)' },
-  { value: 'DD-MM-YYYY',  label: 'DD-MM-YYYY  (31-12-2025)' },
-  { value: 'MM-DD-YYYY',  label: 'MM-DD-YYYY  (12-31-2025)' },
-  { value: 'D MMM YYYY',  label: 'D MMM YYYY  (31 Dec 2025)' },
-  { value: 'MMM D, YYYY', label: 'MMM D, YYYY  (Dec 31, 2025)' },
+  { value: 'dd/MM/yyyy',  label: 'DD/MM/YYYY',  preview: '31/12/2025' },
+  { value: 'MM/dd/yyyy',  label: 'MM/DD/YYYY',  preview: '12/31/2025' },
+  { value: 'yyyy-MM-dd',  label: 'YYYY-MM-DD',  preview: '2025-12-31' },
+  { value: 'dd-MM-yyyy',  label: 'DD-MM-YYYY',  preview: '31-12-2025' },
+  { value: 'MM-dd-yyyy',  label: 'MM-DD-YYYY',  preview: '12-31-2025' },
+  { value: 'd MMM yyyy',  label: 'D MMM YYYY',  preview: '31 Dec 2025' },
+  { value: 'MMM d, yyyy', label: 'MMM D, YYYY', preview: 'Dec 31, 2025' },
 ] as const;
 
 export type DateFormatValue = typeof DATE_FORMATS[number]['value'];
@@ -22,7 +22,7 @@ interface TenantState {
 export const useTenantStore = create<TenantState>()(
   persist(
     (set) => ({
-      dateFormat: 'DD/MM/YYYY',
+      dateFormat: 'dd/MM/yyyy',
       setDateFormat: (dateFormat) => set({ dateFormat }),
     }),
     {
