@@ -108,7 +108,11 @@ export const useAuthStore = create<AuthState>()(
           console.error('Invalid token received during login');
           return;
         }
-        // Single source of truth: Zustand persist handles storage
+        // Start proactive refresh cycle for web
+        import('../services/api/httpClient').then(({ scheduleWebRefresh }) => {
+          const exp = payload.exp - Date.now() / 1000;
+          if (exp > 0) scheduleWebRefresh(exp);
+        }).catch(() => {});
         set({
           user: userData,
           token: authToken,
@@ -122,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Single source of truth: Zustand persist handles storage cleanup
+        import('../services/api/httpClient').then(({ stopWebRefresh }) => stopWebRefresh()).catch(() => {});
         set({
           user: null,
           token: null,
@@ -167,6 +171,10 @@ export const useAuthStore = create<AuthState>()(
           // Token valid — restore session
           if (!isTokenExpired(token)) {
             const expiresIn = getTokenExpiresIn(token);
+            // Start proactive refresh cycle on page reload
+            import('../services/api/httpClient').then(({ scheduleWebRefresh }) => {
+              scheduleWebRefresh(expiresIn);
+            }).catch(() => {});
             set({
               user: get().user ?? buildUserFromPayload(payload),
               isAuthenticated: true,

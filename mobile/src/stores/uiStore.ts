@@ -6,10 +6,17 @@ export type TicketView = 'list' | 'grid' | 'compact';
 export type Direction  = 'ltr' | 'rtl';
 export type ColorMode  = 'light' | 'dark' | 'system';
 
+export type AdminView = 'table' | 'grid' | 'compact';
+
 interface UiState {
   // Ticket list display preference
   ticketView: TicketView;
   setTicketView: (view: TicketView) => void;
+
+  // Per-screen admin view preference — key is screen title
+  adminViews: Record<string, AdminView>;
+  setAdminView: (screen: string, view: AdminView) => void;
+  getAdminView: (screen: string) => AdminView;
 
   // Theme
   colorMode: ColorMode;
@@ -33,6 +40,11 @@ export const useUiStore = create<UiState>()(
       ticketView: 'list',
       setTicketView: (ticketView) => set({ ticketView }),
 
+      adminViews: {},
+      setAdminView: (screen, view) =>
+        set((s) => ({ adminViews: { ...s.adminViews, [screen]: view } })),
+      getAdminView: (screen) => get().adminViews[screen] ?? 'table',
+
       colorMode: 'system',
       setColorMode: (colorMode) => set({ colorMode }),
       toggleColorMode: () => {
@@ -54,6 +66,7 @@ export const useUiStore = create<UiState>()(
       // Don't persist unreadCount — always starts at 0
       partialize: (state) => ({
         ticketView: state.ticketView,
+        adminViews: state.adminViews,
         colorMode:  state.colorMode,
         direction:  state.direction,
       }),

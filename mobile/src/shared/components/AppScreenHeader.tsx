@@ -8,6 +8,9 @@ export interface AppScreenHeaderProps {
   badge?: number | string;
   onAdd?: () => void;
   addLabel?: string;
+  /** Rendered on the LEFT side (e.g. view toggle) */
+  leftActions?: React.ReactNode;
+  /** Rendered on the RIGHT side (legacy, kept for compatibility) */
   rightActions?: React.ReactNode;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -19,26 +22,37 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
   badge,
   onAdd,
   addLabel = 'Add',
+  leftActions,
   rightActions,
   loading = false,
   style,
 }) => (
-  <View className="flex-row items-start justify-between px-4 py-3" style={style}>
-    {/* Left */}
-    <View className="flex-1 mr-3">
-      <View className="flex-row items-center gap-2">
-        <Text className="text-2xl font-bold text-gray-900">{title}</Text>
+  <View className="flex-row items-center px-4 py-3" style={style}>
+
+    {/* Left — view toggle or custom left actions */}
+    <View className="flex-row items-center" style={{ minWidth: 80 }}>
+      {leftActions}
+    </View>
+
+    {/* Center — title + badge */}
+    <View className="flex-1 items-center">
+      <View className="flex-row items-center gap-1.5">
+        <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
+          {title}
+        </Text>
         {badge !== undefined && (
           <View className="bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
             <Text className="text-xs font-semibold text-blue-600">{badge}</Text>
           </View>
         )}
       </View>
-      {subtitle && <Text className="text-sm text-gray-500 mt-0.5">{subtitle}</Text>}
+      {subtitle && (
+        <Text className="text-xs text-gray-500 mt-0.5">{subtitle}</Text>
+      )}
     </View>
 
-    {/* Right */}
-    <View className="flex-row items-center gap-2">
+    {/* Right — Add button or custom right actions */}
+    <View className="flex-row items-center gap-2 justify-end" style={{ minWidth: 80 }}>
       {rightActions}
       {onAdd && (
         <AppButton
@@ -52,6 +66,7 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
         </AppButton>
       )}
     </View>
+
   </View>
 );
 

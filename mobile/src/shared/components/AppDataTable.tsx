@@ -33,6 +33,14 @@ export interface AppDataTableProps<T extends { id: string }> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function getColWidth<T>(col: ColDef<T>): number {
+  // Uppercase bold ~9.5px per char + 20px padding
+  const minForHeader = Math.ceil(col.headerName.length * 9.5 + 20);
+  // If explicit width given, use the larger of the two
+  if (col.width) return Math.max(col.width, minForHeader);
+  return Math.max(minForHeader, 80);
+}
+
 function getCellValue<T>(row: T, col: ColDef<T>): string {
   if (col.valueGetter) return String(col.valueGetter(row) ?? '');
   const val = (row as any)[col.field as string];
@@ -62,30 +70,33 @@ const HeaderCell = <T,>({
 }) => {
   const isActive = sortField === String(col.field);
   const arrow    = isActive ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+  // Single-word titles never wrap; multi-word titles wrap at word boundary
+  const isSingleWord = !col.headerName.includes(' ');
 
   return (
     <Pressable
       onPress={() => col.sortable !== false && onSort(col)}
       style={{
-        width: col.flex ? undefined : (col.width ?? 120),
+        width: col.flex ? undefined : getColWidth(col),
         flex: col.flex,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        alignItems: col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start',
+        justifyContent: 'center',
         borderRightWidth: 1,
         borderRightColor: isDark ? '#334155' : '#e5e7eb',
+        minHeight: 44,
       }}
     >
       <Text
-        numberOfLines={1}
+        numberOfLines={isSingleWord ? 1 : 2}
         style={{
           fontSize: 11,
           fontWeight: '700',
           textTransform: 'uppercase',
-          letterSpacing: 0.5,
+          letterSpacing: 0.4,
           color: isActive ? '#3b82f6' : isDark ? '#94a3b8' : '#6b7280',
+          textAlign: col.align === 'center' ? 'center' : col.align === 'right' ? 'right' : 'left',
         }}
       >
         {col.headerName}{arrow}
@@ -105,7 +116,7 @@ const DataCell = <T,>({
 }) => (
   <View
     style={{
-      width: col.flex ? undefined : (col.width ?? 120),
+      width: col.flex ? undefined : getColWidth(col),
       flex: col.flex,
       paddingHorizontal: 12,
       paddingVertical: 10,
@@ -172,7 +183,7 @@ function AppDataTable<T extends { id: string }>({
           {/* ── Sticky header ── */}
           <View style={{
             flexDirection: 'row',
-            height: headerHeight,
+            minHeight: headerHeight,
             backgroundColor: headerBg,
             borderBottomWidth: 2,
             borderBottomColor: borderC,

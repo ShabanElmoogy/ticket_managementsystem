@@ -1,19 +1,11 @@
 /**
  * Axios instance with request/response interceptors.
- *
- * Responsibilities:
- * - Single shared axios instance
- * - Inject Authorization + X-Tenant-Slug + X-Request-ID headers
- * - Normalize response errors into ApiError
- * - Handle 401 → token refresh → retry queued requests
+ * Web-only — reads token from localStorage directly (set by authStore).
+ * Mobile has its own httpClient using tokenManager.
  */
 
 import axios, { AxiosError } from 'axios';
 import { API_BASE_URL } from '../../config/env';
-
-// ============================================================================
-// Types
-// ============================================================================
 
 export type ApiError = {
   status?: number;
@@ -23,15 +15,7 @@ export type ApiError = {
   isRetryable?: boolean;
 };
 
-// ============================================================================
-// Constants
-// ============================================================================
-
-export const REQUEST_TIMEOUT = 15_000; // 15 s
-
-// ============================================================================
-// Axios instance
-// ============================================================================
+export const REQUEST_TIMEOUT = 15_000;
 
 export const http = axios.create({
   baseURL: API_BASE_URL,
@@ -39,19 +23,60 @@ export const http = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ============================================================================
-// Request interceptor — auth + tenant + trace headers
-// ============================================================================
+// ── Proactive token refresh ────────────────────────────────────────────────
+// Refresh 60s before expiry so users never hit a 401 mid-session.
+
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function getTokenExp(token: string): number | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))?.exp ?? null;
+  } catch { return null; }
+}
+
+async function doWebRefresh() {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) return;
+  try {
+    const res = await http.post<{ token: string; refreshToken?: string }>(
+      '/auth/refresh', { refreshToken }
+    );
+    const newToken        = res.data.token;
+    const newRefreshToken = res.data.refreshToken;
+    localStorage.setItem('token', newToken);
+    if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+    http.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    // Update Zustand store
+    import('../../stores/authStore').then(({ useAuthStore }) => {
+      useAuthStore.getState().setToken(newToken);
+      if (newRefreshToken) useAuthStore.getState().setRefreshToken(newRefreshToken);
+    }).catch(() => {});
+    // Schedule next refresh
+    const exp = getTokenExp(newToken);
+    if (exp) scheduleWebRefresh(exp - Date.now() / 1000);
+    if (import.meta.env.DEV) console.log('✅ Web token proactively refreshed');
+  } catch {
+    if (import.meta.env.DEV) console.warn('⚠️ Web proactive refresh failed');
+  }
+}
+
+export function scheduleWebRefresh(expiresInSeconds: number) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const ms = Math.max((expiresInSeconds - 60) * 1000, 0);
+  refreshTimer = setTimeout(() => doWebRefresh().catch(() => {}), ms);
+  if (import.meta.env.DEV) console.log(`⏰ Web token refresh in ${Math.round(ms / 1000)}s`);
+}
+
+export function stopWebRefresh() {
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+}
+
+// ── Request interceptor ────────────────────────────────────────────────────
 
 http.interceptors.request.use(
   (config) => {
-    // Read token from Zustand persist storage (single source of truth)
-    let token: string | null = null;
-    try {
-      const stored = localStorage.getItem('auth-storage');
-      if (stored) token = JSON.parse(stored)?.state?.token ?? null;
-    } catch { /* ignore */ }
-
+    // Read directly from localStorage — set by authStore.login() / setToken()
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers = config.headers ?? {};
       (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
@@ -68,39 +93,28 @@ http.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
-// ============================================================================
-// Token-refresh queue
-// ============================================================================
+// ── Token-refresh queue ────────────────────────────────────────────────────
 
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
-  reject: (error: ApiError) => void;
+  reject:  (error: ApiError) => void;
 }> = [];
 
 function processQueue(error: ApiError | null, token: string | null = null) {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else if (token) prom.resolve(token);
-  });
+  failedQueue.forEach((p) => { if (error) p.reject(error); else if (token) p.resolve(token); });
   failedQueue = [];
 }
 
-// ============================================================================
-// Response interceptor — error normalization + token refresh
-// ============================================================================
+// ── Response interceptor ───────────────────────────────────────────────────
 
 http.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const requestId = error.config?.headers?.['X-Request-ID'];
-
     if (import.meta.env.DEV) {
       console.error(
         `❌ [${requestId}] ${error.response?.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
@@ -109,54 +123,46 @@ http.interceptors.response.use(
     }
 
     const status = error.response?.status;
-    const data = error.response?.data as unknown;
+    const data   = error.response?.data as unknown;
 
-    // Extract human-readable message from response body
     let message = 'An unexpected error occurred';
     if (typeof data === 'object' && data) {
       const d = data as Record<string, unknown>;
-      if ('error' in d) message = String(d.error);
+      if ('error' in d)        message = String(d.error);
       else if ('message' in d) message = String(d.message);
     } else if (error.message) {
       message = error.message;
     }
 
-    // ── 401 handling: attempt token refresh ──────────────────────────────────
+    // ── Reactive 401 fallback ──────────────────────────────────────────────
     if (status === 401 && error.config && !error.config.url?.includes('/auth/refresh')) {
       if (!isRefreshing) {
         isRefreshing = true;
-
         try {
-          // Read refresh token from Zustand persist (single source of truth)
-          let refreshToken: string | null = null;
-          try {
-            const stored = localStorage.getItem('auth-storage');
-            if (stored) refreshToken = JSON.parse(stored)?.state?.refreshToken ?? null;
-          } catch { /* ignore */ }
+          const refreshToken = localStorage.getItem('refreshToken');
           if (!refreshToken) throw new Error('No refresh token available');
 
           const response = await http.post<{ token: string; refreshToken?: string }>(
-            '/auth/refresh',
-            { refreshToken },
+            '/auth/refresh', { refreshToken }
           );
 
-          const newToken = response.data.token;
+          const newToken        = response.data.token;
           const newRefreshToken = response.data.refreshToken;
 
-          // Update Zustand store — persist middleware handles localStorage
-          try {
-            const { useAuthStore } = await import('../../stores/authStore');
+          localStorage.setItem('token', newToken);
+          if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+          http.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+          // Restart proactive refresh
+          const exp = getTokenExp(newToken);
+          if (exp) scheduleWebRefresh(exp - Date.now() / 1000);
+
+          import('../../stores/authStore').then(({ useAuthStore }) => {
             useAuthStore.getState().setToken(newToken);
             if (newRefreshToken) useAuthStore.getState().setRefreshToken(newRefreshToken);
-          } catch (e) {
-            console.error('Failed to update auth store:', e);
-          }
+          }).catch(() => {});
 
-          (http.defaults.headers.common as Record<string, string>).Authorization =
-            `Bearer ${newToken}`;
-
-          if (import.meta.env.DEV) console.log('✅ Token refreshed successfully');
-
+          if (import.meta.env.DEV) console.log('✅ Web token reactively refreshed');
           processQueue(null, newToken);
 
           if (error.config) {
@@ -165,18 +171,12 @@ http.interceptors.response.use(
             return http.request(error.config);
           }
         } catch (refreshError) {
-          const msg =
-            refreshError instanceof Error ? refreshError.message : 'Token refresh failed';
-
+          const msg = refreshError instanceof Error ? refreshError.message : 'Token refresh failed';
           processQueue({ status: 401, message: msg, isRetryable: false }, null);
-
-          try {
-            const { useAuthStore } = await import('../../stores/authStore');
+          stopWebRefresh();
+          import('../../stores/authStore').then(({ useAuthStore }) => {
             useAuthStore.getState().logout();
-          } catch (e) {
-            console.error('Failed to logout:', e);
-          }
-
+          }).catch(() => {});
           return Promise.reject({
             status: 401,
             message: 'Session expired. Please login again.',
@@ -186,7 +186,6 @@ http.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // Queue the request until the ongoing refresh completes
         return new Promise((resolve, reject) => {
           failedQueue.push({
             resolve: (token: string) => {
@@ -202,22 +201,18 @@ http.interceptors.response.use(
       }
     }
 
-    // ── Determine retryability ────────────────────────────────────────────────
     const isRetryable =
       !error.response ||
       error.response.status === 408 ||
       error.response.status === 429 ||
       (error.response.status >= 500 && error.response.status !== 501);
 
-    const normalized: ApiError = {
+    return Promise.reject({
       status,
       message,
       details: data,
       code: error.code,
-      // 401 is never retried here — handled above via refresh
       isRetryable: status === 401 ? false : isRetryable,
-    };
-
-    return Promise.reject(normalized);
+    } satisfies ApiError);
   },
 );
