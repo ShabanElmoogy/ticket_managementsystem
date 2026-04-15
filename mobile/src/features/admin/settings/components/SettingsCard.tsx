@@ -29,8 +29,9 @@ interface SettingsCardProps {
 }
 
 const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, loading, children }) => {
-  const { colorMode } = useUiStore();
+  const { colorMode, direction } = useUiStore();
   const isDark = colorMode === 'dark';
+  const isRtl  = direction === 'rtl';
 
   return (
     <View style={{
@@ -42,10 +43,10 @@ const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, l
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <Text style={{ fontSize: 20 }}>{icon}</Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a' }}>{title}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', textAlign: isRtl ? 'right' : 'left' }}>{title}</Text>
       </View>
       {description && (
-        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#94a3b8', marginBottom: 16, lineHeight: 18 }}>
+        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#94a3b8', marginBottom: 16, lineHeight: 18, textAlign: isRtl ? 'right' : 'left' }}>
           {description}
         </Text>
       )}
