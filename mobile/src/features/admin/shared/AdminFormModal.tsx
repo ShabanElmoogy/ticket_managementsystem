@@ -1,8 +1,10 @@
 import React from 'react';
 import {
-  Modal, View, Text, Pressable, ScrollView,
-  KeyboardAvoidingView, Platform,
+  View, Text, Pressable, Platform,
+  StyleSheet, useWindowDimensions,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppButton from '../../../shared/components/AppButton';
 import { useUiStore } from '../../../stores/uiStore';
 
@@ -20,59 +22,99 @@ const AdminFormModal: React.FC<Props> = ({
 }) => {
   const { colorMode } = useUiStore();
   const isDark = colorMode === 'dark';
+  const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
+
+  const maxSheetHeight = screenHeight * 0.85;
+
+  if (!open) return null;
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+      {/* Backdrop */}
+      <Pressable
+        style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+        onPress={onClose}
+      />
+
+      {/* Sheet anchored to bottom */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          maxHeight: maxSheetHeight,
+          backgroundColor: isDark ? '#1e293b' : '#ffffff',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 16,
+        }}
       >
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={onClose}>
+        {/* Handle */}
+        <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#d1d5db' }} />
+        </View>
+
+        {/* Header — fixed */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: isDark ? '#334155' : '#f1f5f9',
+        }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: isDark ? '#f1f5f9' : '#111827', flex: 1 }}>
+            {title}
+          </Text>
           <Pressable
-            className={`rounded-t-3xl ${isDark ? 'bg-slate-800' : 'bg-white'}`}
-            style={{ maxHeight: '85%' }}
-            onPress={() => {}}
+            onPress={onClose}
+            style={{
+              width: 32, height: 32, borderRadius: 16,
+              backgroundColor: isDark ? '#334155' : '#f3f4f6',
+              alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            {/* Handle */}
-            <View className="items-center pt-3 pb-1">
-              <View className="w-10 h-1 rounded-full bg-gray-300" />
-            </View>
-
-            {/* Header */}
-            <View className={`flex-row items-center justify-between px-5 py-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-              <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{title}</Text>
-              <Pressable
-                className={`w-8 h-8 rounded-full items-center justify-center ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}
-                onPress={onClose}
-              >
-                <Text className={isDark ? 'text-gray-300' : 'text-gray-500'}>✕</Text>
-              </Pressable>
-            </View>
-
-            {/* Body */}
-            <ScrollView
-              contentContainerStyle={{ padding: 20 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-
-              {/* Submit */}
-              <AppButton
-                variant="contained"
-                color="primary"
-                fullWidth
-                loading={submitting}
-                loadingText="Saving…"
-                onPress={onSubmit}
-                style={{ marginTop: 8 }}
-              >
-                Save
-              </AppButton>
-            </ScrollView>
+            <Text style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 16 }}>✕</Text>
           </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
+        </View>
+
+        {/* KeyboardAwareScrollView — auto-scrolls focused field into view */}
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+          bounces={false}
+          enableOnAndroid
+          enableAutomaticScroll
+          extraScrollHeight={16}
+          extraHeight={16}
+          contentContainerStyle={{
+            padding: 20,
+            paddingBottom: insets.bottom + 32,
+          }}
+        >
+          {children}
+
+          <AppButton
+            variant="contained"
+            color="primary"
+            fullWidth
+            loading={submitting}
+            loadingText="Saving…"
+            onPress={onSubmit}
+            style={{ marginTop: 16 }}
+          >
+            Save
+          </AppButton>
+        </KeyboardAwareScrollView>
+      </View>
+    </View>
   );
 };
 
