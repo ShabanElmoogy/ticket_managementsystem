@@ -23,7 +23,9 @@ export class TicketsApiService extends BaseApiService {
     if (filters?.applicationId) params.applicationId = filters.applicationId;
     if (filters?.userId)      params.userId      = filters.userId;
     params.deleted = filters?.deleted === true ? 'true' : 'false';
-    return this.get<Ticket[]>('/tickets', { params });
+    // Limit results on mobile to avoid large payloads / network timeouts
+    params.limit = '50';
+    return this.get<Ticket[]>('/tickets', { params, timeout: 30_000 });
   };
 
   getTicket       = (id: string)                              => this.get<TicketWithComments>(`/tickets/${id}`);

@@ -1,7 +1,9 @@
-import axios, { AxiosError } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { tokenManager } from './tokenManager';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 
 export type ApiError = {
   status?: number;
@@ -11,167 +13,304 @@ export type ApiError = {
   isRetryable?: boolean;
 };
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// Extend config type to carry our retry flag
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retried?: boolean;
+}
 
-export const REQUEST_TIMEOUT = 15_000;
+// ─────────────────────────────────────────────────────────────────────────────
+// Axios instance
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const REQUEST_TIMEOUT = 30_000; // 30s — mobile networks are slower
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
 
-// ── Axios instance ─────────────────────────────────────────────────────────
-
+/**
+ * `http`  — the main client used everywhere in the app.
+ * `refreshClient` — a SEPARATE bare instance used only for token refresh.
+ *                   It has NO interceptors, so a failed refresh never
+ *                   re-enters the 401 handler and causes an infinite loop.
+ */
 export const http = axios.create({
   baseURL: BASE_URL,
   timeout: REQUEST_TIMEOUT,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ── Request interceptor ────────────────────────────────────────────────────
+const refreshClient = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10_000,
+  headers: { 'Content-Type': 'application/json' },
+});
 
-http.interceptors.request.use(async (config) => {
-  // Token — read from Zustand persisted storage key
-  const stored = await AsyncStorage.getItem('auth-storage');
-  if (stored) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Token helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getTokenExp(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Proactive refresh cycle
+// Schedules a refresh 60 s before the token expires so the interceptor
+// almost never needs to fire reactively.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function startTokenRefreshCycle(token: string): void {
+  stopTokenRefreshCycle();
+
+  const exp = getTokenExp(token);
+  if (!exp) return;
+
+  // How many ms until we should refresh (60 s before expiry, min 5 s)
+  const msUntilRefresh = Math.max((exp * 1000 - Date.now()) - 60_000, 5_000);
+
+  if (__DEV__) {
+    console.log(`⏱ Proactive refresh in ${Math.round(msUntilRefresh / 1000)}s`);
+  }
+
+  refreshTimer = setTimeout(async () => {
     try {
-      const parsed = JSON.parse(stored);
-      const token: string | null = parsed?.state?.token ?? null;
-      if (token) {
-        config.headers = config.headers ?? {};
-        (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-      }
-    } catch {
-      // ignore parse errors
+      const { newToken, newRefreshToken } = await callRefreshEndpoint();
+      applyNewTokens(newToken, newRefreshToken);
+      startTokenRefreshCycle(newToken); // reschedule for the new token
+      if (__DEV__) console.log('✅ Token proactively refreshed');
+    } catch (err) {
+      // Proactive refresh failed — do NOT logout here.
+      // The reactive 401 interceptor below will handle the next failed request.
+      if (__DEV__) console.warn('⚠️ Proactive refresh failed:', err);
     }
+  }, msUntilRefresh);
+}
+
+export function stopTokenRefreshCycle(): void {
+  if (refreshTimer !== null) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core refresh call — uses refreshClient (no interceptors!) to avoid loops
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function callRefreshEndpoint(): Promise<{
+  newToken: string;
+  newRefreshToken: string;
+}> {
+  const refreshToken = tokenManager.getRefreshToken();
+  if (!refreshToken) throw new Error('No refresh token available');
+
+  const response = await refreshClient.post<{
+    token: string;
+    refreshToken: string;
+  }>('/auth/refresh', { refreshToken });
+
+  const newToken        = response.data.token;
+  const newRefreshToken = response.data.refreshToken;
+
+  if (!newToken) throw new Error('Refresh response missing token');
+
+  return { newToken, newRefreshToken };
+}
+
+/**
+ * Updates tokenManager synchronously, then updates Zustand store async.
+ * tokenManager MUST be updated before any retry fires — the request
+ * interceptor reads from it synchronously on every outgoing request.
+ * The Zustand update is fire-and-forget (just keeps persisted state in sync).
+ */
+function applyNewTokens(newToken: string, newRefreshToken: string): void {
+  // ⚠️ SYNCHRONOUS — must happen before any http.request() retry call
+  tokenManager.setToken(newToken);
+  tokenManager.setRefreshToken(newRefreshToken);
+
+  // Async — only for persisted Zustand state, not needed for the retry
+  import('../../stores/authStore')
+    .then(({ useAuthStore }) => {
+      useAuthStore.getState().setToken(newToken);
+      useAuthStore.getState().setRefreshToken(newRefreshToken);
+    })
+    .catch(() => {});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Request interceptor — attach token + request ID
+// ─────────────────────────────────────────────────────────────────────────────
+
+http.interceptors.request.use((config) => {
+  // Always delete first — ensures AxiosHeaders (Axios 1.x) picks up the new
+  // value cleanly. Without this, a stale Authorization from a cloned config
+  // can survive into the retry even after tokenManager is updated.
+  config.headers.delete('Authorization');
+  const token = tokenManager.getToken();
+  if (token) {
+    config.headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // Tenant slug
-  const tenantSlug = await AsyncStorage.getItem('tenantSlug');
+  const tenantSlug = tokenManager.getTenantSlug();
   if (tenantSlug) {
-    (config.headers as Record<string, string>)['X-Tenant-Slug'] = tenantSlug;
+    config.headers.set('X-Tenant-Slug', tenantSlug);
   }
 
-  // Request trace ID
-  const requestId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-  (config.headers as Record<string, string>)['X-Request-ID'] = requestId;
+  config.headers.set(
+    'X-Request-ID',
+    `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+  );
+
+  if (__DEV__) {
+    const auth = config.headers.get('Authorization') as string | null;
+    const slug = config.headers.get('X-Tenant-Slug') as string | null;
+    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
+    console.log(`📤 ${config.method?.toUpperCase()} ${fullUrl}`);
+    console.log(`   Auth: ${auth ? '✅ Bearer ' + auth.slice(7, 30) + '...' : '❌ MISSING'}`);
+    console.log(`   Slug: ${slug ?? '❌ MISSING'}`);
+  }
 
   return config;
 });
 
-// ── Token-refresh queue ────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Reactive 401 queue
+// If multiple requests fail simultaneously, only ONE refresh call is made.
+// All others are queued and retried/rejected together.
+// ─────────────────────────────────────────────────────────────────────────────
 
 let isRefreshing = false;
+
 let failedQueue: Array<{
   resolve: (token: string) => void;
-  reject: (error: ApiError) => void;
+  reject:  (error: ApiError) => void;
 }> = [];
 
-function processQueue(error: ApiError | null, token: string | null = null) {
-  failedQueue.forEach((p) => {
-    if (error) p.reject(error);
-    else if (token) p.resolve(token);
-  });
+function drainQueue(error: ApiError | null, token: string | null = null): void {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
   failedQueue = [];
 }
 
-// ── Response interceptor ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Response interceptor — reactive 401 fallback
+// ─────────────────────────────────────────────────────────────────────────────
 
 http.interceptors.response.use(
   (response) => response,
+
   async (error: AxiosError) => {
-    const requestId = error.config?.headers?.['X-Request-ID'];
-    const status = error.response?.status;
-    const data = error.response?.data as unknown;
+    const originalConfig = error.config as RetryableRequestConfig | undefined;
+    const status         = error.response?.status;
+    const data           = error.response?.data as unknown;
 
     if (__DEV__) {
       console.error(
-        `❌ [${requestId}] ${status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
-        data || error.message,
+        `❌ [${originalConfig?.headers?.['X-Request-ID']}]`,
+        `${status} ${originalConfig?.method?.toUpperCase()} ${originalConfig?.url}`,
+        data ?? error.message,
       );
     }
 
-    // Extract human-readable message
+    // ── Reactive 401 handler ─────────────────────────────────────────────────
+    // Guards:
+    //  1. Must be a 401
+    //  2. Must have a config to retry
+    //  3. Must NOT already be a retried request (prevents infinite loop)
+    //  4. Must NOT be the refresh endpoint itself
+    if (
+      status === 401 &&
+      originalConfig &&
+      !originalConfig._retried &&
+      !originalConfig.url?.includes('/auth/refresh')
+    ) {
+      // ── Case A: a refresh is already in flight — join the queue ────────────
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((_newToken) => {
+            // Don't touch headers here — the request interceptor will set
+            // the correct Authorization from tokenManager on the retry.
+            originalConfig._retried = true;
+            return http.request(originalConfig);
+          })
+          .catch((err: ApiError) => Promise.reject(err));
+      }
+
+      // ── Case B: we are the first 401 — trigger a refresh ───────────────────
+      isRefreshing = true;
+      originalConfig._retried = true; // mark before the await to guard re-entry
+
+      try {
+        const { newToken, newRefreshToken } = await callRefreshEndpoint();
+
+        // tokenManager is updated synchronously here — the request interceptor
+        // will read the new token when it processes the retry below.
+        applyNewTokens(newToken, newRefreshToken);
+        startTokenRefreshCycle(newToken);
+
+        if (__DEV__) console.log('✅ Token reactively refreshed after 401');
+
+        // Unblock every queued request — they re-enter via request interceptor
+        // which reads the fresh token from tokenManager.
+        drainQueue(null, newToken);
+
+        // Retry the original request — DO NOT mutate headers here.
+        // The request interceptor handles Authorization via tokenManager.
+        return http.request(originalConfig);
+
+      } catch (refreshError) {
+        // Refresh failed — session is dead, logout once
+        const sessionExpiredError: ApiError = {
+          status:      401,
+          message:     'Session expired. Please log in again.',
+          isRetryable: false,
+        };
+
+        drainQueue(sessionExpiredError, null);
+
+        tokenManager.clear();
+        stopTokenRefreshCycle();
+
+        import('../../stores/authStore')
+          .then(({ useAuthStore }) => useAuthStore.getState().logout())
+          .catch(() => {});
+
+        if (__DEV__) console.warn('🚪 Refresh failed — logging out');
+        return Promise.reject(sessionExpiredError);
+
+      } finally {
+        // ALWAYS reset — even if retry throws, future requests can refresh again
+        isRefreshing = false;
+      }
+    }
+
+    // ── All other errors — normalise and forward ─────────────────────────────
     let message = 'An unexpected error occurred';
-    if (typeof data === 'object' && data) {
+    if (typeof data === 'object' && data !== null) {
       const d = data as Record<string, unknown>;
-      if ('error' in d) message = String(d.error);
-      else if ('message' in d) message = String(d.message);
+      message = String(d.error ?? d.message ?? message);
     } else if (error.message) {
       message = error.message;
     }
 
-    // ── 401: attempt token refresh ─────────────────────────────────────────
-    if (status === 401 && error.config && !error.config.url?.includes('/auth/refresh')) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          const stored = await AsyncStorage.getItem('auth-storage');
-          const refreshToken: string | null = stored
-            ? (JSON.parse(stored)?.state?.refreshToken ?? null)
-            : null;
-
-          if (!refreshToken) throw new Error('No refresh token available');
-
-          const response = await http.post<{ token: string; refreshToken?: string }>(
-            '/auth/refresh',
-            { refreshToken },
-          );
-
-          const newToken = response.data.token;
-          const newRefreshToken = response.data.refreshToken;
-
-          // Update persisted auth store
-          const { useAuthStore } = await import('../../stores/authStore');
-          useAuthStore.getState().setToken(newToken);
-          if (newRefreshToken) useAuthStore.getState().setRefreshToken(newRefreshToken);
-
-          if (__DEV__) console.log('✅ Token refreshed successfully');
-
-          processQueue(null, newToken);
-
-          if (error.config) {
-            (error.config.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
-            return http.request(error.config);
-          }
-        } catch (refreshError) {
-          const msg = refreshError instanceof Error ? refreshError.message : 'Token refresh failed';
-          processQueue({ status: 401, message: msg, isRetryable: false }, null);
-
-          const { useAuthStore } = await import('../../stores/authStore');
-          useAuthStore.getState().logout();
-
-          return Promise.reject({
-            status: 401,
-            message: 'Session expired. Please login again.',
-            isRetryable: false,
-          } as ApiError);
-        } finally {
-          isRefreshing = false;
-        }
-      } else {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              if (error.config) {
-                (error.config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
-                resolve(http.request(error.config));
-              }
-            },
-            reject: (err: ApiError) => reject(err),
-          });
-        });
-      }
-    }
-
     const isRetryable =
       !error.response ||
-      error.response.status === 408 ||
-      error.response.status === 429 ||
-      (error.response.status >= 500 && error.response.status !== 501);
+      status === 408 ||
+      status === 429 ||
+      (status !== undefined && status >= 500 && status !== 501);
 
     return Promise.reject({
       status,
       message,
-      details: data,
-      code: error.code,
+      details:     data,
+      code:        error.code,
       isRetryable: status === 401 ? false : isRetryable,
     } as ApiError);
   },

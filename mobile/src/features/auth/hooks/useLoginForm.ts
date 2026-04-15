@@ -5,6 +5,7 @@ import { useTenantStore, type DateFormatValue } from '../../../stores/tenantStor
 import { useUiStore } from '../../../stores/uiStore';
 import { authApi } from '../api/auth';
 import { tenantsPublicApi, type PublicTenant } from '../api/tenants';
+import { tokenManager } from '../../../services/api/tokenManager';
 
 export const useLoginForm = () => {
   const [tenantSlug, setTenantSlug]       = useState('');
@@ -48,10 +49,13 @@ export const useLoginForm = () => {
 
       if (isSystemLogin) {
         await AsyncStorage.removeItem('tenantSlug');
+        tokenManager.setTenantSlug(null);
       } else if (normalizedTenant) {
         await AsyncStorage.setItem('tenantSlug', normalizedTenant);
+        tokenManager.setTenantSlug(normalizedTenant);
       } else {
         await AsyncStorage.removeItem('tenantSlug');
+        tokenManager.setTenantSlug(null);
       }
 
       const response = await authApi.login({ email, password });
@@ -60,6 +64,7 @@ export const useLoginForm = () => {
         (response as any)?.tenant?.slug ?? (response as any)?.user?.tenantSlug;
       if (responseTenantSlug) {
         await AsyncStorage.setItem('tenantSlug', String(responseTenantSlug));
+        tokenManager.setTenantSlug(String(responseTenantSlug));
       }
 
       const dateFormat = (response as any)?.tenant?.dateFormat as DateFormatValue | undefined;
@@ -97,8 +102,10 @@ export const useLoginForm = () => {
 
     if (demoTenant) {
       await AsyncStorage.setItem('tenantSlug', demoTenant);
+      tokenManager.setTenantSlug(demoTenant);
     } else {
       await AsyncStorage.removeItem('tenantSlug');
+      tokenManager.setTenantSlug(null);
     }
 
     try {
@@ -116,6 +123,7 @@ export const useLoginForm = () => {
         (response as any)?.tenant?.slug ?? (response as any)?.user?.tenantSlug;
       if (responseTenantSlug) {
         await AsyncStorage.setItem('tenantSlug', String(responseTenantSlug));
+        tokenManager.setTenantSlug(String(responseTenantSlug));
       }
 
       const dateFormat = (response as any)?.tenant?.dateFormat as DateFormatValue | undefined;

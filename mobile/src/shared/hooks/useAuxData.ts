@@ -1,5 +1,6 @@
 import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
+import { tokenManager } from '../../services/api/tokenManager';
 
 /**
  * Same as web/src/shared/hooks/useAuxData.ts
@@ -15,7 +16,8 @@ export function useAuxData<T>(
   return useQuery<T>({
     queryKey,
     queryFn,
-    enabled: !!token && (options?.enabled ?? true),
+    // Both Zustand token AND tokenManager must be set before firing
+    enabled: !!token && !!tokenManager.getToken() && (options?.enabled ?? true),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

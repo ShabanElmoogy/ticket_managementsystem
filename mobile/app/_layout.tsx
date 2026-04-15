@@ -13,30 +13,59 @@ import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { useAuthStore } from '../src/stores/authStore';
 import { initI18n } from '../src/i18n';
 import { DirectionProvider } from '../src/providers/DirectionProvider';
+import { tokenManager } from '../src/services/api/tokenManager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 2,
-    },
+    queries: { staleTime: 30_000, retry: 2 },
   },
 });
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const token = useAuthStore((s) => s.token);
-  const [i18nReady, setI18nReady] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    initI18n().then(() => setI18nReady(true));
+    async function bootstrap() {
+      // 1. Init i18n
+      await initI18n();
+
+      // 2. Wait for Zustand persist to finish reading AsyncStorage.
+      await new Promise<void>((resolve) => {
+        if (!useAuthStore.getState().isLoading) {
+          resolve();
+          return;
+        }
+        const unsub = useAuthStore.subscribe((state) => {
+          if (!state.isLoading) {
+            unsub();
+            resolve();
+          }
+        });
+        useAuthStore.persist.rehydrate();
+      });
+
+      // 3. initializeAuth syncs tokenManager + starts refresh cycle
+      await useAuthStore.getState().initializeAuth();
+
+      // 4. Restore tenant slug
+      const tenantSlug = await AsyncStorage.getItem('tenantSlug');
+      if (tenantSlug) {
+        tokenManager.setTenantSlug(tenantSlug);
+        if (__DEV__) console.log('🏢 tenantSlug restored:', tenantSlug);
+      }
+
+      // 4. Routes render now with correct auth state
+      setReady(true);
+    }
+
+    bootstrap();
   }, []);
 
-  if (!i18nReady) {
+  if (!ready) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />

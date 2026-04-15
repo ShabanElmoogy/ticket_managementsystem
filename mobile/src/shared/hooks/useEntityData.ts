@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
+import { tokenManager } from '../../services/api/tokenManager';
 
 export interface EntityDataReturn<T, CreateT> {
   entities: T[];
@@ -33,7 +34,9 @@ export function useEntityData<T, CreateT>(
   const { data: entities = [], isLoading: loading, refetch } = useQuery({
     queryKey: resolvedKey,
     queryFn: config.api.getAll,
-    enabled: !!token,
+    // Use tokenManager as the gate — same source as httpClient interceptor
+    // This ensures the query only fires when the token is actually available
+    enabled: !!token && !!tokenManager.getToken(),
     staleTime: 30 * 1000,
   });
 

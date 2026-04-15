@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserRole } from '../types/roles';
+import { tokenManager } from '../services/api/tokenManager';
+import { startTokenRefreshCycle, stopTokenRefreshCycle } from '../services/api/httpClient';
 
 // ============================================================================
 // Types  — identical to web/src/stores/authStore.ts
@@ -109,7 +111,10 @@ export const useAuthStore = create<AuthState>()(
           if (__DEV__) console.error('Invalid token received during login');
           return;
         }
-        // Single source of truth: Zustand persist handles AsyncStorage
+        tokenManager.setToken(authToken);
+        if (refreshToken) tokenManager.setRefreshToken(refreshToken);
+        // Start proactive refresh cycle — refreshes token 60s before expiry
+        startTokenRefreshCycle(authToken);
         set({
           user: userData,
           token: authToken,
@@ -123,7 +128,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Single source of truth: Zustand persist handles AsyncStorage cleanup
+        tokenManager.clear();
+        stopTokenRefreshCycle();
         set({
           user: null,
           token: null,
@@ -136,8 +142,14 @@ export const useAuthStore = create<AuthState>()(
         if (__DEV__) console.log('🚪 User logged out');
       },
 
-      setToken:        (token)        => set({ token }),
-      setRefreshToken: (refreshToken) => set({ refreshToken }),
+      setToken: (token) => {
+        tokenManager.setToken(token);
+        set({ token });
+      },
+      setRefreshToken: (refreshToken) => {
+        tokenManager.setRefreshToken(refreshToken);
+        set({ refreshToken });
+      },
       setLoading:      (isLoading)    => set({ isLoading }),
 
       updateUser: (userData) => {
@@ -150,9 +162,13 @@ export const useAuthStore = create<AuthState>()(
 
       initializeAuth: async () => {
         try {
-          // Read from Zustand store (already rehydrated by persist middleware via AsyncStorage)
           const token        = get().token;
           const refreshToken = get().refreshToken;
+
+          if (__DEV__) {
+            console.log('🔐 initializeAuth called');
+            console.log('📦 Stored token:', token ? '✅' : '❌');
+          }
 
           if (!token) {
             set({ isAuthenticated: false, isLoading: false });
@@ -160,37 +176,39 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const payload = decodeToken(token);
+
           if (!payload) {
+            if (__DEV__) console.warn('❌ Invalid token in storage');
+            tokenManager.clear();
+            stopTokenRefreshCycle();
             set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
             return;
           }
 
-          // Token valid — restore session
-          if (!isTokenExpired(token)) {
-            const expiresIn = getTokenExpiresIn(token);
-            set({
-              user: get().user ?? buildUserFromPayload(payload),
-              isAuthenticated: true,
-              isLoading: false,
-            });
-            if (__DEV__) console.log(`✅ Auth restored. Expires in ${Math.round(expiresIn / 60)}m`);
-            return;
-          }
+          // Sync tokenManager — must happen before any API call
+          tokenManager.setToken(token);
+          if (refreshToken) tokenManager.setRefreshToken(refreshToken);
 
-          // Token expired — restore session with expired token.
-          // HTTP interceptor will refresh on the first API call.
-          if (!refreshToken) {
-            set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
-            return;
-          }
+          if (__DEV__) console.log('🔑 tokenManager ready, token:', token.slice(0, 20) + '...');
 
+          // Start proactive refresh cycle
+          startTokenRefreshCycle(token);
+
+          // Restore session
           set({
             user: get().user ?? buildUserFromPayload(payload),
             isAuthenticated: true,
             isLoading: false,
           });
-          if (__DEV__) console.log('⏰ Token expired — session restored, interceptor will refresh');
-        } catch {
+
+          if (__DEV__) {
+            const expiresIn = getTokenExpiresIn(token);
+            console.log(`✅ Auth restored. Expires in ${Math.round(expiresIn / 60)} minutes`);
+          }
+        } catch (error) {
+          if (__DEV__) console.error('❌ initializeAuth failed:', error);
+          tokenManager.clear();
+          stopTokenRefreshCycle();
           set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
         }
       },
@@ -207,8 +225,14 @@ export const useAuthStore = create<AuthState>()(
         tenantStatus:    state.tenantStatus,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.token && state?.user) {
+        if (__DEV__) console.log('🔄 Rehydrating auth store, token:', state?.token ? '✅' : '❌');
+        if (state) {
           state.isLoading = false;
+          if (state.token) {
+            tokenManager.setToken(state.token);
+            if (state.refreshToken) tokenManager.setRefreshToken(state.refreshToken);
+            if (__DEV__) console.log('🔑 tokenManager synced from rehydration');
+          }
         }
       },
     }
