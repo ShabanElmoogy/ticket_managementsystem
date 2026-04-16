@@ -94,7 +94,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
             <Pressable
               onPress={() => setPickerOpen(true)}
               hitSlop={4}
-              style={{ marginEnd: 6, width: 18, alignItems: 'center' }}
+              style={{ marginEnd: 6, width: 30, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 14, lineHeight: 18 }}>
                 {(node as FolderNode).icon ?? (isExpanded ? '📂' : '📁')}
@@ -104,7 +104,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
 
           {/* Doc icon — web: DescriptionIcon 14px */}
           {isDoc && (
-            <View style={{ marginEnd: 6, width: 18, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ marginEnd: 6, width: 30, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 13, lineHeight: 16, color: isCurrentDoc ? '#3b82f6' : textMuted }}>
                 📄
               </Text>
@@ -138,6 +138,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
                 flex: 1, fontSize: 12, lineHeight: 16,
                 fontWeight: isCurrentDoc ? '600' : isFolder ? '500' : '400',
                 color: isCurrentDoc ? '#3b82f6' : textMain,
+                paddingStart : 10
               }}
             >
               {node.title}
@@ -183,7 +184,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
 
             {/* Separator between copy/add and delete */}
             <View style={{
-              width: 1, height: 16, marginHorizontal: 4,
+              width: 3, height: 16, marginHorizontal: 7,
               backgroundColor: p.isDark ? '#334155' : '#e2e8f0',
             }} />
 
