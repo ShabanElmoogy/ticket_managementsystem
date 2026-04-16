@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, Pressable, TextInput,
   KeyboardAvoidingView, Platform, useWindowDimensions,
-  Animated,
+  Animated, I18nManager,
 } from 'react-native';
 import { useUiStore } from '../../../stores/uiStore';
 import { useDocsStore, useCurrentDoc } from './hooks/useDocsStore';
@@ -80,8 +80,11 @@ const DocsScreen: React.FC = () => {
   const isWide = width >= 768;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-260)).current;
+  const isRTL = I18nManager.isRTL;
   const DRAWER_W = Math.min(260, width * 0.78);
+  // RTL: panel anchors to right edge, hides by sliding right (+DRAWER_W)
+  // LTR: panel anchors to left edge,  hides by sliding left  (-DRAWER_W)
+  const slideAnim = useRef(new Animated.Value(isRTL ? DRAWER_W : -DRAWER_W)).current;
 
   const openSidebar = () => {
     setSidebarOpen(true);
@@ -89,8 +92,11 @@ const DocsScreen: React.FC = () => {
   };
 
   const closeSidebar = () => {
-    Animated.timing(slideAnim, { toValue: -DRAWER_W, duration: 200, useNativeDriver: true })
-      .start(() => setSidebarOpen(false));
+    Animated.timing(slideAnim, {
+      toValue: isRTL ? DRAWER_W : -DRAWER_W,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => setSidebarOpen(false));
   };
 
   // ── Granular store selectors (avoid whole-store subscription) ──────────────
@@ -254,25 +260,30 @@ const DocsScreen: React.FC = () => {
               position: 'absolute',
               top: 0, left: 0, right: 0, bottom: 0,
               zIndex: 50,
+              overflow: 'hidden',
             }}
             pointerEvents="box-none"
           >
-            {/* Backdrop — only covers the body area */}
+            {/* Backdrop */}
             <Pressable
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
               onPress={closeSidebar}
             />
 
-            {/* Sliding drawer panel */}
+            {/* Sliding drawer panel
+             *  LTR: anchored left,  hidden at translateX=-DRAWER_W, visible at 0
+             *  RTL: anchored right, hidden at translateX=+DRAWER_W, visible at 0
+             */}
             <Animated.View
               style={{
                 position: 'absolute',
-                top: 0, left: 0, bottom: 0,
+                top: 0, bottom: 0,
+                ...(isRTL ? { right: 0 } : { left: 0 }),
                 width: DRAWER_W,
                 transform: [{ translateX: slideAnim }],
                 elevation: 16,
                 shadowColor: '#000',
-                shadowOffset: { width: 4, height: 0 },
+                shadowOffset: { width: isRTL ? -4 : 4, height: 0 },
                 shadowOpacity: 0.25,
                 shadowRadius: 12,
               }}

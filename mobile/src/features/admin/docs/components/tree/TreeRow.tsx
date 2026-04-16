@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Text, Pressable, TextInput, I18nManager } from 'react-native';
 import type { TreeNode, FolderNode, DocRefNode } from '../../types/types';
 import type { TreeSidebarProps } from './types';
 import { INDENT_PX } from './types';
@@ -61,6 +61,8 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
     setRenaming(false);
   };
 
+  const isRTL = I18nManager.isRTL;
+
   // web: pl: 1.5 + depth*1.5 + 2.5 ≈ 12 + depth*12
   const rowPL = 12 + depth * INDENT_PX;
 
@@ -74,8 +76,8 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',
-            paddingLeft: rowPL,
-            paddingRight: 82,   // reserve space for buttons + separator
+            paddingStart: rowPL,
+            paddingEnd: 82,     // reserve space for buttons + separator
             paddingVertical: 5,
             marginHorizontal: 4,
             marginVertical: 1,
@@ -89,7 +91,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
             <Pressable
               onPress={() => setPickerOpen(true)}
               hitSlop={4}
-              style={{ marginRight: 6, width: 18, alignItems: 'center' }}
+              style={{ marginEnd: 6, width: 18, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 14, lineHeight: 18 }}>
                 {(node as FolderNode).icon ?? (isExpanded ? '📂' : '📁')}
@@ -99,7 +101,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
 
           {/* Doc icon — web: DescriptionIcon 14px */}
           {isDoc && (
-            <View style={{ marginRight: 6, width: 18, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ marginEnd: 6, width: 18, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 13, lineHeight: 16, color: isCurrentDoc ? '#3b82f6' : textMuted }}>
                 📄
               </Text>
@@ -139,22 +141,21 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
             </Text>
           )}
 
-          {/* Folder chevron — right side (web: ExpandMore/Less) */}
+          {/* Folder chevron — end side, flips with RTL */}
           {isFolder && !renaming && (
-            <Text style={{ fontSize: 10, color: textMuted, marginLeft: 4, opacity: 0.6 }}>
-              {isExpanded ? '▾' : '▸'}
+            <Text style={{ fontSize: 10, color: textMuted, marginStart: 4, opacity: 0.6 }}>
+              {isExpanded ? '▾' : (isRTL ? '◂' : '▸')}
             </Text>
           )}
         </Pressable>
 
-        {/* Actions — absolute right, sidebarBg background floats over title
-         *  Web: opacity:0 → shows on hover
-         *  Mobile: always visible (no hover concept) */}
+        {/* Actions — absolute end side, flips with RTL */}
         {!renaming && (
           <View
             style={{
               position: 'absolute',
-              right: 4, top: 0, bottom: 0,
+              ...(isRTL ? { left: 4 } : { right: 4 }),
+              top: 0, bottom: 0,
               flexDirection: 'row',
               alignItems: 'center',
               backgroundColor: sidebarBg,
@@ -215,9 +216,9 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingLeft: rowPL + INDENT_PX,
+                paddingStart: rowPL + INDENT_PX,
                 paddingVertical: 4,
-                paddingRight: 8,
+                paddingEnd: 8,
               }}
             >
               <IconBtn onPress={() => p.onAddFolder(node.id)} color={textMuted} hoverBg={hoverBg}>
@@ -226,7 +227,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
               <IconBtn onPress={() => p.onAddDoc(node.id)} color={textMuted} hoverBg={hoverBg}>
                 📄
               </IconBtn>
-              <Text style={{ fontSize: 11, color: textMuted, fontStyle: 'italic', marginLeft: 4 }}>
+              <Text style={{ fontSize: 11, color: textMuted, fontStyle: 'italic', marginStart: 4 }}>
                 Empty folder
               </Text>
             </View>

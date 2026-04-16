@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, I18nManager } from 'react-native';
 import type { TreeSidebarProps } from './types';
 
 interface Props {
@@ -30,7 +30,7 @@ const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder }) => {
       }}
     >
       {/* NotesIcon equivalent */}
-      <Text style={{ fontSize: 13, color: textMuted, marginRight: 6 }}>📝</Text>
+      <Text style={{ fontSize: 13, color: textMuted, marginEnd: 6 }}>📝</Text>
 
       {/* "DOCUMENTS" label — flex:1 */}
       <Text style={{
@@ -52,14 +52,14 @@ const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder }) => {
           backgroundColor: pressed
             ? (isDark ? '#334155' : '#e2e8f0')
             : (isDark ? '#1e293b' : '#f1f5f9'),
-          marginRight: 8,
+          marginEnd: 8,
         })}
       >
         <Text style={{ fontSize: 18, lineHeight: 22 }}>📁</Text>
       </Pressable>
 
       {/* Separator */}
-      <View style={{ width: 1, height: 18, backgroundColor: isDark ? '#334155' : '#e2e8f0', marginRight: 8 }} />
+      <View style={{ width: 1, height: 18, backgroundColor: isDark ? '#334155' : '#e2e8f0', marginEnd: 8 }} />
 
       {/* AddIcon equivalent — maximized */}
       <Pressable
