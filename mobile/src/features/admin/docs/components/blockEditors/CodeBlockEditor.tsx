@@ -1,68 +1,108 @@
 import React from 'react';
-import { View, Text, TextInput, ScrollView } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
 import type { CodeBlock } from '../../types/types';
 
-const LANGUAGES = ['javascript', 'typescript', 'python', 'java', 'csharp', 'php', 'sql', 'bash', 'json', 'html', 'css', 'xml', 'yaml', 'markdown'];
+const LANGUAGES = [
+  { id: 'javascript', label: 'JS',   color: '#f59e0b' },
+  { id: 'typescript', label: 'TS',   color: '#3b82f6' },
+  { id: 'python',     label: 'PY',   color: '#10b981' },
+  { id: 'java',       label: 'Java', color: '#ef4444' },
+  { id: 'csharp',     label: 'C#',   color: '#8b5cf6' },
+  { id: 'php',        label: 'PHP',  color: '#6366f1' },
+  { id: 'sql',        label: 'SQL',  color: '#0ea5e9' },
+  { id: 'bash',       label: 'Bash', color: '#64748b' },
+  { id: 'json',       label: 'JSON', color: '#f59e0b' },
+  { id: 'html',       label: 'HTML', color: '#ef4444' },
+  { id: 'css',        label: 'CSS',  color: '#3b82f6' },
+  { id: 'yaml',       label: 'YAML', color: '#10b981' },
+];
 
-interface Props {
-  block: CodeBlock;
-  isDark: boolean;
-  onChange: (patch: Partial<CodeBlock>) => void;
-}
+interface Props { block: CodeBlock; isDark: boolean; onChange: (patch: Partial<CodeBlock>) => void; }
 
-const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => (
-  <View style={{
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: isDark ? '#334155' : '#e2e8f0',
-  }}>
-    {/* Language selector */}
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}
-      style={{ backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }}
-      contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 6, gap: 4, flexDirection: 'row' }}
-    >
-      {LANGUAGES.map((lang) => (
-        <Text
-          key={lang}
-          onPress={() => onChange({ language: lang })}
-          style={{
-            fontSize: 11,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: 4,
-            backgroundColor: block.language === lang ? '#3b82f6' : (isDark ? '#1e293b' : '#e2e8f0'),
-            color: block.language === lang ? '#fff' : (isDark ? '#94a3b8' : '#475569'),
-            fontWeight: '600',
-            overflow: 'hidden',
-          }}
-        >
-          {lang}
+const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+  const activeLang = LANGUAGES.find((l) => l.id === block.language) ?? LANGUAGES[0];
+
+  return (
+    <View style={{ borderRadius: 12, overflow: 'hidden', borderWidth: 1.5, borderColor: activeLang.color + '55' }}>
+      {/* Header bar */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 12, paddingVertical: 8,
+        backgroundColor: isDark ? '#0f172a' : '#1e293b',
+      }}>
+        {/* Traffic lights */}
+        <View style={{ flexDirection: 'row', gap: 5 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#ef4444' }} />
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#f59e0b' }} />
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#10b981' }} />
+        </View>
+        {/* Active language badge */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: activeLang.color }} />
+          <Text style={{ fontSize: 12, fontWeight: '700', color: activeLang.color }}>{activeLang.label}</Text>
+        </View>
+        {/* Line count */}
+        <Text style={{ fontSize: 10, color: '#475569' }}>
+          {block.code.split('\n').length} lines
         </Text>
-      ))}
-    </ScrollView>
+      </View>
 
-    {/* Code input */}
-    <TextInput
-      value={block.code}
-      onChangeText={(code) => onChange({ code })}
-      placeholder="// Write your code here…"
-      placeholderTextColor={isDark ? '#475569' : '#9ca3af'}
-      multiline
-      autoCapitalize="none"
-      autoCorrect={false}
-      spellCheck={false}
-      style={{
-        fontFamily: 'monospace',
-        fontSize: 13,
-        lineHeight: 20,
-        color: isDark ? '#e2e8f0' : '#1e293b',
-        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-        padding: 12,
-        minHeight: 100,
-      }}
-    />
-  </View>
-);
+      {/* Language selector */}
+      <ScrollView
+        horizontal showsHorizontalScrollIndicator={false}
+        style={{ backgroundColor: isDark ? '#0f172a' : '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' }}
+        contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 6, gap: 5, flexDirection: 'row' }}
+      >
+        {LANGUAGES.map((lang) => {
+          const active = block.language === lang.id;
+          return (
+            <Pressable
+              key={lang.id}
+              onPress={() => onChange({ language: lang.id })}
+              style={{
+                paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+                backgroundColor: active ? lang.color : 'transparent',
+                borderWidth: 1, borderColor: active ? lang.color : '#334155',
+              }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#fff' : '#64748b' }}>
+                {lang.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Code input */}
+      <TextInput
+        value={block.code}
+        onChangeText={(code) => onChange({ code })}
+        placeholder={`// ${activeLang.label} code here…`}
+        placeholderTextColor="#334155"
+        multiline
+        autoCapitalize="none"
+        autoCorrect={false}
+        spellCheck={false}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: 13, lineHeight: 21,
+          color: '#e2e8f0',
+          backgroundColor: isDark ? '#020617' : '#0f172a',
+          padding: 14,
+          minHeight: 140,
+        }}
+      />
+
+      {/* Footer */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'flex-end',
+        paddingHorizontal: 12, paddingVertical: 5,
+        backgroundColor: isDark ? '#0f172a' : '#1e293b',
+      }}>
+        <Text style={{ fontSize: 10, color: '#334155' }}>{block.code.length} chars</Text>
+      </View>
+    </View>
+  );
+};
 
 export default CodeBlockEditor;

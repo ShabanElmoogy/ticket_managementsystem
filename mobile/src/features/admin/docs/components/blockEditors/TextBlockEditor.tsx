@@ -1,48 +1,90 @@
 import React from 'react';
-import { TextInput, View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import type { TextBlock } from '../../types/types';
 
-// Mobile: no Tiptap — use plain TextInput. Store as plain text in html field.
-// The html field will contain plain text on mobile (no HTML tags).
+const ALIGNS: Array<{ key: 'left'|'center'|'right'; icon: string }> = [
+  { key: 'left',   icon: '⬅' },
+  { key: 'center', icon: '↔' },
+  { key: 'right',  icon: '➡' },
+];
+const TEXT_COLORS = ['#1e293b','#1e40af','#7c3aed','#be185d','#065f46','#b45309','#ef4444','#64748b'];
 
-interface Props {
-  block: TextBlock;
-  isDark: boolean;
-  onChange: (patch: Partial<TextBlock>) => void;
-}
-
-// Strip basic HTML tags for display in TextInput
 function htmlToPlain(html: string): string {
   return html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-    .trim();
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim();
 }
 
+interface Props { block: TextBlock; isDark: boolean; onChange: (patch: Partial<TextBlock>) => void; }
+
 const TextBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+  const align = block.settings?.align ?? 'left';
+  const color = block.settings?.color ?? (isDark ? '#e2e8f0' : '#1e293b');
   const plain = htmlToPlain(block.html);
 
   return (
-    <TextInput
-      value={plain}
-      onChangeText={(text) => onChange({ html: text })}
-      placeholder="Start typing…"
-      placeholderTextColor={isDark ? '#475569' : '#9ca3af'}
-      multiline
-      style={{
-        fontSize: 14,
-        lineHeight: 22,
-        color: block.settings?.color ?? (isDark ? '#e2e8f0' : '#1e293b'),
-        textAlign: block.settings?.align ?? 'left',
-        paddingVertical: 4,
-        minHeight: 40,
-      }}
-    />
+    <View style={{ gap: 10 }}>
+      {/* Toolbar */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {/* Align */}
+        <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0' }}>
+          {ALIGNS.map((a) => (
+            <Pressable
+              key={a.key}
+              onPress={() => onChange({ settings: { ...block.settings, align: a.key } })}
+              style={{
+                paddingHorizontal: 9, paddingVertical: 5,
+                backgroundColor: align === a.key ? '#3b82f6' : (isDark ? '#1e293b' : '#f8fafc'),
+              }}
+            >
+              <Text style={{ fontSize: 12, color: align === a.key ? '#fff' : (isDark ? '#94a3b8' : '#64748b') }}>{a.icon}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Color dots */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 5, flexDirection: 'row', alignItems: 'center' }}>
+          {TEXT_COLORS.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => onChange({ settings: { ...block.settings, color: c } })}
+              style={{
+                width: 20, height: 20, borderRadius: 10, backgroundColor: c,
+                borderWidth: 2, borderColor: color === c ? '#fff' : 'transparent',
+              }}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Text area */}
+      <View style={{
+        borderRadius: 10, borderWidth: 1.5,
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        backgroundColor: isDark ? '#0f172a' : '#fafafa',
+        padding: 12,
+      }}>
+        <TextInput
+          value={plain}
+          onChangeText={(text) => onChange({ html: text })}
+          placeholder="Start typing your paragraph…"
+          placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+          multiline
+          style={{
+            fontSize: 15, lineHeight: 24,
+            color,
+            textAlign: align,
+            minHeight: 80,
+          }}
+        />
+      </View>
+
+      {/* Char count */}
+      <Text style={{ fontSize: 10, color: isDark ? '#334155' : '#cbd5e1', textAlign: 'right' }}>
+        {plain.length} chars
+      </Text>
+    </View>
   );
 };
 

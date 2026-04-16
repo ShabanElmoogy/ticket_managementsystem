@@ -173,7 +173,7 @@ function renderBlockEditor(block: DocBlock, isDark: boolean, onChange: (patch: P
   switch (block.type) {
     case 'heading':       return <HeadingBlockEditor    block={block} isDark={isDark} onChange={onChange as any} />;
     case 'text':          return <TextBlockEditor       block={block} isDark={isDark} onChange={onChange as any} />;
-    case 'divider':       return <DividerBlockView      block={block} isDark={isDark} />;
+    case 'divider':       return <DividerBlockView      block={block} isDark={isDark} onChange={onChange as any} />;
     case 'image':         return <ImageBlockEditor      block={block} isDark={isDark} onChange={onChange as any} />;
     case 'video':         return <VideoBlockEditor      block={block} isDark={isDark} onChange={onChange as any} />;
     case 'bulletedList':  return <BulletedListEditor    block={block} isDark={isDark} onChange={onChange as any} />;

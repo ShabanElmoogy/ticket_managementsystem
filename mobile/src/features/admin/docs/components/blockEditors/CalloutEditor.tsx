@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import type { CalloutBlock, CalloutType } from '../../types/types';
 
-const CALLOUT_TYPES: { type: CalloutType; emoji: string; color: string; bg: string; darkBg: string }[] = [
-  { type: 'info',    emoji: 'ℹ️', color: '#3b82f6', bg: '#eff6ff', darkBg: 'rgba(59,130,246,0.1)' },
-  { type: 'warning', emoji: '⚠️', color: '#f59e0b', bg: '#fffbeb', darkBg: 'rgba(245,158,11,0.1)' },
-  { type: 'success', emoji: '✅', color: '#10b981', bg: '#f0fdf4', darkBg: 'rgba(16,185,129,0.1)' },
-  { type: 'error',   emoji: '❌', color: '#ef4444', bg: '#fef2f2', darkBg: 'rgba(239,68,68,0.1)' },
+const CALLOUT_TYPES: {
+  type: CalloutType; emoji: string; label: string;
+  color: string; bg: string; darkBg: string; border: string;
+}[] = [
+  { type: 'info',    emoji: 'ℹ️', label: 'Info',    color: '#3b82f6', bg: '#eff6ff', darkBg: '#1e3a5f', border: '#bfdbfe' },
+  { type: 'warning', emoji: '⚠️', label: 'Warning', color: '#f59e0b', bg: '#fffbeb', darkBg: '#451a03', border: '#fde68a' },
+  { type: 'success', emoji: '✅', label: 'Success', color: '#10b981', bg: '#f0fdf4', darkBg: '#052e16', border: '#bbf7d0' },
+  { type: 'error',   emoji: '❌', label: 'Error',   color: '#ef4444', bg: '#fef2f2', darkBg: '#450a0a', border: '#fecaca' },
 ];
 
 interface Props { block: CalloutBlock; isDark: boolean; onChange: (patch: Partial<CalloutBlock>) => void; }
@@ -15,52 +18,66 @@ const CalloutEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const cfg = CALLOUT_TYPES.find((c) => c.type === block.calloutType) ?? CALLOUT_TYPES[0];
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: 10 }}>
       {/* Type selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 6, flexDirection: 'row' }}
-      >
-        {CALLOUT_TYPES.map((c) => (
-          <Pressable
-            key={c.type}
-            onPress={() => onChange({ calloutType: c.type })}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 4,
-              paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6,
-              backgroundColor: block.calloutType === c.type ? c.color : (isDark ? '#1e293b' : '#f1f5f9'),
-              borderWidth: 1,
-              borderColor: block.calloutType === c.type ? c.color : (isDark ? '#334155' : '#e2e8f0'),
-            }}
-          >
-            <Text style={{ fontSize: 13 }}>{c.emoji}</Text>
-            <Text style={{
-              fontSize: 12, fontWeight: '600', textTransform: 'capitalize',
-              color: block.calloutType === c.type ? '#fff' : (isDark ? '#94a3b8' : '#64748b'),
-            }}>
-              {c.type}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {CALLOUT_TYPES.map((c) => {
+          const active = block.calloutType === c.type;
+          return (
+            <Pressable
+              key={c.type}
+              onPress={() => onChange({ calloutType: c.type })}
+              style={{
+                flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10,
+                backgroundColor: active ? c.color : (isDark ? '#1e293b' : '#f8fafc'),
+                borderWidth: 1.5,
+                borderColor: active ? c.color : (isDark ? '#334155' : '#e2e8f0'),
+              }}
+            >
+              <Text style={{ fontSize: 18, marginBottom: 2 }}>{c.emoji}</Text>
+              <Text style={{
+                fontSize: 10, fontWeight: '700', textTransform: 'uppercase',
+                color: active ? '#fff' : (isDark ? '#64748b' : '#94a3b8'),
+              }}>
+                {c.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
-      {/* Content */}
+      {/* Content area */}
       <View style={{
-        flexDirection: 'row', gap: 10, padding: 12, borderRadius: 8,
+        borderRadius: 12, overflow: 'hidden',
+        borderWidth: 1.5, borderColor: isDark ? cfg.color + '55' : cfg.border,
         backgroundColor: isDark ? cfg.darkBg : cfg.bg,
-        borderWidth: 1, borderColor: cfg.color + '44',
       }}>
-        <Text style={{ fontSize: 18 }}>{cfg.emoji}</Text>
-        <TextInput
-          value={block.text}
-          onChangeText={(text) => onChange({ text })}
-          placeholder="Callout text…"
-          placeholderTextColor={isDark ? '#475569' : '#9ca3af'}
-          multiline
-          style={{
-            flex: 1, fontSize: 14, lineHeight: 20,
-            color: isDark ? '#e2e8f0' : '#1e293b',
-          }}
-        />
+        {/* Colored top stripe */}
+        <View style={{ height: 3, backgroundColor: cfg.color }} />
+
+        <View style={{ flexDirection: 'row', gap: 12, padding: 14 }}>
+          {/* Emoji */}
+          <View style={{
+            width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: cfg.color + '22', flexShrink: 0,
+          }}>
+            <Text style={{ fontSize: 20 }}>{cfg.emoji}</Text>
+          </View>
+
+          {/* Text */}
+          <TextInput
+            value={block.text}
+            onChangeText={(text) => onChange({ text })}
+            placeholder={`${cfg.label} message…`}
+            placeholderTextColor={cfg.color + '66'}
+            multiline
+            style={{
+              flex: 1, fontSize: 14, lineHeight: 22,
+              color: isDark ? '#e2e8f0' : '#1e293b',
+              minHeight: 60,
+            }}
+          />
+        </View>
       </View>
     </View>
   );
