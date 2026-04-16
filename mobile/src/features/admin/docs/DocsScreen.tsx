@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
-  View, Text, Pressable, TextInput, Modal,
+  View, Text, Pressable, TextInput,
   KeyboardAvoidingView, Platform, useWindowDimensions,
+  Animated,
 } from 'react-native';
 import { useUiStore } from '../../../stores/uiStore';
 import { useDocsStore, useCurrentDoc } from './hooks/useDocsStore';
@@ -79,6 +80,18 @@ const DocsScreen: React.FC = () => {
   const isWide = width >= 768;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-260)).current;
+  const DRAWER_W = Math.min(260, width * 0.78);
+
+  const openSidebar = () => {
+    setSidebarOpen(true);
+    Animated.timing(slideAnim, { toValue: 0, duration: 240, useNativeDriver: true }).start();
+  };
+
+  const closeSidebar = () => {
+    Animated.timing(slideAnim, { toValue: -DRAWER_W, duration: 200, useNativeDriver: true })
+      .start(() => setSidebarOpen(false));
+  };
 
   // ── Granular store selectors (avoid whole-store subscription) ──────────────
   const tree           = useDocsStore((s) => s.tree);
@@ -133,7 +146,7 @@ const DocsScreen: React.FC = () => {
       }}>
         {!isWide && (
           <Pressable
-            onPress={() => setSidebarOpen((v) => !v)}
+            onPress={openSidebar}
             style={({ pressed }) => ({
               width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
               backgroundColor: pressed
@@ -192,7 +205,9 @@ const DocsScreen: React.FC = () => {
 
       {/* ── Body ── */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
-        {isWide ? (
+
+        {/* Wide: permanent sidebar */}
+        {isWide && (
           <View style={{ width: 220 }}>
             <DocTreeSidebar
               tree={tree} docs={docs} currentDocId={currentDocId}
@@ -205,26 +220,9 @@ const DocsScreen: React.FC = () => {
               onSetFolderIcon={setFolderIcon} onDuplicateDoc={duplicateDoc}
             />
           </View>
-        ) : (
-          <Modal visible={sidebarOpen} transparent animationType="slide" onRequestClose={() => setSidebarOpen(false)}>
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-              <View style={{ width: Math.min(280, width * 0.8) }}>
-                <DocTreeSidebar
-                  tree={tree} docs={docs} currentDocId={currentDocId}
-                  selectedTreeId={selectedTreeId} expanded={expanded} isDark={isDark}
-                  onSelectDoc={(docId, nodeId) => { setCurrentDocId(docId); setSelectedTreeId(nodeId); setSidebarOpen(false); }}
-                  onSelectFolder={setSelectedTreeId}
-                  onToggleExpand={toggleExpand}
-                  onAddFolder={addFolder} onAddDoc={addDocUnder}
-                  onRename={renameNode} onDelete={deleteNodeAndDocs}
-                  onSetFolderIcon={setFolderIcon} onDuplicateDoc={duplicateDoc}
-                />
-              </View>
-              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={() => setSidebarOpen(false)} />
-            </View>
-          </Modal>
         )}
 
+        {/* Editor / Preview */}
         <View style={{ flex: 1, flexDirection: 'column' }}>
           {preview ? (
             <DocPreview blocks={currentDoc?.blocks ?? []} isDark={isDark} />
@@ -240,7 +238,6 @@ const DocsScreen: React.FC = () => {
               onInsertBlock={insertBlock}
             />
           )}
-
           {currentDoc && !preview && (
             <BlockPalette onAdd={addBlock} isDark={isDark} horizontal />
           )}
@@ -248,6 +245,54 @@ const DocsScreen: React.FC = () => {
 
         {isWide && currentDoc && !preview && (
           <BlockPalette onAdd={addBlock} isDark={isDark} horizontal={false} />
+        )}
+
+        {/* Compact: drawer slides in INSIDE the body (not full-screen Modal) */}
+        {!isWide && sidebarOpen && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 50,
+            }}
+            pointerEvents="box-none"
+          >
+            {/* Backdrop — only covers the body area */}
+            <Pressable
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+              onPress={closeSidebar}
+            />
+
+            {/* Sliding drawer panel */}
+            <Animated.View
+              style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: DRAWER_W,
+                transform: [{ translateX: slideAnim }],
+                elevation: 16,
+                shadowColor: '#000',
+                shadowOffset: { width: 4, height: 0 },
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+              }}
+            >
+              <DocTreeSidebar
+                tree={tree} docs={docs} currentDocId={currentDocId}
+                selectedTreeId={selectedTreeId} expanded={expanded} isDark={isDark}
+                onSelectDoc={(docId, nodeId) => {
+                  setCurrentDocId(docId);
+                  setSelectedTreeId(nodeId);
+                  closeSidebar();
+                }}
+                onSelectFolder={setSelectedTreeId}
+                onToggleExpand={toggleExpand}
+                onAddFolder={addFolder} onAddDoc={addDocUnder}
+                onRename={renameNode} onDelete={deleteNodeAndDocs}
+                onSetFolderIcon={setFolderIcon} onDuplicateDoc={duplicateDoc}
+              />
+            </Animated.View>
+          </View>
         )}
       </View>
     </KeyboardAvoidingView>
