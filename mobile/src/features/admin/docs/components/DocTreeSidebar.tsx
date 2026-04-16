@@ -1,7 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  View, Text, Pressable, ScrollView, TextInput, Modal,
-} from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
 import type { TreeNode, FolderNode, DocRefNode, Doc } from '../types/types';
 import { isFolder } from '../utils/treeUtils';
 
@@ -14,53 +12,56 @@ const FOLDER_ICONS = [
 ];
 
 const IconPicker: React.FC<{
-  visible: boolean;
-  current?: string;
-  onSelect: (icon: string) => void;
-  onClear: () => void;
-  onClose: () => void;
-  isDark: boolean;
+  visible: boolean; current?: string;
+  onSelect: (icon: string) => void; onClear: () => void;
+  onClose: () => void; isDark: boolean;
 }> = ({ visible, current, onSelect, onClear, onClose, isDark }) => (
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <Pressable
-      style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
+      style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center' }}
       onPress={onClose}
     >
       <Pressable
         style={{
           backgroundColor: isDark ? '#1e293b' : '#fff',
-          borderRadius: 12,
-          padding: 16,
-          width: 240,
+          borderRadius: 16, padding: 18, width: 260,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.25, shadowRadius: 20, elevation: 12,
         }}
         onPress={() => {}}
       >
-        <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#e2e8f0' : '#111', marginBottom: 10 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', marginBottom: 12 }}>
           Choose folder icon
         </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {FOLDER_ICONS.map((emoji) => (
             <Pressable
               key={emoji}
               onPress={() => { onSelect(emoji); onClose(); }}
-              style={{
-                width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-                borderRadius: 6,
-                borderWidth: 2,
+              style={({ pressed }) => ({
+                width: 40, height: 40, alignItems: 'center', justifyContent: 'center',
+                borderRadius: 10, borderWidth: 2,
                 borderColor: current === emoji ? '#3b82f6' : 'transparent',
-                backgroundColor: isDark ? '#334155' : '#f1f5f9',
-              }}
+                backgroundColor: pressed
+                  ? '#3b82f620'
+                  : current === emoji
+                  ? '#3b82f610'
+                  : isDark ? '#334155' : '#f1f5f9',
+              })}
             >
-              <Text style={{ fontSize: 18 }}>{emoji}</Text>
+              <Text style={{ fontSize: 20 }}>{emoji}</Text>
             </Pressable>
           ))}
         </View>
         {current && (
           <Pressable
             onPress={() => { onClear(); onClose(); }}
-            style={{ marginTop: 10, alignItems: 'center', paddingVertical: 6 }}
+            style={{
+              marginTop: 12, alignItems: 'center', paddingVertical: 8,
+              borderRadius: 8, backgroundColor: '#fef2f2',
+            }}
           >
-            <Text style={{ fontSize: 12, color: '#ef4444' }}>Remove icon</Text>
+            <Text style={{ fontSize: 13, color: '#ef4444', fontWeight: '600' }}>Remove icon</Text>
           </Pressable>
         )}
       </Pressable>
@@ -71,12 +72,9 @@ const IconPicker: React.FC<{
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  tree: TreeNode[];
-  docs: Doc[];
-  currentDocId: string | null;
-  selectedTreeId: string | null;
-  expanded: Record<string, boolean>;
-  isDark: boolean;
+  tree: TreeNode[]; docs: Doc[];
+  currentDocId: string | null; selectedTreeId: string | null;
+  expanded: Record<string, boolean>; isDark: boolean;
   onSelectDoc: (docId: string, nodeId: string) => void;
   onSelectFolder: (nodeId: string) => void;
   onToggleExpand: (id: string) => void;
@@ -90,21 +88,17 @@ interface Props {
 
 // ── Tree node row ─────────────────────────────────────────────────────────────
 
-const TreeRow: React.FC<{
-  node: TreeNode;
-  depth: number;
-  props: Props;
-}> = ({ node, depth, props }) => {
+const TreeRow: React.FC<{ node: TreeNode; depth: number; props: Props }> = ({ node, depth, props }) => {
   const { isDark, expanded, currentDocId, selectedTreeId } = props;
   const [renaming, setRenaming] = useState(false);
   const [renameVal, setRenameVal] = useState(node.title);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const isSelected = selectedTreeId === node.id;
   const isCurrentDoc = node.type === 'doc' && (node as DocRefNode).docId === currentDocId;
-  const isExpanded = expanded[node.id];
+  const isSelected   = selectedTreeId === node.id;
+  const isExpanded   = expanded[node.id];
+  const isActive     = isCurrentDoc || isSelected;
 
   const handlePress = () => {
     if (node.type === 'doc') {
@@ -120,51 +114,51 @@ const TreeRow: React.FC<{
     setRenaming(false);
   };
 
-  const bg = isCurrentDoc || isSelected
-    ? (isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.08)')
-    : hovered
-    ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
-    : 'transparent';
-
   return (
     <View>
       <Pressable
         onPress={handlePress}
-        onLongPress={() => { setRenaming(true); setRenameVal(node.title); setTimeout(() => inputRef.current?.focus(), 50); }}
-        onHoverIn={() => setHovered(true)}
-        onHoverOut={() => setHovered(false)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingLeft: 8 + depth * 16,
-          paddingRight: 8,
-          paddingVertical: 6,
-          backgroundColor: bg,
-          borderRadius: 6,
-          marginHorizontal: 4,
-          marginVertical: 1,
+        onLongPress={() => {
+          setRenaming(true);
+          setRenameVal(node.title);
+          setTimeout(() => inputRef.current?.focus(), 60);
         }}
+        style={({ pressed }) => ({
+          flexDirection: 'row', alignItems: 'center',
+          paddingLeft: 10 + depth * 14,
+          paddingRight: 6, paddingVertical: 7,
+          marginHorizontal: 6, marginVertical: 1,
+          borderRadius: 8,
+          backgroundColor: isActive
+            ? (isDark ? 'rgba(59,130,246,0.18)' : 'rgba(59,130,246,0.1)')
+            : pressed
+            ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')
+            : 'transparent',
+        })}
       >
-        {/* Expand arrow for folders */}
-        {node.type === 'folder' && (
-          <Text style={{ fontSize: 10, color: isDark ? '#64748b' : '#9ca3af', width: 14, marginRight: 2 }}>
+        {/* Folder expand arrow */}
+        {node.type === 'folder' ? (
+          <Text style={{ fontSize: 9, color: isDark ? '#475569' : '#94a3b8', width: 12, marginRight: 3 }}>
             {isExpanded ? '▼' : '▶'}
           </Text>
+        ) : (
+          <View style={{ width: 12, marginRight: 3 }} />
         )}
 
         {/* Icon */}
         <Pressable
           onPress={node.type === 'folder' ? () => setIconPickerOpen(true) : undefined}
-          style={{ marginRight: 6 }}
+          hitSlop={4}
+          style={{ marginRight: 7 }}
         >
-          <Text style={{ fontSize: 15 }}>
+          <Text style={{ fontSize: 16 }}>
             {node.type === 'folder'
               ? ((node as FolderNode).icon ?? (isExpanded ? '📂' : '📁'))
               : '📄'}
           </Text>
         </Pressable>
 
-        {/* Title or rename input */}
+        {/* Title / rename input */}
         {renaming ? (
           <TextInput
             ref={inputRef}
@@ -172,26 +166,21 @@ const TreeRow: React.FC<{
             onChangeText={setRenameVal}
             onBlur={commitRename}
             onSubmitEditing={commitRename}
-            style={{
-              flex: 1,
-              fontSize: 13,
-              color: isDark ? '#e2e8f0' : '#111',
-              backgroundColor: isDark ? '#334155' : '#f1f5f9',
-              borderRadius: 4,
-              paddingHorizontal: 6,
-              paddingVertical: 2,
-            }}
             autoFocus
+            style={{
+              flex: 1, fontSize: 13,
+              color: isDark ? '#e2e8f0' : '#0f172a',
+              backgroundColor: isDark ? '#334155' : '#f1f5f9',
+              borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
+              borderWidth: 1.5, borderColor: '#3b82f6',
+            }}
           />
         ) : (
           <Text
             numberOfLines={1}
             style={{
-              flex: 1,
-              fontSize: 13,
-              color: isCurrentDoc
-                ? '#3b82f6'
-                : isDark ? '#e2e8f0' : '#1e293b',
+              flex: 1, fontSize: 13,
+              color: isCurrentDoc ? '#3b82f6' : isDark ? '#e2e8f0' : '#1e293b',
               fontWeight: isCurrentDoc ? '600' : '400',
             }}
           >
@@ -199,40 +188,52 @@ const TreeRow: React.FC<{
           </Text>
         )}
 
-        {/* Action buttons — shown on hover or always on mobile */}
+        {/* Action buttons */}
         {!renaming && (
-          <View style={{ flexDirection: 'row', gap: 2 }}>
+          <View style={{ flexDirection: 'row', gap: 1, marginLeft: 2 }}>
             {node.type === 'folder' && (
               <>
                 <Pressable
                   onPress={() => props.onAddDoc(node.id)}
-                  style={{ padding: 4, borderRadius: 4 }}
-                  hitSlop={4}
+                  hitSlop={6}
+                  style={({ pressed }) => ({
+                    width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: pressed ? '#3b82f620' : 'transparent',
+                  })}
                 >
-                  <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>📄+</Text>
+                  <Text style={{ fontSize: 13 }}>📄</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => props.onAddFolder(node.id)}
-                  style={{ padding: 4, borderRadius: 4 }}
-                  hitSlop={4}
+                  hitSlop={6}
+                  style={({ pressed }) => ({
+                    width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: pressed ? '#3b82f620' : 'transparent',
+                  })}
                 >
-                  <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>📁+</Text>
+                  <Text style={{ fontSize: 13 }}>📁</Text>
                 </Pressable>
               </>
             )}
             {node.type === 'doc' && (
               <Pressable
                 onPress={() => props.onDuplicateDoc((node as DocRefNode).docId)}
-                style={{ padding: 4, borderRadius: 4 }}
-                hitSlop={4}
+                hitSlop={6}
+                style={({ pressed }) => ({
+                  width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: pressed ? '#3b82f620' : 'transparent',
+                })}
               >
-                <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>⧉</Text>
+                <Text style={{ fontSize: 13, color: isDark ? '#64748b' : '#9ca3af' }}>⧉</Text>
               </Pressable>
             )}
             <Pressable
               onPress={() => props.onDelete(node.id)}
-              style={{ padding: 4, borderRadius: 4 }}
-              hitSlop={4}
+              hitSlop={6}
+              style={({ pressed }) => ({
+                width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: pressed ? '#fef2f2' : 'transparent',
+              })}
             >
               <Text style={{ fontSize: 12, color: '#ef4444' }}>✕</Text>
             </Pressable>
@@ -240,7 +241,7 @@ const TreeRow: React.FC<{
         )}
       </Pressable>
 
-      {/* Folder icon picker */}
+      {/* Icon picker */}
       {node.type === 'folder' && (
         <IconPicker
           visible={iconPickerOpen}
@@ -278,46 +279,54 @@ const DocTreeSidebar: React.FC<Props> = (props) => {
     }}>
       {/* Header */}
       <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: isDark ? '#1e293b' : '#e2e8f0',
+        paddingHorizontal: 12, paddingTop: 14, paddingBottom: 10,
+        borderBottomWidth: 1, borderBottomColor: isDark ? '#1e293b' : '#e2e8f0',
       }}>
-        <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text style={{
+          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 0.6, color: isDark ? '#475569' : '#94a3b8',
+          marginBottom: 10,
+        }}>
           Documents
         </Text>
-        <View style={{ flexDirection: 'row', gap: 4 }}>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
           <Pressable
             onPress={() => props.onAddDoc(null)}
-            style={{
-              paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
-              backgroundColor: '#3b82f6',
-            }}
+            style={({ pressed }) => ({
+              flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              gap: 4, paddingVertical: 7, borderRadius: 8,
+              backgroundColor: pressed ? '#2563eb' : '#3b82f6',
+            })}
           >
-            <Text style={{ fontSize: 11, color: '#fff', fontWeight: '600' }}>+ Doc</Text>
+            <Text style={{ fontSize: 14 }}>📄</Text>
+            <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>New Doc</Text>
           </Pressable>
           <Pressable
             onPress={() => props.onAddFolder(null)}
-            style={{
-              paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
-              backgroundColor: isDark ? '#334155' : '#e2e8f0',
-            }}
+            style={({ pressed }) => ({
+              flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              gap: 4, paddingVertical: 7, borderRadius: 8,
+              backgroundColor: pressed
+                ? (isDark ? '#475569' : '#d1d5db')
+                : (isDark ? '#334155' : '#e5e7eb'),
+            })}
           >
-            <Text style={{ fontSize: 11, color: isDark ? '#e2e8f0' : '#475569', fontWeight: '600' }}>+ Folder</Text>
+            <Text style={{ fontSize: 14 }}>📁</Text>
+            <Text style={{ fontSize: 12, color: isDark ? '#e2e8f0' : '#374151', fontWeight: '600' }}>Folder</Text>
           </Pressable>
         </View>
       </View>
 
       {/* Tree */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 4 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 6 }} showsVerticalScrollIndicator={false}>
         {tree.length === 0 ? (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 13, color: isDark ? '#475569' : '#9ca3af' }}>No documents yet</Text>
-            <Text style={{ fontSize: 11, color: isDark ? '#334155' : '#cbd5e1', marginTop: 4 }}>
-              Tap "+ Doc" to create one
+          <View style={{ padding: 24, alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 32 }}>📭</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: isDark ? '#475569' : '#94a3b8', textAlign: 'center' }}>
+              No documents yet
+            </Text>
+            <Text style={{ fontSize: 12, color: isDark ? '#334155' : '#cbd5e1', textAlign: 'center', lineHeight: 18 }}>
+              Tap "New Doc" above to create your first document
             </Text>
           </View>
         ) : (
@@ -326,6 +335,16 @@ const DocTreeSidebar: React.FC<Props> = (props) => {
           ))
         )}
       </ScrollView>
+
+      {/* Footer hint */}
+      <View style={{
+        paddingHorizontal: 12, paddingVertical: 8,
+        borderTopWidth: 1, borderTopColor: isDark ? '#1e293b' : '#f1f5f9',
+      }}>
+        <Text style={{ fontSize: 10, color: isDark ? '#334155' : '#cbd5e1', textAlign: 'center' }}>
+          Long-press to rename
+        </Text>
+      </View>
     </View>
   );
 };

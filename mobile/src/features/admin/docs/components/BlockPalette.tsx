@@ -2,21 +2,23 @@ import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import type { BlockType } from '../types/types';
 
-const BLOCK_TYPES: { type: BlockType; icon: string; label: string }[] = [
-  { type: 'heading',       icon: 'H',  label: 'Heading'       },
-  { type: 'text',          icon: '¶',  label: 'Text'          },
-  { type: 'divider',       icon: '—',  label: 'Divider'       },
-  { type: 'bulletedList',  icon: '•',  label: 'Bullet List'   },
-  { type: 'numberedList',  icon: '1.', label: 'Numbered List' },
-  { type: 'code',          icon: '<>', label: 'Code'          },
-  { type: 'image',         icon: '🖼', label: 'Image'         },
-  { type: 'video',         icon: '▶',  label: 'Video'         },
-  { type: 'quote',         icon: '"',  label: 'Quote'         },
-  { type: 'callout',       icon: '!',  label: 'Callout'       },
-  { type: 'table',         icon: '⊞',  label: 'Table'         },
-  { type: 'toggle',        icon: '▸',  label: 'Toggle'        },
-  { type: 'tabs',          icon: '⊟',  label: 'Tabs'          },
-  { type: 'videoCarousel', icon: '🎬', label: 'Carousel'      },
+interface BlockDef { type: BlockType; emoji: string; label: string; color: string }
+
+const BLOCK_TYPES: BlockDef[] = [
+  { type: 'heading',       emoji: '𝐇',  label: 'Heading',      color: '#6366f1' },
+  { type: 'text',          emoji: '¶',  label: 'Text',         color: '#3b82f6' },
+  { type: 'bulletedList',  emoji: '•',  label: 'Bullet List',  color: '#10b981' },
+  { type: 'numberedList',  emoji: '①',  label: 'Numbered',     color: '#10b981' },
+  { type: 'code',          emoji: '</>',label: 'Code',         color: '#f59e0b' },
+  { type: 'quote',         emoji: '❝',  label: 'Quote',        color: '#8b5cf6' },
+  { type: 'callout',       emoji: '💡', label: 'Callout',      color: '#f59e0b' },
+  { type: 'image',         emoji: '🖼️', label: 'Image',        color: '#ec4899' },
+  { type: 'video',         emoji: '▶️', label: 'Video',        color: '#ef4444' },
+  { type: 'table',         emoji: '⊞',  label: 'Table',        color: '#0ea5e9' },
+  { type: 'toggle',        emoji: '▸',  label: 'Toggle',       color: '#64748b' },
+  { type: 'tabs',          emoji: '⊟',  label: 'Tabs',         color: '#0ea5e9' },
+  { type: 'divider',       emoji: '—',  label: 'Divider',      color: '#94a3b8' },
+  { type: 'videoCarousel', emoji: '🎬', label: 'Carousel',     color: '#ef4444' },
 ];
 
 interface Props {
@@ -26,70 +28,77 @@ interface Props {
 }
 
 const BlockPalette: React.FC<Props> = ({ onAdd, isDark, horizontal = false }) => {
+  const bg     = isDark ? '#0f172a' : '#f8fafc';
+  const border = isDark ? '#1e293b' : '#e2e8f0';
+
   if (horizontal) {
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{
-          backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-          borderTopWidth: 1,
-          borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
-        }}
-        contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 6, gap: 4, flexDirection: 'row' }}
-      >
-        {BLOCK_TYPES.map(({ type, icon, label }) => (
-          <Pressable
-            key={type}
-            onPress={() => onAdd(type)}
-            style={{
-              flexDirection: 'row', alignItems: 'center', gap: 4,
-              paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-              backgroundColor: isDark ? '#1e293b' : '#fff',
-              borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0',
-            }}
-          >
-            <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: '700', minWidth: 16, textAlign: 'center' }}>
-              {icon}
-            </Text>
-            <Text style={{ fontSize: 12, color: isDark ? '#e2e8f0' : '#374151', fontWeight: '500' }}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={{ backgroundColor: bg, borderTopWidth: 1, borderTopColor: border }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 8, gap: 6, flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Text style={{ fontSize: 10, fontWeight: '700', color: isDark ? '#475569' : '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 4 }}>
+            + Block
+          </Text>
+          {BLOCK_TYPES.map(({ type, emoji, label, color }) => (
+            <Pressable
+              key={type}
+              onPress={() => onAdd(type)}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: 5,
+                paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10,
+                backgroundColor: pressed
+                  ? color + '22'
+                  : isDark ? '#1e293b' : '#fff',
+                borderWidth: 1,
+                borderColor: pressed ? color + '66' : (isDark ? '#334155' : '#e5e7eb'),
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: isDark ? 0 : 0.04,
+                shadowRadius: 2,
+                elevation: isDark ? 0 : 1,
+              })}
+            >
+              <Text style={{ fontSize: 14, minWidth: 18, textAlign: 'center' }}>{emoji}</Text>
+              <Text style={{ fontSize: 12, color: isDark ? '#cbd5e1' : '#374151', fontWeight: '500' }}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
     );
   }
 
+  // Vertical sidebar
   return (
-    <View style={{
-      width: 140,
-      backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-      borderLeftWidth: 1,
-      borderLeftColor: isDark ? '#1e293b' : '#e2e8f0',
-    }}>
-      <Text style={{
-        fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5,
-        color: isDark ? '#475569' : '#9ca3af',
-        paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6,
-      }}>
-        Add Block
-      </Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
-        {BLOCK_TYPES.map(({ type, icon, label }) => (
+    <View style={{ width: 148, backgroundColor: bg, borderLeftWidth: 1, borderLeftColor: border }}>
+      <View style={{ paddingHorizontal: 12, paddingTop: 14, paddingBottom: 8 }}>
+        <Text style={{ fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, color: isDark ? '#475569' : '#94a3b8' }}>
+          Add Block
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 6 }}>
+        {BLOCK_TYPES.map(({ type, emoji, label, color }) => (
           <Pressable
             key={type}
             onPress={() => onAdd(type)}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 8,
-              paddingHorizontal: 12, paddingVertical: 8,
-              backgroundColor: pressed ? (isDark ? '#1e293b' : '#f1f5f9') : 'transparent',
+              paddingHorizontal: 8, paddingVertical: 9,
+              borderRadius: 8, marginBottom: 1,
+              backgroundColor: pressed ? color + '18' : 'transparent',
             })}
           >
-            <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: '700', width: 20, textAlign: 'center' }}>
-              {icon}
-            </Text>
-            <Text style={{ fontSize: 12, color: isDark ? '#e2e8f0' : '#374151' }}>
+            <View style={{
+              width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: color + '18',
+            }}>
+              <Text style={{ fontSize: 13 }}>{emoji}</Text>
+            </View>
+            <Text style={{ fontSize: 12, color: isDark ? '#cbd5e1' : '#374151', fontWeight: '500', flex: 1 }}>
               {label}
             </Text>
           </Pressable>

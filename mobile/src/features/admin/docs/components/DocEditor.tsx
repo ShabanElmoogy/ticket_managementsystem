@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import type { DocBlock, BlockType } from '../types/types';
 import {
@@ -7,6 +7,25 @@ import {
   CalloutEditor, TableEditor, ToggleEditor, TabsEditor,
   VideoCarouselEditor, DividerBlockView,
 } from './blockEditors';
+
+// ── Block type metadata ───────────────────────────────────────────────────────
+
+const BLOCK_META: Record<string, { label: string; emoji: string; color: string }> = {
+  heading:       { label: 'Heading',       emoji: '𝐇',   color: '#6366f1' },
+  text:          { label: 'Text',          emoji: '¶',   color: '#3b82f6' },
+  divider:       { label: 'Divider',       emoji: '—',   color: '#94a3b8' },
+  image:         { label: 'Image',         emoji: '🖼️',  color: '#ec4899' },
+  video:         { label: 'Video',         emoji: '▶️',  color: '#ef4444' },
+  bulletedList:  { label: 'Bullet List',   emoji: '•',   color: '#10b981' },
+  numberedList:  { label: 'Numbered List', emoji: '①',   color: '#10b981' },
+  code:          { label: 'Code',          emoji: '</>',  color: '#f59e0b' },
+  quote:         { label: 'Quote',         emoji: '❝',   color: '#8b5cf6' },
+  callout:       { label: 'Callout',       emoji: '💡',  color: '#f59e0b' },
+  table:         { label: 'Table',         emoji: '⊞',   color: '#0ea5e9' },
+  toggle:        { label: 'Toggle',        emoji: '▸',   color: '#64748b' },
+  tabs:          { label: 'Tabs',          emoji: '⊟',   color: '#0ea5e9' },
+  videoCarousel: { label: 'Carousel',      emoji: '🎬',  color: '#ef4444' },
+};
 
 interface Props {
   blocks: DocBlock[];
@@ -19,9 +38,10 @@ interface Props {
   onInsertBlock: (type: BlockType, afterIndex: number) => void;
 }
 
-// ── Block wrapper with actions ────────────────────────────────────────────────
+// ── Block container ───────────────────────────────────────────────────────────
 
 const BlockContainer: React.FC<{
+  block: DocBlock;
   index: number;
   total: number;
   isDark: boolean;
@@ -30,45 +50,124 @@ const BlockContainer: React.FC<{
   onDuplicate: () => void;
   onDelete: () => void;
   children: React.ReactNode;
-}> = ({ index, total, isDark, onMoveUp, onMoveDown, onDuplicate, onDelete, children }) => (
-  <View style={{
-    marginBottom: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  }}>
-    {/* Action bar */}
-    <View style={{
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      gap: 2,
-      paddingHorizontal: 4,
-      paddingTop: 2,
-      paddingBottom: 2,
-    }}>
-      <Pressable onPress={onMoveUp} disabled={index === 0} hitSlop={4}
-        style={{ padding: 4, opacity: index === 0 ? 0.3 : 1 }}>
-        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>↑</Text>
-      </Pressable>
-      <Pressable onPress={onMoveDown} disabled={index === total - 1} hitSlop={4}
-        style={{ padding: 4, opacity: index === total - 1 ? 0.3 : 1 }}>
-        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>↓</Text>
-      </Pressable>
-      <Pressable onPress={onDuplicate} hitSlop={4} style={{ padding: 4 }}>
-        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af' }}>⧉</Text>
-      </Pressable>
-      <Pressable onPress={onDelete} hitSlop={4} style={{ padding: 4 }}>
-        <Text style={{ fontSize: 12, color: '#ef4444' }}>✕</Text>
-      </Pressable>
-    </View>
-    {/* Block content */}
-    <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-      {children}
-    </View>
-  </View>
-);
+}> = ({ block, index, total, isDark, onMoveUp, onMoveDown, onDuplicate, onDelete, children }) => {
+  const [focused, setFocused] = useState(false);
+  const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
 
-// ── Render a single block ─────────────────────────────────────────────────────
+  const cardBg     = isDark ? '#1e293b' : '#ffffff';
+  const cardBorder = focused
+    ? meta.color + '66'
+    : isDark ? '#334155' : '#e5e7eb';
+
+  return (
+    <Pressable
+      onPress={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        marginBottom: 8,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: cardBorder,
+        backgroundColor: cardBg,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0 : 0.06,
+        shadowRadius: 3,
+        elevation: isDark ? 0 : 2,
+      }}
+    >
+      {/* ── Block header bar ── */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+        borderBottomWidth: 1,
+        borderBottomColor: isDark ? '#334155' : '#f1f5f9',
+        gap: 6,
+      }}>
+        {/* Type badge */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', gap: 4,
+          paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6,
+          backgroundColor: meta.color + '18',
+        }}>
+          <Text style={{ fontSize: 11 }}>{meta.emoji}</Text>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: meta.color, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+            {meta.label}
+          </Text>
+        </View>
+
+        <View style={{ flex: 1 }} />
+
+        {/* Move up */}
+        <Pressable
+          onPress={onMoveUp}
+          disabled={index === 0}
+          hitSlop={6}
+          style={{
+            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            opacity: index === 0 ? 0.3 : 1,
+            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
+          }}
+        >
+          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 14 }}>↑</Text>
+        </Pressable>
+
+        {/* Move down */}
+        <Pressable
+          onPress={onMoveDown}
+          disabled={index === total - 1}
+          hitSlop={6}
+          style={{
+            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            opacity: index === total - 1 ? 0.3 : 1,
+            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
+          }}
+        >
+          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 14 }}>↓</Text>
+        </Pressable>
+
+        {/* Duplicate */}
+        <Pressable
+          onPress={onDuplicate}
+          hitSlop={6}
+          style={{
+            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
+          }}
+        >
+          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>⧉</Text>
+        </Pressable>
+
+        {/* Delete */}
+        <Pressable
+          onPress={onDelete}
+          hitSlop={6}
+          style={{
+            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: '#fef2f2',
+            borderWidth: 1, borderColor: '#fecaca',
+          }}
+        >
+          <Text style={{ fontSize: 12, color: '#ef4444' }}>✕</Text>
+        </Pressable>
+      </View>
+
+      {/* ── Block content ── */}
+      <View style={{ padding: 14 }}>
+        {children}
+      </View>
+    </Pressable>
+  );
+};
+
+// ── Render block editor ───────────────────────────────────────────────────────
 
 function renderBlockEditor(block: DocBlock, isDark: boolean, onChange: (patch: Partial<DocBlock>) => void): React.ReactNode {
   switch (block.type) {
@@ -90,49 +189,49 @@ function renderBlockEditor(block: DocBlock, isDark: boolean, onChange: (patch: P
   }
 }
 
+// ── Empty states ──────────────────────────────────────────────────────────────
+
+const EmptyState: React.FC<{ isDark: boolean; hasDoc: boolean }> = ({ isDark, hasDoc }) => (
+  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+    <View style={{
+      width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+      marginBottom: 16,
+    }}>
+      <Text style={{ fontSize: 32 }}>{hasDoc ? '✏️' : '📄'}</Text>
+    </View>
+    <Text style={{ fontSize: 17, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b', marginBottom: 8, textAlign: 'center' }}>
+      {hasDoc ? 'Document is empty' : 'No document selected'}
+    </Text>
+    <Text style={{ fontSize: 14, color: isDark ? '#64748b' : '#94a3b8', textAlign: 'center', lineHeight: 20 }}>
+      {hasDoc
+        ? 'Tap a block type below to start adding content'
+        : 'Open the sidebar to select or create a document'}
+    </Text>
+  </View>
+);
+
 // ── Main editor ───────────────────────────────────────────────────────────────
 
 const DocEditor: React.FC<Props> = ({
   blocks, hasDoc, isDark,
-  onUpdateBlock, onRemoveBlock, onDuplicateBlock, onMoveBlock, onInsertBlock,
+  onUpdateBlock, onRemoveBlock, onDuplicateBlock, onMoveBlock,
 }) => {
-  if (!hasDoc) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Text style={{ fontSize: 32, marginBottom: 12 }}>📄</Text>
-        <Text style={{ fontSize: 16, fontWeight: '600', color: isDark ? '#94a3b8' : '#64748b' }}>
-          Select a document to start editing
-        </Text>
-        <Text style={{ fontSize: 13, color: isDark ? '#475569' : '#9ca3af', marginTop: 6, textAlign: 'center' }}>
-          Choose a document from the sidebar or create a new one
-        </Text>
-      </View>
-    );
-  }
-
-  if (blocks.length === 0) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Text style={{ fontSize: 32, marginBottom: 12 }}>✏️</Text>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: isDark ? '#94a3b8' : '#64748b' }}>
-          This document is empty
-        </Text>
-        <Text style={{ fontSize: 13, color: isDark ? '#475569' : '#9ca3af', marginTop: 6, textAlign: 'center' }}>
-          Use the block palette below to add content
-        </Text>
-      </View>
-    );
+  if (!hasDoc || blocks.length === 0) {
+    return <EmptyState isDark={isDark} hasDoc={hasDoc} />;
   }
 
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}
+      contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       {blocks.map((block, index) => (
         <BlockContainer
           key={block.id}
+          block={block}
           index={index}
           total={blocks.length}
           isDark={isDark}

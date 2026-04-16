@@ -14,23 +14,27 @@ import BlockPalette from './components/BlockPalette';
 
 const SaveIndicator: React.FC<{ status: string; isDark: boolean }> = ({ status, isDark }) => {
   if (status === 'idle') return null;
-  const cfg = {
-    saving: { text: 'Saving…', color: '#f59e0b' },
-    saved:  { text: '✓ Saved',  color: '#10b981' },
-    error:  { text: '✗ Error',  color: '#ef4444' },
-  }[status] ?? { text: '', color: '' };
-
+  const cfg: Record<string, { text: string; color: string; bg: string }> = {
+    saving: { text: 'Saving…', color: '#f59e0b', bg: '#fffbeb' },
+    saved:  { text: '✓ Saved', color: '#10b981', bg: '#f0fdf4' },
+    error:  { text: '✗ Error', color: '#ef4444', bg: '#fef2f2' },
+  };
+  const c = cfg[status];
+  if (!c) return null;
   return (
-    <Text style={{ fontSize: 12, color: cfg.color, fontWeight: '600' }}>{cfg.text}</Text>
+    <View style={{
+      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+      backgroundColor: isDark ? c.color + '22' : c.bg,
+    }}>
+      <Text style={{ fontSize: 11, color: c.color, fontWeight: '700' }}>{c.text}</Text>
+    </View>
   );
 };
 
 // ── Inline title editor ───────────────────────────────────────────────────────
 
 const TitleEditor: React.FC<{
-  title: string;
-  isDark: boolean;
-  onRename: (t: string) => void;
+  title: string; isDark: boolean; onRename: (t: string) => void;
 }> = ({ title, isDark, onRename }) => {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(title);
@@ -49,20 +53,19 @@ const TitleEditor: React.FC<{
           flex: 1, fontSize: 15, fontWeight: '700',
           color: isDark ? '#f1f5f9' : '#0f172a',
           backgroundColor: isDark ? '#334155' : '#f1f5f9',
-          borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4,
+          borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
+          borderWidth: 1.5, borderColor: '#3b82f6',
         }}
       />
     );
   }
 
   return (
-    <Pressable onPress={() => setEditing(true)} style={{ flex: 1 }}>
-      <Text numberOfLines={1} style={{
-        fontSize: 15, fontWeight: '700',
-        color: isDark ? '#f1f5f9' : '#0f172a',
-      }}>
+    <Pressable onPress={() => setEditing(true)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', flex: 1 }}>
         {title}
       </Text>
+      <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#94a3b8' }}>✎</Text>
     </Pressable>
   );
 };
@@ -125,27 +128,27 @@ const DocsScreen: React.FC = () => {
         paddingHorizontal: 12, paddingVertical: 10,
         backgroundColor: headerBg,
         borderBottomWidth: 1, borderBottomColor: borderColor,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0 : 0.05, shadowRadius: 3, elevation: 2,
       }}>
         {!isWide && (
           <Pressable
             onPress={() => setSidebarOpen((v) => !v)}
-            style={{
-              width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: isDark ? '#334155' : '#f1f5f9',
-            }}
+            style={({ pressed }) => ({
+              width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: pressed
+                ? (isDark ? '#475569' : '#e2e8f0')
+                : (isDark ? '#334155' : '#f1f5f9'),
+            })}
           >
-            <Text style={{ fontSize: 16 }}>📁</Text>
+            <Text style={{ fontSize: 17 }}>📁</Text>
           </Pressable>
         )}
 
         {currentDoc ? (
-          <TitleEditor
-            title={currentDoc.title}
-            isDark={isDark}
-            onRename={(t) => renameCurrentDoc(t)}
-          />
+          <TitleEditor title={currentDoc.title} isDark={isDark} onRename={(t) => renameCurrentDoc(t)} />
         ) : (
-          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: isDark ? '#94a3b8' : '#64748b' }}>
+          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: isDark ? '#475569' : '#94a3b8' }}>
             Documentation
           </Text>
         )}
@@ -155,16 +158,19 @@ const DocsScreen: React.FC = () => {
         {currentDoc && (
           <Pressable
             onPress={() => setPreview(!preview)}
-            style={{
-              paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6,
-              backgroundColor: preview ? '#3b82f6' : (isDark ? '#334155' : '#f1f5f9'),
-            }}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 4,
+              paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+              backgroundColor: preview
+                ? '#3b82f6'
+                : pressed
+                ? (isDark ? '#475569' : '#e2e8f0')
+                : (isDark ? '#334155' : '#f1f5f9'),
+            })}
           >
-            <Text style={{
-              fontSize: 12, fontWeight: '600',
-              color: preview ? '#fff' : (isDark ? '#e2e8f0' : '#374151'),
-            }}>
-              {preview ? '✏️ Edit' : '👁 Preview'}
+            <Text style={{ fontSize: 13 }}>{preview ? '✏️' : '👁'}</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: preview ? '#fff' : (isDark ? '#e2e8f0' : '#374151') }}>
+              {preview ? 'Edit' : 'Preview'}
             </Text>
           </Pressable>
         )}
@@ -172,8 +178,13 @@ const DocsScreen: React.FC = () => {
         {currentDoc && !preview && (
           <Pressable
             onPress={() => saveCurrentDoc()}
-            style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: '#3b82f6' }}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 4,
+              paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+              backgroundColor: pressed ? '#2563eb' : '#3b82f6',
+            })}
           >
+            <Text style={{ fontSize: 13 }}>💾</Text>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>Save</Text>
           </Pressable>
         )}
