@@ -78,7 +78,7 @@ const BlockToolbar: React.FC<Props> = ({
       }}>
         <Text style={{ fontSize: 12 }}>{meta.emoji}</Text>
         <Text style={{
-          fontSize: 10, fontWeight: '800',
+          fontSize: 12, fontWeight: '800',
           color: meta.color,
           textTransform: 'uppercase', letterSpacing: 0.4,
         }}>
