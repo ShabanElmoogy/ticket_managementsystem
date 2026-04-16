@@ -163,6 +163,11 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
       docsApi.loadTree(),
     ]);
 
+    // If both fail (null), throw so the caller can show an error
+    if (serverDocs === null && serverNodes === null) {
+      throw new Error('Failed to load documents from server');
+    }
+
     const docs = (Array.isArray(serverDocs) ? serverDocs : []).map((d) => ({
       ...d,
       blocks: parseBlocks(d.blocks),
@@ -170,7 +175,6 @@ export const useDocsStore = create<DocsState>()((set, get) => ({
 
     set({
       docs,
-      currentDocId: docs.length ? docs[0].id : null,
       tree: serverNodes ? applyIcons(buildTree(serverNodes), loadFolderIcons()) : [],
     });
   },
