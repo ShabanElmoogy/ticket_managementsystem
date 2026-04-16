@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, Pressable, ScrollView, FlatList,
-  type StyleProp, type ViewStyle, type TextStyle,
+  View, Text, Pressable, ScrollView, FlatList, useWindowDimensions,
+  type StyleProp, type ViewStyle,
 } from 'react-native';
 import { useUiStore } from '../../stores/uiStore';
 
@@ -153,6 +153,7 @@ function AppDataTable<T extends { id: string }>({
 }: AppDataTableProps<T>) {
   const { colorMode } = useUiStore();
   const isDark = colorMode === 'dark';
+  const { width: screenWidth } = useWindowDimensions();
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDir,   setSortDir]   = useState<SortDir>(null);
@@ -171,6 +172,12 @@ function AppDataTable<T extends { id: string }>({
 
   const sorted = sortRows(rows, sortCol, sortDir);
 
+  // Total width of all fixed columns; flex columns will fill remaining space
+  const totalFixedWidth = columns.reduce((sum, col) => sum + (col.flex ? 0 : getColWidth(col)), 0);
+  const hasFlexCols = columns.some((c) => c.flex);
+  // If no flex cols, ensure the table stretches to at least screen width
+  const tableMinWidth = hasFlexCols ? screenWidth : Math.max(totalFixedWidth, screenWidth);
+
   const headerBg = isDark ? '#0f172a' : '#f8fafc';
   const rowBg    = isDark ? '#1e293b' : '#ffffff';
   const altBg    = isDark ? '#172033' : '#f9fafb';
@@ -179,7 +186,7 @@ function AppDataTable<T extends { id: string }>({
   return (
     <View style={[{ flex: 1, borderWidth: 1, borderColor: borderC, borderRadius: 8, overflow: 'hidden' }, style]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
-        <View>
+        <View style={{ minWidth: tableMinWidth }}>
           {/* ── Sticky header ── */}
           <View style={{
             flexDirection: 'row',
@@ -219,7 +226,7 @@ function AppDataTable<T extends { id: string }>({
                   onPress={() => onRowPress?.(item)}
                   style={{
                     flexDirection: 'row',
-                    height: rowHeight,
+                    minHeight: rowHeight,
                     backgroundColor: index % 2 === 0 ? rowBg : altBg,
                     borderBottomWidth: 1,
                     borderBottomColor: borderC,

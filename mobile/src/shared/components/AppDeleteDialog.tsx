@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, useColorScheme } from 'react-native';
+import { Modal, View, Text, Pressable } from 'react-native';
 import AppButton from './AppButton';
+import { useUiStore } from '../../stores/uiStore';
 
 export interface AppDeleteDialogProps {
   open: boolean;
@@ -33,8 +34,8 @@ const AppDeleteDialog: React.FC<AppDeleteDialogProps> = ({
   confirmLabel = 'Delete',
   cancelLabel = 'Cancel',
 }) => {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const { colorMode } = useUiStore();
+  const isDark = colorMode === 'dark';
 
   const defaultTitle   = `Delete ${itemType}`;
   const defaultMessage = itemName

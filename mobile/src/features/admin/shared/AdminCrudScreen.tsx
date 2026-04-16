@@ -16,7 +16,7 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   onDelete: (id: string) => Promise<void>;
   getItemName?: (item: T) => string;
   /** Optional: render a card for grid/compact view. Falls back to auto-generated card. */
-  renderCard?: (item: T, onEdit: () => void, onDelete: () => void) => React.ReactNode;
+  renderCard?: (item: T, onEdit: () => void, onDelete: () => void) => React.ReactElement | null;
   itemType?: string;
   canAdd?: boolean;
   onRowPress?: (item: T) => void;
@@ -77,17 +77,12 @@ function AutoCard<T extends { id: string }>({
     <View
       style={{
         width,
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 8,
+        borderRadius: 0,
+        padding: 14,
+        marginBottom: 0,
+        borderBottomWidth: 1,
         backgroundColor: isDark ? '#1e293b' : '#ffffff',
-        borderWidth: 1,
         borderColor: isDark ? '#334155' : '#e5e7eb',
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
       }}
     >
       {visibleCols.map((col, i) => {
@@ -261,9 +256,6 @@ function AdminCrudScreen<T extends { id: string }>({
   getItemName, itemType = 'item', canAdd = true, onRowPress,
 }: AdminCrudScreenProps<T>) {
   const { width: screenWidth } = useWindowDimensions();
-  const PADDING = 16;
-  const GAP     = 8;
-  const cardWidth = Math.floor((screenWidth - PADDING * 2 - GAP) / 2);
 
   const { colorMode, getAdminView, setAdminView } = useUiStore();
   const isDark = colorMode === 'dark';
@@ -362,16 +354,15 @@ function AdminCrudScreen<T extends { id: string }>({
 
       {/* ── Table view ── */}
       {view === 'table' && (
-        <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={{ flex: 1, paddingBottom: 24 }}>
           <AppDataTable<T>
             rows={filtered}
             columns={allColumns}
             loading={loading}
             emptyMessage={search ? `No ${title.toLowerCase()} match "${search}"` : `No ${title.toLowerCase()} yet`}
             onRowPress={onRowPress}
-            style={{ marginBottom: 8 }}
           />
-        </ScrollView>
+        </View>
       )}
 
       {/* ── Grid view ── */}
@@ -379,25 +370,26 @@ function AdminCrudScreen<T extends { id: string }>({
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: PADDING, paddingBottom: 24, gap: GAP }}
-          renderItem={({ item }) =>
-            renderCard ? (
-              renderCard(
+          contentContainerStyle={{ paddingBottom: 24 }}
+          renderItem={({ item }) => {
+            if (renderCard) {
+              return renderCard(
                 item,
                 () => { setFormItem(item); setFormOpen(true); },
                 () => setDeleteItem(item),
-              )
-            ) : (
+              ) ?? null;
+            }
+            return (
               <AutoCard
                 item={item}
                 columns={columns}
                 onEdit={() => { setFormItem(item); setFormOpen(true); }}
                 onDelete={() => setDeleteItem(item)}
                 isDark={isDark}
-                width={screenWidth - PADDING * 2}
+                width={screenWidth}
               />
-            )
-          }
+            );
+          }}
           ListEmptyComponent={
             <View className="items-center py-12">
               <Text className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -411,7 +403,7 @@ function AdminCrudScreen<T extends { id: string }>({
       {/* ── Compact view ── */}
       {view === 'compact' && (
         <ScrollView
-          className={`flex-1 mx-4 rounded-xl overflow-hidden border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
+          className={`flex-1 overflow-hidden border-t border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
           contentContainerStyle={{ paddingBottom: 24 }}
         >
           <View className={isDark ? 'bg-slate-800' : 'bg-white'}>
