@@ -75,7 +75,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
             flexDirection: 'row',
             alignItems: 'center',
             paddingLeft: rowPL,
-            paddingRight: 52,   // reserve space for action buttons
+            paddingRight: 82,   // reserve space for buttons + separator
             paddingVertical: 5,
             marginHorizontal: 4,
             marginVertical: 1,
@@ -158,8 +158,8 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
               flexDirection: 'row',
               alignItems: 'center',
               backgroundColor: sidebarBg,
-              borderRadius: 4,
-              paddingHorizontal: 1,
+              borderRadius: 6,
+              paddingHorizontal: 2,
             }}
           >
             {isFolder && (
@@ -176,6 +176,13 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
                 ⧉
               </IconBtn>
             )}
+
+            {/* Separator between copy/add and delete */}
+            <View style={{
+              width: 1, height: 16, marginHorizontal: 4,
+              backgroundColor: p.isDark ? '#334155' : '#e2e8f0',
+            }} />
+
             <IconBtn
               onPress={() => p.onDelete(node.id)}
               color="#ef4444"

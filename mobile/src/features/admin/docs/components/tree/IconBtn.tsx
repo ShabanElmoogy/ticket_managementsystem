@@ -10,21 +10,22 @@ interface Props {
 
 /**
  * Web equivalent: MUI IconButton size="small" sx={{ p: 0.25 }}
- * 24×24 tap target, transparent bg at rest, hoverBg on press.
+ * Maximized for mobile: 32×32 tap target, visible bg at rest, larger icon.
  */
 const IconBtn: React.FC<Props> = ({
   onPress, children, color = '#64748b', hoverBg = 'rgba(0,0,0,0.06)',
 }) => (
   <Pressable
     onPress={onPress}
-    hitSlop={6}
+    hitSlop={4}
     style={({ pressed }) => ({
-      width: 24, height: 24, borderRadius: 4,
+      width: 32, height: 32, borderRadius: 6,
       alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? hoverBg : 'transparent',
+      backgroundColor: pressed ? hoverBg : 'rgba(0,0,0,0.04)',
+      marginHorizontal: 1,
     })}
   >
-    <Text style={{ fontSize: 13, color, lineHeight: 16 }}>
+    <Text style={{ fontSize: 16, color, lineHeight: 20, includeFontPadding: false }}>
       {children}
     </Text>
   </Pressable>

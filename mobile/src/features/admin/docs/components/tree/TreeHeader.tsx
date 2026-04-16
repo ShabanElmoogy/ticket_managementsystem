@@ -42,31 +42,38 @@ const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder }) => {
         Documents
       </Text>
 
-      {/* CreateNewFolderIcon equivalent */}
+      {/* CreateNewFolderIcon equivalent — maximized */}
       <Pressable
         onPress={() => onAddFolder(null)}
-        hitSlop={6}
+        hitSlop={4}
         style={({ pressed }) => ({
-          width: 26, height: 26, borderRadius: 4,
+          width: 34, height: 34, borderRadius: 8,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: pressed ? hoverBg : 'transparent',
-          marginRight: 2,
+          backgroundColor: pressed
+            ? (isDark ? '#334155' : '#e2e8f0')
+            : (isDark ? '#1e293b' : '#f1f5f9'),
+          marginRight: 8,
         })}
       >
-        <Text style={{ fontSize: 14, color: textMuted }}>📁</Text>
+        <Text style={{ fontSize: 18, lineHeight: 22 }}>📁</Text>
       </Pressable>
 
-      {/* AddIcon equivalent */}
+      {/* Separator */}
+      <View style={{ width: 1, height: 18, backgroundColor: isDark ? '#334155' : '#e2e8f0', marginRight: 8 }} />
+
+      {/* AddIcon equivalent — maximized */}
       <Pressable
         onPress={() => onAddDoc(null)}
-        hitSlop={6}
+        hitSlop={4}
         style={({ pressed }) => ({
-          width: 26, height: 26, borderRadius: 4,
+          width: 34, height: 34, borderRadius: 8,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: pressed ? hoverBg : 'transparent',
+          backgroundColor: pressed
+            ? (isDark ? '#334155' : '#e2e8f0')
+            : (isDark ? '#1e293b' : '#f1f5f9'),
         })}
       >
-        <Text style={{ fontSize: 18, color: textMuted, lineHeight: 22 }}>+</Text>
+        <Text style={{ fontSize: 22, color: textMuted, lineHeight: 26 }}>+</Text>
       </Pressable>
     </View>
   );
