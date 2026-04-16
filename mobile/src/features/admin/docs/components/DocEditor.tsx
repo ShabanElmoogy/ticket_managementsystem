@@ -54,48 +54,72 @@ const BlockContainer: React.FC<{
   const [focused, setFocused] = useState(false);
   const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
 
-  const cardBg     = isDark ? '#1e293b' : '#ffffff';
+  // ── Dark mode: distinct layered grays ──────────────────────────────────────
+  // card bg:    #1e293b  (slate-800)
+  // toolbar bg: #273549  (between slate-800 and slate-700 — clearly different)
+  // btn bg:     #334155  (slate-700 — visible against toolbar)
+  // ── Light mode: clean whites ───────────────────────────────────────────────
+  // card bg:    #ffffff
+  // toolbar bg: #f1f5f9  (slate-100)
+  // btn bg:     #ffffff
+
+  const cardBg    = isDark ? '#1e293b' : '#ffffff';
+  const toolbarBg = isDark ? '#273549' : '#f1f5f9';
+  const btnBg     = isDark ? '#334155' : '#ffffff';
+  const btnBorder = isDark ? '#475569' : '#e2e8f0';
+  const btnText   = isDark ? '#cbd5e1' : '#64748b';
+  const divider   = isDark ? '#334155' : '#e9ecef';
   const cardBorder = focused
-    ? meta.color + '66'
-    : isDark ? '#334155' : '#e5e7eb';
+    ? meta.color + '88'
+    : isDark ? '#3d5068' : '#e2e8f0';
+
+  // Delete button — dark mode needs dark red bg, not light pink
+  const deleteBg     = isDark ? '#3b1515' : '#fef2f2';
+  const deleteBorder = isDark ? '#7f1d1d' : '#fecaca';
 
   return (
     <Pressable
       onPress={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={{
-        marginBottom: 8,
+        marginBottom: 10,
         borderRadius: 12,
         borderWidth: 1.5,
         borderColor: cardBorder,
         backgroundColor: cardBg,
         overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: isDark ? 0 : 0.06,
-        shadowRadius: 3,
-        elevation: isDark ? 0 : 2,
+        shadowOffset: { width: 0, height: isDark ? 2 : 1 },
+        shadowOpacity: isDark ? 0.3 : 0.06,
+        shadowRadius: isDark ? 6 : 3,
+        elevation: isDark ? 4 : 2,
       }}
     >
-      {/* ── Block header bar ── */}
+      {/* ── Block header toolbar ── */}
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 10,
-        paddingVertical: 6,
-        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+        paddingVertical: 7,
+        backgroundColor: toolbarBg,
         borderBottomWidth: 1,
-        borderBottomColor: isDark ? '#334155' : '#f1f5f9',
+        borderBottomColor: divider,
         gap: 6,
       }}>
-        {/* Type badge */}
+        {/* Type badge — stronger opacity in dark */}
         <View style={{
-          flexDirection: 'row', alignItems: 'center', gap: 4,
-          paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6,
-          backgroundColor: meta.color + '18',
+          flexDirection: 'row', alignItems: 'center', gap: 5,
+          paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+          backgroundColor: isDark ? meta.color + '30' : meta.color + '15',
+          borderWidth: 1,
+          borderColor: isDark ? meta.color + '55' : meta.color + '25',
         }}>
-          <Text style={{ fontSize: 11 }}>{meta.emoji}</Text>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: meta.color, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+          <Text style={{ fontSize: 12 }}>{meta.emoji}</Text>
+          <Text style={{
+            fontSize: 10, fontWeight: '800',
+            color: isDark ? meta.color : meta.color,
+            textTransform: 'uppercase', letterSpacing: 0.4,
+          }}>
             {meta.label}
           </Text>
         </View>
@@ -107,14 +131,15 @@ const BlockContainer: React.FC<{
           onPress={onMoveUp}
           disabled={index === 0}
           hitSlop={6}
-          style={{
-            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isDark ? '#1e293b' : '#fff',
+          style={({ pressed }) => ({
+            width: 28, height: 28, borderRadius: 7,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: pressed ? btnBorder : btnBg,
             opacity: index === 0 ? 0.3 : 1,
-            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
-          }}
+            borderWidth: 1, borderColor: btnBorder,
+          })}
         >
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 14 }}>↑</Text>
+          <Text style={{ fontSize: 13, color: btnText, lineHeight: 15 }}>↑</Text>
         </Pressable>
 
         {/* Move down */}
@@ -122,40 +147,43 @@ const BlockContainer: React.FC<{
           onPress={onMoveDown}
           disabled={index === total - 1}
           hitSlop={6}
-          style={{
-            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isDark ? '#1e293b' : '#fff',
+          style={({ pressed }) => ({
+            width: 28, height: 28, borderRadius: 7,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: pressed ? btnBorder : btnBg,
             opacity: index === total - 1 ? 0.3 : 1,
-            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
-          }}
+            borderWidth: 1, borderColor: btnBorder,
+          })}
         >
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 14 }}>↓</Text>
+          <Text style={{ fontSize: 13, color: btnText, lineHeight: 15 }}>↓</Text>
         </Pressable>
 
         {/* Duplicate */}
         <Pressable
           onPress={onDuplicate}
           hitSlop={6}
-          style={{
-            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            borderWidth: 1, borderColor: isDark ? '#334155' : '#e5e7eb',
-          }}
+          style={({ pressed }) => ({
+            width: 28, height: 28, borderRadius: 7,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: pressed ? btnBorder : btnBg,
+            borderWidth: 1, borderColor: btnBorder,
+          })}
         >
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>⧉</Text>
+          <Text style={{ fontSize: 13, color: btnText }}>⧉</Text>
         </Pressable>
 
         {/* Delete */}
         <Pressable
           onPress={onDelete}
           hitSlop={6}
-          style={{
-            width: 26, height: 26, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: '#fef2f2',
-            borderWidth: 1, borderColor: '#fecaca',
-          }}
+          style={({ pressed }) => ({
+            width: 28, height: 28, borderRadius: 7,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: pressed ? (isDark ? '#7f1d1d' : '#fee2e2') : deleteBg,
+            borderWidth: 1, borderColor: deleteBorder,
+          })}
         >
-          <Text style={{ fontSize: 12, color: '#ef4444' }}>✕</Text>
+          <Text style={{ fontSize: 13, color: isDark ? '#fca5a5' : '#ef4444' }}>✕</Text>
         </Pressable>
       </View>
 
