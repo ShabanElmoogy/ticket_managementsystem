@@ -14,12 +14,17 @@ const AppDrawerOverlay: React.FC = () => {
   const { user, logout }                                  = useAuthStore();
   const { colorMode, toggleColorMode, setDirection }      = useUiStore();
   const { isRtl }                                         = useDirection();
+  // Fallback: also read directly from store in case context isn't propagating
+  const storeDirection                                    = useUiStore((s) => s.direction);
+  const effectiveIsRtl                                    = isRtl || storeDirection === 'rtl';
   const router                                            = useRouter();
 
   if (!open || !user) return null;
 
   const isDark   = colorMode === 'dark';
   const drawerBg = isDark ? '#1e293b' : '#6366f1';
+
+  if (__DEV__) console.log('🗂️ Drawer isRtl:', isRtl, 'direction:', colorMode);
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(user.role ?? '')
@@ -46,21 +51,21 @@ const AppDrawerOverlay: React.FC = () => {
         onPress={() => setOpen(false)}
       />
 
-      {/* Panel — slides from left (LTR) or right (RTL) */}
+      {/* Panel — slides from right (RTL) or left (LTR) */}
       <View style={{
         position: 'absolute', top: 0, bottom: 0, width: 288,
         backgroundColor: drawerBg,
-        ...(isRtl ? { right: 0 } : { left: 0 }),
+        ...(effectiveIsRtl ? { right: 0 } : { left: 0 }),
       }}>
         <DrawerUserCard
           name={user.name}
           role={user.role}
           isDark={isDark}
-          isRtl={isRtl}
+          isRtl={effectiveIsRtl}
           onToggleTheme={toggleColorMode}
-          onToggleDir={() => setDirection(isRtl ? 'ltr' : 'rtl')}
+          onToggleDir={() => setDirection(effectiveIsRtl ? 'ltr' : 'rtl')}
         />
-        <DrawerNavList items={visibleItems} isRtl={isRtl} onNav={handleNav} />
+        <DrawerNavList items={visibleItems} isRtl={effectiveIsRtl} onNav={handleNav} />
       </View>
     </View>
   );

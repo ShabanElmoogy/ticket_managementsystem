@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, Pressable, TextInput,
   KeyboardAvoidingView, Platform, useWindowDimensions,
-  Animated, I18nManager,
+  Animated,
 } from 'react-native';
 import { useUiStore } from '../../../stores/uiStore';
+import { useDirection } from '../../../providers/DirectionProvider';
 import { useDocsStore, useCurrentDoc } from './hooks/useDocsStore';
 import DocTreeSidebar from './components/DocTreeSidebar';
 import DocEditor from './components/DocEditor';
@@ -78,9 +79,8 @@ const DocsScreen: React.FC = () => {
   const isDark = colorMode === 'dark';
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
-
+  const { isRtl: isRTL } = useDirection();   // ← reads from DirectionProvider
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isRTL = I18nManager.isRTL;
   const DRAWER_W = Math.min(260, width * 0.78);
   // RTL: panel anchors to right edge, hides by sliding right (+DRAWER_W)
   // LTR: panel anchors to left edge,  hides by sliding left  (-DRAWER_W)
