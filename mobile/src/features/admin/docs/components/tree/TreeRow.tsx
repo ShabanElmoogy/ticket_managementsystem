@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, TextInput, I18nManager } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import type { TreeNode, FolderNode, DocRefNode } from '../../types/types';
 import type { TreeSidebarProps } from './types';
 import { INDENT_PX } from './types';
 import IconPickerModal from './IconPickerModal';
 import IconBtn from './IconBtn';
+import { useDirection } from '../../../../../providers/DirectionProvider';
 
 interface Props {
   node: TreeNode;
@@ -26,6 +27,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
   const [renameVal, setRenameVal]   = useState(node.title);
   const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { isRtl } = useDirection();   // ← reads from DirectionProvider, not I18nManager
 
   const isDoc        = node.type === 'doc';
   const isFolder     = node.type === 'folder';
@@ -61,7 +63,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
     setRenaming(false);
   };
 
-  const isRTL = I18nManager.isRTL;
+  const isRTL = isRtl;
 
   // web: pl: 1.5 + depth*1.5 + 2.5 ≈ 12 + depth*12
   const rowPL = 12 + depth * INDENT_PX;
@@ -74,10 +76,11 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
           onPress={handlePress}
           onLongPress={startRename}
           style={({ pressed }) => ({
-            flexDirection: 'row',
+            flexDirection: isRTL ? 'row-reverse' : 'row',
             alignItems: 'center',
-            paddingStart: rowPL,
-            paddingEnd: 82,     // reserve space for buttons + separator
+            ...(isRTL
+              ? { paddingEnd: rowPL, paddingStart: 82 }
+              : { paddingStart: rowPL, paddingEnd: 82 }),
             paddingVertical: 5,
             marginHorizontal: 4,
             marginVertical: 1,
@@ -156,7 +159,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
               position: 'absolute',
               ...(isRTL ? { left: 4 } : { right: 4 }),
               top: 0, bottom: 0,
-              flexDirection: 'row',
+              flexDirection: isRTL ? 'row-reverse' : 'row',
               alignItems: 'center',
               backgroundColor: sidebarBg,
               borderRadius: 6,

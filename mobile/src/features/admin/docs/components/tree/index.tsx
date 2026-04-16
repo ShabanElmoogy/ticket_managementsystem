@@ -4,17 +4,26 @@ import type { TreeSidebarProps } from './types';
 import TreeHeader from './TreeHeader';
 import TreeRow from './TreeRow';
 import TreeEmpty from './TreeEmpty';
+import { useDirection } from '../../../../../providers/DirectionProvider';
 
 export type { TreeSidebarProps };
 
 const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
   const { isDark, tree } = props;
+  const { isRtl } = useDirection();
 
   const sidebarBg = isDark ? '#0f172a' : '#f8fafc';
   const borderC   = isDark ? '#1e293b' : '#e2e8f0';
 
   return (
-    <View style={{ flex: 1, backgroundColor: sidebarBg, borderRightWidth: 1, borderRightColor: borderC }}>
+    <View style={{
+      flex: 1,
+      backgroundColor: sidebarBg,
+      // Border on the correct side based on direction
+      ...(isRtl
+        ? { borderLeftWidth: 1, borderLeftColor: borderC }
+        : { borderRightWidth: 1, borderRightColor: borderC }),
+    }}>
 
       <TreeHeader
         isDark={isDark}

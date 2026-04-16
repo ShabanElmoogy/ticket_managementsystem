@@ -62,9 +62,6 @@ const AppHeaderBar: React.FC = () => {
           <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: getRoleColor(user.role), alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>{getInitials(user.name)}</Text>
           </View>
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }} numberOfLines={1}>
-            {user.name.split(' ')[0]}
-          </Text>
         </Pressable>
 
         {/* Hamburger */}
