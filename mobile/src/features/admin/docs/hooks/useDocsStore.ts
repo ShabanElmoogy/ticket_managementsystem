@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import type {
   BlockType, BlockSettings, DocBlock, Doc, TreeNode, FolderNode, DocRefNode,
   HeadingBlock, TextBlock, DividerBlock, ImageBlock, VideoBlock,
@@ -109,10 +110,7 @@ function deepCloneBlock(block: DocBlock): DocBlock {
 
 // ── Simple toast helper ───────────────────────────────────────────────────────
 
-import { Alert } from 'react-native';
-
 function showErrorToast(message: string): void {
-  // Use Alert for now — can be swapped for a toast library later
   Alert.alert('Error', message);
 }
 

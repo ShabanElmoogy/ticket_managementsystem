@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { BLOCK_META } from './blockMeta';
 import type { DocBlock } from '../../types/types';
+import AppDeleteDialog from '../../../../../shared/components/AppDeleteDialog';
 
 interface Props {
   block: DocBlock;
@@ -18,6 +19,7 @@ const BlockToolbar: React.FC<Props> = ({
   block, index, total, isDark,
   onMoveUp, onMoveDown, onDuplicate, onDelete,
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
 
   const toolbarBg = isDark ? '#273549' : '#f1f5f9';
@@ -57,53 +59,56 @@ const BlockToolbar: React.FC<Props> = ({
     </Pressable>
   );
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete block',
-      `Remove this ${meta.label} block? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ],
-    );
-  };
+  const handleDelete = () => setConfirmOpen(true);
 
   return (
-    <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 10,
-      paddingVertical: 7,
-      backgroundColor: toolbarBg,
-      borderBottomWidth: 1,
-      borderBottomColor: divider,
-      gap: 6,
-    }}>
-      {/* Type badge */}
+    <>
       <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 5,
-        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-        backgroundColor: isDark ? meta.color + '30' : meta.color + '15',
-        borderWidth: 1,
-        borderColor: isDark ? meta.color + '55' : meta.color + '25',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        backgroundColor: toolbarBg,
+        borderBottomWidth: 1,
+        borderBottomColor: divider,
+        gap: 6,
       }}>
-        <Text style={{ fontSize: 12 }}>{meta.emoji}</Text>
-        <Text style={{
-          fontSize: 12, fontWeight: '800',
-          color: meta.color,
-          textTransform: 'uppercase', letterSpacing: 0.4,
+        {/* Type badge */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', gap: 5,
+          paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+          backgroundColor: isDark ? meta.color + '30' : meta.color + '15',
+          borderWidth: 1,
+          borderColor: isDark ? meta.color + '55' : meta.color + '25',
         }}>
-          {meta.label}
-        </Text>
+          <Text style={{ fontSize: 12 }}>{meta.emoji}</Text>
+          <Text style={{
+            fontSize: 12, fontWeight: '800',
+            color: meta.color,
+            textTransform: 'uppercase', letterSpacing: 0.4,
+          }}>
+            {meta.label}
+          </Text>
+        </View>
+
+        <View style={{ flex: 1 }} />
+
+        {btn('↑', onMoveUp,     { disabled: index === 0 })}
+        {btn('↓', onMoveDown,   { disabled: index === total - 1 })}
+        {btn('⧉', onDuplicate)}
+        {btn('✕', handleDelete, { danger: true })}
       </View>
 
-      <View style={{ flex: 1 }} />
-
-      {btn('↑', onMoveUp,     { disabled: index === 0 })}
-      {btn('↓', onMoveDown,   { disabled: index === total - 1 })}
-      {btn('⧉', onDuplicate)}
-      {btn('✕', handleDelete, { danger: true })}
-    </View>
+      <AppDeleteDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => { setConfirmOpen(false); onDelete(); }}
+        title="Delete block"
+        message={`Remove this ${meta.label} block?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+      />
+    </>
   );
 };
 

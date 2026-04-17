@@ -4,88 +4,7 @@ Ordered by impact vs effort. Each item has a concrete implementation path.
 
 ---
 
-## 🔴 Quick Wins (< 1 day each)
-
----
-
-### 1. Deep clone on block duplicate
-
-**Problem:** `duplicateBlock` does a shallow `{ ...block, id: newId() }`. Nested IDs inside `tabs`, `videoCarousel`, `imageCarousel` are not regenerated — duplicated carousels share IDs with the original, causing state conflicts.
-
-**File:** `hooks/useDocsStore.ts` → `duplicateBlock`
-
-**Fix:**
-```ts
-function deepCloneBlock(block: DocBlock): DocBlock {
-  const clone = JSON.parse(JSON.stringify(block));
-  clone.id = newId();
-  // Regenerate nested IDs
-  if (clone.type === 'tabs')          clone.tabs    = clone.tabs.map((t: any)    => ({ ...t, id: newId() }));
-  if (clone.type === 'videoCarousel') clone.videos  = clone.videos.map((v: any)  => ({ ...v, id: newId() }));
-  if (clone.type === 'imageCarousel') clone.images  = clone.images.map((img: any) => ({ ...img, id: newId() }));
-  return clone;
-}
-```
-
----
-
-### 2. Insert block between blocks
-
-**Problem:** The "Add" palette only appends to the end. Users must add then move up repeatedly to insert in the middle.
-
-**File:** `components/editor/BlockContainer.tsx`
-
-**Fix:** Add a small **＋** button that appears between blocks on hover/press. Wire it to the existing `insertBlock(type, afterIndex)` store action. Show a mini block picker popover.
-
-```tsx
-// Between each block in DocEditor
-<Pressable onPress={() => setInsertAfter(index)}>
-  <Text>＋</Text>
-</Pressable>
-{insertAfter === index && (
-  <MiniBlockPicker onAdd={(type) => { insertBlock(type, index); setInsertAfter(null); }} />
-)}
-```
-
----
-
-### 3. Error toasts for API failures
-
-**Problem:** API errors (save, rename, delete) are silently logged. Users have no idea when operations fail.
-
-**File:** `hooks/useDocsStore.ts` — wrap all `await docsApi.*` calls
-
-**Fix:** Import a toast utility and call it in catch blocks:
-```ts
-addFolder: async (parentId) => {
-  try {
-    // ...existing code
-  } catch (e) {
-    showToast('Could not create folder. Please try again.', 'error');
-  }
-},
-```
-
----
-
-### 4. Search in tree sidebar
-
-**Problem:** No way to find a doc by name when the tree has many folders.
-
-**File:** `components/tree/DocTreeSidebar.tsx`
-
-**Fix:** Add a `TextInput` at the top of the sidebar. Filter the flat list of all `DocRefNode` items by title. Show results in a flat list, bypassing the folder hierarchy.
-
-```ts
-const allDocs = useMemo(() =>
-  collectAllDocs(tree).filter(n => n.title.toLowerCase().includes(query.toLowerCase())),
-  [tree, query]
-);
-```
-
----
-
-## 🟡 Medium Priority (1–3 days each)
+## � Medium Priority (1–3 days each)
 
 ---
 
@@ -283,7 +202,7 @@ socket.on('doc:block:update', ({ docId, blockId, patch }) => {
 ## Implementation Order
 
 ```
-Week 1 — Quick wins:
+Week 1 — Quick wins: ✅ DONE
   ✅ 1. Deep clone on duplicate
   ✅ 2. Insert block between blocks
   ✅ 3. Error toasts
