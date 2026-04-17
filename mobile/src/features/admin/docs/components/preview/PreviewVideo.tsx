@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Video, ResizeMode } from 'expo-av';
@@ -40,24 +40,9 @@ interface HostedVideoProps {
 }
 
 const HostedVideoPlayer: React.FC<HostedVideoProps> = ({ uri, width, height }) => {
-  const videoRef = useRef<Video>(null);
   const [ready, setReady] = useState(false);
 
-  // When uri changes, reload the player properly via the expo-av API
-  useEffect(() => {
-    setReady(false);
-    const reload = async () => {
-      if (!videoRef.current) return;
-      try {
-        await videoRef.current.unloadAsync();
-        await videoRef.current.loadAsync({ uri }, {}, false);
-      } catch (e) {
-        if (__DEV__) console.warn('HostedVideoPlayer reload error:', e);
-        setReady(true); // show player anyway
-      }
-    };
-    reload();
-  }, [uri]);
+  const ext = uri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'mp4';
 
   return (
     <View style={{ width, height, backgroundColor: '#000', borderRadius: 8, overflow: 'hidden' }}>
@@ -71,9 +56,10 @@ const HostedVideoPlayer: React.FC<HostedVideoProps> = ({ uri, width, height }) =
           <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 8 }}>Loading video…</Text>
         </View>
       )}
+      {/* key forces full remount when URI changes — avoids loadAsync extractor errors */}
       <Video
-        ref={videoRef}
-        source={{ uri }}
+        key={uri}
+        source={{ uri, overrideFileExtensionAndroid: ext }}
         style={{ width, height }}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}

@@ -1,7 +1,7 @@
 export type BlockType =
   | 'heading' | 'text' | 'divider' | 'image' | 'video'
   | 'bulletedList' | 'numberedList' | 'code' | 'quote' | 'callout'
-  | 'table' | 'toggle' | 'tabs' | 'videoCarousel' | 'imageCarousel';
+  | 'table' | 'toggle' | 'tabs' | 'videoCarousel' | 'imageCarousel' | 'pdf' | 'excel';
 
 export interface BlockSettings {
   align?: 'left' | 'center' | 'right';
@@ -37,10 +37,14 @@ export interface VideoCarouselBlock extends DocBlockBase { type: 'videoCarousel'
 export interface ImageItem { id: string; caption: string; url: string; }
 export interface ImageCarouselBlock extends DocBlockBase { type: 'imageCarousel'; images: ImageItem[]; }
 
+export interface PdfBlock   extends DocBlockBase { type: 'pdf';   url: string; name?: string; }
+export interface ExcelBlock extends DocBlockBase { type: 'excel'; url: string; name?: string; }
+
 export type DocBlock =
   | HeadingBlock | TextBlock | DividerBlock | ImageBlock | VideoBlock
   | BulletedListBlock | NumberedListBlock | CodeBlock | QuoteBlock | CalloutBlock
-  | TableBlock | ToggleBlock | TabsBlock | VideoCarouselBlock | ImageCarouselBlock;
+  | TableBlock | ToggleBlock | TabsBlock | VideoCarouselBlock | ImageCarouselBlock
+  | PdfBlock | ExcelBlock;
 
 export interface Doc {
   id: string;

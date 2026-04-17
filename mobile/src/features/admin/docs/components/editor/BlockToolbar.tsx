@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Alert } from 'react-native';
 import { BLOCK_META } from './blockMeta';
 import type { DocBlock } from '../../types/types';
 
@@ -57,6 +57,17 @@ const BlockToolbar: React.FC<Props> = ({
     </Pressable>
   );
 
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete block',
+      `Remove this ${meta.label} block? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: onDelete },
+      ],
+    );
+  };
+
   return (
     <View style={{
       flexDirection: 'row',
@@ -88,10 +99,10 @@ const BlockToolbar: React.FC<Props> = ({
 
       <View style={{ flex: 1 }} />
 
-      {btn('↑', onMoveUp,   { disabled: index === 0 })}
-      {btn('↓', onMoveDown, { disabled: index === total - 1 })}
+      {btn('↑', onMoveUp,     { disabled: index === 0 })}
+      {btn('↓', onMoveDown,   { disabled: index === total - 1 })}
       {btn('⧉', onDuplicate)}
-      {btn('✕', onDelete,   { danger: true })}
+      {btn('✕', handleDelete, { danger: true })}
     </View>
   );
 };

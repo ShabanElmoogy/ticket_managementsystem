@@ -12,4 +12,6 @@ export { default as ToggleEditor }          from './ToggleEditor';
 export { default as TabsEditor }            from './TabsEditor';
 export { default as VideoCarouselEditor }   from './VideoCarouselEditor';
 export { default as ImageCarouselEditor }   from './ImageCarouselEditor';
+export { default as PdfBlockEditor }        from './PdfBlockEditor';
+export { default as ExcelBlockEditor }      from './ExcelBlockEditor';
 export { default as DividerBlockView }      from './DividerBlockView';

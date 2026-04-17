@@ -4,7 +4,7 @@ import {
   HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, ImageBlockEditor,
   VideoBlockEditor, BulletedListEditor, NumberedListEditor, QuoteEditor,
   CalloutEditor, TableEditor, ToggleEditor, TabsEditor,
-  VideoCarouselEditor, ImageCarouselEditor, DividerBlockView,
+  VideoCarouselEditor, ImageCarouselEditor, PdfBlockEditor, ExcelBlockEditor, DividerBlockView,
 } from '../blockEditors';
 
 export function renderBlockEditor(
@@ -28,6 +28,8 @@ export function renderBlockEditor(
     case 'tabs':          return <TabsEditor            block={block} isDark={isDark} onChange={onChange as any} />;
     case 'videoCarousel': return <VideoCarouselEditor   block={block} isDark={isDark} onChange={onChange as any} />;
     case 'imageCarousel': return <ImageCarouselEditor   block={block} isDark={isDark} onChange={onChange as any} />;
+    case 'pdf':           return <PdfBlockEditor         block={block} isDark={isDark} onChange={onChange as any} />;
+    case 'excel':         return <ExcelBlockEditor        block={block} isDark={isDark} onChange={onChange as any} />;
     default:              return null;
   }
 }

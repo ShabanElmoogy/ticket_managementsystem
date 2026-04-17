@@ -15,4 +15,6 @@ export const BLOCK_META: Record<string, { label: string; emoji: string; color: s
   tabs:          { label: 'Tabs',          emoji: '⊟',    color: '#0ea5e9' },
   videoCarousel: { label: 'Video Carousel', emoji: '🎬',   color: '#ef4444' },
   imageCarousel: { label: 'Image Carousel', emoji: '🖼️',   color: '#ec4899' },
+  pdf:           { label: 'PDF',            emoji: '📄',   color: '#dc2626' },
+  excel:         { label: 'Excel',          emoji: '📊',   color: '#16a34a' },
 };

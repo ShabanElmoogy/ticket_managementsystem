@@ -48,6 +48,39 @@ const imageUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
+// ── PDF upload ────────────────────────────────────────────────────────────────
+const pdfUpload = multer({
+  storage,
+  fileFilter: (_req, file, cb) => {
+    file.mimetype === 'application/pdf'
+      ? cb(null, true)
+      : cb(new Error(`Only PDF files are allowed`), false);
+  },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+});
+
+// ── Excel / spreadsheet upload ────────────────────────────────────────────────
+const ALLOWED_EXCEL_TYPES = [
+  'application/vnd.ms-excel',                                          // .xls
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'text/csv',                                                          // .csv
+  'application/csv',
+  'text/plain',                                                        // some .csv uploads
+];
+
+const excelUpload = multer({
+  storage,
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowed = ALLOWED_EXCEL_TYPES.includes(file.mimetype)
+      || ['.xls', '.xlsx', '.csv'].includes(ext);
+    allowed
+      ? cb(null, true)
+      : cb(new Error(`Only Excel/CSV files are allowed`), false);
+  },
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+});
+
 // ── Multer error wrapper ──────────────────────────────────────────────────────
 // Multer errors bypass the controller's try/catch and return HTML by default.
 // This wrapper catches them and returns proper JSON so the mobile client
@@ -87,6 +120,18 @@ router.delete('/media', authenticateToken, deleteMedia);
 router.post('/image',
   authenticateToken,
   withMulter(imageUpload.single('file'), uploadMedia),
+);
+
+// POST /uploads/pdf  — single PDF upload
+router.post('/pdf',
+  authenticateToken,
+  withMulter(pdfUpload.single('file'), uploadMedia),
+);
+
+// POST /uploads/excel  — single Excel/CSV upload
+router.post('/excel',
+  authenticateToken,
+  withMulter(excelUpload.single('file'), uploadMedia),
 );
 
 export default router;

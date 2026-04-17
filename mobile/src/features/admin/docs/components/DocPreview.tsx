@@ -5,7 +5,7 @@ import {
   PreviewHeading, PreviewText, PreviewDivider, PreviewImage, PreviewVideo,
   PreviewBulletedList, PreviewNumberedList, PreviewCode, PreviewQuote,
   PreviewCallout, PreviewTable, PreviewToggle, PreviewTabs,
-  PreviewVideoCarousel, PreviewImageCarousel, getPreviewColors,
+  PreviewVideoCarousel, PreviewImageCarousel, PreviewPdf, PreviewExcel, getPreviewColors,
 } from './preview';
 
 interface Props { blocks: DocBlock[]; isDark: boolean; }
@@ -80,6 +80,14 @@ const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
             isDark={isDark}
             colors={colors}
           />
+        );
+      case 'pdf':
+        return (
+          <PreviewPdf key={block.id} block={block as any} isDark={isDark} colors={colors} />
+        );
+      case 'excel':
+        return (
+          <PreviewExcel key={block.id} block={block as any} isDark={isDark} colors={colors} />
         );
       default:
         return null;

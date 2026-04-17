@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, Pressable, useWindowDimensions, ActivityIndicator,
 } from 'react-native';
@@ -39,23 +39,10 @@ function resolveUrl(url: string): string {
 // Single hosted video player — isolated so state resets on URL change
 // ─────────────────────────────────────────────────────────────────────────────
 const HostedPlayer: React.FC<{ uri: string; width: number; height: number }> = ({ uri, width, height }) => {
-  const videoRef = useRef<Video>(null);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    setReady(false);
-    const reload = async () => {
-      if (!videoRef.current) return;
-      try {
-        await videoRef.current.unloadAsync();
-        await videoRef.current.loadAsync({ uri }, {}, false);
-      } catch (e) {
-        if (__DEV__) console.warn('HostedPlayer reload error:', e);
-        setReady(true);
-      }
-    };
-    reload();
-  }, [uri]);
+  // Extract file extension for Android ExoPlayer hint
+  const ext = uri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'mp4';
 
   return (
     <View style={{ width, height, backgroundColor: '#000' }}>
@@ -68,16 +55,20 @@ const HostedPlayer: React.FC<{ uri: string; width: number; height: number }> = (
           <Text style={{ color: '#94a3b8', fontSize: 11, marginTop: 6 }}>Loading…</Text>
         </View>
       )}
+      {/* key forces full remount when URI changes — avoids loadAsync extractor errors */}
       <Video
-        ref={videoRef}
-        source={{ uri }}
+        key={uri}
+        source={{ uri, overrideFileExtensionAndroid: ext }}
         style={{ width, height }}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}
         shouldPlay={false}
         onReadyForDisplay={() => setReady(true)}
         onLoad={() => setReady(true)}
-        onError={() => setReady(true)}
+        onError={(e) => {
+          if (__DEV__) console.warn('HostedPlayer error:', uri, e);
+          setReady(true);
+        }}
       />
     </View>
   );

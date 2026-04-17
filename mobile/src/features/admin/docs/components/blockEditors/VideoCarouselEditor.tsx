@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable,
   ActivityIndicator, Alert, useWindowDimensions,
@@ -98,7 +98,6 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
   const [uploading, setUploading] = useState(false);
   const [playing, setPlaying]   = useState(false);
   const [embedError, setEmbedError] = useState(false);
-  const videoRef = useRef<Video>(null);
   const { width } = useWindowDimensions();
 
   const playerWidth  = width - 96;
@@ -112,21 +111,6 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
 
   const youtubeId   = item.url ? getYouTubeId(item.url) : null;
   const hostedVideo = item.url ? isHostedVideo(item.url) : false;
-
-  // Reload expo-av when hosted URL changes
-  useEffect(() => {
-    if (!hostedVideo || !item.url) return;
-    const reload = async () => {
-      if (!videoRef.current) return;
-      try {
-        await videoRef.current.unloadAsync();
-        await videoRef.current.loadAsync({ uri: resolveUrl(item.url) }, {}, false);
-      } catch (e) {
-        if (__DEV__) console.warn('VideoCard reload error:', e);
-      }
-    };
-    reload();
-  }, [item.url]);
 
   const handleUpload = async (uri: string, mimeType: string, filename: string) => {
     setUploading(true);
@@ -373,7 +357,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
           ) : hostedVideo ? (
             <View style={{ borderRadius: 8, overflow: 'hidden', backgroundColor: '#000' }}>
               <Video
-                ref={videoRef}
+                key={resolveUrl(item.url)}
                 source={{ uri: resolveUrl(item.url) }}
                 style={{ width: playerWidth, height: playerHeight }}
                 useNativeControls

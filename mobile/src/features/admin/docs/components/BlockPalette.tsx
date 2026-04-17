@@ -20,6 +20,8 @@ const BLOCK_TYPES: BlockDef[] = [
   { type: 'divider',       icon: '—',    label: 'Divider',     color: '#94a3b8' },
   { type: 'videoCarousel', icon: '🎬',   label: 'Vid Carousel', color: '#ef4444', isEmoji: true },
   { type: 'imageCarousel', icon: '🖼️',   label: 'Img Carousel', color: '#ec4899', isEmoji: true },
+  { type: 'pdf',           icon: '📄',   label: 'PDF',          color: '#dc2626', isEmoji: true },
+  { type: 'excel',         icon: '📊',   label: 'Excel',        color: '#16a34a', isEmoji: true },
 ];
 
 interface Props {

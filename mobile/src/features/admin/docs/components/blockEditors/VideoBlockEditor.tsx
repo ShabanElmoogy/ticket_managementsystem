@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, useWindowDimensions,
   Linking, Alert, ActivityIndicator,
@@ -115,28 +115,12 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const [playing, setPlaying]   = useState(false);
   const [embedError, setEmbedError] = useState(false);
   const [uploading, setUploading]   = useState(false);
-  const videoRef = useRef<Video>(null);
 
   const playerWidth  = width - 80;
   const playerHeight = Math.round(playerWidth * 9 / 16);
   const youtubeId    = block.url ? getYouTubeId(block.url) : null;
   const hostedVideo  = block.url ? isHostedVideo(block.url) : false;
   const localVideo   = block.url ? isLocalUri(block.url) : false;
-
-  // Reload expo-av player when hosted URL changes
-  useEffect(() => {
-    if (!hostedVideo || !block.url) return;
-    const reload = async () => {
-      if (!videoRef.current) return;
-      try {
-        await videoRef.current.unloadAsync();
-        await videoRef.current.loadAsync({ uri: resolveUrl(block.url!) }, {}, false);
-      } catch (e) {
-        if (__DEV__) console.warn('VideoBlockEditor reload error:', e);
-      }
-    };
-    reload();
-  }, [block.url]);
 
   // ── Colors ────────────────────────────────────────────────────────────────
   const bg       = isDark ? '#1e293b' : '#f8fafc';
@@ -433,8 +417,8 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           // Hosted video — play with expo-av using the full URL
           <View style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' }}>
             <Video
-              ref={videoRef}
-              source={{ uri: resolveUrl(block.url) }}
+              key={resolveUrl(block.url)}
+              source={{ uri: resolveUrl(block.url), overrideFileExtensionAndroid: resolveUrl(block.url).split('?')[0].split('.').pop()?.toLowerCase() ?? 'mp4' }}
               style={{ width: playerWidth, height: playerHeight }}
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
@@ -445,10 +429,10 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             />
           </View>
         ) : localVideo ? (
-          // Fallback: local URI (shouldn't normally reach here after upload)
+          // Fallback: local URI
           <View style={{ borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' }}>
             <Video
-              ref={videoRef}
+              key={block.url}
               source={{ uri: block.url }}
               style={{ width: playerWidth, height: playerHeight }}
               useNativeControls
