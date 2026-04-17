@@ -38,7 +38,9 @@ export const http = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-const refreshClient = axios.create({
+// Bare client — NO interceptors. Used only for token refresh calls
+// to prevent the 401 handler from re-entering and causing infinite loops.
+export const refreshClient = axios.create({
   baseURL: BASE_URL,
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
@@ -80,14 +82,31 @@ export function startTokenRefreshCycle(token: string): void {
 
   refreshTimer = setTimeout(async () => {
     try {
+      if (__DEV__) console.log('🔄 [REFRESH] Starting proactive token refresh...');
       const { newToken, newRefreshToken } = await callRefreshEndpoint();
       applyNewTokens(newToken, newRefreshToken);
       startTokenRefreshCycle(newToken); // reschedule for the new token
-      if (__DEV__) console.log('✅ Token proactively refreshed');
-    } catch (err) {
-      // Proactive refresh failed — do NOT logout here.
-      // The reactive 401 interceptor below will handle the next failed request.
-      if (__DEV__) console.warn('⚠️ Proactive refresh failed:', err);
+      if (__DEV__) {
+        const exp = getTokenExp(newToken);
+        const expiresIn = exp ? Math.round((exp - Date.now() / 1000) / 60) : 0;
+        console.log(`✅ [REFRESH] Token proactively refreshed. New token expires in ${expiresIn}m`);
+      }
+    } catch (err: any) {
+      // Proactive refresh failed
+      if (__DEV__) {
+        console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
+        console.warn('   Status:', err?.response?.status ?? err?.status);
+        console.warn('   Data:', JSON.stringify(err?.response?.data ?? err?.details));
+      }
+      // If refresh token is expired/revoked (401), logout the user
+      const status = err?.response?.status ?? err?.status;
+      if (status === 401) {
+        if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
+        import('../../stores/authStore')
+          .then(({ useAuthStore }) => useAuthStore.getState().logout())
+          .catch(() => {});
+      }
+      // Otherwise (network error etc.) — do NOT logout, let reactive 401 handle it
     }
   }, msUntilRefresh);
 }
@@ -168,12 +187,15 @@ http.interceptors.request.use((config) => {
   );
 
   if (__DEV__) {
-    const auth = config.headers.get('Authorization') as string | null;
-    const slug = config.headers.get('X-Tenant-Slug') as string | null;
+    const auth    = config.headers.get('Authorization') as string | null;
+    const slug    = config.headers.get('X-Tenant-Slug') as string | null;
+    const reqId   = config.headers.get('X-Request-ID') as string | null;
     const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
-    console.log(`📤 ${config.method?.toUpperCase()} ${fullUrl}`);
-    console.log(`   Auth: ${auth ? '✅ Bearer ' + auth.slice(7, 30) + '...' : '❌ MISSING'}`);
-    console.log(`   Slug: ${slug ?? '❌ MISSING'}`);
+    const method  = (config.method ?? 'GET').toUpperCase().padEnd(6);
+    console.log(
+      `📤 [${reqId?.slice(-6)}] ${method} ${fullUrl}\n` +
+      `   Auth: ${auth ? '✅' : '❌ MISSING'} | Slug: ${slug ?? '❌ MISSING'}`
+    );
   }
 
   return config;
@@ -202,7 +224,15 @@ function drainQueue(error: ApiError | null, token: string | null = null): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (__DEV__) {
+      const reqId  = response.config.headers?.['X-Request-ID'] as string | null;
+      const method = (response.config.method ?? 'GET').toUpperCase().padEnd(6);
+      const url    = response.config.url ?? '';
+      console.log(`✅ [${reqId?.slice(-6)}] ${method} ${url} → ${response.status}`);
+    }
+    return response;
+  },
 
   async (error: AxiosError) => {
     const originalConfig = error.config as RetryableRequestConfig | undefined;
@@ -255,7 +285,11 @@ http.interceptors.response.use(
         applyNewTokens(newToken, newRefreshToken);
         startTokenRefreshCycle(newToken);
 
-        if (__DEV__) console.log('✅ Token reactively refreshed after 401');
+        if (__DEV__) {
+          const exp = getTokenExp(newToken);
+          const expiresIn = exp ? Math.round((exp - Date.now() / 1000) / 60) : 0;
+          console.log(`✅ [REFRESH] Token reactively refreshed after 401. Expires in ${expiresIn}m`);
+        }
 
         // Unblock every queued request — they re-enter via request interceptor
         // which reads the fresh token from tokenManager.

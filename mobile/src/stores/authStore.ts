@@ -191,7 +191,46 @@ export const useAuthStore = create<AuthState>()(
 
           if (__DEV__) console.log('🔑 tokenManager ready, token:', token.slice(0, 20) + '...');
 
-          // Start proactive refresh cycle
+          const expiresIn = getTokenExpiresIn(token);
+
+          if (expiresIn <= 0 && refreshToken) {
+            // Token already expired — use the bare refreshClient (no interceptors)
+            // to avoid the 401 handler firing and causing a loop
+            if (__DEV__) console.log('⏰ Token expired on cold start, refreshing...');
+            try {
+              const { refreshClient } = await import('../services/api/httpClient');
+              const response = await refreshClient.post<{ token: string; refreshToken: string }>(
+                '/auth/refresh', { refreshToken }
+              );
+              const newToken        = response.data.token;
+              const newRefreshToken = response.data.refreshToken;
+              tokenManager.setToken(newToken);
+              tokenManager.setRefreshToken(newRefreshToken);
+              startTokenRefreshCycle(newToken);
+              const newPayload = decodeToken(newToken);
+              set({
+                token: newToken,
+                refreshToken: newRefreshToken,
+                user: get().user ?? (newPayload ? buildUserFromPayload(newPayload) : null),
+                isAuthenticated: true,
+                isLoading: false,
+              });
+              if (__DEV__) {
+                const logPayload = decodeToken(newToken);
+                const mins = logPayload ? Math.round((logPayload.exp - Date.now() / 1000) / 60) : 0;
+                console.log(`✅ [REFRESH] Cold start token refreshed. Expires in ${mins}m`);
+              }
+              return;
+            } catch (refreshErr: any) {
+              if (__DEV__) console.warn('❌ Cold start refresh failed:', refreshErr?.response?.data ?? refreshErr?.message);
+              tokenManager.clear();
+              stopTokenRefreshCycle();
+              set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
+              return;
+            }
+          }
+
+          // Token still valid — start proactive refresh cycle
           startTokenRefreshCycle(token);
 
           // Restore session

@@ -22,6 +22,7 @@ import epicRoutes from './epics/epics.routes.js';
 import epicTemplateRoutes from './epicTemplates/epicTemplates.routes.js';
 
 import attachmentRoutes from './attachments/attachments.routes.js';
+import uploadsRoutes from './uploads/uploads.routes.js';
 
 const router = express.Router();
 
@@ -46,5 +47,6 @@ router.use('/epics', epicRoutes);
 router.use('/epic-templates', epicTemplateRoutes);
 router.use('/documents', docRoutes);
 router.use('/docsbuilder', docBuilderRoutes);
+router.use('/uploads', uploadsRoutes);
 
 export default router;
