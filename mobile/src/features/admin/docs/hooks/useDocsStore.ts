@@ -88,6 +88,34 @@ function makeBlock(type: BlockType): DocBlock {
   }
 }
 
+// ── Deep clone helper — regenerates all nested IDs ───────────────────────────
+
+function deepCloneBlock(block: DocBlock): DocBlock {
+  // Deep copy via JSON to avoid shared references
+  const clone = JSON.parse(JSON.stringify(block)) as DocBlock;
+  clone.id = newId();
+  // Regenerate nested IDs for container blocks
+  if (clone.type === 'tabs') {
+    (clone as any).tabs = (clone as any).tabs.map((t: any) => ({ ...t, id: newId() }));
+  }
+  if (clone.type === 'videoCarousel') {
+    (clone as any).videos = (clone as any).videos.map((v: any) => ({ ...v, id: newId() }));
+  }
+  if (clone.type === 'imageCarousel') {
+    (clone as any).images = (clone as any).images.map((img: any) => ({ ...img, id: newId() }));
+  }
+  return clone;
+}
+
+// ── Simple toast helper ───────────────────────────────────────────────────────
+
+import { Alert } from 'react-native';
+
+function showErrorToast(message: string): void {
+  // Use Alert for now — can be swapped for a toast library later
+  Alert.alert('Error', message);
+}
+
 // ── Folder icon persistence (AsyncStorage) ────────────────────────────────────
 
 const ICONS_KEY = 'docs_folder_icons';
@@ -151,14 +179,18 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   // ── Init ──────────────────────────────────────────────────────────────────
 
   loadAll: async () => {
-    const [rawDocs, rawTree, icons] = await Promise.all([
-      docsApi.loadDocs(),
-      docsApi.loadTree(),
-      loadFolderIcons(),
-    ]);
-    const docs = (rawDocs ?? []).map((d) => ({ ...d, blocks: parseBlocks(d.blocks) }));
-    const tree = applyIcons(buildTree(rawTree ?? []), icons);
-    set({ docs, tree });
+    try {
+      const [rawDocs, rawTree, icons] = await Promise.all([
+        docsApi.loadDocs(),
+        docsApi.loadTree(),
+        loadFolderIcons(),
+      ]);
+      const docs = (rawDocs ?? []).map((d) => ({ ...d, blocks: parseBlocks(d.blocks) }));
+      const tree = applyIcons(buildTree(rawTree ?? []), icons);
+      set({ docs, tree });
+    } catch {
+      showErrorToast('Could not load documents. Check your connection.');
+    }
   },
 
   // ── Block operations ──────────────────────────────────────────────────────
@@ -240,7 +272,7 @@ export const useDocsStore = create<DocsState>((set, get) => ({
         if (d.id !== currentDocId) return d;
         const idx = d.blocks.findIndex((b) => b.id === id);
         if (idx === -1) return d;
-        const clone = { ...d.blocks[idx], id: newId() };
+        const clone = deepCloneBlock(d.blocks[idx]);
         const blocks = [...d.blocks];
         blocks.splice(idx + 1, 0, clone);
         return { ...d, blocks };
@@ -288,32 +320,44 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   // ── Tree operations ───────────────────────────────────────────────────────
 
   addFolder: async (parentId) => {
-    const node = await docsApi.createFolder('New Folder', parentId);
-    const newFolder: FolderNode = { id: node.id, type: 'folder', title: node.title, children: [] };
-    set((s) => ({ tree: insertChild(s.tree, parentId, newFolder) }));
+    try {
+      const node = await docsApi.createFolder('New Folder', parentId);
+      const newFolder: FolderNode = { id: node.id, type: 'folder', title: node.title, children: [] };
+      set((s) => ({ tree: insertChild(s.tree, parentId, newFolder) }));
+    } catch {
+      showErrorToast('Could not create folder. Please try again.');
+    }
   },
 
   addDocUnder: async (parentId) => {
-    const doc  = await docsApi.createDoc('Untitled', []);
-    const node = await docsApi.createDocNode(doc.title, parentId, doc.id);
-    const docRef: DocRefNode = { id: node.id, type: 'doc', title: doc.title, docId: doc.id };
-    set((s) => ({
-      docs: [...s.docs, { ...doc, blocks: [] }],
-      tree: insertChild(s.tree, parentId, docRef),
-      currentDocId: doc.id,
-      selectedTreeId: node.id,
-    }));
+    try {
+      const doc  = await docsApi.createDoc('Untitled', []);
+      const node = await docsApi.createDocNode(doc.title, parentId, doc.id);
+      const docRef: DocRefNode = { id: node.id, type: 'doc', title: doc.title, docId: doc.id };
+      set((s) => ({
+        docs: [...s.docs, { ...doc, blocks: [] }],
+        tree: insertChild(s.tree, parentId, docRef),
+        currentDocId: doc.id,
+        selectedTreeId: node.id,
+      }));
+    } catch {
+      showErrorToast('Could not create document. Please try again.');
+    }
   },
 
   renameNode: async (id, newTitle) => {
-    await docsApi.renameNode(id, newTitle);
-    set((s) => ({
-      tree: mapTree(s.tree, (n) => (n.id === id ? { ...n, title: newTitle } : n)),
-      docs: s.docs.map((d) => {
-        const node = s.tree.find((n) => n.type === 'doc' && (n as DocRefNode).docId === d.id);
-        return node?.id === id ? { ...d, title: newTitle } : d;
-      }),
-    }));
+    try {
+      await docsApi.renameNode(id, newTitle);
+      set((s) => ({
+        tree: mapTree(s.tree, (n) => (n.id === id ? { ...n, title: newTitle } : n)),
+        docs: s.docs.map((d) => {
+          const node = s.tree.find((n) => n.type === 'doc' && (n as DocRefNode).docId === d.id);
+          return node?.id === id ? { ...d, title: newTitle } : d;
+        }),
+      }));
+    } catch {
+      showErrorToast('Could not rename. Please try again.');
+    }
   },
 
   deleteNodeAndDocs: async (id) => {
@@ -321,14 +365,18 @@ export const useDocsStore = create<DocsState>((set, get) => ({
     const node = findNode(tree, id);
     if (!node) return;
     const docIds = collectDocIds(node);
-    await docsApi.deleteNode(id);
-    const { nodes: newTree } = removeNode(tree, id);
-    set((s) => ({
-      tree: newTree,
-      docs: s.docs.filter((d) => !docIds.includes(d.id)),
-      currentDocId: docIds.includes(s.currentDocId ?? '') ? null : s.currentDocId,
-      selectedTreeId: s.selectedTreeId === id ? null : s.selectedTreeId,
-    }));
+    try {
+      await docsApi.deleteNode(id);
+      const { nodes: newTree } = removeNode(tree, id);
+      set((s) => ({
+        tree: newTree,
+        docs: s.docs.filter((d) => !docIds.includes(d.id)),
+        currentDocId: docIds.includes(s.currentDocId ?? '') ? null : s.currentDocId,
+        selectedTreeId: s.selectedTreeId === id ? null : s.selectedTreeId,
+      }));
+    } catch {
+      showErrorToast('Could not delete. Please try again.');
+    }
   },
 
   toggleExpand: (id) =>
