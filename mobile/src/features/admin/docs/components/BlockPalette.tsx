@@ -18,7 +18,8 @@ const BLOCK_TYPES: BlockDef[] = [
   { type: 'toggle',        icon: '▸',    label: 'Toggle',      color: '#64748b' },
   { type: 'tabs',          icon: '⊟',    label: 'Tabs',        color: '#0ea5e9' },
   { type: 'divider',       icon: '—',    label: 'Divider',     color: '#94a3b8' },
-  { type: 'videoCarousel', icon: '🎬',   label: 'Carousel',    color: '#ef4444', isEmoji: true },
+  { type: 'videoCarousel', icon: '🎬',   label: 'Vid Carousel', color: '#ef4444', isEmoji: true },
+  { type: 'imageCarousel', icon: '🖼️',   label: 'Img Carousel', color: '#ec4899', isEmoji: true },
 ];
 
 interface Props {

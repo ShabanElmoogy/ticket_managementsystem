@@ -13,5 +13,6 @@ export const BLOCK_META: Record<string, { label: string; emoji: string; color: s
   table:         { label: 'Table',         emoji: '⊞',    color: '#0ea5e9' },
   toggle:        { label: 'Toggle',        emoji: '▸',    color: '#64748b' },
   tabs:          { label: 'Tabs',          emoji: '⊟',    color: '#0ea5e9' },
-  videoCarousel: { label: 'Carousel',      emoji: '🎬',   color: '#ef4444' },
+  videoCarousel: { label: 'Video Carousel', emoji: '🎬',   color: '#ef4444' },
+  imageCarousel: { label: 'Image Carousel', emoji: '🖼️',   color: '#ec4899' },
 };

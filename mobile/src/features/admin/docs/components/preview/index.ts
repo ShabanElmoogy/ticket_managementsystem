@@ -12,4 +12,5 @@ export { default as PreviewTable }         from './PreviewTable';
 export { default as PreviewToggle }        from './PreviewToggle';
 export { default as PreviewTabs }          from './PreviewTabs';
 export { default as PreviewVideoCarousel } from './PreviewVideoCarousel';
+export { default as PreviewImageCarousel } from './PreviewImageCarousel';
 export { getPreviewColors }                from './previewUtils';

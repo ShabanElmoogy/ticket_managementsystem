@@ -5,7 +5,7 @@ import {
   PreviewHeading, PreviewText, PreviewDivider, PreviewImage, PreviewVideo,
   PreviewBulletedList, PreviewNumberedList, PreviewCode, PreviewQuote,
   PreviewCallout, PreviewTable, PreviewToggle, PreviewTabs,
-  PreviewVideoCarousel, getPreviewColors,
+  PreviewVideoCarousel, PreviewImageCarousel, getPreviewColors,
 } from './preview';
 
 interface Props { blocks: DocBlock[]; isDark: boolean; }
@@ -13,7 +13,6 @@ interface Props { blocks: DocBlock[]; isDark: boolean; }
 const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
   const [openToggles,  setOpenToggles]  = useState<Record<string, boolean>>({});
   const [activeTabs,   setActiveTabs]   = useState<Record<string, number>>({});
-  const [carouselIdx,  setCarouselIdx]  = useState<Record<string, number>>({});
 
   const colors = getPreviewColors(isDark);
 
@@ -64,20 +63,24 @@ const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
           />
         );
       }
-      case 'videoCarousel': {
-        const idx = carouselIdx[block.id] ?? 0;
-        const total = (block as any).videos?.length ?? 0;
+      case 'videoCarousel':
         return (
           <PreviewVideoCarousel
             key={block.id}
             block={block as any}
+            isDark={isDark}
             colors={colors}
-            idx={idx}
-            onPrev={() => setCarouselIdx((s) => ({ ...s, [block.id]: Math.max(0, idx - 1) }))}
-            onNext={() => setCarouselIdx((s) => ({ ...s, [block.id]: Math.min(total - 1, idx + 1) }))}
           />
         );
-      }
+      case 'imageCarousel':
+        return (
+          <PreviewImageCarousel
+            key={block.id}
+            block={block as any}
+            isDark={isDark}
+            colors={colors}
+          />
+        );
       default:
         return null;
     }

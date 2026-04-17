@@ -198,6 +198,26 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     }
   };
 
+  const handleRecordVideo = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow access to your camera.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['videos'],
+      allowsEditing: false,
+      videoMaxDuration: 300, // 5 min max
+      quality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const filename = `video_${Date.now()}.mp4`;
+      const mimeType = asset.mimeType ?? 'video/mp4';
+      await handleUpload(asset.uri, mimeType, filename);
+    }
+  };
+
   const handleClear = () => {
     // Delete hosted video from server when user explicitly clears it
     if (block.url && isHostedVideo(block.url)) {
@@ -295,6 +315,20 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
               >
                 <Text style={{ fontSize: 18 }}>🎞️</Text>
                 <Text style={{ fontSize: 13, color: '#fff', fontWeight: '600' }}>Gallery</Text>
+              </Pressable>
+
+              {/* Camera */}
+              <Pressable
+                onPress={handleRecordVideo}
+                style={({ pressed }) => ({
+                  flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  gap: 6, paddingVertical: 12, borderRadius: 10,
+                  borderWidth: 1.5, borderColor: '#3b82f6',
+                  backgroundColor: pressed ? (isDark ? '#1e3a5f' : '#eff6ff') : 'transparent',
+                })}
+              >
+                <Text style={{ fontSize: 18 }}>📹</Text>
+                <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: '600' }}>Camera</Text>
               </Pressable>
 
               {/* Files */}

@@ -20,7 +20,10 @@ const storage = multer.diskStorage({
 });
 
 // ── Video upload ──────────────────────────────────────────────────────────────
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg'];
+const ALLOWED_VIDEO_TYPES = [
+  'video/mp4', 'video/webm', 'video/quicktime',
+  'video/x-msvideo', 'video/mpeg', 'video/3gpp',
+];
 
 const videoUpload = multer({
   storage,
@@ -29,7 +32,7 @@ const videoUpload = multer({
       ? cb(null, true)
       : cb(new Error(`File type not allowed: ${file.mimetype}`), false);
   },
-  limits: { fileSize: 100 * 1024 * 1024, files: 1 }, // 100 MB
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB — no files limit, single() handles that
 });
 
 // ── Image upload ──────────────────────────────────────────────────────────────
@@ -42,16 +45,48 @@ const imageUpload = multer({
       ? cb(null, true)
       : cb(new Error(`File type not allowed: ${file.mimetype}`), false);
   },
-  limits: { fileSize: 10 * 1024 * 1024, files: 1 }, // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
+
+// ── Multer error wrapper ──────────────────────────────────────────────────────
+// Multer errors bypass the controller's try/catch and return HTML by default.
+// This wrapper catches them and returns proper JSON so the mobile client
+// can parse the error message.
+function withMulter(multerMiddleware, handler) {
+  return (req, res, next) => {
+    multerMiddleware(req, res, (err) => {
+      if (err) {
+        // MulterError (file too large, unexpected field, etc.)
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(413).json({ error: 'File too large' });
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return res.status(400).json({ error: 'Unexpected file field' });
+        }
+        // fileFilter rejection or other multer error
+        return res.status(400).json({ error: err.message || 'Upload error' });
+      }
+      // No multer error — run the actual controller
+      return handler(req, res, next);
+    });
+  };
+}
 
 router.use(resolveTenant);
 
-// POST /uploads/media  — video
-router.post('/media', authenticateToken, videoUpload.single('file'), uploadMedia);
-// DELETE /uploads/media — video or image
+// POST /uploads/media  — single video upload
+router.post('/media',
+  authenticateToken,
+  withMulter(videoUpload.single('file'), uploadMedia),
+);
+
+// DELETE /uploads/media — delete video or image by URL
 router.delete('/media', authenticateToken, deleteMedia);
-// POST /uploads/image  — image
-router.post('/image', authenticateToken, imageUpload.single('file'), uploadMedia);
+
+// POST /uploads/image  — single image upload
+router.post('/image',
+  authenticateToken,
+  withMulter(imageUpload.single('file'), uploadMedia),
+);
 
 export default router;
