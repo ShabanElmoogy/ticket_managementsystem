@@ -134,6 +134,25 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     }
   };
 
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow access to your camera.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const filename = `photo_${Date.now()}.jpg`;
+      const mimeType = asset.mimeType ?? 'image/jpeg';
+      await handleUpload(asset.uri, mimeType, filename);
+    }
+  };
+
   const handleClear = () => {
     if (block.url?.startsWith('/uploads/')) deleteImageFromServer(block.url);
     onChange({ url: '' });
@@ -210,19 +229,36 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
               </Text>
             </View>
           ) : (
-            <Pressable
-              onPress={handlePickFromGallery}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                gap: 8, paddingVertical: 14, borderRadius: 10,
-                backgroundColor: pressed ? '#db2777' : '#ec4899',
-              })}
-            >
-              <Text style={{ fontSize: 20 }}>📷</Text>
-              <Text style={{ fontSize: 14, color: '#fff', fontWeight: '600' }}>
-                {block.url?.startsWith('/uploads/') ? 'Replace image' : 'Choose from gallery'}
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {/* Gallery */}
+              <Pressable
+                onPress={handlePickFromGallery}
+                style={({ pressed }) => ({
+                  flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  gap: 6, paddingVertical: 13, borderRadius: 10,
+                  backgroundColor: pressed ? '#db2777' : '#ec4899',
+                })}
+              >
+                <Text style={{ fontSize: 18 }}>🖼️</Text>
+                <Text style={{ fontSize: 13, color: '#fff', fontWeight: '600' }}>
+                  {block.url?.startsWith('/uploads/') ? 'Replace' : 'Gallery'}
+                </Text>
+              </Pressable>
+
+              {/* Camera */}
+              <Pressable
+                onPress={handleTakePhoto}
+                style={({ pressed }) => ({
+                  flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  gap: 6, paddingVertical: 13, borderRadius: 10,
+                  borderWidth: 1.5, borderColor: '#ec4899',
+                  backgroundColor: pressed ? (isDark ? '#2d1a2e' : '#fdf4ff') : 'transparent',
+                })}
+              >
+                <Text style={{ fontSize: 18 }}>📸</Text>
+                <Text style={{ fontSize: 13, color: '#ec4899', fontWeight: '600' }}>Camera</Text>
+              </Pressable>
+            </View>
           )}
 
           {/* Hosted image badge */}
@@ -282,7 +318,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           <Text style={{ fontSize: 36 }}>🖼️</Text>
           <Text style={{ fontSize: 13, fontWeight: '600', color: '#ec4899' }}>Add an image</Text>
           <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#f9a8d4' }}>
-            {tab === 'link' ? 'Paste a URL above' : 'Choose from gallery'}
+            {tab === 'link' ? 'Paste a URL above' : 'Gallery or Camera'}
           </Text>
         </View>
       ) : null}
