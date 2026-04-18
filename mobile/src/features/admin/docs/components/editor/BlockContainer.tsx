@@ -13,16 +13,14 @@ interface Props {
   onMoveDown: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  onFocus?: (node: View | null) => void;
   children: React.ReactNode;
 }
 
 const BlockContainer: React.FC<Props> = ({
   block, index, total, isDark,
-  onMoveUp, onMoveDown, onDuplicate, onDelete, onFocus, children,
+  onMoveUp, onMoveDown, onDuplicate, onDelete, children,
 }) => {
   const [focused, setFocused] = useState(false);
-  const containerRef = useRef<View>(null);
   const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
 
   const cardBg     = isDark ? '#1e293b' : '#ffffff';
@@ -30,18 +28,10 @@ const BlockContainer: React.FC<Props> = ({
     ? meta.color + '88'
     : isDark ? '#3d5068' : '#e2e8f0';
 
-  const handleFocus = () => {
-    setFocused(true);
-    onFocus?.(containerRef.current);
-  };
-
   return (
-    <View
-      ref={containerRef}
-      onStartShouldSetResponder={() => false}
-    >
+    <View>
       <Pressable
-        onPress={handleFocus}
+        onPress={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={{
           marginBottom: 10,
@@ -67,12 +57,7 @@ const BlockContainer: React.FC<Props> = ({
           onDuplicate={onDuplicate}
           onDelete={onDelete}
         />
-
-        {/* Wrap children in a View that triggers scroll on focus */}
-        <View
-          style={{ padding: 14 }}
-          onStartShouldSetResponder={() => { handleFocus(); return false; }}
-        >
+        <View style={{ padding: 14 }}>
           {children}
         </View>
       </Pressable>

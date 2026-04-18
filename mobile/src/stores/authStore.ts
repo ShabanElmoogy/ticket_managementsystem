@@ -222,10 +222,42 @@ export const useAuthStore = create<AuthState>()(
               }
               return;
             } catch (refreshErr: any) {
-              if (__DEV__) console.warn('❌ Cold start refresh failed:', refreshErr?.response?.data ?? refreshErr?.message);
-              tokenManager.clear();
-              stopTokenRefreshCycle();
-              set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
+              const status = refreshErr?.response?.status;
+              const isNetworkError = !refreshErr?.response && (
+                refreshErr?.code === 'ECONNABORTED' ||
+                refreshErr?.code === 'ERR_NETWORK' ||
+                refreshErr?.message === 'Network Error'
+              );
+
+              if (isNetworkError) {
+                // Network unavailable on cold start — keep session alive.
+                // The reactive 401 interceptor will refresh when the first
+                // real API call fails. Don't logout the user.
+                if (__DEV__) console.warn('⚠️ Cold start refresh failed (network) — keeping session, will retry on next request');
+                // Keep the expired token in tokenManager — the 401 interceptor
+                // will trigger a refresh when the first API call returns 401
+                startTokenRefreshCycle(token); // schedule proactive refresh for later
+                set({
+                  user: get().user ?? buildUserFromPayload(payload),
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+              } else if (status === 401) {
+                // Refresh token is genuinely revoked/expired — logout
+                if (__DEV__) console.warn('❌ Cold start refresh failed: refresh token revoked — logging out');
+                tokenManager.clear();
+                stopTokenRefreshCycle();
+                set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false });
+              } else {
+                // Other server error (500 etc.) — keep session, retry later
+                if (__DEV__) console.warn('⚠️ Cold start refresh failed (server error) — keeping session');
+                startTokenRefreshCycle(token);
+                set({
+                  user: get().user ?? buildUserFromPayload(payload),
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+              }
               return;
             }
           }

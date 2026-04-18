@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/authStore';
 import { useUiStore } from '../../../stores/uiStore';
@@ -12,7 +11,6 @@ const AppHeaderBar: React.FC = () => {
   const { colorMode, unreadCount }     = useUiStore();
   const { open, setOpen, setHeaderHeight } = useDrawer();
   const router                         = useRouter();
-  const insets                         = useSafeAreaInsets();
 
   if (!user) return null;
 
@@ -23,7 +21,8 @@ const AppHeaderBar: React.FC = () => {
     <View
       style={{
         flexDirection: 'row', alignItems: 'center',
-        paddingTop: insets.top + 8, paddingBottom: 12, paddingHorizontal: 16,
+        // No paddingTop for safe area — SafeAreaView in _layout.tsx handles it
+        paddingTop: 8, paddingBottom: 12, paddingHorizontal: 16,
         backgroundColor: headerBg, gap: 8,
       }}
       onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
