@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, useWindowDimensions,
-  Animated,
+  useWindowDimensions, Animated,
 } from 'react-native';
 import { useUiStore } from '../../../stores/uiStore';
 import { useDirection } from '../../../providers/DirectionProvider';
@@ -138,11 +137,8 @@ const DocsScreen: React.FC = () => {
   const borderColor = isDark ? '#334155' : '#e2e8f0';
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* ── Header ── */}
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      {/* ── Header — stays fixed, never moves with keyboard ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingVertical: 10,
@@ -309,8 +305,8 @@ const DocsScreen: React.FC = () => {
             </Animated.View>
           </View>
         )}
-      </View>
-    </KeyboardAvoidingView>
+        </View>
+    </View>
   );
 };
 
