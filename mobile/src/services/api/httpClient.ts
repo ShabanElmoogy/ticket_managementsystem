@@ -81,6 +81,11 @@ export function startTokenRefreshCycle(token: string): void {
   }
 
   refreshTimer = setTimeout(async () => {
+    // Skip if a reactive refresh is already in flight
+    if (isRefreshing) {
+      if (__DEV__) console.log('⏭ [REFRESH] Proactive skipped — reactive refresh in progress');
+      return;
+    }
     try {
       if (__DEV__) console.log('🔄 [REFRESH] Starting proactive token refresh...');
       const { newToken, newRefreshToken } = await callRefreshEndpoint();
@@ -128,14 +133,16 @@ async function callRefreshEndpoint(): Promise<{
   const refreshToken = tokenManager.getRefreshToken();
   if (!refreshToken) throw new Error('No refresh token available');
 
+  if (__DEV__) {
+    console.log('🔄 [REFRESH] Calling /auth/refresh with token:', refreshToken.slice(0, 20) + '...');
+  }
+
   const response = await refreshClient.post<{
     token: string;
     refreshToken?: string;
   }>('/auth/refresh', { refreshToken });
 
   const newToken        = response.data.token;
-  // Server may return the same refresh token or a new one (token rotation).
-  // Fall back to the current one if the server doesn't return a new one.
   const newRefreshToken = response.data.refreshToken ?? refreshToken;
 
   if (!newToken) throw new Error('Refresh response missing token');
@@ -298,32 +305,55 @@ http.interceptors.response.use(
 
       // ── Case B: we are the first 401 — trigger a refresh ───────────────────
       isRefreshing = true;
-      originalConfig._retried = true; // mark before the await to guard re-entry
+      originalConfig._retried = true;
+
+      // Cancel proactive refresh — it may be racing with us using the same token
+      stopTokenRefreshCycle();
 
       try {
+        const storedRefreshToken = tokenManager.getRefreshToken();
+        if (!storedRefreshToken) {
+          throw new Error('No refresh token — cannot refresh');
+        }
+
         const { newToken, newRefreshToken } = await callRefreshEndpoint();
 
-        // tokenManager is updated synchronously here — the request interceptor
-        // will read the new token when it processes the retry below.
         applyNewTokens(newToken, newRefreshToken);
         startTokenRefreshCycle(newToken);
 
         if (__DEV__) {
           const exp = getTokenExp(newToken);
           const expiresIn = exp ? Math.round((exp - Date.now() / 1000) / 60) : 0;
-          console.log(`✅ [REFRESH] Token reactively refreshed after 401. Expires in ${expiresIn}m`);
+          console.log(`✅ [REFRESH] Token reactively refreshed. Expires in ${expiresIn}m`);
         }
 
-        // Unblock every queued request — they re-enter via request interceptor
-        // which reads the fresh token from tokenManager.
         drainQueue(null, newToken);
-
-        // Retry the original request — DO NOT mutate headers here.
-        // The request interceptor handles Authorization via tokenManager.
         return http.request(originalConfig);
 
-      } catch (refreshError) {
-        // Refresh failed — session is dead, logout once
+      } catch (refreshError: any) {
+        const refreshStatus = refreshError?.response?.status;
+        const isNetworkErr  = !refreshError?.response;
+
+        if (__DEV__) {
+          console.warn('🔄 [REFRESH] Reactive refresh failed:',
+            refreshStatus ?? refreshError?.message,
+            refreshError?.response?.data ?? ''
+          );
+        }
+
+        if (isNetworkErr) {
+          // Network error — don't logout, let the user retry manually
+          const networkError: ApiError = {
+            status:      0,
+            message:     'Network error. Please check your connection.',
+            isRetryable: true,
+          };
+          drainQueue(networkError, null);
+          isRefreshing = false;
+          return Promise.reject(networkError);
+        }
+
+        // 401 or other server error — session is dead, logout
         const sessionExpiredError: ApiError = {
           status:      401,
           message:     'Session expired. Please log in again.',
@@ -331,7 +361,6 @@ http.interceptors.response.use(
         };
 
         drainQueue(sessionExpiredError, null);
-
         tokenManager.clear();
         stopTokenRefreshCycle();
 
