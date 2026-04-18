@@ -11,6 +11,7 @@ import DocTreeSidebar from './components/DocTreeSidebar';
 import DocEditor from './components/DocEditor';
 import DocPreview from './components/DocPreview';
 import BlockPalette from './components/BlockPalette';
+import UndoRedoButtons from './components/UndoRedoButtons';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
 
@@ -207,6 +208,9 @@ const DocsScreen: React.FC = () => {
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>Save</Text>
           </Pressable>
         )}
+
+        {/* Undo / Redo — only when editing */}
+        {currentDoc && !preview && <UndoRedoButtons isDark={isDark} />}
       </View>
 
       {/* ── Body ── */}

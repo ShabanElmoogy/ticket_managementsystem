@@ -92,21 +92,20 @@ export function startTokenRefreshCycle(token: string): void {
         console.log(`✅ [REFRESH] Token proactively refreshed. New token expires in ${expiresIn}m`);
       }
     } catch (err: any) {
-      // Proactive refresh failed
-      if (__DEV__) {
-        console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
-        console.warn('   Status:', err?.response?.status ?? err?.status);
-        console.warn('   Data:', JSON.stringify(err?.response?.data ?? err?.details));
-      }
-      // If refresh token is expired/revoked (401), logout the user
       const status = err?.response?.status ?? err?.status;
+      // If refresh token is expired/revoked (401), logout silently — this is expected
       if (status === 401) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
         import('../../stores/authStore')
           .then(({ useAuthStore }) => useAuthStore.getState().logout())
           .catch(() => {});
+      } else {
+        // Unexpected failure (network error etc.) — log as warning
+        if (__DEV__) {
+          console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
+        }
+        // Do NOT logout — let the reactive 401 interceptor handle it
       }
-      // Otherwise (network error etc.) — do NOT logout, let reactive 401 handle it
     }
   }, msUntilRefresh);
 }
@@ -131,13 +130,21 @@ async function callRefreshEndpoint(): Promise<{
 
   const response = await refreshClient.post<{
     token: string;
-    refreshToken: string;
+    refreshToken?: string;
   }>('/auth/refresh', { refreshToken });
 
   const newToken        = response.data.token;
-  const newRefreshToken = response.data.refreshToken;
+  // Server may return the same refresh token or a new one (token rotation).
+  // Fall back to the current one if the server doesn't return a new one.
+  const newRefreshToken = response.data.refreshToken ?? refreshToken;
 
   if (!newToken) throw new Error('Refresh response missing token');
+  if (!newRefreshToken) throw new Error('Refresh response missing refreshToken');
+
+  if (__DEV__) {
+    const rotated = response.data.refreshToken && response.data.refreshToken !== refreshToken;
+    console.log(`🔑 [REFRESH] Token refreshed. Refresh token ${rotated ? 'rotated ✅' : 'unchanged'}`);
+  }
 
   return { newToken, newRefreshToken };
 }
@@ -151,13 +158,14 @@ async function callRefreshEndpoint(): Promise<{
 function applyNewTokens(newToken: string, newRefreshToken: string): void {
   // ⚠️ SYNCHRONOUS — must happen before any http.request() retry call
   tokenManager.setToken(newToken);
-  tokenManager.setRefreshToken(newRefreshToken);
+  // Only update refresh token if we actually have a new one
+  if (newRefreshToken) tokenManager.setRefreshToken(newRefreshToken);
 
   // Async — only for persisted Zustand state, not needed for the retry
   import('../../stores/authStore')
     .then(({ useAuthStore }) => {
       useAuthStore.getState().setToken(newToken);
-      useAuthStore.getState().setRefreshToken(newRefreshToken);
+      if (newRefreshToken) useAuthStore.getState().setRefreshToken(newRefreshToken);
     })
     .catch(() => {});
 }
@@ -240,11 +248,26 @@ http.interceptors.response.use(
     const data           = error.response?.data as unknown;
 
     if (__DEV__) {
-      console.error(
-        `❌ [${originalConfig?.headers?.['X-Request-ID']}]`,
-        `${status} ${originalConfig?.method?.toUpperCase()} ${originalConfig?.url}`,
-        data ?? error.message,
-      );
+      // 401 on non-refresh endpoints = expected token expiry, will be retried silently
+      // Only log as error for non-401 or for the refresh endpoint itself
+      const isHandled401 =
+        status === 401 &&
+        !originalConfig?.url?.includes('/auth/refresh') &&
+        !originalConfig?._retried;
+
+      if (!isHandled401) {
+        console.error(
+          `❌ [${originalConfig?.headers?.['X-Request-ID']}]`,
+          `${status} ${originalConfig?.method?.toUpperCase()} ${originalConfig?.url}`,
+          data ?? error.message,
+        );
+      }
+      // For handled 401s, log quietly so the refresh flow is traceable
+      if (isHandled401) {
+        console.log(
+          `🔄 [401] Token expired on ${originalConfig?.method?.toUpperCase()} ${originalConfig?.url} — refreshing...`,
+        );
+      }
     }
 
     // ── Reactive 401 handler ─────────────────────────────────────────────────

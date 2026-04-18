@@ -24,6 +24,10 @@ interface DocsState {
   selectedTreeId: string | null;
   saveStatus:     SaveStatus;
 
+  // ── Undo / Redo ────────────────────────────────────────────────────────────
+  past:   DocBlock[][];   // stack of previous block states (max 50)
+  future: DocBlock[][];   // stack of undone states
+
   setCurrentDocId:   (id: string | null) => void;
   setPreview:        (v: boolean) => void;
   setSelectedTreeId: (id: string | null) => void;
@@ -40,6 +44,9 @@ interface DocsState {
   moveBlock:           (id: string, dir: -1 | 1) => void;
   setDragId:           (id: string | null) => void;
   dropBlock:           (targetId: string) => void;
+
+  undo: () => void;
+  redo: () => void;
 
   addFolder:         (parentId: string | null) => Promise<void>;
   addDocUnder:       (parentId: string | null) => Promise<void>;
@@ -139,6 +146,88 @@ function applyIcons(tree: TreeNode[], icons: Record<string, string>): TreeNode[]
   });
 }
 
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+//
+// Design:
+//  - History is stored per-doc: historyMap[docId] = { past, future }
+//  - past/future in DocsState are derived views of the current doc's history
+//    (kept in sync so components can subscribe to them without knowing docId)
+//  - Structural mutations (add/remove/move/duplicate) push immediately
+//  - Text edits (updateBlock/updateBlockSettings) are debounced per-doc:
+//    only the snapshot at the START of a typing burst is pushed, not every keystroke
+//  - Switching docs resets the derived past/future but preserves each doc's history
+//  - Max 50 snapshots per doc
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MAX_HISTORY = 50;
+
+interface DocHistory {
+  past:   DocBlock[][];
+  future: DocBlock[][];
+}
+
+// Per-doc history map — lives outside the store to avoid Zustand re-renders
+// on every history push. Only past.length / future.length are exposed to UI.
+const historyMap = new Map<string, DocHistory>();
+
+function getHistory(docId: string): DocHistory {
+  if (!historyMap.has(docId)) historyMap.set(docId, { past: [], future: [] });
+  return historyMap.get(docId)!;
+}
+
+function clearHistory(docId: string): void {
+  historyMap.set(docId, { past: [], future: [] });
+}
+
+// Per-doc text-edit debounce — tracks the snapshot at the START of a typing burst
+const textDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const textBurstSnapshots = new Map<string, DocBlock[]>();
+
+/**
+ * Push a snapshot for STRUCTURAL mutations (add/remove/move/duplicate).
+ * Clears the redo stack immediately.
+ * Returns the new past/future lengths for the store's derived state.
+ */
+function recordStructural(docId: string, blocksBefore: DocBlock[]): { past: DocBlock[][], future: DocBlock[][] } {
+  // Cancel any pending text burst — the structural action supersedes it
+  const timer = textDebounceTimers.get(docId);
+  if (timer) { clearTimeout(timer); textDebounceTimers.delete(docId); }
+  textBurstSnapshots.delete(docId);
+
+  const h = getHistory(docId);
+  h.past   = [...h.past.slice(-(MAX_HISTORY - 1)), blocksBefore];
+  h.future = [];
+  return { past: h.past, future: h.future };
+}
+
+/**
+ * Push a snapshot for TEXT edits — debounced per doc.
+ * Only the snapshot at the START of a typing burst is recorded.
+ * Subsequent keystrokes within 1000ms reuse the same snapshot.
+ * Returns the new past/future lengths for the store's derived state.
+ */
+function recordText(docId: string, blocksBefore: DocBlock[]): { past: DocBlock[][], future: DocBlock[][] } {
+  const h = getHistory(docId);
+
+  // First keystroke in this burst — save the snapshot
+  if (!textBurstSnapshots.has(docId)) {
+    textBurstSnapshots.set(docId, blocksBefore);
+    h.past   = [...h.past.slice(-(MAX_HISTORY - 1)), blocksBefore];
+    h.future = [];
+  }
+
+  // Reset the debounce timer — burst ends 1000ms after last keystroke
+  const existing = textDebounceTimers.get(docId);
+  if (existing) clearTimeout(existing);
+  textDebounceTimers.set(docId, setTimeout(() => {
+    textDebounceTimers.delete(docId);
+    textBurstSnapshots.delete(docId);
+  }, 1000));
+
+  return { past: h.past, future: h.future };
+}
+
 // ── Auto-save debounce ────────────────────────────────────────────────────────
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -167,8 +256,21 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   expanded:       {},
   selectedTreeId: null,
   saveStatus:     'idle',
+  past:           [],
+  future:         [],
 
-  setCurrentDocId:   (id) => set({ currentDocId: id, preview: false }),
+  setCurrentDocId: (id) => {
+    // Cancel any pending text burst for the previous doc
+    const prev = get().currentDocId;
+    if (prev) {
+      const t = textDebounceTimers.get(prev);
+      if (t) { clearTimeout(t); textDebounceTimers.delete(prev); }
+      textBurstSnapshots.delete(prev);
+    }
+    // Load history for the new doc (or empty if first visit)
+    const h = id ? getHistory(id) : { past: [], future: [] };
+    set({ currentDocId: id, preview: false, past: h.past, future: h.future });
+  },
   setPreview:        (v)  => set({ preview: v }),
   setSelectedTreeId: (id) => set({ selectedTreeId: id }),
   setSaveStatus:     (s)  => set({ saveStatus: s }),
@@ -197,7 +299,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
     const block = makeBlock(type);
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) =>
         d.id === currentDocId ? { ...d, blocks: [...d.blocks, block] } : d
       ),
@@ -209,7 +314,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
     const block = makeBlock(type);
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) => {
         if (d.id !== currentDocId) return d;
         const blocks = [...d.blocks];
@@ -223,7 +331,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   updateBlock: (id, patch) => {
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordText(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) =>
         d.id === currentDocId
           ? { ...d, blocks: d.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) }
@@ -236,7 +347,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   updateBlockSettings: (id, patch) => {
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordText(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) =>
         d.id === currentDocId
           ? {
@@ -254,7 +368,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   removeBlock: (id) => {
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) =>
         d.id === currentDocId ? { ...d, blocks: d.blocks.filter((b) => b.id !== id) } : d
       ),
@@ -265,7 +382,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   duplicateBlock: (id) => {
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) => {
         if (d.id !== currentDocId) return d;
         const idx = d.blocks.findIndex((b) => b.id === id);
@@ -282,7 +402,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   moveBlock: (id, dir) => {
     const { currentDocId, docs } = get();
     if (!currentDocId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) => {
         if (d.id !== currentDocId) return d;
         const blocks = [...d.blocks];
@@ -299,7 +422,10 @@ export const useDocsStore = create<DocsState>((set, get) => ({
   dropBlock: (targetId) => {
     const { currentDocId, docs, dragId } = get();
     if (!currentDocId || !dragId || dragId === targetId) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
     set({
+      past: h.past, future: h.future,
       docs: docs.map((d) => {
         if (d.id !== currentDocId) return d;
         const blocks = [...d.blocks];
@@ -311,6 +437,58 @@ export const useDocsStore = create<DocsState>((set, get) => ({
         return { ...d, blocks };
       }),
       dragId: null,
+    });
+    scheduleSave(get);
+  },
+
+  // ── Undo / Redo ───────────────────────────────────────────────────────────
+
+  undo: () => {
+    const { docs, currentDocId } = get();
+    if (!currentDocId) return;
+    const h = getHistory(currentDocId);
+    if (!h.past.length) return;
+
+    // Cancel any pending text burst — undo supersedes it
+    const t = textDebounceTimers.get(currentDocId);
+    if (t) { clearTimeout(t); textDebounceTimers.delete(currentDocId); }
+    textBurstSnapshots.delete(currentDocId);
+
+    const prev    = h.past[h.past.length - 1];
+    const current = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+
+    h.past   = h.past.slice(0, -1);
+    h.future = [current, ...h.future.slice(0, MAX_HISTORY - 1)];
+
+    set({
+      past:   h.past,
+      future: h.future,
+      docs:   docs.map(d => d.id === currentDocId ? { ...d, blocks: prev } : d),
+    });
+    scheduleSave(get);
+  },
+
+  redo: () => {
+    const { docs, currentDocId } = get();
+    if (!currentDocId) return;
+    const h = getHistory(currentDocId);
+    if (!h.future.length) return;
+
+    // Cancel any pending text burst
+    const t = textDebounceTimers.get(currentDocId);
+    if (t) { clearTimeout(t); textDebounceTimers.delete(currentDocId); }
+    textBurstSnapshots.delete(currentDocId);
+
+    const next    = h.future[0];
+    const current = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+
+    h.past   = [...h.past.slice(-(MAX_HISTORY - 1)), current];
+    h.future = h.future.slice(1);
+
+    set({
+      past:   h.past,
+      future: h.future,
+      docs:   docs.map(d => d.id === currentDocId ? { ...d, blocks: next } : d),
     });
     scheduleSave(get);
   },
@@ -366,11 +544,15 @@ export const useDocsStore = create<DocsState>((set, get) => ({
     try {
       await docsApi.deleteNode(id);
       const { nodes: newTree } = removeNode(tree, id);
+      // Clean up history for deleted docs
+      docIds.forEach(clearHistory);
       set((s) => ({
         tree: newTree,
         docs: s.docs.filter((d) => !docIds.includes(d.id)),
         currentDocId: docIds.includes(s.currentDocId ?? '') ? null : s.currentDocId,
         selectedTreeId: s.selectedTreeId === id ? null : s.selectedTreeId,
+        past:   docIds.includes(s.currentDocId ?? '') ? [] : s.past,
+        future: docIds.includes(s.currentDocId ?? '') ? [] : s.future,
       }));
     } catch {
       showErrorToast('Could not delete. Please try again.');
