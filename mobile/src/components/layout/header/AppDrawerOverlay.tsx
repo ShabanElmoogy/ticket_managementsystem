@@ -9,7 +9,7 @@ import DrawerUserCard from './DrawerUserCard';
 import DrawerNavList from './DrawerNavList';
 import { NAV_ITEMS } from './navItems';
 
-const AppDrawerOverlay: React.FC = () => {
+const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 }) => {
   const { open, setOpen, headerHeight, bottomNavHeight } = useDrawer();
   const { user, logout }                                  = useAuthStore();
   const { colorMode, toggleColorMode, setDirection }      = useUiStore();
@@ -19,7 +19,7 @@ const AppDrawerOverlay: React.FC = () => {
   const effectiveIsRtl                                    = isRtl || storeDirection === 'rtl';
   const router                                            = useRouter();
 
-  if (!open || !user) return null;
+  if (!open || !user || headerHeight === 0) return null;
 
   const isDark   = colorMode === 'dark';
   const drawerBg = isDark ? '#1e293b' : '#6366f1';
@@ -39,7 +39,7 @@ const AppDrawerOverlay: React.FC = () => {
   return (
     <View style={{
       position: 'absolute',
-      top: headerHeight,
+      top: safeAreaTop + headerHeight,
       bottom: bottomNavHeight,
       left: 0, right: 0,
       zIndex: 999,
