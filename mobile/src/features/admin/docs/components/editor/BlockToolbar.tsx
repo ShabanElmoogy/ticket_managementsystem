@@ -33,26 +33,47 @@ const BlockToolbar: React.FC<Props> = ({
   const btn = (
     label: string,
     onPress: () => void,
-    opts?: { disabled?: boolean; danger?: boolean }
+    opts?: { disabled?: boolean; danger?: boolean; primary?: boolean }
   ) => (
     <Pressable
       onPress={onPress}
       disabled={opts?.disabled}
       hitSlop={4}
       style={({ pressed }) => ({
-        width: 36, height: 36, borderRadius: 9,
+        width: opts?.primary ? 52 : 42,
+        height: opts?.primary ? 52 : 42,
+        borderRadius: opts?.primary ? 13 : 10,
         alignItems: 'center', justifyContent: 'center',
         opacity: opts?.disabled ? 0.3 : 1,
-        borderWidth: 1,
-        borderColor: opts?.danger ? deleteBorder : btnBorder,
+        borderWidth: 1.5,
+        borderColor: opts?.danger
+          ? deleteBorder
+          : opts?.primary
+          ? '#3b82f6'
+          : btnBorder,
         backgroundColor: pressed
-          ? (opts?.danger ? (isDark ? '#7f1d1d' : '#fee2e2') : btnBorder)
-          : (opts?.danger ? deleteBg : btnBg),
+          ? (opts?.danger
+              ? (isDark ? '#7f1d1d' : '#fee2e2')
+              : opts?.primary
+              ? '#2563eb'
+              : btnBorder)
+          : (opts?.danger
+              ? deleteBg
+              : opts?.primary
+              ? (isDark ? '#1e3a5f' : '#eff6ff')
+              : btnBg),
       })}
     >
       <Text style={{
-        fontSize: 16,
-        color: opts?.danger ? (isDark ? '#fca5a5' : '#ef4444') : btnText,
+        fontSize: opts?.primary ? 24 : 18,
+        fontWeight: opts?.primary ? '800' : '500',
+        color: opts?.danger
+          ? (isDark ? '#fca5a5' : '#ef4444')
+          : opts?.primary
+          ? '#3b82f6'
+          : btnText,
+        lineHeight: opts?.primary ? 28 : 22,
+        includeFontPadding: false,
       }}>
         {label}
       </Text>
@@ -66,8 +87,8 @@ const BlockToolbar: React.FC<Props> = ({
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         backgroundColor: toolbarBg,
         borderBottomWidth: 1,
         borderBottomColor: divider,
@@ -93,10 +114,20 @@ const BlockToolbar: React.FC<Props> = ({
 
         <View style={{ flex: 1 }} />
 
-        {btn('↑', onMoveUp,     { disabled: index === 0 })}
-        {btn('↓', onMoveDown,   { disabled: index === total - 1 })}
-        {btn('⧉', onDuplicate)}
-        {btn('✕', handleDelete, { danger: true })}
+        {/* Move group */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {btn('↑', onMoveUp,   { disabled: index === 0,         primary: true })}
+          {btn('↓', onMoveDown, { disabled: index === total - 1, primary: true })}
+        </View>
+
+        {/* Separator */}
+        <View style={{ width: 1, height: 32, backgroundColor: divider, marginHorizontal: 4 }} />
+
+        {/* Action group */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {btn('⧉', onDuplicate)}
+          {btn('✕', handleDelete, { danger: true })}
+        </View>
       </View>
 
       <AppDeleteDialog
