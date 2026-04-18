@@ -23,8 +23,8 @@ interface Props {
   onDuplicateBlock: (id: string) => void;
   onMoveBlock: (id: string, dir: -1 | 1) => void;
   onInsertBlock: (type: BlockType, afterIndex: number) => void;
-  /** Called when drag ends with the new ordered list of block IDs */
   onReorderBlocks: (orderedIds: string[]) => void;
+  onSaveBlockAsTemplate?: (block: DocBlock) => void;
 }
 
 // ── Drag handle ───────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ const DropIndicator: React.FC<{ isDark: boolean }> = ({ isDark }) => (
 const DocEditor: React.FC<Props> = ({
   blocks, hasDoc, isDark,
   onUpdateBlock, onRemoveBlock, onDuplicateBlock, onMoveBlock,
-  onInsertBlock, onReorderBlocks,
+  onInsertBlock, onReorderBlocks, onSaveBlockAsTemplate,
 }) => {
   const [insertAfter, setInsertAfter] = useState<number | null>(null);
 
@@ -223,6 +223,7 @@ const DocEditor: React.FC<Props> = ({
                       onMoveDown={()  => onMoveBlock(block.id, 1)}
                       onDuplicate={() => onDuplicateBlock(block.id)}
                       onDelete={()    => onRemoveBlock(block.id)}
+                      onSaveAsTemplate={onSaveBlockAsTemplate ? () => onSaveBlockAsTemplate(block) : undefined}
                     >
                       {renderBlockEditor(block, isDark, (patch) => onUpdateBlock(block.id, patch))}
                     </BlockContainer>

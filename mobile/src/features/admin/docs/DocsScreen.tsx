@@ -12,6 +12,8 @@ import DocPreview from './components/DocPreview';
 import BlockPalette from './components/BlockPalette';
 import UndoRedoButtons from './components/UndoRedoButtons';
 import ContentSearchModal from './components/ContentSearchModal';
+import TemplatesModal from './components/TemplatesModal';
+import { useBlockTemplates } from './hooks/useBlockTemplates';
 import { exportDocToPdf } from './utils/exportDocPdf';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
@@ -86,6 +88,9 @@ const DocsScreen: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [exporting,   setExporting]   = useState(false);
   const [searchOpen,  setSearchOpen]  = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
+  const { templates, saveTemplate, deleteTemplate, instantiateTemplate } = useBlockTemplates();
 
   const DRAWER_W  = Math.min(260, width * 0.78);
   const slideAnim = useRef(new Animated.Value(isRTL ? DRAWER_W : -DRAWER_W)).current;
@@ -115,6 +120,7 @@ const DocsScreen: React.FC = () => {
   const setSelectedTreeId = useDocsStore((s) => s.setSelectedTreeId);
   const setPreview        = useDocsStore((s) => s.setPreview);
   const addBlock          = useDocsStore((s) => s.addBlock);
+  const addBlocks         = useDocsStore((s) => s.addBlocks);
   const insertBlock       = useDocsStore((s) => s.insertBlock);
   const updateBlock       = useDocsStore((s) => s.updateBlock);
   const removeBlock       = useDocsStore((s) => s.removeBlock);
@@ -277,15 +283,22 @@ const DocsScreen: React.FC = () => {
               onMoveBlock={moveBlock}
               onInsertBlock={insertBlock}
               onReorderBlocks={reorderBlocks}
+              onSaveBlockAsTemplate={(block) => saveTemplate(block.type + ' template', [block])}
             />
           )}
           {currentDoc && !preview && (
-            <BlockPalette onAdd={addBlock} isDark={isDark} horizontal />
+            <BlockPalette onAdd={addBlock} isDark={isDark} horizontal
+              templateCount={templates.length}
+              onOpenTemplates={() => setTemplatesOpen(true)}
+            />
           )}
         </View>
 
         {isWide && currentDoc && !preview && (
-          <BlockPalette onAdd={addBlock} isDark={isDark} horizontal={false} />
+          <BlockPalette onAdd={addBlock} isDark={isDark} horizontal={false}
+            templateCount={templates.length}
+            onOpenTemplates={() => setTemplatesOpen(true)}
+          />
         )}
 
         {/* Compact drawer */}
@@ -325,6 +338,19 @@ const DocsScreen: React.FC = () => {
           </View>
         )}
       </View>
+
+      {/* Templates modal */}
+      <TemplatesModal
+        visible={templatesOpen}
+        templates={templates}
+        isDark={isDark}
+        onClose={() => setTemplatesOpen(false)}
+        onDelete={deleteTemplate}
+        onUse={(template) => {
+          const blocks = instantiateTemplate(template);
+          addBlocks(blocks);
+        }}
+      />
 
       {/* Content search modal */}
       <ContentSearchModal

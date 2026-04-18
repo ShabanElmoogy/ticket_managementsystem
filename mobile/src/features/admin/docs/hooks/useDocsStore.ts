@@ -36,6 +36,7 @@ interface DocsState {
   loadAll: () => Promise<void>;
 
   addBlock:            (type: BlockType) => Promise<void>;
+  addBlocks:           (blocks: DocBlock[]) => void;
   insertBlock:         (type: BlockType, afterIndex: number) => Promise<void>;
   updateBlock:         <T extends DocBlock>(id: string, patch: Partial<T>) => void;
   updateBlockSettings: (id: string, patch: Partial<BlockSettings>) => void;
@@ -306,6 +307,20 @@ export const useDocsStore = create<DocsState>((set, get) => ({
       past: h.past, future: h.future,
       docs: docs.map((d) =>
         d.id === currentDocId ? { ...d, blocks: [...d.blocks, block] } : d
+      ),
+    });
+    scheduleSave(get);
+  },
+
+  addBlocks: (newBlocks) => {
+    const { currentDocId, docs } = get();
+    if (!currentDocId || !newBlocks.length) return;
+    const before = docs.find(d => d.id === currentDocId)?.blocks ?? [];
+    const h = recordStructural(currentDocId, before);
+    set({
+      past: h.past, future: h.future,
+      docs: docs.map((d) =>
+        d.id === currentDocId ? { ...d, blocks: [...d.blocks, ...newBlocks] } : d
       ),
     });
     scheduleSave(get);

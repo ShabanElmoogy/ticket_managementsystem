@@ -216,7 +216,7 @@ Week 2 — Core UX:
 Week 3 — Power features:
   ⏳ 8. Export to PDF
   ⏳ 9. Block search
-  ⏳ 10. Block templates
+  ✅ 10. Block templates
 
 Future:
   ⏳ 11. Real-time collaboration

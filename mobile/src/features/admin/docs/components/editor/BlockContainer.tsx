@@ -13,12 +13,13 @@ interface Props {
   onMoveDown: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onSaveAsTemplate?: (block: DocBlock) => void;
   children: React.ReactNode;
 }
 
 const BlockContainer: React.FC<Props> = ({
   block, index, total, isDark,
-  onMoveUp, onMoveDown, onDuplicate, onDelete, children,
+  onMoveUp, onMoveDown, onDuplicate, onDelete, onSaveAsTemplate, children,
 }) => {
   const [focused, setFocused] = useState(false);
   const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
@@ -56,6 +57,7 @@ const BlockContainer: React.FC<Props> = ({
           onMoveDown={onMoveDown}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
+          onSaveAsTemplate={onSaveAsTemplate}
         />
         <View style={{ padding: 14 }}>
           {children}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import type { BlockType } from '../../types/types';
 import { BLOCK_TYPES } from './blockTypes';
 import PaletteButton from './PaletteButton';
@@ -7,13 +7,11 @@ import PaletteButton from './PaletteButton';
 interface Props {
   onAdd: (type: BlockType) => void;
   isDark: boolean;
+  templateCount?: number;
+  onOpenTemplates?: () => void;
 }
 
-/**
- * Horizontal scrolling strip of block type buttons.
- * Shown at the bottom of the editor on narrow screens.
- */
-const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark }) => {
+const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark, templateCount = 0, onOpenTemplates }) => {
   const bg          = isDark ? '#0f172a' : '#f8fafc';
   const stripBorder = isDark ? '#1e293b' : '#e2e8f0';
   const btnBg       = isDark ? '#1e293b' : '#ffffff';
@@ -40,6 +38,29 @@ const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark }) => {
         }}>
           ADD
         </Text>
+
+        {/* Templates button */}
+        {onOpenTemplates && (
+          <Pressable
+            onPress={onOpenTemplates}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 4,
+              paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10,
+              backgroundColor: pressed ? '#7c3aed22' : (isDark ? '#1e293b' : '#fff'),
+              borderWidth: 1.5,
+              borderColor: pressed ? '#7c3aed88' : '#7c3aed55',
+              minWidth: 56,
+            })}
+          >
+            <Text style={{ fontSize: 14 }}>📋</Text>
+            <View>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#7c3aed' }}>Templates</Text>
+              {templateCount > 0 && (
+                <Text style={{ fontSize: 9, color: '#7c3aed', textAlign: 'center' }}>{templateCount}</Text>
+              )}
+            </View>
+          </Pressable>
+        )}
 
         {BLOCK_TYPES.map((def) => (
           <PaletteButton
