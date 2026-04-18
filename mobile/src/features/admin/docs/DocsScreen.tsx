@@ -11,6 +11,7 @@ import DocEditor from './components/DocEditor';
 import DocPreview from './components/DocPreview';
 import BlockPalette from './components/BlockPalette';
 import UndoRedoButtons from './components/UndoRedoButtons';
+import { exportDocToPdf } from './utils/exportDocPdf';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
 
@@ -79,27 +80,26 @@ const DocsScreen: React.FC = () => {
   const isDark = colorMode === 'dark';
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
-  const { isRtl: isRTL } = useDirection();   // ← reads from DirectionProvider
+  const { isRtl: isRTL } = useDirection();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const DRAWER_W = Math.min(260, width * 0.78);
-  // RTL: panel anchors to right edge, hides by sliding right (+DRAWER_W)
-  // LTR: panel anchors to left edge,  hides by sliding left  (-DRAWER_W)
+  const [exporting,   setExporting]   = useState(false);
+
+  const DRAWER_W  = Math.min(260, width * 0.78);
   const slideAnim = useRef(new Animated.Value(isRTL ? DRAWER_W : -DRAWER_W)).current;
 
   const openSidebar = () => {
     setSidebarOpen(true);
     Animated.timing(slideAnim, { toValue: 0, duration: 240, useNativeDriver: true }).start();
   };
-
   const closeSidebar = () => {
     Animated.timing(slideAnim, {
       toValue: isRTL ? DRAWER_W : -DRAWER_W,
-      duration: 200,
-      useNativeDriver: true,
+      duration: 200, useNativeDriver: true,
     }).start(() => setSidebarOpen(false));
   };
 
-  // ── Granular store selectors (avoid whole-store subscription) ──────────────
+  // ── Store selectors ────────────────────────────────────────────────────────
   const tree           = useDocsStore((s) => s.tree);
   const docs           = useDocsStore((s) => s.docs);
   const currentDocId   = useDocsStore((s) => s.currentDocId);
@@ -108,30 +108,42 @@ const DocsScreen: React.FC = () => {
   const preview        = useDocsStore((s) => s.preview);
   const saveStatus     = useDocsStore((s) => s.saveStatus);
 
-  const loadAll            = useDocsStore((s) => s.loadAll);
-  const setCurrentDocId    = useDocsStore((s) => s.setCurrentDocId);
-  const setSelectedTreeId  = useDocsStore((s) => s.setSelectedTreeId);
-  const setPreview         = useDocsStore((s) => s.setPreview);
-  const addBlock           = useDocsStore((s) => s.addBlock);
-  const insertBlock        = useDocsStore((s) => s.insertBlock);
-  const updateBlock        = useDocsStore((s) => s.updateBlock);
-  const removeBlock        = useDocsStore((s) => s.removeBlock);
-  const duplicateBlock     = useDocsStore((s) => s.duplicateBlock);
-  const moveBlock          = useDocsStore((s) => s.moveBlock);
-  const toggleExpand       = useDocsStore((s) => s.toggleExpand);
-  const addFolder          = useDocsStore((s) => s.addFolder);
-  const addDocUnder        = useDocsStore((s) => s.addDocUnder);
-  const renameNode         = useDocsStore((s) => s.renameNode);
-  const deleteNodeAndDocs  = useDocsStore((s) => s.deleteNodeAndDocs);
-  const setFolderIcon      = useDocsStore((s) => s.setFolderIcon);
-  const duplicateDoc       = useDocsStore((s) => s.duplicateDoc);
+  const loadAll           = useDocsStore((s) => s.loadAll);
+  const setCurrentDocId   = useDocsStore((s) => s.setCurrentDocId);
+  const setSelectedTreeId = useDocsStore((s) => s.setSelectedTreeId);
+  const setPreview        = useDocsStore((s) => s.setPreview);
+  const addBlock          = useDocsStore((s) => s.addBlock);
+  const insertBlock       = useDocsStore((s) => s.insertBlock);
+  const updateBlock       = useDocsStore((s) => s.updateBlock);
+  const removeBlock       = useDocsStore((s) => s.removeBlock);
+  const duplicateBlock    = useDocsStore((s) => s.duplicateBlock);
+  const moveBlock         = useDocsStore((s) => s.moveBlock);
   const reorderBlocks     = useDocsStore((s) => s.reorderBlocks);
-  const saveCurrentDoc     = useDocsStore((s) => s.saveCurrentDoc);
-  const renameCurrentDoc   = useDocsStore((s) => s.renameCurrentDoc);
+  const toggleExpand      = useDocsStore((s) => s.toggleExpand);
+  const addFolder         = useDocsStore((s) => s.addFolder);
+  const addDocUnder       = useDocsStore((s) => s.addDocUnder);
+  const renameNode        = useDocsStore((s) => s.renameNode);
+  const deleteNodeAndDocs = useDocsStore((s) => s.deleteNodeAndDocs);
+  const setFolderIcon     = useDocsStore((s) => s.setFolderIcon);
+  const duplicateDoc      = useDocsStore((s) => s.duplicateDoc);
+  const saveCurrentDoc    = useDocsStore((s) => s.saveCurrentDoc);
+  const renameCurrentDoc  = useDocsStore((s) => s.renameCurrentDoc);
 
   const currentDoc = useCurrentDoc();
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleExport = async () => {
+    if (!currentDoc || exporting) return;
+    setExporting(true);
+    try {
+      await exportDocToPdf(currentDoc);
+    } catch (e) {
+      if (__DEV__) console.error('PDF export failed:', e);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const bg          = isDark ? '#0f172a' : '#f8fafc';
   const headerBg    = isDark ? '#1e293b' : '#fff';
@@ -139,23 +151,22 @@ const DocsScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      {/* ── Header — stays fixed, never moves with keyboard ── */}
+
+      {/* ── Header ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingVertical: 10,
         backgroundColor: headerBg,
         borderBottomWidth: 1, borderBottomColor: borderColor,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: isDark ? 0 : 0.05, shadowRadius: 3, elevation: 2,
+        elevation: 2,
       }}>
         {!isWide && (
           <Pressable
             onPress={openSidebar}
             style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: pressed
-                ? (isDark ? '#475569' : '#e2e8f0')
-                : (isDark ? '#334155' : '#f1f5f9'),
+              width: 36, height: 36, borderRadius: 10,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: pressed ? (isDark ? '#475569' : '#e2e8f0') : (isDark ? '#334155' : '#f1f5f9'),
             })}
           >
             <Text style={{ fontSize: 17 }}>📁</Text>
@@ -163,7 +174,7 @@ const DocsScreen: React.FC = () => {
         )}
 
         {currentDoc ? (
-          <TitleEditor title={currentDoc.title} isDark={isDark} onRename={(t) => renameCurrentDoc(t)} />
+          <TitleEditor title={currentDoc.title} isDark={isDark} onRename={renameCurrentDoc} />
         ) : (
           <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: isDark ? '#475569' : '#94a3b8' }}>
             Documentation
@@ -172,16 +183,34 @@ const DocsScreen: React.FC = () => {
 
         <SaveIndicator status={saveStatus} isDark={isDark} />
 
+        {/* Export PDF */}
+        {currentDoc && (
+          <Pressable
+            onPress={handleExport}
+            disabled={exporting}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 4,
+              paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+              backgroundColor: pressed ? '#dc2626' : '#ef4444',
+              opacity: exporting ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 13 }}>{exporting ? '⏳' : '📄'}</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>
+              {exporting ? 'Exporting…' : 'PDF'}
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Preview / Edit toggle */}
         {currentDoc && (
           <Pressable
             onPress={() => setPreview(!preview)}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-              backgroundColor: preview
-                ? '#3b82f6'
-                : pressed
-                ? (isDark ? '#475569' : '#e2e8f0')
+              backgroundColor: preview ? '#3b82f6'
+                : pressed ? (isDark ? '#475569' : '#e2e8f0')
                 : (isDark ? '#334155' : '#f1f5f9'),
             })}
           >
@@ -192,9 +221,10 @@ const DocsScreen: React.FC = () => {
           </Pressable>
         )}
 
+        {/* Save */}
         {currentDoc && !preview && (
           <Pressable
-            onPress={() => saveCurrentDoc()}
+            onPress={saveCurrentDoc}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
@@ -206,7 +236,7 @@ const DocsScreen: React.FC = () => {
           </Pressable>
         )}
 
-        {/* Undo / Redo — only when editing */}
+        {/* Undo / Redo */}
         {currentDoc && !preview && <UndoRedoButtons isDark={isDark} />}
       </View>
 
@@ -230,7 +260,7 @@ const DocsScreen: React.FC = () => {
         )}
 
         {/* Editor / Preview */}
-        <View style={{ flex: 1, flexDirection: 'column' }}>
+        <View style={{ flex: 1 }}>
           {preview ? (
             <DocPreview blocks={currentDoc?.blocks ?? []} isDark={isDark} />
           ) : (
@@ -255,49 +285,32 @@ const DocsScreen: React.FC = () => {
           <BlockPalette onAdd={addBlock} isDark={isDark} horizontal={false} />
         )}
 
-        {/* Compact: drawer slides in INSIDE the body (not full-screen Modal) */}
+        {/* Compact drawer */}
         {!isWide && sidebarOpen && (
           <View
-            style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              zIndex: 50,
-              overflow: 'hidden',
-            }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, overflow: 'hidden' }}
             pointerEvents="box-none"
           >
-            {/* Backdrop */}
             <Pressable
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
               onPress={closeSidebar}
             />
-
-            {/* Sliding drawer panel
-             *  LTR: anchored left,  hidden at translateX=-DRAWER_W, visible at 0
-             *  RTL: anchored right, hidden at translateX=+DRAWER_W, visible at 0
-             */}
             <Animated.View
               style={{
-                position: 'absolute',
-                top: 0, bottom: 0,
+                position: 'absolute', top: 0, bottom: 0,
                 ...(isRTL ? { right: 0 } : { left: 0 }),
                 width: DRAWER_W,
                 transform: [{ translateX: slideAnim }],
                 elevation: 16,
                 shadowColor: '#000',
                 shadowOffset: { width: isRTL ? -4 : 4, height: 0 },
-                shadowOpacity: 0.25,
-                shadowRadius: 12,
+                shadowOpacity: 0.25, shadowRadius: 12,
               }}
             >
               <DocTreeSidebar
                 tree={tree} docs={docs} currentDocId={currentDocId}
                 selectedTreeId={selectedTreeId} expanded={expanded} isDark={isDark}
-                onSelectDoc={(docId, nodeId) => {
-                  setCurrentDocId(docId);
-                  setSelectedTreeId(nodeId);
-                  closeSidebar();
-                }}
+                onSelectDoc={(docId, nodeId) => { setCurrentDocId(docId); setSelectedTreeId(nodeId); closeSidebar(); }}
                 onSelectFolder={setSelectedTreeId}
                 onToggleExpand={toggleExpand}
                 onAddFolder={addFolder} onAddDoc={addDocUnder}
@@ -307,7 +320,7 @@ const DocsScreen: React.FC = () => {
             </Animated.View>
           </View>
         )}
-        </View>
+      </View>
     </View>
   );
 };
