@@ -47,6 +47,7 @@ interface DocsState {
 
   undo: () => void;
   redo: () => void;
+  reorderBlocks: (orderedIds: string[]) => void;
 
   addFolder:         (parentId: string | null) => Promise<void>;
   addDocUnder:       (parentId: string | null) => Promise<void>;
@@ -489,6 +490,23 @@ export const useDocsStore = create<DocsState>((set, get) => ({
       past:   h.past,
       future: h.future,
       docs:   docs.map(d => d.id === currentDocId ? { ...d, blocks: next } : d),
+    });
+    scheduleSave(get);
+  },
+
+  reorderBlocks: (orderedIds) => {
+    const { currentDocId, docs } = get();
+    if (!currentDocId) return;
+    const doc = docs.find(d => d.id === currentDocId);
+    if (!doc) return;
+    const h = recordStructural(currentDocId, doc.blocks);
+    const blockMap = new Map(doc.blocks.map(b => [b.id, b]));
+    const reordered = orderedIds
+      .map(id => blockMap.get(id))
+      .filter((b): b is DocBlock => b !== undefined);
+    set({
+      past: h.past, future: h.future,
+      docs: docs.map(d => d.id === currentDocId ? { ...d, blocks: reordered } : d),
     });
     scheduleSave(get);
   },

@@ -125,6 +125,7 @@ const DocsScreen: React.FC = () => {
   const deleteNodeAndDocs  = useDocsStore((s) => s.deleteNodeAndDocs);
   const setFolderIcon      = useDocsStore((s) => s.setFolderIcon);
   const duplicateDoc       = useDocsStore((s) => s.duplicateDoc);
+  const reorderBlocks     = useDocsStore((s) => s.reorderBlocks);
   const saveCurrentDoc     = useDocsStore((s) => s.saveCurrentDoc);
   const renameCurrentDoc   = useDocsStore((s) => s.renameCurrentDoc);
 
@@ -242,6 +243,7 @@ const DocsScreen: React.FC = () => {
               onDuplicateBlock={duplicateBlock}
               onMoveBlock={moveBlock}
               onInsertBlock={insertBlock}
+              onReorderBlocks={reorderBlocks}
             />
           )}
           {currentDoc && !preview && (
