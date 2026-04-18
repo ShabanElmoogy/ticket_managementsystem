@@ -11,6 +11,7 @@ import DocEditor from './components/DocEditor';
 import DocPreview from './components/DocPreview';
 import BlockPalette from './components/BlockPalette';
 import UndoRedoButtons from './components/UndoRedoButtons';
+import ContentSearchModal from './components/ContentSearchModal';
 import { exportDocToPdf } from './utils/exportDocPdf';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ const DocsScreen: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [exporting,   setExporting]   = useState(false);
+  const [searchOpen,  setSearchOpen]  = useState(false);
 
   const DRAWER_W  = Math.min(260, width * 0.78);
   const slideAnim = useRef(new Animated.Value(isRTL ? DRAWER_W : -DRAWER_W)).current;
@@ -255,6 +257,7 @@ const DocsScreen: React.FC = () => {
               onAddFolder={addFolder} onAddDoc={addDocUnder}
               onRename={renameNode} onDelete={deleteNodeAndDocs}
               onSetFolderIcon={setFolderIcon} onDuplicateDoc={duplicateDoc}
+              onSearch={() => setSearchOpen(true)}
             />
           </View>
         )}
@@ -316,11 +319,36 @@ const DocsScreen: React.FC = () => {
                 onAddFolder={addFolder} onAddDoc={addDocUnder}
                 onRename={renameNode} onDelete={deleteNodeAndDocs}
                 onSetFolderIcon={setFolderIcon} onDuplicateDoc={duplicateDoc}
+                onSearch={() => { closeSidebar(); setSearchOpen(true); }}
               />
             </Animated.View>
           </View>
         )}
       </View>
+
+      {/* Content search modal */}
+      <ContentSearchModal
+        visible={searchOpen}
+        docs={docs}
+        isDark={isDark}
+        onClose={() => setSearchOpen(false)}
+        onSelectDoc={(docId) => {
+          setCurrentDocId(docId);
+          // find the tree node id for this doc
+          const findNodeId = (nodes: typeof tree): string | null => {
+            for (const n of nodes) {
+              if (n.type === 'doc' && (n as any).docId === docId) return n.id;
+              if (n.type === 'folder') {
+                const found = findNodeId((n as any).children);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          const nodeId = findNodeId(tree);
+          if (nodeId) setSelectedTreeId(nodeId);
+        }}
+      />
     </View>
   );
 };

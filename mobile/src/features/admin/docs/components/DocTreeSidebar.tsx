@@ -46,6 +46,7 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
         isDark={isDark}
         onAddDoc={props.onAddDoc}
         onAddFolder={props.onAddFolder}
+        onSearch={props.onSearch}
       />
 
       <TreeSearchInput

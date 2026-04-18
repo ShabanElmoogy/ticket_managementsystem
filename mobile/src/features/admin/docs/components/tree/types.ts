@@ -16,6 +16,7 @@ export interface TreeSidebarProps {
   onDelete: (id: string) => void;
   onSetFolderIcon: (id: string, icon: string) => void;
   onDuplicateDoc: (docId: string) => void;
+  onSearch?: () => void;
 }
 
 export const INDENT_PX = 12; // depth * 1.5 * 8px — matches web

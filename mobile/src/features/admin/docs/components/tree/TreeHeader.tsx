@@ -6,6 +6,7 @@ interface Props {
   isDark: boolean;
   onAddDoc: TreeSidebarProps['onAddDoc'];
   onAddFolder: TreeSidebarProps['onAddFolder'];
+  onSearch?: () => void;
 }
 
 /**
@@ -13,7 +14,7 @@ interface Props {
  *   px:1.5 py:1.25 row with NotesIcon + "DOCUMENTS" label + CreateNewFolderIcon + AddIcon
  * Mobile: same compact layout — no big full-width buttons
  */
-const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder }) => {
+const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder, onSearch }) => {
   const borderC   = isDark ? '#1e293b' : '#e2e8f0';
   const textMuted = isDark ? '#64748b' : '#94a3b8';
   const hoverBg   = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
@@ -75,6 +76,27 @@ const TreeHeader: React.FC<Props> = ({ isDark, onAddDoc, onAddFolder }) => {
       >
         <Text style={{ fontSize: 22, color: textMuted, lineHeight: 26 }}>+</Text>
       </Pressable>
+
+      {/* Search icon */}
+      {onSearch && (
+        <>
+          <View style={{ width: 1, height: 18, backgroundColor: isDark ? '#334155' : '#e2e8f0', marginStart: 8 }} />
+          <Pressable
+            onPress={onSearch}
+            hitSlop={4}
+            style={({ pressed }) => ({
+              width: 34, height: 34, borderRadius: 8,
+              alignItems: 'center', justifyContent: 'center',
+              marginStart: 8,
+              backgroundColor: pressed
+                ? (isDark ? '#334155' : '#e2e8f0')
+                : (isDark ? '#1e293b' : '#f1f5f9'),
+            })}
+          >
+            <Text style={{ fontSize: 16, lineHeight: 20 }}>🔍</Text>
+          </Pressable>
+        </>
+      )}
     </View>
   );
 };
