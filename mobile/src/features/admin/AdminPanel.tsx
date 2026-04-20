@@ -11,6 +11,7 @@ import TemplatesScreen     from './templates/TemplatesScreen';
 import TenantsScreen       from './tenants/TenantsScreen';
 import SettingsScreen      from './settings/SettingsScreen';
 import DocsScreen          from './docs/DocsScreen';
+import ReportsScreen       from './reports/ReportsScreen';
 
 // ── Menu config ───────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'users',        label: 'Users',        icon: '👤' },
   { id: 'templates',    label: 'Templates',    icon: '📋' },
   { id: 'docs',         label: 'Docs',         icon: '📚' },
+  { id: 'reports',      label: 'Reports',      icon: '📊' },
   { id: 'tenants',      label: 'Tenants',      icon: '🏢', roles: ['SUPER_ADMIN'] },
   { id: 'settings',     label: 'Settings',     icon: '⚙️' },
 ];
@@ -49,6 +51,7 @@ const AdminPanel: React.FC = () => {
       case 'users':        return <UsersScreen />;
       case 'templates':    return <TemplatesScreen />;
       case 'docs':         return <DocsScreen />;
+      case 'reports':      return <ReportsScreen />;
       case 'tenants':      return <TenantsScreen />;
       case 'settings':     return <SettingsScreen />;
       default:             return <AdminDashboardScreen />;
