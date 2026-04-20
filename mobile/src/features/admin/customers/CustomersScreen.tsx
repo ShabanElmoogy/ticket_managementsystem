@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
 import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { customersApi, customersKeys } from './api/customers';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
 import AppTextInput from '../../../shared/components/AppTextInput';
 import AppBadge from '../../../shared/components/AppBadge';
+import { exportEntityPdf } from '../../../shared/utils/exportEntityPdf';
 import type { Customer, CreateCustomerData } from '../../../services/api/types';
 import type { ColDef } from '../../../shared/components/AppDataTable';
 
@@ -45,6 +45,8 @@ const CustomerForm: React.FC<{
 };
 
 const CustomersScreen: React.FC = () => {
+  const [exporting, setExporting] = useState(false);
+
   const f = useAdminFeature<Customer, CreateCustomerData>({
     entityName: 'customers', queryKey: customersKeys.all,
     api: {
@@ -60,12 +62,21 @@ const CustomersScreen: React.FC = () => {
     },
   });
 
+  const handleExport = async () => {
+    setExporting(true);
+    try { await exportEntityPdf('Customers', f.entities, COLUMNS); }
+    finally { setExporting(false); }
+  };
+
   return (
     <AdminCrudScreen<Customer>
       title="Customers" icon="👥" itemType="customer"
       entities={f.entities} loading={f.loading}
       columns={COLUMNS} searchFields={['name', 'email']}
       getItemName={(c) => c.name} onDelete={(id) => f.remove(id)}
+      onRefresh={f.refetch}
+      onExport={handleExport}
+      exporting={exporting}
       renderForm={(item, onClose) => (
         <CustomerForm item={item} onClose={onClose} submitting={f.ui.submitting}
           onSave={async (data) => { if (item) await f.update(item.id, data); else await f.create(data); onClose(); }}

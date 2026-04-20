@@ -1,7 +1,5 @@
 import React from 'react';
-import AdminToolbar    from '../../../../shared/components/AdminToolbar';
-import ExportPdfButton from '../../../../shared/components/ExportPdfButton';
-import RefreshButton   from '../../../../shared/components/RefreshButton';
+import AppScreenHeader from '../../../../shared/components/AppScreenHeader';
 import type { AdminView } from '../../../../stores/uiStore';
 
 interface Props {
@@ -15,30 +13,25 @@ interface Props {
   onRefresh: () => void;
 }
 
+/**
+ * Reports screen header — uses the unified AppScreenHeader.
+ * Shows: ViewToggle | [title] | Refresh | Export PDF
+ */
 const ReportsHeader: React.FC<Props> = ({
   isDark, view, onViewChange,
   loading, exporting, isEmpty,
   onExport, onRefresh,
 }) => (
-  <AdminToolbar
+  <AppScreenHeader
+    title="Reports"
     isDark={isDark}
     view={view}
     onViewChange={onViewChange}
-    actions={
-      <>
-        <ExportPdfButton
-          onPress={onExport}
-          loading={exporting}
-          disabled={loading || isEmpty}
-          isDark={isDark}
-        />
-        <RefreshButton
-          onPress={onRefresh}
-          loading={loading}
-          isDark={isDark}
-        />
-      </>
-    }
+    loading={loading}
+    onExport={onExport}
+    exporting={exporting}
+    exportDisabled={loading || isEmpty}
+    onRefresh={onRefresh}
   />
 );
 

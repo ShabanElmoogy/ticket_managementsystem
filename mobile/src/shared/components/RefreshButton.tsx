@@ -16,16 +16,16 @@ const RefreshButton: React.FC<Props> = ({ onPress, loading = false, isDark = fal
     onPress={onPress}
     disabled={loading}
     style={({ pressed }) => ({
-      flexDirection: 'row', alignItems: 'center', gap: 6,
-      height: 36, paddingHorizontal: 12, borderRadius: 10,
+      alignItems: 'center', justifyContent: 'center', gap: 2,
+      height: 44, paddingHorizontal: 12, borderRadius: 10,
       backgroundColor: pressed
         ? (isDark ? '#475569' : '#d1d5db')
         : (isDark ? '#334155' : '#e5e7eb'),
       opacity: loading ? 0.5 : 1,
     })}
   >
-    <Text style={{ fontSize: 14, lineHeight: 18 }}>{loading ? '⏳' : '🔄'}</Text>
-    <Text style={{ fontSize: 12, fontWeight: '800', color: isDark ? '#e2e8f0' : '#374151' }}>
+    <Text style={{ fontSize: 16, lineHeight: 18 }}>{loading ? '⏳' : '🔄'}</Text>
+    <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e2e8f0' : '#374151' }}>
       {loading ? 'Loading…' : 'Refresh'}
     </Text>
   </Pressable>

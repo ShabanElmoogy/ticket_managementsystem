@@ -1,37 +1,58 @@
 import React from 'react';
-import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
-import AppButton from './AppButton';
+import { View, Text, Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import ViewToggle      from './ViewToggle';
+import ExportPdfButton from './ExportPdfButton';
+import RefreshButton   from './RefreshButton';
+import VerticalDivider from './VerticalDivider';
+import type { AdminView } from '../../stores/uiStore';
 
 export interface AppScreenHeaderProps {
+  // ── Identity ──────────────────────────────────────────────────────────────
   title: string;
   subtitle?: string;
   badge?: number | string;
+  isDark?: boolean;
+
+  // ── View toggle (left side) ───────────────────────────────────────────────
+  view?: AdminView;
+  onViewChange?: (v: AdminView) => void;
+  /** Legacy: any custom left content */
+  leftActions?: React.ReactNode;
+
+  // ── Add button (right side) ───────────────────────────────────────────────
   onAdd?: () => void;
   addLabel?: string;
-  /** Rendered on the LEFT side (e.g. view toggle) */
-  leftActions?: React.ReactNode;
-  /** Rendered on the RIGHT side (legacy, kept for compatibility) */
-  rightActions?: React.ReactNode;
   loading?: boolean;
+
+  // ── Export PDF (right side, before Add) ──────────────────────────────────
+  onExport?: () => void;
+  exporting?: boolean;
+  exportDisabled?: boolean;
+
+  // ── Refresh (right side) ──────────────────────────────────────────────────
+  onRefresh?: () => void;
+
+  // ── Legacy ────────────────────────────────────────────────────────────────
+  rightActions?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
 const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
-  title,
-  subtitle,
-  badge,
-  onAdd,
-  addLabel = 'Add',
-  leftActions,
-  rightActions,
-  loading = false,
-  style,
+  title, subtitle, badge, isDark = false,
+  view, onViewChange, leftActions,
+  onAdd, addLabel = 'Add', loading = false,
+  onExport, exporting = false, exportDisabled = false,
+  onRefresh,
+  rightActions, style,
 }) => (
   <View className="flex-row items-center px-4 py-3" style={style}>
 
-    {/* Left — view toggle or custom left actions */}
+    {/* Left — ViewToggle or custom left actions */}
     <View className="flex-row items-center" style={{ minWidth: 80 }}>
-      {leftActions}
+      {view && onViewChange
+        ? <ViewToggle current={view} onChange={onViewChange} isDark={isDark} />
+        : leftActions
+      }
     </View>
 
     {/* Center — title + badge */}
@@ -51,19 +72,48 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
       )}
     </View>
 
-    {/* Right — Add button or custom right actions */}
+    {/* Right — Refresh | Export PDF | separator | Add */}
     <View className="flex-row items-center gap-2 justify-end" style={{ minWidth: 80 }}>
       {rightActions}
+
+      {onRefresh && (
+        <RefreshButton onPress={onRefresh} loading={loading} isDark={isDark} />
+      )}
+
+      {onExport && (
+        <ExportPdfButton
+          onPress={onExport}
+          loading={exporting}
+          disabled={exportDisabled}
+          isDark={isDark}
+        />
+      )}
+
+      {onAdd && (onExport || onRefresh) && (
+        <VerticalDivider isDark={isDark} height={36} marginHorizontal={2} />
+      )}
+
       {onAdd && (
-        <AppButton
-          variant="contained"
-          color="primary"
-          size="small"
-          loading={loading}
+        <Pressable
           onPress={onAdd}
+          disabled={loading}
+          style={({ pressed }) => ({
+            alignItems: 'center', justifyContent: 'center', gap: 2,
+            height: 44, paddingHorizontal: 12, borderRadius: 10,
+            backgroundColor: pressed ? '#15803d' : '#16a34a',
+            opacity: loading ? 0.5 : 1,
+            shadowColor: '#16a34a',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: loading ? 0 : 0.35,
+            shadowRadius: 5,
+            elevation: loading ? 0 : 3,
+          })}
         >
-          + {addLabel}
-        </AppButton>
+          <Text style={{ fontSize: 16, lineHeight: 18 }}>➕</Text>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>
+            {addLabel}
+          </Text>
+        </Pressable>
       )}
     </View>
 

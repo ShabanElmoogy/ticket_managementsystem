@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View } from 'react-native';
 import { REPORT_TYPES, type ReportType, DEFAULT_PERIOD } from '../../types';
 import type {
   CustomerTicketsSummaryRow, CustomerStatusRow,
@@ -13,15 +13,11 @@ import ActivityTable          from './tables/ActivityTable';
 import TicketsTable           from './tables/TicketsTable';
 import SlaTable               from './tables/SlaTable';
 import ActivityPeriodSelector from './ActivityPeriodSelector';
-import AppSearchInput         from '../../../../../shared/components/AppSearchInput';
 import AppEmptyState          from '../../../../../shared/components/AppEmptyState';
 import ReportGridCard         from './views/ReportGridCard';
 import ReportCompactRow       from './views/ReportCompactRow';
-import ReportCardHeader       from './ReportCardHeader';
-import ReportTableView        from './views/ReportTableView';
+import DataCard               from '../../../../../shared/components/DataCard';
 import { useReportData }      from './useReportData';
-
-// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   reportType:   ReportType;
@@ -45,7 +41,8 @@ interface Props {
   view?: AdminView;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Tagged row type for grid/compact views ────────────────────────────────────
+interface TaggedRow { id: string; _reportType: ReportType; [key: string]: any; }
 
 const ReportCard: React.FC<Props> = ({
   reportType, summaryRows, statusRows, activityRows, tickets, slaRows,
@@ -55,15 +52,13 @@ const ReportCard: React.FC<Props> = ({
 }) => {
   const [search, setSearch] = useState('');
 
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const cardBg = isDark ? '#1e293b' : '#ffffff';
-  const label  = REPORT_TYPES.find(r => r.id === reportType)?.label ?? '';
-  const isFiltered = search.trim().length > 0;
+  const label           = REPORT_TYPES.find(r => r.id === reportType)?.label ?? '';
+  const isFiltered      = search.trim().length > 0;
   const searchPlaceholder = reportType === 'tickets'
     ? 'Search by title or customer…'
     : 'Search by customer name…';
 
-  // ── Data (filter → sort → paginate) ──────────────────────────────────────
+  // ── Filter → sort → paginate ──────────────────────────────────────────────
   const {
     activePag, totalUnfiltered, activeRows,
     summaryPag, statusPag, activityPag, ticketsPag, slaPag,
@@ -78,7 +73,11 @@ const ReportCard: React.FC<Props> = ({
   // ── Table renderer ────────────────────────────────────────────────────────
   const renderTable = useCallback(() => {
     if (totalItems === 0) {
-      return <AppEmptyState icon={isFiltered ? '🔍' : '📭'} message={isFiltered ? 'No results found' : 'No data available'} subtitle={search.trim().length > 0 ? `No rows match "${search}"` : undefined} />;
+      return <AppEmptyState
+        icon={isFiltered ? '🔍' : '📭'}
+        message={isFiltered ? 'No results found' : 'No data available'}
+        subtitle={isFiltered ? `No rows match "${search}"` : undefined}
+      />;
     }
     switch (reportType) {
       case 'summary':
@@ -104,75 +103,34 @@ const ReportCard: React.FC<Props> = ({
     summarySorting, statusSorting, activitySorting, ticketsSorting, slaSorting,
   ]);
 
-  // ── Shared list header ────────────────────────────────────────────────────
-  const ListHeader = useMemo(() => (
-    <View>
-      <AppSearchInput value={search} onChange={setSearch} isDark={isDark} placeholder={searchPlaceholder} />
-      {reportType === 'customers-activity' && onActivityPeriodChange && (
-        <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
-          <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
-        </View>
-      )}
-    </View>
-  ), [isDark, search, searchPlaceholder, reportType, activityPeriod, onActivityPeriodChange]);
+  // ── Header extras (activity period selector) ──────────────────────────────
+  const headerExtras = useMemo(() =>
+    reportType === 'customers-activity' && onActivityPeriodChange ? (
+      <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
+        <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
+      </View>
+    ) : null,
+    [reportType, activityPeriod, onActivityPeriodChange, isDark],
+  );
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <View style={{
-      flex: 1, borderRadius: 12, overflow: 'hidden',
-      borderWidth: 1, borderColor: border,
-      backgroundColor: cardBg,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0 : 0.06, shadowRadius: 6, elevation: 2,
-    }}>
-      <ReportCardHeader
-        label={label}
-        totalItems={totalItems}
-        totalUnfiltered={totalUnfiltered}
-        isFiltered={isFiltered}
-        isDark={isDark}
-      />
-
-      {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={{ fontSize: 13, color: isDark ? '#64748b' : '#94a3b8' }}>Loading report data…</Text>
-        </View>
-      ) : view === 'table' ? (
-        <ReportTableView
-          renderTable={renderTable}
-          ListHeader={ListHeader}
-          activePag={activePag}
-          loading={loading}
-          onRefresh={onRefresh}
-          isDark={isDark}
-        />
-      ) : view === 'grid' ? (
-        <FlatList
-          data={activeRows}
-          keyExtractor={(item: any) => item.id}
-          contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={<AppEmptyState icon={isFiltered ? '🔍' : '📭'} message={isFiltered ? 'No results found' : 'No data available'} subtitle={search.trim().length > 0 ? `No rows match "${search}"` : undefined} />}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => <ReportGridCard row={item} isDark={isDark} />}
-        />
-      ) : (
-        <FlatList
-          data={activeRows}
-          keyExtractor={(item: any) => item.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={<AppEmptyState icon={isFiltered ? '🔍' : '📭'} message={isFiltered ? 'No results found' : 'No data available'} subtitle={search.trim().length > 0 ? `No rows match "${search}"` : undefined} />}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => <ReportCompactRow row={item} isDark={isDark} />}
-        />
-      )}
-    </View>
+    <DataCard<TaggedRow>
+      title={label}
+      isDark={isDark}
+      totalCount={totalUnfiltered}
+      rows={activeRows as TaggedRow[]}
+      loading={loading}
+      search={search}
+      onSearchChange={setSearch}
+      searchPlaceholder={searchPlaceholder}
+      view={view}
+      renderTable={renderTable}
+      pagination={activePag}
+      renderGridItem={(item) => <ReportGridCard row={item} isDark={isDark} />}
+      renderCompactItem={(item) => <ReportCompactRow row={item} isDark={isDark} />}
+      headerExtras={headerExtras}
+      onRefresh={onRefresh}
+    />
   );
 };
 

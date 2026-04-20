@@ -24,8 +24,8 @@ const ExportPdfButton: React.FC<Props> = ({
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        height: 36, paddingHorizontal: 12, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center', gap: 2,
+        height: 44, paddingHorizontal: 12, borderRadius: 10,
         backgroundColor: loading ? '#b91c1c' : pressed ? '#dc2626' : '#ef4444',
         opacity: isDisabled ? 0.4 : 1,
         shadowColor: '#ef4444',
@@ -35,8 +35,8 @@ const ExportPdfButton: React.FC<Props> = ({
         elevation: isDisabled ? 0 : 3,
       })}
     >
-      <Text style={{ fontSize: 14, lineHeight: 18 }}>{icon}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff' }}>{label}</Text>
+      <Text style={{ fontSize: 16, lineHeight: 18 }}>{icon}</Text>
+      <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>{label}</Text>
     </Pressable>
   );
 };
