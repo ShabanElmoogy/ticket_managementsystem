@@ -1,10 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, Pressable,
-  ScrollView, ActivityIndicator, RefreshControl,
+  FlatList, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { REPORT_TYPES, type ReportType, DEFAULT_PERIOD } from '../types';
-import type { CustomerTicketsSummaryRow, CustomerStatusRow, CustomerActivityRow, ActivityPeriod, SlaMetricsRow } from '../types';
+import type {
+  CustomerTicketsSummaryRow, CustomerStatusRow,
+  CustomerActivityRow, ActivityPeriod, SlaMetricsRow,
+} from '../types';
 import type { Ticket } from '../../../../services/api/types';
 import SummaryTable  from './tables/SummaryTable';
 import StatusTable   from './tables/StatusTable';
@@ -12,9 +15,9 @@ import ActivityTable from './tables/ActivityTable';
 import TicketsTable  from './tables/TicketsTable';
 import SlaTable      from './tables/SlaTable';
 import Pagination    from './Pagination';
-import { usePagination } from './usePagination';
+import { usePagination } from '../../../../shared/components/AppTable';
+import { useSorting } from '../../../../shared/components/AppTable';
 import ActivityPeriodSelector from './ActivityPeriodSelector';
-import { useSorting } from './useSorting';
 
 interface Props {
   reportType:   ReportType;
@@ -72,11 +75,7 @@ const SearchInput: React.FC<{
       placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
       autoCapitalize="none"
       autoCorrect={false}
-      style={{
-        flex: 1, fontSize: 13,
-        color: isDark ? '#e2e8f0' : '#1e293b',
-        paddingVertical: 0,
-      }}
+      style={{ flex: 1, fontSize: 13, color: isDark ? '#e2e8f0' : '#1e293b', paddingVertical: 0 }}
     />
     {value.length > 0 && (
       <Pressable onPress={() => onChange('')} hitSlop={8}>
@@ -85,6 +84,26 @@ const SearchInput: React.FC<{
     )}
   </View>
 );
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+const EmptyState: React.FC<{ isFiltered: boolean; search: string; isDark: boolean }> = ({ isFiltered, search, isDark }) => (
+  <View style={{ padding: 40, alignItems: 'center' }}>
+    <Text style={{ fontSize: 32, marginBottom: 10 }}>{isFiltered ? '🔍' : '📭'}</Text>
+    <Text style={{ fontSize: 14, fontWeight: '600', color: isDark ? '#475569' : '#94a3b8', marginBottom: 4 }}>
+      {isFiltered ? 'No results found' : 'No data available'}
+    </Text>
+    {search.trim().length > 0 && (
+      <Text style={{ fontSize: 12, color: isDark ? '#334155' : '#cbd5e1', textAlign: 'center' }}>
+        No rows match "{search}"
+      </Text>
+    )}
+  </View>
+);
+
+// ── Sentinel for single-item FlatList ─────────────────────────────────────────
+
+const TABLE_ITEM = [{ key: 'table' }];
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -128,13 +147,6 @@ const ReportCard: React.FC<Props> = ({
   const ticketsSorting  = useSorting(filteredTickets as any[]);
   const slaSorting      = useSorting(filteredSla);
 
-  const activeSorting =
-    reportType === 'summary'            ? summarySorting
-    : reportType === 'customers-status'   ? statusSorting
-    : reportType === 'customers-activity' ? activitySorting
-    : reportType === 'sla'                ? slaSorting
-    : ticketsSorting;
-
   // ── Paginate ──────────────────────────────────────────────────────────────
   const summaryPag  = usePagination(summarySorting.sorted);
   const statusPag   = usePagination(statusSorting.sorted);
@@ -160,9 +172,48 @@ const ReportCard: React.FC<Props> = ({
   const isFiltered = search.trim().length > 0;
 
   const searchPlaceholder =
-    reportType === 'tickets'
-      ? 'Search by title or customer…'
-      : 'Search by customer name…';
+    reportType === 'tickets' ? 'Search by title or customer…' : 'Search by customer name…';
+
+  // ── Table renderer ────────────────────────────────────────────────────────
+  const renderTable = useCallback(() => {
+    if (totalItems === 0) {
+      return <EmptyState isFiltered={isFiltered} search={search} isDark={isDark} />;
+    }
+    switch (reportType) {
+      case 'summary':
+        return <SummaryTable rows={summaryPag.paged} isDark={isDark}
+          sort={summarySorting.sort} onSort={summarySorting.toggle} />;
+      case 'customers-status':
+        return <StatusTable rows={statusPag.paged} isDark={isDark}
+          sort={statusSorting.sort} onSort={statusSorting.toggle} />;
+      case 'customers-activity':
+        return <ActivityTable rows={activityPag.paged} isDark={isDark}
+          sort={activitySorting.sort} onSort={activitySorting.toggle}
+          period={activityPeriod} />;
+      case 'tickets':
+        return <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark}
+          sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />;
+      case 'sla':
+        return <SlaTable rows={slaPag.paged as SlaMetricsRow[]} isDark={isDark}
+          sort={slaSorting.sort} onSort={slaSorting.toggle} />;
+    }
+  }, [
+    reportType, totalItems, isFiltered, search, isDark, activityPeriod,
+    summaryPag.paged, statusPag.paged, activityPag.paged, ticketsPag.paged, slaPag.paged,
+    summarySorting, statusSorting, activitySorting, ticketsSorting, slaSorting,
+  ]);
+
+  // ── FlatList header ───────────────────────────────────────────────────────
+  const ListHeader = useMemo(() => (
+    <View>
+      <SearchInput value={search} onChange={setSearch} isDark={isDark} placeholder={searchPlaceholder} />
+      {reportType === 'customers-activity' && onActivityPeriodChange && (
+        <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
+          <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
+        </View>
+      )}
+    </View>
+  ), [isDark, search, searchPlaceholder, reportType, activityPeriod, onActivityPeriodChange]);
 
   return (
     <View style={{
@@ -175,7 +226,7 @@ const ReportCard: React.FC<Props> = ({
       {/* ── Card header ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 16, paddingVertical: 12,
+        paddingHorizontal: 16, paddingVertical: 10,
         borderBottomWidth: 1, borderBottomColor: border,
         backgroundColor: isDark ? '#0f172a' : '#f8fafc',
       }}>
@@ -183,7 +234,7 @@ const ReportCard: React.FC<Props> = ({
           {label}
         </Text>
         <View style={{
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8,
+          paddingHorizontal: 8, paddingVertical: 1, borderRadius: 8,
           backgroundColor: isFiltered ? '#f59e0b22' : '#3b82f620',
         }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: isFiltered ? '#f59e0b' : '#3b82f6' }}>
@@ -200,69 +251,28 @@ const ReportCard: React.FC<Props> = ({
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-          <SearchInput value={search} onChange={setSearch} isDark={isDark} placeholder={searchPlaceholder} />
-
-          {reportType === 'customers-activity' && onActivityPeriodChange && (
-            <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
-              <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
-            </View>
-          )}
-
-          <ScrollView
-            style={{ flex: 1 }}
+          <FlatList
+            data={TABLE_ITEM}
+            keyExtractor={(item) => item.key}
+            renderItem={renderTable}
+            ListHeaderComponent={ListHeader}
+            ListFooterComponent={
+              <Pagination
+                page={activePag.page}
+                totalPages={activePag.totalPages}
+                totalItems={activePag.totalItems}
+                pageSize={activePag.pageSize}
+                hasNext={activePag.hasNext}
+                hasPrev={activePag.hasPrev}
+                onNext={activePag.next}
+                onPrev={activePag.prev}
+                isDark={isDark}
+              />
+            }
             refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-          >
-            {reportType === 'summary' && (
-              <SummaryTable rows={summaryPag.paged} isDark={isDark}
-                sort={summarySorting.sort} onSort={summarySorting.toggle} />
-            )}
-            {reportType === 'customers-status' && (
-              <StatusTable rows={statusPag.paged} isDark={isDark}
-                sort={statusSorting.sort} onSort={statusSorting.toggle} />
-            )}
-            {reportType === 'customers-activity' && (
-              <ActivityTable rows={activityPag.paged} isDark={isDark}
-                sort={activitySorting.sort} onSort={activitySorting.toggle}
-                period={activityPeriod} />
-            )}
-            {reportType === 'tickets' && (
-              <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark}
-                sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />
-            )}
-            {reportType === 'sla' && (
-              <SlaTable rows={slaPag.paged as SlaMetricsRow[]} isDark={isDark}
-                sort={slaSorting.sort} onSort={slaSorting.toggle} />
-            )}
-
-            {totalItems === 0 && (
-              <View style={{ padding: 40, alignItems: 'center' }}>
-                <Text style={{ fontSize: 32, marginBottom: 10 }}>
-                  {isFiltered ? '🔍' : '📭'}
-                </Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: isDark ? '#475569' : '#94a3b8', marginBottom: 4 }}>
-                  {isFiltered ? 'No results found' : 'No data available'}
-                </Text>
-                {isFiltered && (
-                  <Text style={{ fontSize: 12, color: isDark ? '#334155' : '#cbd5e1', textAlign: 'center' }}>
-                    No rows match "{search}"
-                  </Text>
-                )}
-              </View>
-            )}
-          </ScrollView>
-
-          <Pagination
-            page={activePag.page}
-            totalPages={activePag.totalPages}
-            totalItems={activePag.totalItems}
-            pageSize={activePag.pageSize}
-            hasNext={activePag.hasNext}
-            hasPrev={activePag.hasPrev}
-            onNext={activePag.next}
-            onPrev={activePag.prev}
-            isDark={isDark}
+            removeClippedSubviews={false}
           />
         </View>
       )}

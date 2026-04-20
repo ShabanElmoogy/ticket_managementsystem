@@ -34,5 +34,22 @@ export type { OverviewCardProps }       from './OverviewCard';
 
 export { HapticTab }                    from './HapticTab';
 export { IconSymbol }                   from './IconSymbol';
+
+export {
+  // Primitives
+  TH, STH, TD, TableRow, TableHeader, Badge as TableBadge,
+  // Layout
+  VirtualTable,
+  // Hooks
+  useSorting, usePagination,
+  // Constants
+  W as TableW, STATUS_COLORS as TableStatusColors, PRIORITY_COLORS as TablePriorityColors,
+  PAGE_SIZE,
+}                                       from './AppTable';
+export type {
+  SortState, SortDir, VirtualTableProps,
+}                                       from './AppTable';
+export { default as AppDataTable }      from './AppDataTable';
+export type { AppDataTableProps, ColDef } from './AppDataTable';
 // Layout components moved to src/components/layout/
 // Import directly from there: import AppHeader from '../../components/layout/AppHeader'

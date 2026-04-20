@@ -58,7 +58,7 @@ const Pagination: React.FC<Props> = ({
 
         {/* Page indicator */}
         <View style={{
-          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+          paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8,
           backgroundColor: '#3b82f6',
         }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>
