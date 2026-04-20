@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import type { SortState } from './useSorting';
 
 // ── Color maps ────────────────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ export const Badge: React.FC<{ label: string | number; color: string }> = ({ lab
   </View>
 );
 
-// ── TH — header cell ──────────────────────────────────────────────────────────
+// ── TH — static header cell (original style) ─────────────────────────────────
 
 export const TH: React.FC<{ children: string; width: number; isDark: boolean }> = ({ children, width, isDark }) => (
   <Text style={{
@@ -52,6 +53,44 @@ export const TH: React.FC<{ children: string; width: number; isDark: boolean }> 
     {children}
   </Text>
 );
+
+// ── STH — sortable header cell (same visual as TH + tap + sort arrow) ──────────
+
+export const STH: React.FC<{
+  children: string;
+  width: number;
+  isDark: boolean;
+  field: string;
+  sort: SortState;
+  onSort: (field: string) => void;
+}> = ({ children, width, isDark, field, sort, onSort }) => {
+  const isActive = sort.field === field;
+  const arrow    = isActive ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '';
+  const color    = isActive ? '#3b82f6' : (isDark ? '#94a3b8' : '#64748b');
+
+  return (
+    // Outer View holds the fixed width — Pressable fills it completely
+    <View style={{ width }}>
+      <Pressable
+        onPress={() => onSort(field)}
+        style={({ pressed }) => ({
+          paddingVertical: 10,
+          paddingHorizontal: 6,
+          backgroundColor: pressed
+            ? (isDark ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.06)')
+            : 'transparent',
+        })}
+      >
+        <Text style={{
+          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 0.4, color, textAlign: 'center',
+        }}>
+          {children}{arrow}
+        </Text>
+      </Pressable>
+    </View>
+  );
+};
 
 // ── TD — data cell ────────────────────────────────────────────────────────────
 

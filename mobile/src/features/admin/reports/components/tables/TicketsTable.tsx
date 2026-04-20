@@ -1,21 +1,26 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { Badge, TH, TD, TableRow, TableHeader, W, STATUS_COLORS, PRIORITY_COLORS } from '../tableUtils';
+import { Badge, STH, TD, TableRow, TableHeader, W, STATUS_COLORS, PRIORITY_COLORS } from '../tableUtils';
+import type { SortState } from '../useSorting';
 import type { Ticket } from '../../../../../services/api/types';
 
+interface Props {
+  rows: Ticket[];
+  isDark: boolean;
+  sort: SortState;
+  onSort: (field: string) => void;
+}
 
-interface Props { rows: Ticket[]; isDark: boolean }
-
-const TicketsTable: React.FC<Props> = ({ rows, isDark }) => (
+const TicketsTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
     <View>
       <TableHeader isDark={isDark}>
-        <TH width={W.title}    isDark={isDark}>Title</TH>
-        <TH width={W.status}   isDark={isDark}>Status</TH>
-        <TH width={W.priority} isDark={isDark}>Priority</TH>
-        <TH width={W.name}     isDark={isDark}>Customer</TH>
-        <TH width={W.name}     isDark={isDark}>Application</TH>
-        <TH width={W.name}     isDark={isDark}>Assigned</TH>
+        <STH width={W.title}    isDark={isDark} field="title"    sort={sort} onSort={onSort}>Title</STH>
+        <STH width={W.status}   isDark={isDark} field="status"   sort={sort} onSort={onSort}>Status</STH>
+        <STH width={W.priority} isDark={isDark} field="priority" sort={sort} onSort={onSort}>Priority</STH>
+        <STH width={W.name}     isDark={isDark} field="customer" sort={sort} onSort={onSort}>Customer</STH>
+        <STH width={W.name}     isDark={isDark} field="application" sort={sort} onSort={onSort}>Application</STH>
+        <STH width={W.name}     isDark={isDark} field="assignedTo" sort={sort} onSort={onSort}>Assigned</STH>
       </TableHeader>
 
       {rows.map((t, i) => (

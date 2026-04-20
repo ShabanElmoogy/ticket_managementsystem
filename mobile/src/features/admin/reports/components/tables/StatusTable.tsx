@@ -1,21 +1,27 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { Badge, TH, TD, TableRow, TableHeader, W } from '../tableUtils';
+import { Badge, STH, TD, TableRow, TableHeader, W } from '../tableUtils';
+import type { SortState } from '../useSorting';
 import type { CustomerStatusRow } from '../../types';
 
-interface Props { rows: CustomerStatusRow[]; isDark: boolean }
+interface Props {
+  rows: CustomerStatusRow[];
+  isDark: boolean;
+  sort: SortState;
+  onSort: (field: string) => void;
+}
 
-const StatusTable: React.FC<Props> = ({ rows, isDark }) => (
+const StatusTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => (
   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
     <View>
       <TableHeader isDark={isDark}>
-        <TH width={W.customer} isDark={isDark}>Customer</TH>
-        <TH width={W.num}      isDark={isDark}>Total</TH>
-        <TH width={W.num}      isDark={isDark}>Open</TH>
-        <TH width={W.num}      isDark={isDark}>In Prog.</TH>
-        <TH width={W.num}      isDark={isDark}>Resolved</TH>
-        <TH width={W.pct}      isDark={isDark}>Open %</TH>
-        <TH width={W.pct}      isDark={isDark}>Res. %</TH>
+        <STH width={W.customer} isDark={isDark} field="customerName" sort={sort} onSort={onSort}>Customer</STH>
+        <STH width={W.num}      isDark={isDark} field="total"        sort={sort} onSort={onSort}>Total</STH>
+        <STH width={W.num}      isDark={isDark} field="open"         sort={sort} onSort={onSort}>Open</STH>
+        <STH width={W.num}      isDark={isDark} field="inProgress"   sort={sort} onSort={onSort}>In Prog.</STH>
+        <STH width={W.num}      isDark={isDark} field="resolved"     sort={sort} onSort={onSort}>Resolved</STH>
+        <STH width={W.pct}      isDark={isDark} field="openPct"      sort={sort} onSort={onSort}>Open %</STH>
+        <STH width={W.pct}      isDark={isDark} field="resolvedPct"  sort={sort} onSort={onSort}>Res. %</STH>
       </TableHeader>
 
       {rows.map((r, i) => (

@@ -12,6 +12,7 @@ import ActivityTable from './tables/ActivityTable';
 import TicketsTable  from './tables/TicketsTable';
 import Pagination    from './Pagination';
 import { usePagination } from './usePagination';
+import { useSorting } from './useSorting';
 
 interface Props {
   reportType:   ReportType;
@@ -123,11 +124,23 @@ const ReportCard: React.FC<Props> = ({
     });
   }, [filteredSummary, filteredStatus, filteredActivity, filteredTickets]);
 
-  // ── Paginate filtered results ─────────────────────────────────────────────
-  const summaryPag  = usePagination(filteredSummary);
-  const statusPag   = usePagination(filteredStatus);
-  const activityPag = usePagination(filteredActivity);
-  const ticketsPag  = usePagination(filteredTickets);
+  // ── Sort filtered results (before pagination) ────────────────────────────
+  const summarySorting  = useSorting(filteredSummary);
+  const statusSorting   = useSorting(filteredStatus);
+  const activitySorting = useSorting(filteredActivity);
+  const ticketsSorting  = useSorting(filteredTickets as any[]);
+
+  const activeSorting =
+    reportType === 'summary'            ? summarySorting
+    : reportType === 'customers-status'   ? statusSorting
+    : reportType === 'customers-activity' ? activitySorting
+    : ticketsSorting;
+
+  // ── Paginate sorted+filtered results ─────────────────────────────────────
+  const summaryPag  = usePagination(summarySorting.sorted);
+  const statusPag   = usePagination(statusSorting.sorted);
+  const activityPag = usePagination(activitySorting.sorted);
+  const ticketsPag  = usePagination(ticketsSorting.sorted);
 
   const activePag =
     reportType === 'summary'            ? summaryPag
@@ -206,16 +219,20 @@ const ReportCard: React.FC<Props> = ({
             keyboardShouldPersistTaps="handled"
           >
             {reportType === 'summary' && (
-              <SummaryTable rows={summaryPag.paged} isDark={isDark} />
+              <SummaryTable rows={summaryPag.paged} isDark={isDark}
+                sort={summarySorting.sort} onSort={summarySorting.toggle} />
             )}
             {reportType === 'customers-status' && (
-              <StatusTable rows={statusPag.paged} isDark={isDark} />
+              <StatusTable rows={statusPag.paged} isDark={isDark}
+                sort={statusSorting.sort} onSort={statusSorting.toggle} />
             )}
             {reportType === 'customers-activity' && (
-              <ActivityTable rows={activityPag.paged} isDark={isDark} />
+              <ActivityTable rows={activityPag.paged} isDark={isDark}
+                sort={activitySorting.sort} onSort={activitySorting.toggle} />
             )}
             {reportType === 'tickets' && (
-              <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark} />
+              <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark}
+                sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />
             )}
 
             {totalItems === 0 && (
