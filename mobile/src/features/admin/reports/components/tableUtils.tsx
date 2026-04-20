@@ -48,7 +48,7 @@ export const TH: React.FC<{ children: string; width: number; isDark: boolean }> 
   <Text style={{
     width, fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
     letterSpacing: 0.4, color: isDark ? '#94a3b8' : '#64748b',
-    textAlign: 'center', paddingVertical: 10, paddingHorizontal: 6,
+    textAlign: 'center', paddingVertical: 20, paddingHorizontal: 6,
   }}>
     {children}
   </Text>
@@ -74,7 +74,7 @@ export const STH: React.FC<{
       <Pressable
         onPress={() => onSort(field)}
         style={({ pressed }) => ({
-          paddingVertical: 10,
+          paddingVertical: 16,
           paddingHorizontal: 6,
           backgroundColor: pressed
             ? (isDark ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.06)')
@@ -83,7 +83,7 @@ export const STH: React.FC<{
       >
         <Text style={{
           fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
-          letterSpacing: 0.4, color, textAlign: 'center',
+          letterSpacing: 0.4, color, textAlign: 'center',paddingVertical : 7
         }}>
           {children}{arrow}
         </Text>

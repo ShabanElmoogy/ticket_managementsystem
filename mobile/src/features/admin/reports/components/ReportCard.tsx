@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable,
   ScrollView, ActivityIndicator, RefreshControl,
@@ -115,14 +115,20 @@ const ReportCard: React.FC<Props> = ({
   );
 
   // ── Notify parent of filtered data (for export) ─────────────────────────
+  // Keep callback ref stable so useEffect doesn't re-run when parent re-renders
+  const onFilteredDataRef = useRef(onFilteredData);
+  useEffect(() => { onFilteredDataRef.current = onFilteredData; });
+
+  // Use a stable string key — only call parent when actual filter results change
+  const filteredKey = `${filteredSummary.length}|${filteredStatus.length}|${filteredActivity.length}|${filteredTickets.length}|${search}`;
   useEffect(() => {
-    onFilteredData?.({
+    onFilteredDataRef.current?.({
       summaryRows:  filteredSummary  as CustomerTicketsSummaryRow[],
       statusRows:   filteredStatus   as CustomerStatusRow[],
       activityRows: filteredActivity as CustomerActivityRow[],
       tickets:      filteredTickets  as Ticket[],
     });
-  }, [filteredSummary, filteredStatus, filteredActivity, filteredTickets]);
+  }, [filteredKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sort filtered results (before pagination) ────────────────────────────
   const summarySorting  = useSorting(filteredSummary);
