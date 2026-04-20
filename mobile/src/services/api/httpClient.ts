@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenManager } from './tokenManager';
+import { networkEvents } from './networkEvents';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -384,6 +385,17 @@ http.interceptors.response.use(
       message = String(d.error ?? d.message ?? message);
     } else if (error.message) {
       message = error.message;
+    }
+
+    const isNetworkError = !error.response && (
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ERR_NETWORK'  ||
+      error.message === 'Network Error'
+    );
+
+    // Fire global network error event — UI can show a dialog
+    if (isNetworkError) {
+      networkEvents.emit('Network error. Please check your connection.');
     }
 
     const isRetryable =

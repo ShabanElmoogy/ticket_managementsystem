@@ -15,6 +15,7 @@ import { initI18n } from '../src/i18n';
 import { DirectionProvider } from '../src/providers/DirectionProvider';
 import { tokenManager } from '../src/services/api/tokenManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetworkErrorDialog from '../src/components/NetworkErrorDialog';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,8 @@ export default function RootLayout() {
               <Stack.Screen name="(app)"  options={{ headerShown: false }} />
             </Stack>
             <StatusBar style="auto" />
+            {/* Global network error dialog — mounted once, listens to all API errors */}
+            <NetworkErrorDialog />
           </ThemeProvider>
         </DirectionProvider>
       </QueryClientProvider>

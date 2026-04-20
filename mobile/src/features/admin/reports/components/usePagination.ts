@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export const PAGE_SIZE = 7;
 
@@ -7,7 +7,9 @@ export function usePagination<T>(items: T[], pageSize = PAGE_SIZE) {
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
 
-  // Reset to page 1 when data changes
+  // Reset to page 1 whenever the dataset changes (search filter, report type switch)
+  useEffect(() => { setPage(1); }, [items.length]);
+
   const safePage = Math.min(page, totalPages);
 
   const paged = useMemo(
