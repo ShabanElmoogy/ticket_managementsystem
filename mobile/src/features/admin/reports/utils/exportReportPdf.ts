@@ -107,12 +107,13 @@ function activityHtml(rows: CustomerActivityRow[]): string {
 }
 
 function ticketsHtml(rows: Ticket[]): string {
-  const head = `<tr><th>Title</th><th>Status</th><th>Priority</th><th>Customer</th><th>Assigned To</th><th>Created</th></tr>`;
+  const head = `<tr><th>Title</th><th>Status</th><th>Priority</th><th>Customer</th><th>Application</th><th>Assigned To</th><th>Created</th></tr>`;
   const body = rows.map(t => `<tr>
     <td style="text-align:left">${esc(t.title)}</td>
     <td><span class="badge ${t.status.toLowerCase().replace('_', '_')}">${esc(t.status)}</span></td>
     <td><span class="badge ${t.priority.toLowerCase()}">${esc(t.priority)}</span></td>
     <td>${esc(t.customer?.name)}</td>
+    <td>${esc(t.application?.name ?? '—')}</td>
     <td>${esc(t.assignedTo?.name ?? 'Unassigned')}</td>
     <td>${fmtDate(t.createdAt)}</td>
   </tr>`).join('');

@@ -33,17 +33,17 @@ interface Props {
 
 // ── Search filter functions ───────────────────────────────────────────────────
 
-function filterByQuery<T extends { customerName?: string; title?: string }>(
-  rows: T[],
-  q: string,
-  fields: (keyof T)[],
-): T[] {
+function filterByQuery<T>(rows: T[], q: string, getFields: (r: T) => string[]): T[] {
   if (!q.trim()) return rows;
   const lower = q.toLowerCase();
-  return rows.filter((r) =>
-    fields.some((f) => String(r[f] ?? '').toLowerCase().includes(lower))
-  );
+  return rows.filter((r) => getFields(r).some((v) => v.toLowerCase().includes(lower)));
 }
+
+const customerFields = (r: { customerName?: string }) =>
+  [r.customerName ?? ''];
+
+const ticketFields = (r: any) =>
+  [r.title ?? '', r.customer?.name ?? '', r.application?.name ?? ''];
 
 // ── Search input ──────────────────────────────────────────────────────────────
 
@@ -97,19 +97,19 @@ const ReportCard: React.FC<Props> = ({
 
   // ── Filter rows by search query ───────────────────────────────────────────
   const filteredSummary  = useMemo(
-    () => filterByQuery(summaryRows,  search, ['customerName']),
+    () => filterByQuery(summaryRows,  search, customerFields),
     [summaryRows,  search],
   );
   const filteredStatus   = useMemo(
-    () => filterByQuery(statusRows,   search, ['customerName']),
+    () => filterByQuery(statusRows,   search, customerFields),
     [statusRows,   search],
   );
   const filteredActivity = useMemo(
-    () => filterByQuery(activityRows, search, ['customerName']),
+    () => filterByQuery(activityRows, search, customerFields),
     [activityRows, search],
   );
   const filteredTickets  = useMemo(
-    () => filterByQuery(tickets as any[], search, ['title', 'customerName'] as any),
+    () => filterByQuery(tickets,      search, ticketFields),
     [tickets, search],
   );
 
