@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import AppDataTable, { type ColDef } from '../../../../../shared/components/AppDataTable';
-import { Badge as TableBadge, W, STATUS_COLORS, PRIORITY_COLORS } from '../../../../../shared/components/AppTable';
-import type { SortState } from '../../../../../shared/components/AppTable';
-import type { Ticket } from '../../../../../services/api/types';
+import AppDataTable, { type ColDef } from '../../../../../../shared/components/AppDataTable';
+import { Badge as TableBadge, W, STATUS_COLORS, PRIORITY_COLORS } from '../../../../../../shared/components/AppTable';
+import type { SortState } from '../../../../../../shared/components/AppTable';
+import type { Ticket } from '../../../../../../services/api/types';
 
 interface Props {
   rows: Ticket[];

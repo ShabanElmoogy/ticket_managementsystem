@@ -1,0 +1,14 @@
+import React from 'react';
+import ErrorBanner from '../../../../shared/components/ErrorBanner';
+
+interface Props {
+  message: string;
+  onRetry: () => void;
+  isDark: boolean;
+}
+
+const ReportErrorBanner: React.FC<Props> = ({ message, onRetry, isDark }) => (
+  <ErrorBanner message={message} onRetry={onRetry} isDark={isDark} />
+);
+
+export default ReportErrorBanner;

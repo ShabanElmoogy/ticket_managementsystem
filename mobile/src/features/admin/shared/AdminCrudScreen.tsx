@@ -3,6 +3,7 @@ import { View, TextInput, Text, Pressable, ScrollView, FlatList, useWindowDimens
 import AppScreenHeader from '../../../shared/components/AppScreenHeader';
 import AppDeleteDialog from '../../../shared/components/AppDeleteDialog';
 import AppDataTable, { type ColDef } from '../../../shared/components/AppDataTable';
+import ViewToggle from '../../../shared/components/ViewToggle';
 import { useUiStore, type AdminView } from '../../../stores/uiStore';
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
@@ -21,42 +22,6 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   canAdd?: boolean;
   onRowPress?: (item: T) => void;
 }
-
-// ── View toggle button ─────────────────────────────────────────────────────
-
-const VIEW_OPTIONS: { view: AdminView; icon: string; label: string }[] = [
-  { view: 'table',   icon: '⊞', label: 'Table'   },
-  { view: 'grid',    icon: '▦', label: 'Grid'    },
-  { view: 'compact', icon: '☰', label: 'Compact' },
-];
-
-const ViewToggle: React.FC<{
-  current: AdminView;
-  onChange: (v: AdminView) => void;
-  isDark: boolean;
-}> = ({ current, onChange, isDark }) => (
-  <View className={`flex-row rounded-lg overflow-hidden border ${isDark ? 'border-slate-600' : 'border-gray-200'}`}>
-    {VIEW_OPTIONS.map(({ view, icon, label }) => {
-      const active = current === view;
-      return (
-        <Pressable
-          key={view}
-          onPress={() => onChange(view)}
-          className={`px-2.5 py-1.5 items-center justify-center ${
-            active
-              ? 'bg-blue-600'
-              : isDark ? 'bg-slate-700' : 'bg-white'
-          }`}
-          accessibilityLabel={label}
-        >
-          <Text style={{ fontSize: 14, color: active ? '#fff' : isDark ? '#94a3b8' : '#6b7280' }}>
-            {icon}
-          </Text>
-        </Pressable>
-      );
-    })}
-  </View>
-);
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
 

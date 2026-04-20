@@ -13,18 +13,22 @@ interface Props {
   isDark: boolean;
 }
 
-const Pagination: React.FC<Props> = ({
+/**
+ * Generic pagination bar — prev/next buttons, page indicator, item range.
+ * Returns null when there is only one page (nothing to paginate).
+ */
+const AppPagination: React.FC<Props> = ({
   page, totalPages, totalItems, pageSize,
   hasNext, hasPrev, onNext, onPrev, isDark,
 }) => {
-  const from  = Math.min((page - 1) * pageSize + 1, totalItems);
-  const to    = Math.min(page * pageSize, totalItems);
-  const bg    = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const text  = isDark ? '#94a3b8' : '#64748b';
-  const btnBg = isDark ? '#273549' : '#ffffff';
-
   if (totalPages <= 1) return null;
+
+  const from   = Math.min((page - 1) * pageSize + 1, totalItems);
+  const to     = Math.min(page * pageSize, totalItems);
+  const bg     = isDark ? '#1e293b' : '#f8fafc';
+  const border = isDark ? '#334155' : '#e2e8f0';
+  const text   = isDark ? '#94a3b8' : '#64748b';
+  const btnBg  = isDark ? '#273549' : '#ffffff';
 
   return (
     <View style={{
@@ -33,14 +37,13 @@ const Pagination: React.FC<Props> = ({
       backgroundColor: bg,
       borderTopWidth: 1, borderTopColor: border,
     }}>
-      {/* Info */}
+      {/* Range info */}
       <Text style={{ fontSize: 12, color: text }}>
         {from}–{to} of {totalItems}
       </Text>
 
       {/* Controls */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        {/* Prev */}
         <Pressable
           onPress={onPrev}
           disabled={!hasPrev}
@@ -56,17 +59,12 @@ const Pagination: React.FC<Props> = ({
           <Text style={{ fontSize: 16, color: isDark ? '#e2e8f0' : '#374151' }}>‹</Text>
         </Pressable>
 
-        {/* Page indicator */}
-        <View style={{
-          paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8,
-          backgroundColor: '#3b82f6',
-        }}>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: '#3b82f6' }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>
             {page} / {totalPages}
           </Text>
         </View>
 
-        {/* Next */}
         <Pressable
           onPress={onNext}
           disabled={!hasNext}
@@ -86,4 +84,4 @@ const Pagination: React.FC<Props> = ({
   );
 };
 
-export default Pagination;
+export default AppPagination;

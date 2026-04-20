@@ -7,7 +7,7 @@ import {
   buildCustomerStatusRows,
   buildCustomerActivityRows,
   buildSlaMetricsRows,
-} from '../rowBuilders';
+} from '../utils/rowBuilders';
 import { exportReportPdf } from '../utils/exportReportPdf';
 import { networkEvents }   from '../../../../services/api/networkEvents';
 import type { ReportType, ActivityPeriod, SlaMetricsRow } from '../types';

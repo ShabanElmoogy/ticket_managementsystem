@@ -1,13 +1,13 @@
 // Copied verbatim from web/src/components/admin/reportsManagement/rowBuilders.ts
 // Pure functions — no platform-specific code.
 
-import type { Ticket, Customer } from '../../../services/api/types';
+import type { Ticket, Customer } from '../../../../services/api/types';
 import type {
   CustomerTicketsSummaryRow,
   CustomerStatusRow,
   CustomerActivityRow,
   SlaMetricsRow,
-} from './types';
+} from '../types';
 
 export function buildSummaryRows(
   tickets: Ticket[],
