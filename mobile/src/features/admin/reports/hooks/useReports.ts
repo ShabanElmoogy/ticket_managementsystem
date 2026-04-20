@@ -6,10 +6,12 @@ import {
   buildSummaryRows,
   buildCustomerStatusRows,
   buildCustomerActivityRows,
+  buildSlaMetricsRows,
 } from '../rowBuilders';
 import { exportReportPdf } from '../utils/exportReportPdf';
 import { networkEvents }   from '../../../../services/api/networkEvents';
-import type { ReportType } from '../types';
+import type { ReportType, ActivityPeriod, SlaMetricsRow } from '../types';
+import { DEFAULT_PERIOD } from '../types';
 import type {
   CustomerTicketsSummaryRow,
   CustomerStatusRow,
@@ -22,11 +24,15 @@ export interface FilteredData {
   statusRows:   CustomerStatusRow[];
   activityRows: CustomerActivityRow[];
   tickets:      Ticket[];
+  slaRows:      SlaMetricsRow[];
 }
 
 export function useReports() {
   // ── Report type ────────────────────────────────────────────────────────────
   const [reportType, setReportType] = useState<ReportType>('summary');
+
+  // ── Activity period ────────────────────────────────────────────────────────
+  const [activityPeriod, setActivityPeriod] = useState<ActivityPeriod>(DEFAULT_PERIOD);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const {
@@ -57,14 +63,18 @@ export function useReports() {
   // ── Row builders ───────────────────────────────────────────────────────────
   const summaryRows  = useMemo(() => buildSummaryRows(tickets, customers),         [tickets, customers]);
   const statusRows   = useMemo(() => buildCustomerStatusRows(tickets, customers),   [tickets, customers]);
-  const activityRows = useMemo(() => buildCustomerActivityRows(tickets, customers), [tickets, customers]);
+  const activityRows = useMemo(
+    () => buildCustomerActivityRows(tickets, customers, activityPeriod.daysA, activityPeriod.daysB),
+    [tickets, customers, activityPeriod],
+  );
+  const slaRows = useMemo(() => buildSlaMetricsRows(tickets, customers), [tickets, customers]);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
   const refresh = () => { void refetchT(); void refetchC(); };
 
   // ── Filtered data (updated by ReportCard via onFilteredData callback) ──────
   const [filteredData, setFilteredData] = useState<FilteredData>({
-    summaryRows, statusRows, activityRows, tickets,
+    summaryRows, statusRows, activityRows, tickets, slaRows,
   });
 
   // ── Active row count for the current report type ───────────────────────────
@@ -72,6 +82,7 @@ export function useReports() {
     reportType === 'summary'            ? filteredData.summaryRows.length
     : reportType === 'customers-status'   ? filteredData.statusRows.length
     : reportType === 'customers-activity' ? filteredData.activityRows.length
+    : reportType === 'sla'                ? filteredData.slaRows.length
     : filteredData.tickets.length;
 
   // ── PDF export ─────────────────────────────────────────────────────────────
@@ -100,11 +111,14 @@ export function useReports() {
     // State
     reportType,
     setReportType,
+    activityPeriod,
+    setActivityPeriod,
     // Data
     tickets,
     summaryRows,
     statusRows,
     activityRows,
+    slaRows,
     // Status
     loading,
     error,

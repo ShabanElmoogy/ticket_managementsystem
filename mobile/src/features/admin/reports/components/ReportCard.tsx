@@ -3,15 +3,17 @@ import {
   View, Text, TextInput, Pressable,
   ScrollView, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { REPORT_TYPES, type ReportType } from '../types';
-import type { CustomerTicketsSummaryRow, CustomerStatusRow, CustomerActivityRow } from '../types';
+import { REPORT_TYPES, type ReportType, DEFAULT_PERIOD } from '../types';
+import type { CustomerTicketsSummaryRow, CustomerStatusRow, CustomerActivityRow, ActivityPeriod, SlaMetricsRow } from '../types';
 import type { Ticket } from '../../../../services/api/types';
 import SummaryTable  from './tables/SummaryTable';
 import StatusTable   from './tables/StatusTable';
 import ActivityTable from './tables/ActivityTable';
 import TicketsTable  from './tables/TicketsTable';
+import SlaTable      from './tables/SlaTable';
 import Pagination    from './Pagination';
 import { usePagination } from './usePagination';
+import ActivityPeriodSelector from './ActivityPeriodSelector';
 import { useSorting } from './useSorting';
 
 interface Props {
@@ -20,19 +22,22 @@ interface Props {
   statusRows:   CustomerStatusRow[];
   activityRows: CustomerActivityRow[];
   tickets:      Ticket[];
+  slaRows:      SlaMetricsRow[];
   loading:      boolean;
   isDark:       boolean;
   onRefresh:    () => void;
-  /** Called whenever the filtered dataset changes — used by parent for export */
   onFilteredData?: (data: {
     summaryRows:  CustomerTicketsSummaryRow[];
     statusRows:   CustomerStatusRow[];
     activityRows: CustomerActivityRow[];
     tickets:      Ticket[];
+    slaRows:      SlaMetricsRow[];
   }) => void;
+  activityPeriod?: ActivityPeriod;
+  onActivityPeriodChange?: (p: ActivityPeriod) => void;
 }
 
-// ── Search filter functions ───────────────────────────────────────────────────
+// ── Search filter ─────────────────────────────────────────────────────────────
 
 function filterByQuery<T>(rows: T[], q: string, getFields: (r: T) => string[]): T[] {
   if (!q.trim()) return rows;
@@ -40,11 +45,8 @@ function filterByQuery<T>(rows: T[], q: string, getFields: (r: T) => string[]): 
   return rows.filter((r) => getFields(r).some((v) => v.toLowerCase().includes(lower)));
 }
 
-const customerFields = (r: { customerName?: string }) =>
-  [r.customerName ?? ''];
-
-const ticketFields = (r: any) =>
-  [r.title ?? '', r.customer?.name ?? '', r.application?.name ?? ''];
+const customerFields = (r: { customerName?: string }) => [r.customerName ?? ''];
+const ticketFields   = (r: any) => [r.title ?? '', r.customer?.name ?? '', r.application?.name ?? ''];
 
 // ── Search input ──────────────────────────────────────────────────────────────
 
@@ -87,8 +89,9 @@ const SearchInput: React.FC<{
 // ── Main component ────────────────────────────────────────────────────────────
 
 const ReportCard: React.FC<Props> = ({
-  reportType, summaryRows, statusRows, activityRows, tickets,
+  reportType, summaryRows, statusRows, activityRows, tickets, slaRows,
   loading, isDark, onRefresh, onFilteredData,
+  activityPeriod = DEFAULT_PERIOD, onActivityPeriodChange,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -96,74 +99,66 @@ const ReportCard: React.FC<Props> = ({
   const cardBg = isDark ? '#1e293b' : '#ffffff';
   const label  = REPORT_TYPES.find(r => r.id === reportType)?.label ?? '';
 
-  // ── Filter rows by search query ───────────────────────────────────────────
-  const filteredSummary  = useMemo(
-    () => filterByQuery(summaryRows,  search, customerFields),
-    [summaryRows,  search],
-  );
-  const filteredStatus   = useMemo(
-    () => filterByQuery(statusRows,   search, customerFields),
-    [statusRows,   search],
-  );
-  const filteredActivity = useMemo(
-    () => filterByQuery(activityRows, search, customerFields),
-    [activityRows, search],
-  );
-  const filteredTickets  = useMemo(
-    () => filterByQuery(tickets,      search, ticketFields),
-    [tickets, search],
-  );
+  // ── Filter rows ───────────────────────────────────────────────────────────
+  const filteredSummary  = useMemo(() => filterByQuery(summaryRows,  search, customerFields), [summaryRows,  search]);
+  const filteredStatus   = useMemo(() => filterByQuery(statusRows,   search, customerFields), [statusRows,   search]);
+  const filteredActivity = useMemo(() => filterByQuery(activityRows, search, customerFields), [activityRows, search]);
+  const filteredTickets  = useMemo(() => filterByQuery(tickets,      search, ticketFields),   [tickets,      search]);
+  const filteredSla      = useMemo(() => filterByQuery(slaRows,      search, customerFields), [slaRows,      search]);
 
-  // ── Notify parent of filtered data (for export) ─────────────────────────
-  // Keep callback ref stable so useEffect doesn't re-run when parent re-renders
+  // ── Notify parent of filtered data (for export) ───────────────────────────
   const onFilteredDataRef = useRef(onFilteredData);
   useEffect(() => { onFilteredDataRef.current = onFilteredData; });
 
-  // Use a stable string key — only call parent when actual filter results change
-  const filteredKey = `${filteredSummary.length}|${filteredStatus.length}|${filteredActivity.length}|${filteredTickets.length}|${search}`;
+  const filteredKey = `${filteredSummary.length}|${filteredStatus.length}|${filteredActivity.length}|${filteredTickets.length}|${filteredSla.length}|${search}`;
   useEffect(() => {
     onFilteredDataRef.current?.({
       summaryRows:  filteredSummary  as CustomerTicketsSummaryRow[],
       statusRows:   filteredStatus   as CustomerStatusRow[],
       activityRows: filteredActivity as CustomerActivityRow[],
       tickets:      filteredTickets  as Ticket[],
+      slaRows:      filteredSla      as SlaMetricsRow[],
     });
   }, [filteredKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Sort filtered results (before pagination) ────────────────────────────
+  // ── Sort ──────────────────────────────────────────────────────────────────
   const summarySorting  = useSorting(filteredSummary);
   const statusSorting   = useSorting(filteredStatus);
   const activitySorting = useSorting(filteredActivity);
   const ticketsSorting  = useSorting(filteredTickets as any[]);
+  const slaSorting      = useSorting(filteredSla);
 
   const activeSorting =
     reportType === 'summary'            ? summarySorting
     : reportType === 'customers-status'   ? statusSorting
     : reportType === 'customers-activity' ? activitySorting
+    : reportType === 'sla'                ? slaSorting
     : ticketsSorting;
 
-  // ── Paginate sorted+filtered results ─────────────────────────────────────
+  // ── Paginate ──────────────────────────────────────────────────────────────
   const summaryPag  = usePagination(summarySorting.sorted);
   const statusPag   = usePagination(statusSorting.sorted);
   const activityPag = usePagination(activitySorting.sorted);
   const ticketsPag  = usePagination(ticketsSorting.sorted);
+  const slaPag      = usePagination(slaSorting.sorted);
 
   const activePag =
     reportType === 'summary'            ? summaryPag
     : reportType === 'customers-status'   ? statusPag
     : reportType === 'customers-activity' ? activityPag
+    : reportType === 'sla'                ? slaPag
     : ticketsPag;
 
-  const totalItems    = activePag.totalItems;
+  const totalItems = activePag.totalItems;
   const totalUnfiltered =
     reportType === 'summary'            ? summaryRows.length
     : reportType === 'customers-status'   ? statusRows.length
     : reportType === 'customers-activity' ? activityRows.length
+    : reportType === 'sla'                ? slaRows.length
     : tickets.length;
 
   const isFiltered = search.trim().length > 0;
 
-  // Placeholder text per report type
   const searchPlaceholder =
     reportType === 'tickets'
       ? 'Search by title or customer…'
@@ -187,16 +182,11 @@ const ReportCard: React.FC<Props> = ({
         <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b' }}>
           {label}
         </Text>
-
-        {/* Row count — shows filtered/total when searching */}
         <View style={{
           paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8,
           backgroundColor: isFiltered ? '#f59e0b22' : '#3b82f620',
         }}>
-          <Text style={{
-            fontSize: 11, fontWeight: '700',
-            color: isFiltered ? '#f59e0b' : '#3b82f6',
-          }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: isFiltered ? '#f59e0b' : '#3b82f6' }}>
             {isFiltered ? `${totalItems} / ${totalUnfiltered}` : `${totalItems} rows`}
           </Text>
         </View>
@@ -210,13 +200,13 @@ const ReportCard: React.FC<Props> = ({
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-          {/* ── Search input ── */}
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            isDark={isDark}
-            placeholder={searchPlaceholder}
-          />
+          <SearchInput value={search} onChange={setSearch} isDark={isDark} placeholder={searchPlaceholder} />
+
+          {reportType === 'customers-activity' && onActivityPeriodChange && (
+            <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
+              <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
+            </View>
+          )}
 
           <ScrollView
             style={{ flex: 1 }}
@@ -234,11 +224,16 @@ const ReportCard: React.FC<Props> = ({
             )}
             {reportType === 'customers-activity' && (
               <ActivityTable rows={activityPag.paged} isDark={isDark}
-                sort={activitySorting.sort} onSort={activitySorting.toggle} />
+                sort={activitySorting.sort} onSort={activitySorting.toggle}
+                period={activityPeriod} />
             )}
             {reportType === 'tickets' && (
               <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark}
                 sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />
+            )}
+            {reportType === 'sla' && (
+              <SlaTable rows={slaPag.paged as SlaMetricsRow[]} isDark={isDark}
+                sort={slaSorting.sort} onSort={slaSorting.toggle} />
             )}
 
             {totalItems === 0 && (
@@ -258,7 +253,6 @@ const ReportCard: React.FC<Props> = ({
             )}
           </ScrollView>
 
-          {/* ── Pagination bar ── */}
           <Pagination
             page={activePag.page}
             totalPages={activePag.totalPages}

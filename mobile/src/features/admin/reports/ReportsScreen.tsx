@@ -44,7 +44,8 @@ const ReportsScreen: React.FC = () => {
 
   const {
     reportType, setReportType,
-    tickets, summaryRows, statusRows, activityRows,
+    activityPeriod, setActivityPeriod,
+    tickets, summaryRows, statusRows, activityRows, slaRows,
     loading, error, exporting, activeCount,
     refresh, exportPdf, setFilteredData,
   } = useReports();
@@ -154,10 +155,13 @@ const ReportsScreen: React.FC = () => {
           statusRows={statusRows}
           activityRows={activityRows}
           tickets={tickets}
+          slaRows={slaRows}
           loading={loading}
           isDark={isDark}
           onRefresh={refresh}
           onFilteredData={setFilteredData}
+          activityPeriod={activityPeriod}
+          onActivityPeriodChange={setActivityPeriod}
         />
       </View>
     </View>

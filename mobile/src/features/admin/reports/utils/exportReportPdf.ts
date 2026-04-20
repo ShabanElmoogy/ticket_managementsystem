@@ -5,6 +5,7 @@ import type {
   CustomerTicketsSummaryRow,
   CustomerStatusRow,
   CustomerActivityRow,
+  SlaMetricsRow,
   ReportType,
 } from '../types';
 import { REPORT_TYPES } from '../types';
@@ -47,6 +48,8 @@ const CSS = `
   .medium      { background: #fef3c7; color: #b45309; }
   .high        { background: #fee2e2; color: #b91c1c; }
   .urgent      { background: #fecaca; color: #991b1b; }
+  .overdue     { background: #fee2e2; color: #b91c1c; }
+  .ontime      { background: #d1fae5; color: #065f46; }
   .pct-open    { color: #b45309; font-weight: 700; }
   .pct-res     { color: #065f46; font-weight: 700; }
   .total       { font-weight: 800; font-size: 14px; }
@@ -120,6 +123,25 @@ function ticketsHtml(rows: Ticket[]): string {
   return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
 
+function slaHtml(rows: SlaMetricsRow[]): string {
+  const head = `<tr><th>Customer</th><th>Total</th><th>With SLA</th><th>Overdue</th><th>Resolved</th><th>On Time</th><th>On Time %</th><th>Avg Resolution (hrs)</th></tr>`;
+  const body = rows.map(r => {
+    const onTimePct = r.resolved > 0 ? ((r.onTimeCount / r.resolved) * 100).toFixed(1) : '—';
+    const overdueClass = r.overdue > 0 ? 'overdue' : 'resolved';
+    return `<tr>
+      <td style="text-align:left">${esc(r.customerName)}</td>
+      <td class="total">${r.total}</td>
+      <td><span class="badge open">${r.withDeadline}</span></td>
+      <td><span class="badge ${overdueClass}">${r.overdue}</span></td>
+      <td><span class="badge resolved">${r.resolved}</span></td>
+      <td><span class="badge ontime">${r.onTimeCount}</span></td>
+      <td class="pct-res">${onTimePct}${onTimePct !== '—' ? '%' : ''}</td>
+      <td>${r.avgResolutionHours !== null ? `${r.avgResolutionHours}h` : '—'}</td>
+    </tr>`;
+  }).join('');
+  return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
 // ── Public export function ────────────────────────────────────────────────────
 
 export interface ExportData {
@@ -127,6 +149,7 @@ export interface ExportData {
   statusRows:   CustomerStatusRow[];
   activityRows: CustomerActivityRow[];
   tickets:      Ticket[];
+  slaRows:      SlaMetricsRow[];
 }
 
 export async function exportReportPdf(
@@ -141,6 +164,7 @@ export async function exportReportPdf(
     case 'customers-status':   tableHtml = statusHtml(data.statusRows);     break;
     case 'customers-activity': tableHtml = activityHtml(data.activityRows); break;
     case 'tickets':            tableHtml = ticketsHtml(data.tickets);       break;
+    case 'sla':                tableHtml = slaHtml(data.slaRows);           break;
   }
 
   const html = page(label, tableHtml);
