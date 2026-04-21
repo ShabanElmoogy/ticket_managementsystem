@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import { AppTextInput } from '@/src/shared/components';
-import { customerFormSchema } from '../schemas/customerSchema';
+import { createCustomerFormSchema } from '../schemas/customerSchema';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 interface Props {
@@ -20,7 +20,7 @@ const CustomerForm: React.FC<Props> = ({ item, onClose, onSave, submitting }) =>
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async () => {
-    const result = customerFormSchema.safeParse({ name, email, phone });
+    const result = createCustomerFormSchema(t).safeParse({ name, email, phone });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((e) => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import { AppTextInput } from '@/src/shared/components';
-import { applicationFormSchema } from '../schemas/applicationSchema';
+import { createApplicationFormSchema } from '../schemas/applicationSchema';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 interface Props {
@@ -20,7 +20,7 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
   const [errors,      setErrors]      = useState<Record<string, string>>({});
 
   const handleSubmit = async () => {
-    const result = applicationFormSchema.safeParse({ name, description, version });
+    const result = createApplicationFormSchema(t).safeParse({ name, description, version });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((e) => {

@@ -115,6 +115,74 @@ export function getEntityColumns(t: TFunction): ColDef<Entity>[] {
 
 ---
 
+### `schemas/<feature>Schema.ts`
+
+Zod schemas use a **factory function** pattern so error messages can be translated.
+
+**Never hardcode English strings in Zod schemas.** Always use `createXSchema(t)`.
+
+```ts
+// schemas/applicationSchema.ts
+import { z } from 'zod';
+import type { TFunction } from 'i18next';
+
+export const createApplicationFormSchema = (t: TFunction) =>
+  z.object({
+    name: z.string().trim()
+      .min(3,   t('validation.minLength', { field: t('common.name'), min: 3 }))
+      .max(100, t('validation.maxLength', { field: t('common.name'), max: 100 })),
+    description: z.string().trim()
+      .max(500, t('validation.maxLength', { field: t('common.description'), max: 500 }))
+      .optional().or(z.literal('')),
+  });
+
+export type ApplicationFormValues = z.infer<ReturnType<typeof createApplicationFormSchema>>;
+```
+
+Call the factory inside `handleSubmit` where `t` is already available:
+
+```ts
+// In the form component
+const handleSubmit = async () => {
+  const result = createApplicationFormSchema(t).safeParse({ name, description });
+  if (!result.success) {
+    const fieldErrors: Record<string, string> = {};
+    result.error.issues.forEach((e) => {
+      if (e.path[0]) fieldErrors[String(e.path[0])] = e.message;
+    });
+    setErrors(fieldErrors);
+    return;
+  }
+  // ...
+};
+```
+
+### Shared validation keys (`validation` namespace)
+
+Add these keys to **both** `en.json` and `ar.json` — they are shared across all features:
+
+```json
+// en.json
+"validation": {
+  "required":      "{{field}} is required",
+  "minLength":     "{{field}} must be at least {{min}} characters",
+  "maxLength":     "{{field}} must be at most {{max}} characters",
+  "invalidEmail":  "Invalid email address"
+}
+
+// ar.json
+"validation": {
+  "required":      "{{field}} مطلوب",
+  "minLength":     "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
+  "maxLength":     "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
+  "invalidEmail":  "البريد الإلكتروني غير صالح"
+}
+```
+
+Field names come from `common.*` keys (e.g. `t('common.name')`, `t('common.email')`).
+
+---
+
 ### `components/<Entity>Form.tsx`
 - Controlled form with local `useState` per field
 - Wrapped in `AdminFormModal`
@@ -423,7 +491,7 @@ messages: {
 - [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function export (not a plain array)
 - [ ] `components/<Entity>Form.tsx` — form with `AdminFormModal` + `useTranslation`
 - [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export + `useTranslation`
-- [ ] `schemas/<feature>Schema.ts` — Zod schema (if validation needed)
+- [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory (if validation needed), uses `validation.*` keys
 - [ ] `<Feature>Screen.tsx` — thin, renders `AdminCrudScreen` + `useTranslation`
 - [ ] `en.json` + `ar.json` — translation namespace added with all required keys
 - [ ] All cross-folder imports use `@/src/...` alias

@@ -38,7 +38,14 @@
     "refresh": "تحديث",
     "refreshing": "جاري التحميل…",
     "exportPdf": "تصدير PDF",
-    "exporting": "جاري التصدير…"
+    "exporting": "جاري التصدير…",
+    "phone": "الهاتف"
+  },
+  "validation": {
+    "required": "{{field}} مطلوب",
+    "minLength": "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
+    "maxLength": "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
+    "invalidEmail": "البريد الإلكتروني غير صالح"
   },
   "applications": {
     "title": "التطبيقات",
