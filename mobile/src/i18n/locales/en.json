@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "tickets": "Tickets",
     "kanbanBoard": "Kanban Board",
+    "kanban": "Kanban",
     "epics": "Epics",
     "featureRequests": "Feature Requests",
     "documents": "Documents",

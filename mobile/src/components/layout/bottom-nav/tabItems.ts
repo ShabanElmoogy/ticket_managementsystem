@@ -1,5 +1,6 @@
 export interface TabItem {
-  label: string;
+  /** i18n key for the label */
+  labelKey: string;
   icon: string;
   activeIcon: string;
   route: string;
@@ -7,8 +8,8 @@ export interface TabItem {
 }
 
 export const TABS: TabItem[] = [
-  { label: 'Dashboard', icon: '📊', activeIcon: '📊', route: '/(app)',         match: '/(app)'         },
-  { label: 'Tickets',   icon: '🎫', activeIcon: '🎫', route: '/(app)/tickets', match: '/(app)/tickets' },
-  { label: 'Kanban',    icon: '🗂️', activeIcon: '🗂️', route: '/(app)/kanban',  match: '/(app)/kanban'  },
-  { label: 'Profile',   icon: '👤', activeIcon: '👤', route: '/(app)/profile', match: '/(app)/profile' },
+  { labelKey: 'nav.dashboard', icon: '📊', activeIcon: '📊', route: '/(app)',         match: '/(app)'         },
+  { labelKey: 'nav.tickets',   icon: '🎫', activeIcon: '🎫', route: '/(app)/tickets', match: '/(app)/tickets' },
+  { labelKey: 'nav.kanban',    icon: '🗂️', activeIcon: '🗂️', route: '/(app)/kanban',  match: '/(app)/kanban'  },
+  { labelKey: 'nav.profile',   icon: '👤', activeIcon: '👤', route: '/(app)/profile', match: '/(app)/profile' },
 ];

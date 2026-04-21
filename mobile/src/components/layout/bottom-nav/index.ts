@@ -1,5 +1,7 @@
 export { default as AppBottomNav } from './AppBottomNav';
-export { default as BottomNavItem } from './BottomNavItem';
 export { TABS } from './tabItems';
 export type { TabItem } from './tabItems';
 export { default } from './AppBottomNav';
+
+// BottomNavItem lives in shared/components — import from there:
+// import { BottomNavItem } from '../../../shared/components';

@@ -17,3 +17,6 @@ export type { ToggleButtonProps } from './ToggleButton';
 
 export { default as NavItem } from './NavItem';
 export type { NavItemProps } from './NavItem';
+
+export { default as BottomNavItem } from './BottomNavItem';
+export type { BottomNavItemProps } from './BottomNavItem';

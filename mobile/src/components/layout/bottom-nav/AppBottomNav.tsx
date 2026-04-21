@@ -2,8 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useUiStore } from '../../../stores/uiStore';
-import BottomNavItem from './BottomNavItem';
+import { BottomNavItem } from '../../../shared/components';
 import { TABS } from './tabItems';
 
 const AppBottomNav: React.FC = () => {
@@ -11,6 +12,7 @@ const AppBottomNav: React.FC = () => {
   const pathname      = usePathname();
   const { colorMode } = useUiStore();
   const insets        = useSafeAreaInsets();
+  const { t }         = useTranslation();
   const isDark        = colorMode === 'dark';
 
   return (
@@ -27,7 +29,9 @@ const AppBottomNav: React.FC = () => {
         return (
           <BottomNavItem
             key={tab.route}
-            tab={tab}
+            icon={tab.icon}
+            activeIcon={tab.activeIcon}
+            label={t(tab.labelKey)}
             isActive={isActive}
             isDark={isDark}
             onPress={() => router.push(tab.route as any)}
