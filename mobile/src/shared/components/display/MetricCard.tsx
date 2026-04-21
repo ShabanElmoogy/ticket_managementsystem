@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import AppCard from './AppCard';
+import AppCard from '../layout/AppCard';
 
 export interface MetricCardProps {
   title: string;

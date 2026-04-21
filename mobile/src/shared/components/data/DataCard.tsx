@@ -18,11 +18,11 @@ import React, { useState, useMemo } from 'react';
 import {
   View, Text, FlatList, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import AppSearchInput  from './AppSearchInput';
-import AppEmptyState   from './AppEmptyState';
-import AppDeleteDialog from './AppDeleteDialog';
-import SectionHeader   from './SectionHeader';
-import CountBadge      from './CountBadge';
+import AppSearchInput  from '../forms/AppSearchInput';
+import AppEmptyState   from '../feedback/AppEmptyState';
+import AppDeleteDialog from '../dialogs/AppDeleteDialog';
+import SectionHeader   from '../display/SectionHeader';
+import CountBadge      from '../display/CountBadge';
 import PaginatedView   from './PaginatedView';
 import type { AdminView } from '../../stores/uiStore';
 

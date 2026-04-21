@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import ViewToggle      from './ViewToggle';
-import ExportPdfButton from './ExportPdfButton';
-import RefreshButton   from './RefreshButton';
+import ExportPdfButton from '../actions/ExportPdfButton';
+import RefreshButton   from '../actions/RefreshButton';
 import VerticalDivider from './VerticalDivider';
 import type { AdminView } from '../../stores/uiStore';
 

@@ -1,22 +1,27 @@
 /**
- * Common reusable UI components
- * Extracted from header components for reuse across the app
+ * Shared UI components — grouped by concern.
+ *
+ * Subfolders:
+ *   display/    — Avatar, Badge, StatCard, MetricCard, SectionHeader, etc.
+ *   feedback/   — AppLoadingSpinner, AppEmptyState
+ *   forms/      — AppTextInput, AppButton, AppSearchInput, AppBadge
+ *   dialogs/    — AppDeleteDialog, AppConfirmDialog
+ *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
+ *   layout/     — AppCard, AppScreenHeader, AdminToolbar, ViewToggle, VerticalDivider
+ *   data/       — AppTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup
+ *   actions/    — RefreshButton, ExportPdfButton
+ *   platform/   — HapticTab, IconSymbol
+ *
+ * All symbols are re-exported here so existing imports keep working:
+ *   import { Avatar, AppButton } from '../../shared/components';
  */
 
-export { default as Avatar } from './Avatar';
-export type { AvatarProps } from './Avatar';
-
-export { default as Badge } from './Badge';
-export type { BadgeProps } from './Badge';
-
-export { default as IconButton } from './IconButton';
-export type { IconButtonProps } from './IconButton';
-
-export { default as ToggleButton } from './ToggleButton';
-export type { ToggleButtonProps } from './ToggleButton';
-
-export { default as NavItem } from './NavItem';
-export type { NavItemProps } from './NavItem';
-
-export { default as BottomNavItem } from './BottomNavItem';
-export type { BottomNavItemProps } from './BottomNavItem';
+export * from './display';
+export * from './feedback';
+export * from './forms';
+export * from './dialogs';
+export * from './navigation';
+export * from './layout';
+export * from './data';
+export * from './actions';
+export * from './platform';

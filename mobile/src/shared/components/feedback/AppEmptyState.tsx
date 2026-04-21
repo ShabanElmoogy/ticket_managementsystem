@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import AppButton from './AppButton';
+import AppButton from '../forms/AppButton';
 
 export interface AppEmptyStateProps {
   icon?: string;

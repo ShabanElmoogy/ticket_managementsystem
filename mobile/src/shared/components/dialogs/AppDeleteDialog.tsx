@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
-import AppButton from './AppButton';
+import AppButton from '../forms/AppButton';
 import { useUiStore } from '../../stores/uiStore';
 
 export interface AppDeleteDialogProps {
