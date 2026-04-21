@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { adminSettingsApi, type SlaConfig } from './api/adminSettingsApi';
 import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppButton from '../../../shared/components/AppButton';
+import { AppTextInput, AppButton } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
 const PRESETS = [1, 2, 4, 8, 24, 48, 72];

@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, ScrollView, FlatList, useWindowDimensions,
   type StyleProp, type ViewStyle,
 } from 'react-native';
-import { useUiStore } from '../../stores/uiStore';
+import { useUiStore } from '../../../stores/uiStore';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

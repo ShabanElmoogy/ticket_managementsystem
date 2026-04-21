@@ -6,7 +6,7 @@ import type {
 import type { Ticket } from '../../../../../services/api/types';
 import type { ReportType } from '../../types';
 import { filterByQuery, customerFields, ticketFields } from './reportFilters';
-import { usePagination, useSorting } from '../../../../../shared/components/AppTable';
+import { usePagination, useSorting } from '../../../../../shared/components';
 
 interface Input {
   reportType:   ReportType;

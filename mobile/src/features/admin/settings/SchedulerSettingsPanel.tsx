@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Switch } from 'react-native';
 import { adminSettingsApi, type EscalationConfig } from './api/adminSettingsApi';
 import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppButton from '../../../shared/components/AppButton';
+import { AppTextInput, AppButton } from '../../../shared/components';
 import { useAuthStore } from '../../../stores/authStore';
 import { useUiStore } from '../../../stores/uiStore';
 

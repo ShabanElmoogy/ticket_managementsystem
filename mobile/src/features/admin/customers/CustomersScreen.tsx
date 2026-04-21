@@ -3,11 +3,10 @@ import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { customersApi, customersKeys } from './api/customers';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppBadge from '../../../shared/components/AppBadge';
+import { AppTextInput, AppBadge } from '../../../shared/components';
 import { exportEntityPdf } from '../../../shared/utils/exportEntityPdf';
 import type { Customer, CreateCustomerData } from '../../../services/api/types';
-import type { ColDef } from '../../../shared/components/AppDataTable';
+import type { ColDef } from '../../../shared/components';
 
 const COLUMNS: ColDef<Customer>[] = [
   { field: 'name',               headerName: 'Name',       flex: 1,   sortable: true  },

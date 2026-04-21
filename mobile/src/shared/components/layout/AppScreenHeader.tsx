@@ -4,7 +4,7 @@ import ViewToggle      from './ViewToggle';
 import ExportPdfButton from '../actions/ExportPdfButton';
 import RefreshButton   from '../actions/RefreshButton';
 import VerticalDivider from './VerticalDivider';
-import type { AdminView } from '../../stores/uiStore';
+import type { AdminView } from '../../../stores/uiStore';
 
 export interface AppScreenHeaderProps {
   // ── Identity ──────────────────────────────────────────────────────────────

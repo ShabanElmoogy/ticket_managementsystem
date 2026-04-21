@@ -4,8 +4,8 @@
  */
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Badge, W } from '../components/AppTable';
-import type { ColDef } from '../components/AppDataTable';
+import { Badge, W } from '../components/data/AppTable';
+import type { ColDef } from '../components/data/AppDataTable';
 
 // ── Badge column ──────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import AppDataTable, { type ColDef } from '../../../../../../shared/components/AppDataTable';
-import { W } from '../../../../../../shared/components/AppTable';
-import type { SortState } from '../../../../../../shared/components/AppTable';
+import { AppDataTable, type ColDef } from '../../../../../../shared/components';
+import { W } from '../../../../../../shared/components';
+import type { SortState } from '../../../../../../shared/components';
 import type { CustomerStatusRow } from '../../../types';
 import {
   createBadgeColumn,

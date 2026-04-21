@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppButton from '../../../shared/components/AppButton';
+import { AppButton } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
 interface Props {

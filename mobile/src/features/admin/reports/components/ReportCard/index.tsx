@@ -13,10 +13,10 @@ import ActivityTable          from './tables/ActivityTable';
 import TicketsTable           from './tables/TicketsTable';
 import SlaTable               from './tables/SlaTable';
 import ActivityPeriodSelector from './ActivityPeriodSelector';
-import AppEmptyState          from '../../../../../shared/components/AppEmptyState';
+import AppEmptyState          from '../../../../../shared/components';
 import ReportGridCard         from './views/ReportGridCard';
 import ReportCompactRow       from './views/ReportCompactRow';
-import DataCard               from '../../../../../shared/components/DataCard';
+import DataCard               from '../../../../../shared/components';
 import { useReportData }      from './useReportData';
 
 interface Props {

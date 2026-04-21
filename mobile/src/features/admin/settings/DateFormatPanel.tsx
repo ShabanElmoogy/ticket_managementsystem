@@ -3,7 +3,7 @@ import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import dayjs from 'dayjs';
 import { adminSettingsApi } from './api/adminSettingsApi';
 import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import AppButton from '../../../shared/components/AppButton';
+import { AppButton } from '../../../shared/components';
 import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '../../../stores/tenantStore';
 import { useUiStore } from '../../../stores/uiStore';
 

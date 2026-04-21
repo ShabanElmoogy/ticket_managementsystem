@@ -1,5 +1,5 @@
 import React from 'react';
-import PaginatedView from '../../../../../../shared/components/PaginatedView';
+import { PaginatedView } from '../../../../../../shared/components';
 
 interface PaginationState {
   page: number;

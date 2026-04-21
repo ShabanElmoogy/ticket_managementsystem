@@ -1,9 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, Pressable, FlatList, ScrollView, useWindowDimensions } from 'react-native';
-import AppScreenHeader from '../../../shared/components/AppScreenHeader';
-import AppDataTable, { type ColDef } from '../../../shared/components/AppDataTable';
-import AppDeleteDialog from '../../../shared/components/AppDeleteDialog';
-import DataCard from '../../../shared/components/DataCard';
+import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
 export interface AdminCrudScreenProps<T extends { id: string }> {

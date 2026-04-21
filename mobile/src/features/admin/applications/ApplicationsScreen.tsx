@@ -5,11 +5,10 @@ import { applicationsApi, applicationsKeys } from './api/applications';
 import { applicationFormSchema } from './schemas/applicationSchema';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppBadge from '../../../shared/components/AppBadge';
+import { AppTextInput, AppBadge } from '../../../shared/components';
 import { formatDate, formatRelativeDuration } from '../../../shared/utils/dateUtils';
 import type { Application, CreateApplicationData } from '../../../services/api/types';
-import type { ColDef } from '../../../shared/components/AppDataTable';
+import type { ColDef } from '../../../shared/components';
 
 // ── Column definitions — mirrors web ApplicationsColumns.tsx ───────────────
 

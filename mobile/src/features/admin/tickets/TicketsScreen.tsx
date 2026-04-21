@@ -2,9 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuxData } from '../../../shared/hooks/useAuxData';
 import { ticketsApi, ticketsKeys } from './api/tickets';
-import AppBadge from '../../../shared/components/AppBadge';
-import AppScreenHeader from '../../../shared/components/AppScreenHeader';
-import AppDataTable, { type ColDef } from '../../../shared/components/AppDataTable';
+import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '../../../shared/components';
 import type { Ticket } from '../../../services/api/types';
 import { useUiStore } from '../../../stores/uiStore';
 

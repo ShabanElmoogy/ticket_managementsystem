@@ -3,10 +3,9 @@ import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { usersApi, usersKeys } from './api/users';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppBadge from '../../../shared/components/AppBadge';
+import { AppTextInput, AppBadge } from '../../../shared/components';
 import type { User, CreateUserData } from '../../../services/api/types';
-import type { ColDef } from '../../../shared/components/AppDataTable';
+import type { ColDef } from '../../../shared/components';
 import { useAuthStore } from '../../../stores/authStore';
 
 const ROLE_COLORS: Record<string, string> = {

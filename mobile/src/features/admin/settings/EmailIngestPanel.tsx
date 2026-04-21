@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Switch } from 'react-native';
 import { adminSettingsApi, type EmailConfig } from './api/adminSettingsApi';
 import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import AppButton from '../../../shared/components/AppButton';
+import { AppButton } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
 type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;

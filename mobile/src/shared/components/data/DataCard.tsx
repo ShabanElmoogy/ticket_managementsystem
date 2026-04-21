@@ -24,7 +24,7 @@ import AppDeleteDialog from '../dialogs/AppDeleteDialog';
 import SectionHeader   from '../display/SectionHeader';
 import CountBadge      from '../display/CountBadge';
 import PaginatedView   from './PaginatedView';
-import type { AdminView } from '../../stores/uiStore';
+import type { AdminView } from '../../../stores/uiStore';
 
 // ── Pagination state shape ────────────────────────────────────────────────────
 

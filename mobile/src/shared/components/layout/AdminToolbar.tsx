@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import ViewToggle from './ViewToggle';
 import VerticalDivider from './VerticalDivider';
-import type { AdminView } from '../../stores/uiStore';
+import type { AdminView } from '../../../stores/uiStore';
 
 interface Props {
   isDark: boolean;

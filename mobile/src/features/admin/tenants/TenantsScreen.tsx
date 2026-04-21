@@ -3,9 +3,8 @@ import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { tenantsApi, tenantsKeys, type Tenant } from './api/tenants';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppBadge from '../../../shared/components/AppBadge';
-import type { ColDef } from '../../../shared/components/AppDataTable';
+import { AppTextInput, AppBadge } from '../../../shared/components';
+import type { ColDef } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
 const STATUS_COLOR: Record<string, string> = {

@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLoginForm } from '../hooks/useLoginForm';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppButton from '../../../shared/components/AppButton';
+import { AppTextInput, AppButton } from '../../../shared/components';
 import type { Direction } from '../../../stores/uiStore';
 
 // ── Tenant picker ──────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import type { AdminView } from '../../stores/uiStore';
+import type { AdminView } from '../../../stores/uiStore';
 
 const VIEW_OPTIONS: { view: AdminView; icon: string; label: string }[] = [
   { view: 'table',   icon: '⊞', label: 'Table'   },

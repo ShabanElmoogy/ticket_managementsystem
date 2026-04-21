@@ -3,10 +3,9 @@ import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
 import { ticketTemplatesApi, ticketTemplatesKeys, type TicketTemplatePayload } from './api/templates';
 import AdminCrudScreen from '../shared/AdminCrudScreen';
 import AdminFormModal from '../shared/AdminFormModal';
-import AppTextInput from '../../../shared/components/AppTextInput';
-import AppBadge from '../../../shared/components/AppBadge';
+import { AppTextInput, AppBadge } from '../../../shared/components';
 import type { TicketTemplate } from '../../../services/api/types';
-import type { ColDef } from '../../../shared/components/AppDataTable';
+import type { ColDef } from '../../../shared/components';
 
 const COLUMNS: ColDef<TicketTemplate>[] = [
   { field: 'name',        headerName: 'Name',        flex: 1,   sortable: true },

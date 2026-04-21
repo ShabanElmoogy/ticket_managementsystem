@@ -1,5 +1,5 @@
 import React from 'react';
-import ErrorBanner from '../../../../shared/components/ErrorBanner';
+import { ErrorBanner } from '../../../../shared/components';
 
 interface Props {
   message: string;

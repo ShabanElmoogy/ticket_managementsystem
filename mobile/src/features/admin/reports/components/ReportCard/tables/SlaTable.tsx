@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Text } from 'react-native';
-import AppDataTable, { type ColDef } from '../../../../../../shared/components/AppDataTable';
-import { W } from '../../../../../../shared/components/AppTable';
-import type { SortState } from '../../../../../../shared/components/AppTable';
+import { AppDataTable, type ColDef } from '../../../../../../shared/components';
+import { W } from '../../../../../../shared/components';
+import type { SortState } from '../../../../../../shared/components';
 import type { SlaMetricsRow } from '../../../types';
 import {
   createBadgeColumn,

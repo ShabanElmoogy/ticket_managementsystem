@@ -1,6 +1,6 @@
 import React from 'react';
 import { REPORT_TYPES, type ReportType } from '../types';
-import FilterChipGroup, { type FilterChipOption } from '../../../../shared/components/FilterChipGroup';
+import FilterChipGroup, { type FilterChipOption } from '../../../../shared/components';
 
 interface Props {
   value: ReportType;

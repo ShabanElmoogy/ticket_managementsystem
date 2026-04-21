@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
 import AppButton from '../forms/AppButton';
-import { useUiStore } from '../../stores/uiStore';
+import { useUiStore } from '../../../stores/uiStore';
 
 export interface AppDeleteDialogProps {
   open: boolean;

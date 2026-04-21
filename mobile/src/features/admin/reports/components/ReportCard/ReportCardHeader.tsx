@@ -1,6 +1,5 @@
 import React from 'react';
-import SectionHeader from '../../../../../shared/components/SectionHeader';
-import CountBadge    from '../../../../../shared/components/CountBadge';
+import { SectionHeader, CountBadge } from '../../../../../shared/components';
 
 interface Props {
   label: string;

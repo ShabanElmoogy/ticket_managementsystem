@@ -1,5 +1,5 @@
 import React from 'react';
-import AppScreenHeader from '../../../../shared/components/AppScreenHeader';
+import { AppScreenHeader } from '../../../../shared/components';
 import type { AdminView } from '../../../../stores/uiStore';
 
 interface Props {
