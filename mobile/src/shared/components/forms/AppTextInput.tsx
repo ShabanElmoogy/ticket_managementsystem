@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, Pressable,
   type TextInputProps, type StyleProp, type ViewStyle,
 } from 'react-native';
+import { useDirection } from '../../../providers/DirectionProvider';
 
 export type AppTextInputFieldType = 'text' | 'search' | 'password' | 'number' | 'email';
 
@@ -40,6 +41,10 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const [focused,      setFocused]      = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // isRtl is used only for text alignment — layout direction is inherited
+  // from DirectionProvider's root View (same as AppSearchInput does it)
+  const { isRtl } = useDirection();
+
   const isPassword = fieldType === 'password';
   const isSearch   = fieldType === 'search';
   const isNumber   = fieldType === 'number';
@@ -47,16 +52,16 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const charCount  = String(value ?? '').length;
   const atLimit    = maxLength !== undefined && charCount >= maxLength;
   const showClear  = (showClearButton ?? isSearch) && hasValue;
+  const showBadge  = maxLength !== undefined && !isNumber;
 
   const keyboardType: TextInputProps['keyboardType'] =
     isNumber ? 'numeric' :
     fieldType === 'email' ? 'email-address' : 'default';
 
-  // Border color: error → red, focused → blue, default → gray
   const borderColor = error ? '#ef4444' : focused ? '#3b82f6' : '#d1d5db';
-  const borderWidth = focused ? 2 : 2;
+  // Text alignment follows direction; number fields always centered
+  const textAlign = isNumber ? 'center' : isRtl ? 'right' : 'left';
 
-  // Stepper handlers
   const handleStep = (dir: 1 | -1) => {
     const current = parseFloat(String(value ?? '0')) || 0;
     let next = current + dir * step;
@@ -65,30 +70,56 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
     onChangeText?.(String(next));
   };
 
+  // Badge pill — last child in the row so it sits at the trailing edge
+  const CountBadge = showBadge ? (
+    <View style={{
+      marginHorizontal: 8,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: atLimit ? '#fef2f2' : focused ? '#eff6ff' : '#f3f4f6',
+      borderWidth: 1,
+      borderColor: atLimit ? '#fca5a5' : focused ? '#bfdbfe' : '#e5e7eb',
+    }}>
+      <Text style={{
+        fontSize: 11,
+        fontWeight: '700',
+        color: atLimit ? '#ef4444' : focused ? '#3b82f6' : '#9ca3af',
+        fontVariant: ['tabular-nums'],
+      }}>
+        {charCount}/{maxLength}
+      </Text>
+    </View>
+  ) : null;
+
   return (
     <View style={[{ marginBottom: 12 }, containerStyle]}>
+      {/* Label */}
       {label && (
         <Text style={{
           fontSize: 13, fontWeight: '600', marginBottom: 4,
           color: error ? '#ef4444' : '#374151',
+          textAlign: isRtl ? 'right' : 'left',
         }}>
           {label}
         </Text>
       )}
 
+      {/* Input row — inherits direction from DirectionProvider, no override needed */}
       <View style={{
-        flexDirection: 'row', alignItems: 'center',
-        borderWidth, borderColor, borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 2, borderColor, borderRadius: 10,
         backgroundColor: '#ffffff',
         minHeight: 44,
         overflow: 'hidden',
       }}>
-        {/* Search icon */}
+        {/* Search icon — leading edge */}
         {isSearch && (
-          <Text style={{ paddingLeft: 12, color: '#9ca3af', fontSize: 16 }}>🔍</Text>
+          <Text style={{ paddingHorizontal: 12, color: '#9ca3af', fontSize: 16 }}>🔍</Text>
         )}
 
-        {/* Number stepper — minus */}
+        {/* Number stepper — minus (leading) */}
         {isNumber && (
           <Pressable
             onPress={() => handleStep(-1)}
@@ -96,14 +127,15 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
               width: 40, alignSelf: 'stretch',
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: focused ? '#eff6ff' : '#f9fafb',
-              borderRightWidth: 1, borderRightColor: borderColor,
+              borderRightWidth: 1,
+              borderRightColor: borderColor,
             }}
           >
             <Text style={{ fontSize: 20, color: '#6b7280', lineHeight: 24 }}>−</Text>
           </Pressable>
         )}
 
-        {/* Input */}
+        {/* Text input */}
         <TextInput
           style={{
             flex: 1,
@@ -111,7 +143,8 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
             color: '#111827',
             paddingHorizontal: 12,
             paddingVertical: 10,
-            textAlign: isNumber ? 'center' : 'left',
+            textAlign,
+            writingDirection: isRtl ? 'rtl' : 'ltr',
           }}
           value={value}
           onChangeText={onChangeText}
@@ -126,7 +159,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           {...rest}
         />
 
-        {/* Number stepper — plus */}
+        {/* Number stepper — plus (trailing) */}
         {isNumber && (
           <Pressable
             onPress={() => handleStep(1)}
@@ -134,22 +167,16 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
               width: 40, alignSelf: 'stretch',
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: focused ? '#eff6ff' : '#f9fafb',
-              borderLeftWidth: 1, borderLeftColor: borderColor,
+              borderLeftWidth: 1,
+              borderLeftColor: borderColor,
             }}
           >
             <Text style={{ fontSize: 20, color: '#3b82f6', lineHeight: 24 }}>+</Text>
           </Pressable>
         )}
 
-        {/* Char counter */}
-        {maxLength !== undefined && !isNumber && (
-          <Text style={{
-            fontSize: 11, marginRight: 8,
-            color: atLimit ? '#ef4444' : '#9ca3af',
-          }}>
-            {charCount}/{maxLength}
-          </Text>
-        )}
+        {/* Char count badge — trailing end (last before password/clear) */}
+        {CountBadge}
 
         {/* Password toggle */}
         {isPassword && (
@@ -168,12 +195,20 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
       {/* Error message */}
       {error && (
-        <Text style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>{error}</Text>
+        <Text style={{
+          fontSize: 11, color: '#ef4444', marginTop: 4,
+          textAlign: isRtl ? 'right' : 'left',
+        }}>
+          {error}
+        </Text>
       )}
 
       {/* Focus hint for number fields */}
       {isNumber && focused && (
-        <Text style={{ fontSize: 10, color: '#3b82f6', marginTop: 3 }}>
+        <Text style={{
+          fontSize: 10, color: '#3b82f6', marginTop: 3,
+          textAlign: isRtl ? 'right' : 'left',
+        }}>
           Tap − / + or type a value
         </Text>
       )}

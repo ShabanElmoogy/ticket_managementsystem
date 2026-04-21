@@ -1,7 +1,6 @@
 export { default as AppTable } from './AppTable';
-
 export { default as AppDataTable } from './AppDataTable';
-
+export type { ColDef } from './AppDataTable';
 export { default as DataCard } from './DataCard';
 export type { DataCardProps, PaginationState } from './DataCard';
 

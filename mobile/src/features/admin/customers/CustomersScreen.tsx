@@ -26,6 +26,11 @@ const CustomersScreen: React.FC = () => {
       searchPlaceholder={t('customers.searchPlaceholder')}
       emptyMessage={t('customers.emptyMessage')}
       emptyFilteredMessage={t('customers.emptyFilteredMessage')}
+      addLabel={t('customers.addTitle')}
+      exportLabel={t('common.exportPdf')}
+      exportingLabel={t('common.exporting')}
+      refreshLabel={t('common.refresh')}
+      refreshingLabel={t('common.refreshing')}
       renderForm={(item, onClose) => (
         <CustomerForm
           item={item}

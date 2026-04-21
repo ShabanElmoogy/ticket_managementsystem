@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, FlatList, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 
@@ -28,23 +28,38 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   emptyMessage?: string;
   /** Translated empty message when search has no results */
   emptyFilteredMessage?: string;
+  /** Translated button labels — passed from screen via t() */
+  addLabel?: string;
+  exportLabel?: string;
+  exportingLabel?: string;
+  refreshLabel?: string;
+  refreshingLabel?: string;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
 
 function AutoCard<T extends { id: string }>({
-  item, columns, onEdit, onDelete: onDel, isDark, width,
+  item, columns, onEdit, onDelete: onDel, isDark,
 }: {
   item: T; columns: ColDef<T>[];
   onEdit: () => void; onDelete: () => void;
-  isDark: boolean; width: number;
+  isDark: boolean;
 }) {
   const visibleCols = columns.filter((c) => c.field !== '__actions__');
   return (
     <View style={{
-      width, padding: 14, borderBottomWidth: 1,
+      width: '100%',
+      marginBottom: 10,
+      padding: 14,
+      borderRadius: 10,
+      borderWidth: 1,
       backgroundColor: isDark ? '#1e293b' : '#ffffff',
       borderColor: isDark ? '#334155' : '#e5e7eb',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isDark ? 0 : 0.05,
+      shadowRadius: 3,
+      elevation: 1,
     }}>
       {visibleCols.map((col, i) => {
         const val = col.valueGetter ? col.valueGetter(item) : (item as any)[col.field as string];
@@ -54,7 +69,7 @@ function AutoCard<T extends { id: string }>({
               {col.headerName}
             </Text>
             {col.renderCell ? (
-              <View style={{ flex: 1 }}>{col.renderCell(item)}</View>
+              <View style={{ flex: 1, minWidth: 0 }}>{col.renderCell(item)}</View>
             ) : (
               <Text style={{ fontSize: 13, flex: 1, fontWeight: i === 0 ? '600' : '400', color: isDark ? (i === 0 ? '#f1f5f9' : '#cbd5e1') : (i === 0 ? '#111827' : '#4b5563') }} numberOfLines={2}>
                 {val == null || val === '' ? '—' : String(val)}
@@ -133,8 +148,8 @@ function AdminCrudScreen<T extends { id: string }>({
   getItemName, itemType = 'item', canAdd = true, onRowPress,
   onExport, exporting = false, onRefresh,
   searchPlaceholder, emptyMessage, emptyFilteredMessage,
+  addLabel, exportLabel, exportingLabel, refreshLabel, refreshingLabel,
 }: AdminCrudScreenProps<T>) {
-  const { width: screenWidth } = useWindowDimensions();
   const { colorMode, setAdminView } = useUiStore();
   const isDark = colorMode === 'dark';
   const view   = useUiStore((s) => s.adminViews[title] ?? 'table');
@@ -163,7 +178,7 @@ function AdminCrudScreen<T extends { id: string }>({
   // Action column for table view
   const actionCol: ColDef<T> = {
     field: '__actions__', headerName: '', width: 88, sortable: false, align: 'center',
-    renderCell: (row) => (
+    renderCell: (row: T) => (
       <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
         <Pressable
           onPress={() => { setFormItem(row); setFormOpen(true); }}
@@ -204,12 +219,16 @@ function AdminCrudScreen<T extends { id: string }>({
         view={view}
         onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}
-        addLabel={`Add ${itemType}`}
+        addLabel={addLabel ?? `Add ${itemType}`}
         loading={loading}
         onExport={onExport}
         exporting={exporting}
         exportDisabled={loading || entities.length === 0}
+        exportLabel={exportLabel}
+        exportingLabel={exportingLabel}
         onRefresh={onRefresh}
+        refreshLabel={refreshLabel}
+        refreshingLabel={refreshingLabel}
       />
 
       {/* DataCard handles search, views, empty states, delete dialog */}
@@ -228,7 +247,7 @@ function AdminCrudScreen<T extends { id: string }>({
           renderGridItem={(item) =>
             renderCard
               ? renderCard(item, () => { setFormItem(item); setFormOpen(true); }, () => setDeleteTarget(item))
-              : <AutoCard item={item} columns={columns} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} width={screenWidth} />
+              : <AutoCard item={item} columns={columns} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
           }
           renderCompactItem={(item) =>
             <CompactRow item={item} columns={columns} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />

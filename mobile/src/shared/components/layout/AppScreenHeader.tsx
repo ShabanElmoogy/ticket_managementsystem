@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, type StyleProp, type ViewStyle } from 'react-native';
-import ViewToggle      from './ViewToggle';
-import ExportPdfButton from '../actions/ExportPdfButton';
-import RefreshButton   from '../actions/RefreshButton';
-import VerticalDivider from './VerticalDivider';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
+import ViewToggle from './ViewToggle';
+import HeaderTitle from './HeaderTitle';
+import HeaderActionGroup from './HeaderActionGroup';
 import type { AdminView } from '../../../stores/uiStore';
 
 export interface AppScreenHeaderProps {
@@ -16,106 +15,77 @@ export interface AppScreenHeaderProps {
   // ── View toggle (left side) ───────────────────────────────────────────────
   view?: AdminView;
   onViewChange?: (v: AdminView) => void;
-  /** Legacy: any custom left content */
+  /** Any custom left content (shown instead of ViewToggle when no view/onViewChange) */
   leftActions?: React.ReactNode;
 
-  // ── Add button (right side) ───────────────────────────────────────────────
+  // ── Add button ────────────────────────────────────────────────────────────
   onAdd?: () => void;
   addLabel?: string;
   loading?: boolean;
 
-  // ── Export PDF (right side, before Add) ──────────────────────────────────
+  // ── Export PDF ────────────────────────────────────────────────────────────
   onExport?: () => void;
   exporting?: boolean;
   exportDisabled?: boolean;
+  exportLabel?: string;
+  exportingLabel?: string;
 
-  // ── Refresh (right side) ──────────────────────────────────────────────────
+  // ── Refresh ───────────────────────────────────────────────────────────────
   onRefresh?: () => void;
+  refreshLabel?: string;
+  refreshingLabel?: string;
 
-  // ── Legacy ────────────────────────────────────────────────────────────────
+  // ── Legacy / escape hatch ─────────────────────────────────────────────────
+  /** Extra buttons rendered before Refresh in the action group */
   rightActions?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
+/**
+ * Standard screen header used across all admin screens.
+ *
+ * Layout: [ViewToggle | leftActions] — [Title + badge] — [Refresh | Export | | Add]
+ *
+ * Each section only renders when the relevant props are provided.
+ */
 const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
-  title, subtitle, badge, isDark = false,
+  isDark = false,
   view, onViewChange, leftActions,
   onAdd, addLabel = 'Add', loading = false,
-  onExport, exporting = false, exportDisabled = false,
-  onRefresh,
+  onExport, exporting = false, exportDisabled = false, exportLabel, exportingLabel,
+  onRefresh, refreshLabel, refreshingLabel,
   rightActions, style,
 }) => (
-  <View className="flex-row items-center px-4 py-3" style={style}>
+  <View style={[{ flexDirection: 'row', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  paddingHorizontal: 16, 
+                  paddingVertical: 12 }, style]}>
 
     {/* Left — ViewToggle or custom left actions */}
-    <View className="flex-row items-center" style={{ minWidth: 80 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 80 }}>
       {view && onViewChange
         ? <ViewToggle current={view} onChange={onViewChange} isDark={isDark} />
         : leftActions
       }
     </View>
 
-    {/* Center — title + badge */}
-    <View className="flex-1 items-center">
-      <View className="flex-row items-center gap-1.5">
-        <Text className="text-lg font-bold text-gray-900" numberOfLines={1}>
-          {title}
-        </Text>
-        {badge !== undefined && (
-          <View className="bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
-            <Text className="text-xs font-semibold text-blue-600">{badge}</Text>
-          </View>
-        )}
-      </View>
-      {subtitle && (
-        <Text className="text-xs text-gray-500 mt-0.5">{subtitle}</Text>
-      )}
-    </View>
-
-    {/* Right — Refresh | Export PDF | separator | Add */}
-    <View className="flex-row items-center gap-2 justify-end" style={{ minWidth: 80 }}>
-      {rightActions}
-
-      {onRefresh && (
-        <RefreshButton onPress={onRefresh} loading={loading} isDark={isDark} />
-      )}
-
-      {onExport && (
-        <ExportPdfButton
-          onPress={onExport}
-          loading={exporting}
-          disabled={exportDisabled}
-          isDark={isDark}
-        />
-      )}
-
-      {onAdd && (onExport || onRefresh) && (
-        <VerticalDivider isDark={isDark} height={36} marginHorizontal={2} />
-      )}
-
-      {onAdd && (
-        <Pressable
-          onPress={onAdd}
-          disabled={loading}
-          style={({ pressed }) => ({
-            alignItems: 'center', justifyContent: 'center', gap: 2,
-            height: 44, paddingHorizontal: 12, borderRadius: 10,
-            backgroundColor: pressed ? '#15803d' : '#16a34a',
-            opacity: loading ? 0.5 : 1,
-            shadowColor: '#16a34a',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: loading ? 0 : 0.35,
-            shadowRadius: 5,
-            elevation: loading ? 0 : 3,
-          })}
-        >
-          <Text style={{ fontSize: 16, lineHeight: 18 }}>➕</Text>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>
-            {addLabel}
-          </Text>
-        </Pressable>
-      )}
-    </View>
+    {/* Right — Refresh | Export PDF | | Add */}
+    <HeaderActionGroup
+      isDark={isDark}
+      loading={loading}
+      onAdd={onAdd}
+      addLabel={addLabel}
+      onExport={onExport}
+      exporting={exporting}
+      exportDisabled={exportDisabled}
+      exportLabel={exportLabel}
+      exportingLabel={exportingLabel}
+      onRefresh={onRefresh}
+      refreshLabel={refreshLabel}
+      refreshingLabel={refreshingLabel}
+      extraActions={rightActions}
+    />
 
   </View>
 );

@@ -1,17 +1,22 @@
 import React from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 interface Props {
   onPress: () => void;
   loading?: boolean;
   isDark?: boolean;
+  label?: string;
+  loadingLabel?: string;
 }
 
 /**
  * Grey "Refresh" button with loading state.
  * Reusable across any admin screen.
  */
-const RefreshButton: React.FC<Props> = ({ onPress, loading = false, isDark = false }) => (
+const RefreshButton: React.FC<Props> = ({
+  onPress, loading = false, isDark = false,
+  label = 'Refresh', loadingLabel = 'Loading…',
+}) => (
   <Pressable
     onPress={onPress}
     disabled={loading}
@@ -24,10 +29,12 @@ const RefreshButton: React.FC<Props> = ({ onPress, loading = false, isDark = fal
       opacity: loading ? 0.5 : 1,
     })}
   >
-    <Text style={{ fontSize: 16, lineHeight: 18 }}>{loading ? '⏳' : '🔄'}</Text>
-    <Text style={{ fontSize: 10, fontWeight: '800', color: isDark ? '#e2e8f0' : '#374151' }}>
-      {loading ? 'Loading…' : 'Refresh'}
-    </Text>
+    <View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <Text style={{ fontSize: 16, lineHeight: 18 }}>{loading ? '⏳' : '🔄'}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '800', color: isDark ? '#e2e8f0' : '#374151' }}>
+        {loading ? loadingLabel : label}
+      </Text>
+    </View>
   </Pressable>
 );
 

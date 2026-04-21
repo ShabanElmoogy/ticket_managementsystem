@@ -33,7 +33,12 @@
     "version": "Version",
     "status": "Status",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "add": "Add",
+    "refresh": "Refresh",
+    "refreshing": "Loading…",
+    "exportPdf": "Export PDF",
+    "exporting": "Exporting…"
   },
   "applications": {
     "title": "Applications",

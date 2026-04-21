@@ -246,6 +246,11 @@ const EntitiesScreen: React.FC = () => {
       onRefresh={f.refetch}
       onExport={handleExport}
       exporting={exporting}
+      addLabel={t('<feature>.addTitle')}
+      exportLabel={t('common.exportPdf')}
+      exportingLabel={t('common.exporting')}
+      refreshLabel={t('common.refresh')}
+      refreshingLabel={t('common.refreshing')}
       searchPlaceholder={t('<feature>.searchPlaceholder')}
       emptyMessage={t('<feature>.emptyMessage')}
       emptyFilteredMessage={t('<feature>.emptyFilteredMessage')}
@@ -272,20 +277,50 @@ export default EntitiesScreen;
 
 ## Refresh & Export Buttons
 
-The **Refresh** and **Export PDF** buttons are built into `AppScreenHeader` — they appear automatically when you pass the props to `AdminCrudScreen`. No extra UI code needed.
+The **Refresh**, **Export PDF**, and **Add** buttons are built into `AppScreenHeader` — they appear automatically when you pass the props to `AdminCrudScreen`. No extra UI code needed.
+
+All button labels must be passed as translated strings from the screen. Never rely on the default English fallbacks.
 
 ```tsx
-// In <Feature>Screen.tsx — these three props are all you need:
-onRefresh={f.refetch}       // shows 🔄 Refresh button
-onExport={handleExport}     // shows 📄 Export PDF button
-exporting={exporting}       // shows loading state on Export button
+// In <Feature>Screen.tsx — pass all button labels via t()
+onRefresh={f.refetch}
+refreshLabel={t('common.refresh')}
+refreshingLabel={t('common.refreshing')}
+
+onExport={handleExport}
+exporting={exporting}
+exportLabel={t('common.exportPdf')}
+exportingLabel={t('common.exporting')}
+
+addLabel={t('<feature>.addTitle')}   // feature-specific: "Add Application", "Add Customer"
 ```
 
 The header renders: `[ViewToggle] | Title | 🔄 Refresh  📄 Export PDF | ➕ Add`
 
-- `onRefresh` — calls `f.refetch` from `useAdminFeature`
-- `onExport` + `exporting` — defined in `hooks/use<Feature>.ts` using `exportEntityPdf`
-- The separator before Add appears automatically when either button is present
+### Shared button keys (in `common` namespace)
+
+These keys live in `common` — shared across all features, no duplication needed:
+
+```json
+"common": {
+  "add": "Add",
+  "refresh": "Refresh",
+  "refreshing": "Loading…",
+  "exportPdf": "Export PDF",
+  "exporting": "Exporting…"
+}
+```
+
+```json
+// ar.json
+"common": {
+  "add": "إضافة",
+  "refresh": "تحديث",
+  "refreshing": "جاري التحميل…",
+  "exportPdf": "تصدير PDF",
+  "exporting": "جاري التصدير…"
+}
+```
 
 ---
 
@@ -329,7 +364,7 @@ Every feature must be fully translated. Add a namespace in both `en.json` and `a
 
 | File | Keys used |
 |---|---|
-| `<Feature>Screen.tsx` | `title`, `itemType`, `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` |
+| `<Feature>Screen.tsx` | `title`, `itemType`, `addTitle`, `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` + `common.refresh`, `common.refreshing`, `common.exportPdf`, `common.exporting` |
 | `components/<Entity>Form.tsx` | `addTitle`, `editTitle`, `form.*` |
 | `hooks/use<Feature>.ts` | `messages.*`, `addTitle`, `editTitle`, `title` (export), `columns.*` via `getColumns(t)` |
 | `components/<feature>Columns.tsx` | `columns.*`, `active`, `inactive` — via `t` param, not hook |
@@ -337,11 +372,16 @@ Every feature must be fully translated. Add a namespace in both `en.json` and `a
 ### Usage pattern
 
 ```tsx
-// Screen
+// Screen — all strings via t(), nothing hardcoded
 const { t } = useTranslation();
 <AdminCrudScreen
   title={t('applications.title')}
   itemType={t('applications.itemType')}
+  addLabel={t('applications.addTitle')}
+  exportLabel={t('common.exportPdf')}
+  exportingLabel={t('common.exporting')}
+  refreshLabel={t('common.refresh')}
+  refreshingLabel={t('common.refreshing')}
   searchPlaceholder={t('applications.searchPlaceholder')}
   emptyMessage={t('applications.emptyMessage')}
   emptyFilteredMessage={t('applications.emptyFilteredMessage')}
@@ -388,6 +428,7 @@ messages: {
 - [ ] `en.json` + `ar.json` — translation namespace added with all required keys
 - [ ] All cross-folder imports use `@/src/...` alias
 - [ ] `onRefresh`, `onExport`, `exporting` passed to `AdminCrudScreen`
+- [ ] `addLabel`, `exportLabel`, `exportingLabel`, `refreshLabel`, `refreshingLabel` passed as translated strings
 - [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` passed as translated strings
 - [ ] Screen registered in the admin navigation
 

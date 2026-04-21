@@ -1,11 +1,13 @@
 import React from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 interface Props {
   onPress: () => void;
   loading?: boolean;   // exporting in progress
   disabled?: boolean;  // no data to export
   isDark?: boolean;
+  label?: string;
+  loadingLabel?: string;
 }
 
 /**
@@ -14,10 +16,11 @@ interface Props {
  */
 const ExportPdfButton: React.FC<Props> = ({
   onPress, loading = false, disabled = false, isDark = false,
+  label = 'Export PDF', loadingLabel = 'Exporting…',
 }) => {
   const isDisabled = loading || disabled;
   const icon = loading ? '⏳' : disabled ? '🚫' : '📄';
-  const label = loading ? 'Exporting…' : 'Export PDF';
+  const text = loading ? loadingLabel : label;
 
   return (
     <Pressable
@@ -35,8 +38,10 @@ const ExportPdfButton: React.FC<Props> = ({
         elevation: isDisabled ? 0 : 3,
       })}
     >
-      <Text style={{ fontSize: 16, lineHeight: 18 }}>{icon}</Text>
-      <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>{label}</Text>
+      <View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <Text style={{ fontSize: 16, lineHeight: 18 }}>{icon}</Text>
+        <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>{text}</Text>
+      </View>
     </Pressable>
   );
 };

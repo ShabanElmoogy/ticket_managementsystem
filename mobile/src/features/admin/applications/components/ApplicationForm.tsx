@@ -52,6 +52,9 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
         placeholder={t('applications.form.namePlaceholder')}
         error={errors.name}
         autoCapitalize="words"
+        maxLength={100}
+        showClearButton
+        onClear={() => { setName(''); setErrors((e) => ({ ...e, name: '' })); }}
       />
       <AppTextInput
         label={t('applications.form.version')}
@@ -60,6 +63,9 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
         placeholder={t('applications.form.versionPlaceholder')}
         error={errors.version}
         autoCapitalize="none"
+        maxLength={50}
+        showClearButton
+        onClear={() => { setVersion(''); setErrors((e) => ({ ...e, version: '' })); }}
       />
       <AppTextInput
         label={t('applications.form.description')}
@@ -68,6 +74,9 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
         placeholder={t('applications.form.descriptionPlaceholder')}
         error={errors.description}
         autoCapitalize="sentences"
+        maxLength={500}
+        showClearButton
+        onClear={() => { setDescription(''); setErrors((e) => ({ ...e, description: '' })); }}
       />
     </AdminFormModal>
   );

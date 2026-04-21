@@ -33,7 +33,12 @@
     "version": "الإصدار",
     "status": "الحالة",
     "active": "نشط",
-    "inactive": "غير نشط"
+    "inactive": "غير نشط",
+    "add": "إضافة",
+    "refresh": "تحديث",
+    "refreshing": "جاري التحميل…",
+    "exportPdf": "تصدير PDF",
+    "exporting": "جاري التصدير…"
   },
   "applications": {
     "title": "التطبيقات",

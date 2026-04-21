@@ -26,6 +26,11 @@ const ApplicationsScreen: React.FC = () => {
       searchPlaceholder={t('applications.searchPlaceholder')}
       emptyMessage={t('applications.emptyMessage')}
       emptyFilteredMessage={t('applications.emptyFilteredMessage')}
+      addLabel={t('applications.addTitle')}
+      exportLabel={t('common.exportPdf')}
+      exportingLabel={t('common.exporting')}
+      refreshLabel={t('common.refresh')}
+      refreshingLabel={t('common.refreshing')}
       renderForm={(item, onClose) => (
         <ApplicationForm
           item={item}

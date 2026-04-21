@@ -20,8 +20,9 @@ interface Props {
 const AdminFormModal: React.FC<Props> = ({
   open, title, onClose, onSubmit, submitting = false, children,
 }) => {
-  const { colorMode } = useUiStore();
+  const { colorMode, direction } = useUiStore();
   const isDark = colorMode === 'dark';
+  const isRtl  = direction === 'rtl';
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
 
@@ -53,6 +54,7 @@ const AdminFormModal: React.FC<Props> = ({
           shadowOpacity: 0.15,
           shadowRadius: 12,
           elevation: 16,
+          direction: isRtl ? 'rtl' : 'ltr',
         }}
       >
         {/* Handle */}

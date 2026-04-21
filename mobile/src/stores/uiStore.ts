@@ -68,7 +68,9 @@ export const useUiStore = create<UiState>()(
         ticketView: state.ticketView,
         adminViews: state.adminViews,
         colorMode:  state.colorMode,
-        direction:  state.direction,
+        // direction is NOT persisted — it is always derived from the language
+        // at boot time via initI18n() → setDirection(). Persisting it caused
+        // a race condition where rehydration overwrote the language-based value.
       }),
       onRehydrateStorage: () => (_state) => {
         // direction is applied via DirectionProvider — no I18nManager needed
