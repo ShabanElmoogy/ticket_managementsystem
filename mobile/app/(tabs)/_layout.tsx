@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { HapticTab } from '../../src/shared/components/platform/HapticTab';
-import { IconSymbol } from '../../src/shared/components/platform/IconSymbol';
+import { HapticTab } from '@/src/shared/components/platform/HapticTab';
+import { IconSymbol } from '@/src/shared/components/platform/IconSymbol';
 import { Colors } from '@/src/constants/theme';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 

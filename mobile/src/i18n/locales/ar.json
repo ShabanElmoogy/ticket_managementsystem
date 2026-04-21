@@ -36,13 +36,74 @@
     "inactive": "غير نشط"
   },
   "applications": {
-    "title": "إدارة التطبيقات",
-    "create": "إنشاء تطبيق جديد",
-    "edit": "تعديل التطبيق",
-    "delete_confirm": "هل أنت متأكد من حذف هذا التطبيق؟",
-    "name": "اسم التطبيق",
-    "version": "الإصدار",
-    "description": "الوصف"
+    "title": "التطبيقات",
+    "itemType": "تطبيق",
+    "addButton": "إضافة تطبيق",
+    "editTitle": "تعديل التطبيق",
+    "addTitle": "إضافة تطبيق",
+    "searchPlaceholder": "البحث في التطبيقات…",
+    "emptyMessage": "لا توجد تطبيقات بعد",
+    "emptyFilteredMessage": "لا توجد تطبيقات تطابق بحثك",
+    "columns": {
+      "name": "الاسم",
+      "version": "الإصدار",
+      "status": "الحالة",
+      "tickets": "التذاكر",
+      "customers": "العملاء",
+      "created": "تاريخ الإنشاء"
+    },
+    "form": {
+      "name": "الاسم *",
+      "namePlaceholder": "اسم التطبيق",
+      "version": "الإصدار",
+      "versionPlaceholder": "1.0.0",
+      "description": "الوصف",
+      "descriptionPlaceholder": "وصف مختصر للتطبيق"
+    },
+    "messages": {
+      "created": "تم إنشاء التطبيق بنجاح",
+      "updated": "تم تحديث التطبيق بنجاح",
+      "deleted": "تم حذف التطبيق بنجاح",
+      "errorCreate": "خطأ في إنشاء التطبيق",
+      "errorUpdate": "خطأ في تحديث التطبيق",
+      "errorDelete": "خطأ في حذف التطبيق"
+    },
+    "export": "تصدير PDF",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "customers": {
+    "title": "العملاء",
+    "itemType": "عميل",
+    "addTitle": "إضافة عميل",
+    "editTitle": "تعديل العميل",
+    "searchPlaceholder": "البحث في العملاء…",
+    "emptyMessage": "لا يوجد عملاء بعد",
+    "emptyFilteredMessage": "لا يوجد عملاء يطابقون بحثك",
+    "columns": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "status": "الحالة",
+      "tickets": "التذاكر"
+    },
+    "form": {
+      "name": "الاسم *",
+      "namePlaceholder": "اسم العميل",
+      "email": "البريد الإلكتروني *",
+      "emailPlaceholder": "email@example.com",
+      "phone": "الهاتف",
+      "phonePlaceholder": "+1234567890"
+    },
+    "messages": {
+      "created": "تم إنشاء العميل بنجاح",
+      "updated": "تم تحديث العميل بنجاح",
+      "deleted": "تم حذف العميل بنجاح",
+      "errorCreate": "خطأ في إنشاء العميل",
+      "errorUpdate": "خطأ في تحديث العميل",
+      "errorDelete": "خطأ في حذف العميل"
+    },
+    "export": "تصدير PDF"
   },
   "users": {
     "title": "إدارة المستخدمين",

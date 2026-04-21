@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../../stores/authStore';
-import { useUiStore } from '../../../stores/uiStore';
-import { useDrawer } from './DrawerContext';
-import { getInitials, getRoleColor } from './navItems';
-import { Avatar, IconButton } from '../../../shared/components';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useUiStore } from '@/src/stores/uiStore';
+import { useDrawer } from '@/src/components/layout/header/DrawerContext';
+import { getInitials, getRoleColor } from '@/src/components/layout/header/navItems';
+import { Avatar, IconButton } from '@/src/shared/components';
 
 const AppHeaderBar: React.FC = () => {
   const { user }                       = useAuthStore();

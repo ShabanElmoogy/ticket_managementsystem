@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useAuthStore } from '../../src/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 import { Redirect } from 'expo-router';
 
 export default function AuthLayout() {

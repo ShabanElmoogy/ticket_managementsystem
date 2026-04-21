@@ -22,6 +22,12 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   exporting?: boolean;
   /** Optional refresh — shows Refresh button in header */
   onRefresh?: () => void;
+  /** Translated search placeholder — e.g. t('applications.searchPlaceholder') */
+  searchPlaceholder?: string;
+  /** Translated empty message when no items exist */
+  emptyMessage?: string;
+  /** Translated empty message when search has no results */
+  emptyFilteredMessage?: string;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
@@ -126,6 +132,7 @@ function AdminCrudScreen<T extends { id: string }>({
   renderForm, onDelete, renderCard,
   getItemName, itemType = 'item', canAdd = true, onRowPress,
   onExport, exporting = false, onRefresh,
+  searchPlaceholder, emptyMessage, emptyFilteredMessage,
 }: AdminCrudScreenProps<T>) {
   const { width: screenWidth } = useWindowDimensions();
   const { colorMode, setAdminView } = useUiStore();
@@ -179,10 +186,14 @@ function AdminCrudScreen<T extends { id: string }>({
       rows={filtered}
       columns={[...columns, actionCol]}
       loading={loading}
-      emptyMessage={search ? `No ${title.toLowerCase()} match "${search}"` : `No ${title.toLowerCase()} yet`}
+      emptyMessage={
+        search
+          ? (emptyFilteredMessage ?? `No ${title.toLowerCase()} match "${search}"`)
+          : (emptyMessage ?? `No ${title.toLowerCase()} yet`)
+      }
       onRowPress={onRowPress}
     />
-  ), [filtered, columns, loading, search, title, onRowPress]);
+  ), [filtered, columns, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
@@ -211,7 +222,7 @@ function AdminCrudScreen<T extends { id: string }>({
           loading={loading}
           search={search}
           onSearchChange={setSearch}
-          searchPlaceholder={`Search ${title.toLowerCase()}…`}
+          searchPlaceholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
           view={view}
           renderTable={renderTable}
           renderGridItem={(item) =>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text } from 'react-native';
-import { networkEvents } from '../services/api/networkEvents';
-import { useUiStore } from '../stores/uiStore';
-import { AlertDialog } from '../shared/components';
+import { networkEvents } from '@/src/services/api/networkEvents';
+import { useUiStore } from '@/src/stores/uiStore';
+import { AlertDialog } from '@/src/shared/components';
 
 const NetworkErrorDialog: React.FC = () => {
   const { colorMode } = useUiStore();

@@ -1,0 +1,67 @@
+import React from 'react';
+import { View, Text } from 'react-native';
+import { AppBadge } from '@/src/shared/components';
+import { formatDate } from '@/src/shared/utils/dateUtils';
+import type { Application } from '@/src/services/api/types';
+import type { ColDef } from '@/src/shared/components/data/AppDataTable';
+import type { TFunction } from 'i18next';
+
+/**
+ * Returns translated column definitions.
+ * Accepts `t` so columns can be translated without using hooks directly.
+ */
+export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
+  return [
+    { field: 'name',    headerName: t('applications.columns.name'),    flex: 1,   sortable: true },
+    {
+      field: 'version', headerName: t('applications.columns.version'), width: 90, sortable: true,
+      renderCell: (row) => (
+        <View className="bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+          <Text className="text-blue-700 text-xs font-mono">{row.version ?? '—'}</Text>
+        </View>
+      ),
+    },
+    {
+      field: 'isActive', headerName: t('applications.columns.status'), width: 90, align: 'center',
+      renderCell: (row) => (
+        <AppBadge
+          label={row.isActive ? t('applications.active') : t('applications.inactive')}
+          color={row.isActive ? '#10b981' : '#6b7280'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: '_count', headerName: t('applications.columns.tickets'), width: 70, align: 'center',
+      valueGetter: (row) => row._count?.tickets ?? 0,
+      renderCell: (row) => {
+        const count = row._count?.tickets ?? 0;
+        return (
+          <View className="bg-blue-100 rounded-full px-2 py-0.5 min-w-[28px] items-center">
+            <Text className="text-blue-700 text-xs font-bold">{count}</Text>
+          </View>
+        );
+      },
+    },
+    {
+      field: '_countCustomers', headerName: t('applications.columns.customers'), width: 80, align: 'center',
+      valueGetter: (row) => row._count?.customers ?? 0,
+      renderCell: (row) => {
+        const count = row._count?.customers ?? 0;
+        return (
+          <View className="bg-green-100 rounded-full px-2 py-0.5 min-w-[28px] items-center">
+            <Text className="text-green-700 text-xs font-bold">{count}</Text>
+          </View>
+        );
+      },
+    },
+    {
+      field: 'createdAt', headerName: t('applications.columns.created'), width: 100, align: 'center',
+      renderCell: (row) => (
+        <Text className="text-gray-500 text-xs">
+          {row.createdAt ? formatDate(row.createdAt) : '—'}
+        </Text>
+      ),
+    },
+  ];
+}

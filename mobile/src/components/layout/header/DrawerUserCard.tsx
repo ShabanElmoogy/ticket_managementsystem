@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text } from 'react-native';
-import { getInitials, getRoleColor } from './navItems';
-import { changeLanguage, getCurrentLanguage } from '../../../i18n';
-import { Avatar, Badge, ToggleButton } from '../../../shared/components';
+import { getInitials, getRoleColor } from '@/src/components/layout/header/navItems';
+import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
+import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
 
 interface Props {
   name: string;

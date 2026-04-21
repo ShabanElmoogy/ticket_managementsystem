@@ -1,13 +1,13 @@
 import { Stack, Redirect } from 'expo-router';
 import { View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 import AppHeader, {
   DrawerProvider,
   AppDrawerOverlay,
   useDrawer,
-} from '../../src/components/layout/AppHeader';
-import AppBottomNav from '../../src/components/layout/AppBottomNav';
+} from '@/src/components/layout/AppHeader';
+import AppBottomNav from '@/src/components/layout/AppBottomNav';
 
 function AppShell() {
   const { setBottomNavHeight } = useDrawer();

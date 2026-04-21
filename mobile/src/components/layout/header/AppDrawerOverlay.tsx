@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../../stores/authStore';
-import { useUiStore } from '../../../stores/uiStore';
-import { useDirection } from '../../../providers/DirectionProvider';
-import { useDrawer } from './DrawerContext';
-import DrawerUserCard from './DrawerUserCard';
-import DrawerNavList from './DrawerNavList';
-import { NAV_ITEMS } from './navItems';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useUiStore } from '@/src/stores/uiStore';
+import { useDirection } from '@/src/providers/DirectionProvider';
+import { useDrawer } from '@/src/components/layout/header/DrawerContext';
+import DrawerUserCard from '@/src/components/layout/header/DrawerUserCard';
+import DrawerNavList from '@/src/components/layout/header/DrawerNavList';
+import { NAV_ITEMS } from '@/src/components/layout/header/navItems';
 
 const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 }) => {
   const { open, setOpen, headerHeight, bottomNavHeight } = useDrawer();

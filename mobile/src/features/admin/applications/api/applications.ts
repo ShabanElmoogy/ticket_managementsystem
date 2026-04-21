@@ -1,5 +1,5 @@
-import { BaseApiService } from '../../../../services/api/base';
-import type { Application, CreateApplicationData } from '../../../../services/api/types';
+import { BaseApiService } from '@/src/services/api/base';
+import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 export class ApplicationsApiService extends BaseApiService {
   getApplications  = ()                                              => this.get<Application[]>('/applications');

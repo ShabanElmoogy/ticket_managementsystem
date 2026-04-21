@@ -10,12 +10,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
-import { useAuthStore } from '../src/stores/authStore';
-import { initI18n } from '../src/i18n';
-import { DirectionProvider } from '../src/providers/DirectionProvider';
-import { tokenManager } from '../src/services/api/tokenManager';
+import { useAuthStore } from '@/src/stores/authStore';
+import { initI18n } from '@/src/i18n';
+import { DirectionProvider } from '@/src/providers/DirectionProvider';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetworkErrorDialog from '../src/components/NetworkErrorDialog';
+import NetworkErrorDialog from '@/src/components/NetworkErrorDialog';
 
 const queryClient = new QueryClient({
   defaultOptions: {
