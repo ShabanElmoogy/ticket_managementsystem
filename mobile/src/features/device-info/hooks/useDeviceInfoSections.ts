@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Platform, Dimensions, PixelRatio } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 import * as Battery from 'expo-battery';
 import * as Device from 'expo-device';
@@ -18,11 +19,11 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${mb.toFixed(0)} MB`;
 }
 
-function storageBar(free: number | null, total: number | null): string {
+function storageBar(free: number | null, total: number | null, tUsed: string, tFree: string): string {
   if (!free || !total) return '—';
   const used = total - free;
   const pct  = Math.round((used / total) * 100);
-  return `${formatBytes(used)} used · ${formatBytes(free)} free (${pct}%)`;
+  return `${formatBytes(used)} ${tUsed} · ${formatBytes(free)} ${tFree} (${pct}%)`;
 }
 
 function networkTypeLabel(type: Network.NetworkStateType | null): string {
@@ -73,8 +74,49 @@ interface AsyncState {
 }
 
 export function useDeviceInfoSections(): InfoSection[] {
+  const { t } = useTranslation();
+  const l = (key: string) => t(`deviceInfo.labels.${key}`);
+  const s = (key: string) => t(`deviceInfo.sections.${key}`);
+  const v = (key: string) => t(`deviceInfo.values.${key}`);
+
+  const networkTypeLabel = (type: Network.NetworkStateType | null): string => {
+    if (!type) return '—';
+    const map: Partial<Record<Network.NetworkStateType, string>> = {
+      [Network.NetworkStateType.WIFI]:      `📶 ${v('wifi')}`,
+      [Network.NetworkStateType.CELLULAR]:  `📡 ${v('cellular')}`,
+      [Network.NetworkStateType.BLUETOOTH]: `🔵 ${v('bluetooth')}`,
+      [Network.NetworkStateType.ETHERNET]:  `🔌 ${v('ethernet')}`,
+      [Network.NetworkStateType.NONE]:      `🚫 ${v('none')}`,
+      [Network.NetworkStateType.UNKNOWN]:   `❓ ${v('unknown')}`,
+    };
+    return map[type] ?? '—';
+  };
+
+  const batteryStateLabel = (bs: Battery.BatteryState | null): string => {
+    if (bs === null) return '—';
+    const map: Record<Battery.BatteryState, string> = {
+      [Battery.BatteryState.CHARGING]:  `⚡ ${v('charging')}`,
+      [Battery.BatteryState.FULL]:      `🔋 ${v('full')}`,
+      [Battery.BatteryState.UNPLUGGED]: `🔌 ${v('unplugged')}`,
+      [Battery.BatteryState.UNKNOWN]:   `❓ ${v('unknown')}`,
+    };
+    return map[bs] ?? '—';
+  };
+
+  const deviceTypeLabel = (dt: Device.DeviceType | null): string => {
+    if (dt === null) return '—';
+    const map: Record<Device.DeviceType, string> = {
+      [Device.DeviceType.PHONE]:   `📱 ${v('phone')}`,
+      [Device.DeviceType.TABLET]:  `📟 ${v('tablet')}`,
+      [Device.DeviceType.DESKTOP]: `🖥️ ${v('desktop')}`,
+      [Device.DeviceType.TV]:      `📺 ${v('tv')}`,
+      [Device.DeviceType.UNKNOWN]: `❓ ${v('unknown')}`,
+    };
+    return map[dt] ?? '—';
+  };
   const [windowDims, setWindowDims] = useState(Dimensions.get('window'));
   const [screenDims, setScreenDims] = useState(Dimensions.get('screen'));
+  const [storageRefresh, setStorageRefresh] = useState(0); // trigger re-read
   const [async, setAsync] = useState<AsyncState>({
     batteryLevel: null, batteryState: null, lowPowerMode: null,
     networkState: null, ipAddress: null,    airplaneMode: null,
@@ -89,12 +131,38 @@ export function useDeviceInfoSections(): InfoSection[] {
     return () => sub.remove();
   }, []);
 
-  // All async APIs in one shot
+  // Storage — re-read every 30s (Paths properties are sync, no native listener)
   useEffect(() => {
-    let levelSub: Battery.Subscription | null = null;
-    let stateSub: Battery.Subscription | null = null;
+    const timer = setInterval(() => setStorageRefresh((n) => n + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // All async APIs in one shot + all real-time listeners
+  useEffect(() => {
+    let levelSub:   ReturnType<typeof Battery.addBatteryLevelListener>   | null = null;
+    let stateSub:   ReturnType<typeof Battery.addBatteryStateListener>   | null = null;
+    let powerSub:   ReturnType<typeof Battery.addLowPowerModeListener>   | null = null;
+    let networkSub: ReturnType<typeof Network.addNetworkStateListener>   | null = null;
+
+    // Helper to re-fetch IP address (called on mount + on network change)
+    const refreshIp = async () => {
+      try {
+        const ip = await Network.getIpAddressAsync();
+        setAsync((prev) => ({ ...prev, ipAddress: ip }));
+      } catch { /* ignore */ }
+    };
+
+    // Helper to re-fetch airplane mode (Android only)
+    const refreshAirplaneMode = async () => {
+      if (Platform.OS !== 'android') return;
+      try {
+        const mode = await Network.isAirplaneModeEnabledAsync();
+        setAsync((prev) => ({ ...prev, airplaneMode: mode }));
+      } catch { /* ignore */ }
+    };
 
     (async () => {
+      // ── Initial load ──────────────────────────────────────────────────────
       const results = await Promise.allSettled([
         Battery.getBatteryLevelAsync(),
         Battery.getBatteryStateAsync(),
@@ -116,18 +184,34 @@ export function useDeviceInfoSections(): InfoSection[] {
         airplaneMode: val(results[5] as PromiseSettledResult<boolean>),
       });
 
-      // Live battery listeners
+      // ── Battery listeners ─────────────────────────────────────────────────
       try {
         levelSub = Battery.addBatteryLevelListener(({ batteryLevel: l }) =>
           setAsync((prev) => ({ ...prev, batteryLevel: l })));
+
         stateSub = Battery.addBatteryStateListener(({ batteryState: s }) =>
           setAsync((prev) => ({ ...prev, batteryState: s })));
-      } catch { /* not available */ }
+
+        powerSub = Battery.addLowPowerModeListener(({ lowPowerMode: lp }) =>
+          setAsync((prev) => ({ ...prev, lowPowerMode: lp })));
+      } catch { /* battery API not available on this platform */ }
+
+      // ── Network listener ──────────────────────────────────────────────────
+      try {
+        networkSub = Network.addNetworkStateListener((state) => {
+          setAsync((prev) => ({ ...prev, networkState: state }));
+          // Re-fetch IP and airplane mode whenever connectivity changes
+          refreshIp();
+          refreshAirplaneMode();
+        });
+      } catch { /* network listener not available */ }
     })();
 
     return () => {
       levelSub?.remove();
       stateSub?.remove();
+      powerSub?.remove();
+      networkSub?.remove();
     };
   }, []);
 
@@ -146,10 +230,12 @@ export function useDeviceInfoSections(): InfoSection[] {
   const { batteryLevel, batteryState, lowPowerMode,
           networkState, ipAddress, airplaneMode } = async;
 
-  // Storage — sync properties from Paths
+  // Storage — sync properties from Paths, re-reads on storageRefresh tick
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   let freeDisk: number | null = null;
   let totalDisk: number | null = null;
   try {
+    void storageRefresh; // declare dependency
     freeDisk  = Paths.availableDiskSpace;
     totalDisk = Paths.totalDiskSpace;
   } catch { /* not available on this platform */ }
@@ -171,126 +257,126 @@ export function useDeviceInfoSections(): InfoSection[] {
 
   const sections: InfoSection[] = [
     {
-      title: 'Device',
+      title: s('device'),
       emoji: '📱',
       color: '#6366f1',
       rows: [
-        { label: 'Device Name',    value: Device.deviceName ?? (Constants as any).deviceName ?? '—' },
-        { label: 'Type',           value: deviceTypeLabel(Device.deviceType) },
-        { label: 'Brand',          value: Device.brand ?? androidC.Brand ?? '—' },
-        { label: 'Manufacturer',   value: Device.manufacturer ?? androidC.Manufacturer ?? '—' },
-        { label: 'Model Name',     value: Device.modelName ?? androidC.Model ?? iosC.Model ?? '—' },
-        { label: 'Model ID',       value: Device.modelId ?? '—' },
-        { label: 'Design Name',    value: (Device as any).designName ?? '—' },
-        { label: 'Year Class',     value: Device.deviceYearClass ?? '—' },
-        { label: 'Total RAM',      value: formatBytes(Device.totalMemory) },
-        { label: 'CPU Arch',       value: cpuArch },
-        { label: 'Is Emulator',    value: !Device.isDevice },
+        { label: l('deviceName'),    value: Device.deviceName ?? (Constants as any).deviceName ?? '—' },
+        { label: l('type'),          value: deviceTypeLabel(Device.deviceType) },
+        { label: l('brand'),         value: Device.brand ?? androidC.Brand ?? '—' },
+        { label: l('manufacturer'),  value: Device.manufacturer ?? androidC.Manufacturer ?? '—' },
+        { label: l('modelName'),     value: Device.modelName ?? androidC.Model ?? iosC.Model ?? '—' },
+        { label: l('modelId'),       value: Device.modelId ?? '—' },
+        { label: l('designName'),    value: (Device as any).designName ?? '—' },
+        { label: l('yearClass'),     value: Device.deviceYearClass ?? '—' },
+        { label: l('totalRam'),      value: formatBytes(Device.totalMemory) },
+        { label: l('cpuArch'),       value: cpuArch },
+        { label: l('isEmulator'),    value: !Device.isDevice },
       ],
     },
     {
-      title: 'Operating System',
+      title: s('os'),
       emoji: '🖥️',
       color: '#0ea5e9',
       rows: [
-        { label: 'OS Name',        value: Device.osName ?? (isIos ? 'iOS' : 'Android') },
-        { label: 'OS Version',     value: Device.osVersion ?? String(osVersion) },
-        { label: 'OS Build ID',    value: Device.osBuildId ?? '—' },
-        { label: 'Internal Build', value: Device.osBuildFingerprint ?? androidC.Fingerprint ?? '—' },
+        { label: l('osName'),        value: Device.osName ?? (isIos ? 'iOS' : 'Android') },
+        { label: l('osVersion'),     value: Device.osVersion ?? String(osVersion) },
+        { label: l('osBuildId'),     value: Device.osBuildId ?? '—' },
+        { label: l('internalBuild'), value: Device.osBuildFingerprint ?? androidC.Fingerprint ?? '—' },
         ...(isAndroid ? [
-          { label: 'Android Release', value: androidC.Release ?? '—' },
-          { label: 'SDK Level',        value: androidC.Version ?? '—' },
+          { label: l('androidRelease'), value: androidC.Release ?? '—' },
+          { label: l('sdkLevel'),       value: androidC.Version ?? '—' },
         ] : []),
         ...(isIos ? [
-          { label: 'System Version',   value: iosC.osVersion ?? '—' },
+          { label: l('systemVersion'),  value: iosC.osVersion ?? '—' },
         ] : []),
       ],
     },
     {
-      title: batteryEmoji + ' Battery',
+      title: `${batteryEmoji} ${s('battery')}`,
       emoji: batteryEmoji,
       color: '#22c55e',
       rows: [
-        { label: 'Level',          value: batteryPercent },
-        { label: 'State',          value: batteryStateLabel(batteryState) },
-        { label: 'Low Power Mode', value: lowPowerMode },
+        { label: l('level'),         value: batteryPercent },
+        { label: l('state'),         value: batteryStateLabel(batteryState) },
+        { label: l('lowPowerMode'),  value: lowPowerMode },
       ],
     },
     {
-      title: 'Network',
+      title: s('network'),
       emoji: '🌐',
       color: '#06b6d4',
       rows: [
-        { label: 'Type',           value: networkTypeLabel(networkState?.type ?? null) },
-        { label: 'Connected',      value: networkState?.isConnected ?? null },
-        { label: 'Internet',       value: networkState?.isInternetReachable ?? null },
-        { label: 'IP Address',     value: ipAddress },
+        { label: l('networkType'),   value: networkTypeLabel(networkState?.type ?? null) },
+        { label: l('connected'),     value: networkState?.isConnected ?? null },
+        { label: l('internet'),      value: networkState?.isInternetReachable ?? null },
+        { label: l('ipAddress'),     value: ipAddress },
         ...(Platform.OS === 'android' ? [
-          { label: 'Airplane Mode', value: airplaneMode },
+          { label: l('airplaneMode'), value: airplaneMode },
         ] : []),
       ],
     },
     {
-      title: 'Storage',
+      title: s('storage'),
       emoji: '💾',
       color: '#f97316',
       rows: [
-        { label: 'Total',          value: formatBytes(totalDisk) },
-        { label: 'Free',           value: formatBytes(freeDisk) },
-        { label: 'Usage',          value: storageBar(freeDisk, totalDisk) },
+        { label: l('total'),         value: formatBytes(totalDisk) },
+        { label: l('free'),          value: formatBytes(freeDisk) },
+        { label: l('usage'),         value: storageBar(freeDisk, totalDisk, v('used'), v('free')) },
       ],
     },
     {
-      title: 'App',
+      title: s('app'),
       emoji: '📦',
       color: '#8b5cf6',
       rows: [
-        { label: 'App Name',       value: manifest.name },
-        { label: 'Version',        value: manifest.version },
-        { label: 'Expo SDK',       value: manifest.sdkVersion },
-        { label: 'Slug',           value: manifest.slug },
-        { label: 'Scheme',         value: Array.isArray(manifest.scheme) ? manifest.scheme[0] : manifest.scheme },
-        { label: 'Debug Mode',     value: __DEV__ },
-        { label: 'Execution Env',  value: (Constants as any).executionEnvironment ?? '—' },
-        { label: 'Session ID',     value: Constants.sessionId },
+        { label: l('appName'),       value: manifest.name },
+        { label: l('version'),       value: manifest.version },
+        { label: l('expoSdk'),       value: manifest.sdkVersion },
+        { label: l('slug'),          value: manifest.slug },
+        { label: l('scheme'),        value: Array.isArray(manifest.scheme) ? manifest.scheme[0] : manifest.scheme },
+        { label: l('debugMode'),     value: __DEV__ },
+        { label: l('executionEnv'),  value: (Constants as any).executionEnvironment ?? '—' },
+        { label: l('sessionId'),     value: Constants.sessionId },
       ],
     },
     {
-      title: 'Updates',
+      title: s('updates'),
       emoji: '🔄',
       color: '#14b8a6',
       rows: [
-        { label: 'Update ID',      value: Updates.updateId ?? '—' },
-        { label: 'Channel',        value: Updates.channel ?? '—' },
-        { label: 'Runtime Version', value: Updates.runtimeVersion ?? '—' },
-        { label: 'Embedded Launch', value: Updates.isEmbeddedLaunch },
-        { label: 'Published At',   value: updatedAt },
+        { label: l('updateId'),        value: Updates.updateId ?? '—' },
+        { label: l('channel'),         value: Updates.channel ?? '—' },
+        { label: l('runtimeVersion'),  value: Updates.runtimeVersion ?? '—' },
+        { label: l('embeddedLaunch'),  value: Updates.isEmbeddedLaunch },
+        { label: l('publishedAt'),     value: updatedAt },
       ],
     },
     {
-      title: 'Display',
+      title: s('display'),
       emoji: '🖼️',
       color: '#ec4899',
       rows: [
-        { label: 'Window Width',   value: `${Math.round(windowDims.width)} dp` },
-        { label: 'Window Height',  value: `${Math.round(windowDims.height)} dp` },
-        { label: 'Screen Width',   value: `${Math.round(screenDims.width)} dp` },
-        { label: 'Screen Height',  value: `${Math.round(screenDims.height)} dp` },
-        { label: 'Pixel Ratio',    value: pixelRatio.toFixed(2) },
-        { label: 'Font Scale',     value: fontScale.toFixed(2) },
-        { label: 'Physical Pixels', value: `${Math.round(screenDims.width * pixelRatio)} × ${Math.round(screenDims.height * pixelRatio)} px` },
-        { label: 'Scale',          value: screenDims.scale?.toFixed(2) ?? '—' },
+        { label: l('windowWidth'),    value: `${Math.round(windowDims.width)} dp` },
+        { label: l('windowHeight'),   value: `${Math.round(windowDims.height)} dp` },
+        { label: l('screenWidth'),    value: `${Math.round(screenDims.width)} dp` },
+        { label: l('screenHeight'),   value: `${Math.round(screenDims.height)} dp` },
+        { label: l('pixelRatio'),     value: pixelRatio.toFixed(2) },
+        { label: l('fontScale'),      value: fontScale.toFixed(2) },
+        { label: l('physicalPixels'), value: `${Math.round(screenDims.width * pixelRatio)} × ${Math.round(screenDims.height * pixelRatio)} px` },
+        { label: l('scale'),          value: screenDims.scale?.toFixed(2) ?? '—' },
       ],
     },
     {
-      title: 'Runtime',
+      title: s('runtime'),
       emoji: '⚙️',
       color: '#f59e0b',
       rows: [
-        { label: 'JS Engine',      value: (global as any).HermesInternal ? 'Hermes' : 'JSC' },
-        { label: 'Architecture',   value: (global as any).__turboModuleProxy ? 'New (Fabric)' : 'Old (Paper)' },
-        { label: 'Expo Go',        value: (Constants as any).executionEnvironment === 'storeClient' },
-        { label: 'Status Bar H',   value: Constants.statusBarHeight ? `${Constants.statusBarHeight} dp` : '—' },
+        { label: l('jsEngine'),       value: (global as any).HermesInternal ? 'Hermes' : 'JSC' },
+        { label: l('architecture'),   value: (global as any).__turboModuleProxy ? 'New (Fabric)' : 'Old (Paper)' },
+        { label: l('expoGo'),         value: (Constants as any).executionEnvironment === 'storeClient' },
+        { label: l('statusBarHeight'), value: Constants.statusBarHeight ? `${Constants.statusBarHeight} dp` : '—' },
       ],
     },
   ];

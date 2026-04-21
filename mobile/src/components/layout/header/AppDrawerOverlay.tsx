@@ -12,7 +12,7 @@ import { NAV_ITEMS } from './navItems';
 const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 }) => {
   const { open, setOpen, headerHeight, bottomNavHeight } = useDrawer();
   const { user, logout }                                  = useAuthStore();
-  const { colorMode, toggleColorMode, setDirection }      = useUiStore();
+  const { colorMode, toggleColorMode }                    = useUiStore();
   const { isRtl }                                         = useDirection();
   // Fallback: also read directly from store in case context isn't propagating
   const storeDirection                                    = useUiStore((s) => s.direction);
@@ -63,7 +63,6 @@ const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 
           isDark={isDark}
           isRtl={effectiveIsRtl}
           onToggleTheme={toggleColorMode}
-          onToggleDir={() => setDirection(effectiveIsRtl ? 'ltr' : 'rtl')}
         />
         <DrawerNavList items={visibleItems} isRtl={effectiveIsRtl} onNav={handleNav} />
       </View>
