@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import { useUiStore } from '../../../stores/uiStore';
 import { useDrawer } from './DrawerContext';
 import { getInitials, getRoleColor } from './navItems';
+import { Avatar, IconButton } from '../../../shared/components';
 
 const AppHeaderBar: React.FC = () => {
   const { user }                       = useAuthStore();
@@ -41,35 +42,30 @@ const AppHeaderBar: React.FC = () => {
       {/* Right actions */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         {/* Notification bell */}
-        <Pressable
-          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}
+        <IconButton
+          icon="🔔"
+          badgeCount={unreadCount}
           onPress={() => router.push('/(app)/notifications' as any)}
-        >
-          <Text style={{ fontSize: 16 }}>🔔</Text>
-          {unreadCount > 0 && (
-            <View style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: 8, backgroundColor: '#ef4444', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 9, fontWeight: '700' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
-        </Pressable>
+        />
 
         {/* User avatar */}
         <Pressable
           style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
-          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: getRoleColor(user.role), alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>{getInitials(user.name)}</Text>
-          </View>
+          <Avatar
+            text={user.name}
+            backgroundColor={getRoleColor(user.role)}
+            size={28}
+          />
         </Pressable>
 
         {/* Hamburger */}
-        <Pressable
-          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}
+        <IconButton
+          icon={open ? '✕' : '☰'}
+          iconSize={18}
           onPress={() => setOpen(!open)}
-        >
-          <Text style={{ color: '#fff', fontSize: 18 }}>{open ? '✕' : '☰'}</Text>
-        </Pressable>
+        />
       </View>
     </View>
   );

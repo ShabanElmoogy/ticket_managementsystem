@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text } from 'react-native';
 import { getInitials, getRoleColor } from './navItems';
 import { changeLanguage, getCurrentLanguage } from '../../../i18n';
+import { Avatar, Badge, ToggleButton } from '../../../shared/components';
 
 interface Props {
   name: string;
@@ -33,47 +34,36 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isDark, isRtl, onToggleTh
     }}>
       {/* Avatar + name — always row, icon left, text right-aligned in RTL */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <View style={{
-          width: 44, height: 44, borderRadius: 22,
-          backgroundColor: getRoleColor(role),
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{getInitials(name)}</Text>
-        </View>
+        <Avatar
+          text={name}
+          backgroundColor={getRoleColor(role)}
+          size={44}
+        />
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14, textAlign: isRtl ? 'right' : 'left' }}>
             {name}
           </Text>
-          <View style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', backgroundColor: `${getRoleColor(role)}44`, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, marginTop: 2 }}>
-            <Text style={{ color: '#fff', fontSize: 11 }}>{role}</Text>
-          </View>
+          <Badge
+            label={role}
+            backgroundColor={`${getRoleColor(role)}44`}
+            textColor="#fff"
+            style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', marginTop: 2 }}
+          />
         </View>
       </View>
 
       {/* Theme + language toggles */}
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Pressable
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingVertical: 8 }}
+        <ToggleButton
+          icon={isDark ? '☀️' : '🌙'}
+          label={isDark ? 'Light' : 'Dark'}
           onPress={onToggleTheme}
-        >
-          <Text>{isDark ? '☀️' : '🌙'}</Text>
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '500' }}>{isDark ? 'Light' : 'Dark'}</Text>
-        </Pressable>
-        <Pressable
-          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingVertical: 8 }}
+        />
+        <ToggleButton
+          label={currentLang === 'en' ? 'عربي' : 'EN'}
+          loading={switching}
           onPress={handleLanguageSwitch}
-          disabled={switching}
-        >
-          {switching ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-                {currentLang === 'en' ? 'عربي' : 'EN'}
-              </Text>
-            </>
-          )}
-        </Pressable>
+        />
       </View>
     </View>
   );
