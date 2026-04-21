@@ -1,13 +1,20 @@
 {
   "nav": {
     "dashboard": "لوحة التحكم",
+    "tickets": "التذاكر",
+    "kanbanBoard": "لوحة كانبان",
+    "epics": "الملاحم",
+    "featureRequests": "طلبات الميزات",
+    "documents": "المستندات",
+    "programming": "البرمجة",
+    "adminPanel": "لوحة الإدارة",
+    "profile": "الملف الشخصي",
+    "deviceInfo": "معلومات الجهاز",
+    "logout": "تسجيل الخروج",
     "applications": "التطبيقات",
     "users": "المستخدمون",
     "customers": "العملاء",
-    "tickets": "التذاكر",
-    "tasks": "المهام",
-    "profile": "الملف الشخصي",
-    "logout": "تسجيل الخروج"
+    "tasks": "المهام"
   },
   "common": {
     "loading": "جاري التحميل...",

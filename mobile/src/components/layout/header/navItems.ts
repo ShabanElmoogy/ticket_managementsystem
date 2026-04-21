@@ -1,5 +1,5 @@
 export interface NavItem {
-  label: string;
+  labelKey: string;  // i18n key instead of hardcoded label
   icon: string;
   route: string;
   color?: string;
@@ -8,16 +8,17 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard',        icon: '📊', route: '/(app)'             },
-  { label: 'Tickets',          icon: '🎫', route: '/(app)/tickets'     },
-  { label: 'Kanban Board',     icon: '🗂️', route: '/(app)/kanban'      },
-  { label: 'Epics',            icon: '🌳', route: '/(app)/epics'       },
-  { label: 'Feature Requests', icon: '💡', route: '/(app)/features'    },
-  { label: 'Documents',        icon: '📄', route: '/(app)/documents',   roles: ['TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER'] },
-  { label: 'Programming',      icon: '💻', route: '/(app)/programming', roles: ['PROGRAMMER', 'TENANT_ADMIN', 'SUPER_ADMIN'] },
-  { label: 'Admin Panel',      icon: '⚙️', route: '/(app)/admin',      roles: ['TENANT_ADMIN', 'SUPER_ADMIN'] },  { label: 'Profile',          icon: '👤', route: '/(app)/profile',    dividerBefore: true },
-  { label: 'Device Info',      icon: '📱', route: '/(app)/device-info', dividerBefore: true },
-  { label: 'Logout',           icon: '🚪', route: '__logout__',        color: '#ef4444', dividerBefore: true },
+  { labelKey: 'nav.dashboard',        icon: '📊', route: '/(app)'             },
+  { labelKey: 'nav.tickets',          icon: '🎫', route: '/(app)/tickets'     },
+  { labelKey: 'nav.kanbanBoard',      icon: '🗂️', route: '/(app)/kanban'      },
+  { labelKey: 'nav.epics',            icon: '🌳', route: '/(app)/epics'       },
+  { labelKey: 'nav.featureRequests',  icon: '💡', route: '/(app)/features'    },
+  { labelKey: 'nav.documents',        icon: '📄', route: '/(app)/documents',   roles: ['TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER'] },
+  { labelKey: 'nav.programming',      icon: '💻', route: '/(app)/programming', roles: ['PROGRAMMER', 'TENANT_ADMIN', 'SUPER_ADMIN'] },
+  { labelKey: 'nav.adminPanel',       icon: '⚙️', route: '/(app)/admin',      roles: ['TENANT_ADMIN', 'SUPER_ADMIN'] },
+  { labelKey: 'nav.profile',          icon: '👤', route: '/(app)/profile',    dividerBefore: true },
+  { labelKey: 'nav.deviceInfo',       icon: '📱', route: '/(app)/device-info', dividerBefore: true },
+  { labelKey: 'nav.logout',           icon: '🚪', route: '__logout__',        color: '#ef4444', dividerBefore: true },
 ];
 
 export const getInitials = (name: string) =>
