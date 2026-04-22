@@ -1,44 +1,51 @@
 import { useRef, useCallback } from 'react';
-import { ScrollView, type NativeSyntheticEvent, type TextInputFocusEventData } from 'react-native';
+import { ScrollView } from 'react-native';
 
 /**
  * useScrollToInput — scrolls a ScrollView to keep the focused TextInput
  * visible above the keyboard.
  *
+ * Works on both old and new React Native architecture.
+ *
  * Usage:
- *   const { scrollRef, onInputFocus } = useScrollToInput();
+ *   const { scrollRef, handleInputFocus } = useScrollToInput();
  *
  *   <ScrollView ref={scrollRef}>
- *     <TextInput onFocus={onInputFocus} />
- *     <TextInput onFocus={onInputFocus} />
+ *     {React.Children.map(children, child =>
+ *       React.cloneElement(child, { onFocus: handleInputFocus })
+ *     )}
  *   </ScrollView>
+ *
+ * Or use the helper to inject onFocus automatically (see AdminFormModal).
  */
 export function useScrollToInput() {
   const scrollRef = useRef<ScrollView>(null);
+  const inputRefs = useRef<Map<any, { y: number }>>(new Map());
 
-  const onInputFocus = useCallback((
-    e: NativeSyntheticEvent<TextInputFocusEventData>,
-  ) => {
-    const node = e.target;
-    if (!node || !scrollRef.current) return;
+  /**
+   * Call this from each input's onLayout to track its position.
+   * The form modal injects this automatically.
+   */
+  const handleInputLayout = useCallback((key: any, y: number) => {
+    inputRefs.current.set(key, { y });
+  }, []);
 
-    // Wait for keyboard to start appearing so the reduced height is known
+  /**
+   * Call this from each input's onFocus to scroll it into view.
+   * The form modal injects this automatically.
+   */
+  const handleInputFocus = useCallback((key: any) => {
+    const position = inputRefs.current.get(key);
+    if (!position || !scrollRef.current) return;
+
+    // Wait for keyboard to start appearing
     setTimeout(() => {
-      if (!scrollRef.current) return;
-
-      (node as any).measureLayout(
-        (scrollRef.current as any)?.getScrollableNode?.() ?? scrollRef.current,
-        (_x: number, y: number) => {
-          // Scroll so the field sits 24px below the top of the visible area
-          scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
-        },
-        () => {
-          // Fallback: scroll to end
-          scrollRef.current?.scrollToEnd({ animated: true });
-        },
-      );
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, position.y - 24),
+        animated: true,
+      });
     }, 150);
   }, []);
 
-  return { scrollRef, onInputFocus };
+  return { scrollRef, handleInputLayout, handleInputFocus };
 }

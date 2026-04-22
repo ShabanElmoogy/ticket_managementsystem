@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
+import FormField from '@/src/features/admin/shared/FormField';
 import { AppTextInput } from '@/src/shared/components';
 import { createApplicationFormSchema } from '../schemas/applicationSchema';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
@@ -45,39 +46,45 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
       onSubmit={handleSubmit}
       submitting={submitting}
     >
-      <AppTextInput
-        label={t('applications.form.name')}
-        value={name}
-        onChangeText={(v) => { setName(v); setErrors((e) => ({ ...e, name: '' })); }}
-        placeholder={t('applications.form.namePlaceholder')}
-        error={errors.name}
-        autoCapitalize="words"
-        maxLength={100}
-        showClearButton
-        onClear={() => { setName(''); setErrors((e) => ({ ...e, name: '' })); }}
-      />
-      <AppTextInput
-        label={t('applications.form.version')}
-        value={version}
-        onChangeText={(v) => { setVersion(v); setErrors((e) => ({ ...e, version: '' })); }}
-        placeholder={t('applications.form.versionPlaceholder')}
-        error={errors.version}
-        autoCapitalize="none"
-        maxLength={50}
-        showClearButton
-        onClear={() => { setVersion(''); setErrors((e) => ({ ...e, version: '' })); }}
-      />
-      <AppTextInput
-        label={t('applications.form.description')}
-        value={description}
-        onChangeText={(v) => { setDescription(v); setErrors((e) => ({ ...e, description: '' })); }}
-        placeholder={t('applications.form.descriptionPlaceholder')}
-        error={errors.description}
-        autoCapitalize="sentences"
-        maxLength={500}
-        showClearButton
-        onClear={() => { setDescription(''); setErrors((e) => ({ ...e, description: '' })); }}
-      />
+      <FormField>
+        <AppTextInput
+          label={t('applications.form.name')}
+          value={name}
+          onChangeText={(v) => { setName(v); setErrors((e) => ({ ...e, name: '' })); }}
+          placeholder={t('applications.form.namePlaceholder')}
+          error={errors.name}
+          autoCapitalize="words"
+          maxLength={100}
+          showClearButton
+          onClear={() => { setName(''); setErrors((e) => ({ ...e, name: '' })); }}
+        />
+      </FormField>
+      <FormField>
+        <AppTextInput
+          label={t('applications.form.version')}
+          value={version}
+          onChangeText={(v) => { setVersion(v); setErrors((e) => ({ ...e, version: '' })); }}
+          placeholder={t('applications.form.versionPlaceholder')}
+          error={errors.version}
+          autoCapitalize="none"
+          maxLength={50}
+          showClearButton
+          onClear={() => { setVersion(''); setErrors((e) => ({ ...e, version: '' })); }}
+        />
+      </FormField>
+      <FormField>
+        <AppTextInput
+          label={t('applications.form.description')}
+          value={description}
+          onChangeText={(v) => { setDescription(v); setErrors((e) => ({ ...e, description: '' })); }}
+          placeholder={t('applications.form.descriptionPlaceholder')}
+          error={errors.description}
+          autoCapitalize="sentences"
+          maxLength={500}
+          showClearButton
+          onClear={() => { setDescription(''); setErrors((e) => ({ ...e, description: '' })); }}
+        />
+      </FormField>
     </AdminFormModal>
   );
 };

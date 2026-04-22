@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View, Text, Pressable, Modal, ScrollView,
   KeyboardAvoidingView, Platform,
   StyleSheet, useWindowDimensions,
-  type NativeSyntheticEvent, type TextInputFocusEventData,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from '../../../shared/components';
-import { useScrollToInput } from '../../../shared/hooks/useScrollToInput';
+import { FormScrollProvider } from './FormScrollContext';
 import { useUiStore } from '../../../stores/uiStore';
 
 export interface AdminFormModalProps {
@@ -27,17 +26,9 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
   const isRtl  = direction === 'rtl';
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
-
-  // Scroll the focused input into view above the keyboard
-  const { scrollRef, onInputFocus } = useScrollToInput();
+  const scrollRef = useRef<ScrollView>(null);
 
   const maxSheetHeight = screenHeight * 0.85;
-
-  /**
-   * Inject onFocus into every AppTextInput / TextInput child.
-   * Keeps form components clean — they don't need to know about scrolling.
-   */
-  const childrenWithScroll = injectFocusHandler(children, onInputFocus);
 
   return (
     <Modal
@@ -71,7 +62,7 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               <View style={styles.handle} />
             </View>
 
-            {/* Header — fixed, never scrolls */}
+            {/* Header — fixed */}
             <View style={[
               styles.header,
               { borderBottomColor: isDark ? '#334155' : '#f1f5f9' },
@@ -87,19 +78,20 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               </Pressable>
             </View>
 
-            {/* Scrollable content */}
+            {/* Scrollable content — FormScrollProvider tracks field positions */}
             <ScrollView
               ref={scrollRef}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               bounces={false}
-              scrollEventThrottle={16}
               contentContainerStyle={[
                 styles.scrollContent,
                 { paddingBottom: insets.bottom + 32 },
               ]}
             >
-              {childrenWithScroll}
+              <FormScrollProvider scrollRef={scrollRef}>
+                {children}
+              </FormScrollProvider>
 
               <AppButton
                 variant="contained"
@@ -119,48 +111,6 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
     </Modal>
   );
 };
-
-// ── Inject onFocus into all input descendants ─────────────────────────────────
-
-type FocusHandler = (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
-
-function injectFocusHandler(
-  children: React.ReactNode,
-  onFocus: FocusHandler,
-): React.ReactNode {
-  return React.Children.map(children, (child) => {
-    if (!React.isValidElement(child)) return child;
-
-    const el   = child as React.ReactElement<any>;
-    const name = (el.type as any)?.displayName ?? (el.type as any)?.name ?? '';
-
-    // TextInput or any component that accepts onFocus + onChangeText (AppTextInput)
-    const isInput =
-      name === 'TextInput' ||
-      name === 'AppTextInput' ||
-      (el.props?.onChangeText !== undefined && el.props?.value !== undefined);
-
-    if (isInput) {
-      return React.cloneElement(el, {
-        onFocus: (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
-          onFocus(e);
-          el.props.onFocus?.(e);
-        },
-      });
-    }
-
-    // Recurse into containers
-    if (el.props?.children) {
-      return React.cloneElement(el, {
-        children: injectFocusHandler(el.props.children, onFocus),
-      });
-    }
-
-    return child;
-  });
-}
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
