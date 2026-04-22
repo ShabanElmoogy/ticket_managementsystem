@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { AppBadge } from '@/src/shared/components';
 import { formatDate } from '@/src/shared/utils/dateUtils';
 import type { Application } from '@/src/services/api/types';
 import type { ColDef } from '@/src/shared/components/data/AppDataTable';
@@ -19,16 +18,6 @@ export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
         <View style={{ backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
           <Text style={{ color: '#1d4ed8', fontSize: 11, fontFamily: 'monospace' }}>{row.version ?? '—'}</Text>
         </View>
-      ),
-    },
-    {
-      field: 'isActive', headerName: t('applications.columns.status'), width: 90, align: 'center',
-      renderCell: (row) => (
-        <AppBadge
-          label={row.isActive ? t('applications.active') : t('applications.inactive')}
-          color={row.isActive ? '#10b981' : '#6b7280'}
-          size="small"
-        />
       ),
     },
     {

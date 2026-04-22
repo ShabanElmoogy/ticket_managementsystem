@@ -31,16 +31,6 @@ interface UseApplicationFormArgs {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-/**
- * useApplicationForm — all state, validation, and submit logic for ApplicationForm.
- *
- * Fixes:
- * - State syncs when `item` changes (useEffect on item.id)
- * - Errors deleted (not set to '') on field change
- * - isDirty tracks whether any field differs from initial values
- * - firstErrorFieldId exposed for scrollToFirstError integration
- * - All handlers stable via useCallback
- */
 export function useApplicationForm({
   item,
   onSave,
@@ -56,7 +46,6 @@ export function useApplicationForm({
       description: item?.description ?? '',
       version:     item?.version     ?? '',
     }),
-    // Re-derive only when the item identity changes, not on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [item?.id],
   );
@@ -67,7 +56,7 @@ export function useApplicationForm({
   const [isSubmitting,      setIsSubmitting]      = useState(false);
   const [firstErrorFieldId, setFirstErrorFieldId] = useState<string | null>(null);
 
-  // ── Sync state when item changes (modal re-opened with different item) ────
+  // ── Sync state when item changes ──────────────────────────────────────────
   useEffect(() => {
     setFields(getInitial());
     setErrors({});
@@ -96,7 +85,6 @@ export function useApplicationForm({
         setIsDirty(checkDirty(next));
         return next;
       });
-      // Delete the error key — never set to ''
       setErrors((prev) => {
         if (!(field in prev)) return prev;
         const next = { ...prev };
@@ -125,11 +113,9 @@ export function useApplicationForm({
       });
       setErrors(fieldErrors);
 
-      // First error in visual order
       const ORDER: Array<keyof ApplicationFormValues> = ['name', 'version', 'description'];
       setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
 
-      // Show validation error toast
       toast.error(t('applications.messages.validationError'));
       return;
     }

@@ -8,7 +8,8 @@ import type { Application, CreateApplicationData } from '@/src/services/api/type
 
 export function useApplications() {
   const { t } = useTranslation();
-  const [exporting, setExporting] = useState(false);
+  const [exporting,  setExporting]  = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Rebuild columns when language changes
   const columns = useMemo(() => getApplicationColumns(t), [t]);
@@ -46,5 +47,5 @@ export function useApplications() {
     finally { setExporting(false); }
   };
 
-  return { f, columns, exporting, handleExport };
+  return { f, columns, exporting, handleExport, selectedId, setSelectedId };
 }

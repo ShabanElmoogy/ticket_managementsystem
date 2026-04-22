@@ -3,7 +3,6 @@ export interface Application {
   name: string;
   description?: string;
   version?: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   _count?: {

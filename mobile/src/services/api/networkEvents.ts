@@ -16,6 +16,7 @@ import type { AxiosRequestConfig } from 'axios';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type NetworkErrorListener   = (message: string) => void;
+type ApiErrorListener       = (status: number, message: string, details?: unknown) => void;
 type RetrySuccessListener   = (count: number) => void;
 type RetryCallback          = (config: AxiosRequestConfig) => Promise<unknown>;
 
@@ -28,6 +29,7 @@ interface QueuedRequest {
 // ── State ─────────────────────────────────────────────────────────────────────
 
 const errorListeners:        Set<NetworkErrorListener> = new Set();
+const apiErrorListeners:     Set<ApiErrorListener>     = new Set();
 const retrySuccessListeners: Set<RetrySuccessListener> = new Set();
 const queue:                 QueuedRequest[]           = [];
 
@@ -50,6 +52,19 @@ export const networkEvents = {
   /** Emit a network error to all subscribers */
   emit: (message: string) => {
     errorListeners.forEach((fn) => fn(message));
+  },
+
+  // ── API error notifications ───────────────────────────────────────────────
+
+  /** Subscribe to API errors (4xx/5xx responses) */
+  onApiError: (fn: ApiErrorListener) => {
+    apiErrorListeners.add(fn);
+    return () => apiErrorListeners.delete(fn);
+  },
+
+  /** Emit an API error (called by httpClient for non-network errors) */
+  emitApiError: (status: number, message: string, details?: unknown) => {
+    apiErrorListeners.forEach((fn) => fn(status, message, details));
   },
 
   // ── Retry queue ───────────────────────────────────────────────────────────

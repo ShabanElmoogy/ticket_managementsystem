@@ -24,6 +24,8 @@ export interface AlertDialogProps {
   copyable?:    boolean;
   extra?:       React.ReactNode;
   actions?:     AlertDialogAction[];
+  /** Replaces the entire actions row with custom content */
+  actionsOverride?: React.ReactNode;
   isDark?:      boolean;
 }
 
@@ -48,6 +50,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
   copyable    = false,
   extra,
   actions,
+  actionsOverride,
   isDark      = false,
 }) => {
   const [copied, setCopied] = useState(false);
@@ -119,8 +122,8 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
             {/* Extra slot */}
             {extra}
 
-            {/* Actions */}
-            {defaultActions.length > 0 && (
+            {/* Actions — override takes priority */}
+            {actionsOverride ?? (defaultActions.length > 0 && (
               <View style={styles.actions}>
                 {defaultActions.map((action, i) => (
                   <ActionButton
@@ -131,7 +134,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
                   />
                 ))}
               </View>
-            )}
+            ))}
           </View>
         </Pressable>
       </Pressable>

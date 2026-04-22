@@ -408,6 +408,19 @@ http.interceptors.response.use(
       status === 429 ||
       (status !== undefined && status >= 500 && status !== 501);
 
+    // Fire global API error event for non-network, non-401 errors
+    // 401 is handled by the refresh flow above — don't double-show it
+    // 404 on detail fetches is expected (deleted resource) — skip silently
+    const shouldShowDialog =
+      !isNetworkError &&
+      status !== 401 &&
+      status !== 404 &&
+      status !== undefined;
+
+    if (shouldShowDialog) {
+      networkEvents.emitApiError(status!, message, data);
+    }
+
     return Promise.reject({
       status,
       message,

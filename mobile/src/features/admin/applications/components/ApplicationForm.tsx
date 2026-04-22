@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
@@ -15,16 +15,9 @@ interface Props {
   onClose:     () => void;
   onSave:      (data: CreateApplicationData) => Promise<void>;
   submitting:  boolean;
-  /** 'page' renders a full-screen form. 'modal' renders a bottom sheet. Default: 'page' */
   mode?:       'page' | 'modal';
 }
 
-/**
- * ApplicationForm — works in both page and modal mode.
- *
- * mode="page"  → AdminFormPage  (recommended — no keyboard issues)
- * mode="modal" → AdminFormModal (bottom sheet — use for quick edits)
- */
 const ApplicationForm: React.FC<Props> = ({
   item, onClose, onSave, submitting, mode = 'page',
 }) => {
@@ -42,20 +35,10 @@ const ApplicationForm: React.FC<Props> = ({
     handleSubmit,
   } = useApplicationForm({ item, onSave, onClose });
 
-  // Auto-focus first input
-  // Page mode: shorter delay (no modal animation to wait for)
-  // Modal mode: longer delay (wait for slide animation to complete)
-  const firstInputRef = useFocusInput({
-    inModal: mode === 'modal',
-    enabled: true,
-    delay: mode === 'page' ? 100 : undefined,
-  });
-
-  // Refs for next-field navigation (return key → next input)
+  const firstInputRef  = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
   const versionRef     = useRef<TextInput | null>(null);
   const descriptionRef = useRef<TextInput | null>(null);
 
-  // Stable per-field handlers
   const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
   const onChangeVersion     = useCallback((v: string) => handleChange('version', v),     [handleChange]);
   const onChangeDescription = useCallback((v: string) => handleChange('description', v), [handleChange]);
@@ -65,18 +48,21 @@ const ApplicationForm: React.FC<Props> = ({
 
   const onSubmit = useCallback(async () => {
     await handleSubmit();
-    if (firstErrorFieldId) {
-      scrollToFirstError([firstErrorFieldId]);
-    }
+    if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
   }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
 
-  const formTitle      = item ? t('applications.editTitle') : t('applications.addTitle');
-  const isDisabled     = submitting || isSubmitting || !isDirty;
+  const formTitle       = item ? t('applications.editTitle') : t('applications.addTitle');
+  const isDisabled      = submitting || isSubmitting || !isDirty;
   const isSubmittingAll = submitting || isSubmitting;
+
+  // ── Linked stats (edit mode only) ─────────────────────────────────────────
+  const linkedTickets   = item?._count?.tickets   ?? 0;
+  const linkedCustomers = item?._count?.customers ?? 0;
 
   // ── Shared fields ─────────────────────────────────────────────────────────
   const fields_jsx = (
     <>
+      {/* ── Name ── */}
       <FormField fieldId="name">
         <AppTextInput
           inputRef={firstInputRef}
@@ -93,6 +79,7 @@ const ApplicationForm: React.FC<Props> = ({
         />
       </FormField>
 
+      {/* ── Version ── */}
       <FormField fieldId="version">
         <AppTextInput
           inputRef={versionRef}
@@ -109,6 +96,7 @@ const ApplicationForm: React.FC<Props> = ({
         />
       </FormField>
 
+      {/* ── Description (multiline) ── */}
       <FormField fieldId="description">
         <AppTextInput
           inputRef={descriptionRef}
@@ -121,12 +109,36 @@ const ApplicationForm: React.FC<Props> = ({
           maxLength={500}
           showClearButton
           onClear={onClearDescription}
+          multiline
+          numberOfLines={3}
+          blurOnSubmit
         />
       </FormField>
+
+      {/* ── Linked stats (edit mode only) ── */}
+      {item && (
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          <View style={{
+            flex: 1, padding: 12, borderRadius: 10,
+            backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>{linkedTickets}</Text>
+            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('applications.columns.tickets')}</Text>
+          </View>
+          <View style={{
+            flex: 1, padding: 12, borderRadius: 10,
+            backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#065f46' }}>{linkedCustomers}</Text>
+            <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>{t('applications.columns.customers')}</Text>
+          </View>
+        </View>
+      )}
     </>
   );
 
-  // ── Page mode (default — recommended) ────────────────────────────────────
   if (mode === 'page') {
     return (
       <AdminFormPage
@@ -142,7 +154,6 @@ const ApplicationForm: React.FC<Props> = ({
     );
   }
 
-  // ── Modal mode (bottom sheet) ─────────────────────────────────────────────
   return (
     <AdminFormModal
       open
