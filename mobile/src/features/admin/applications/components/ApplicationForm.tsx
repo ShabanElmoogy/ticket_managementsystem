@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
-import FormField from '@/src/features/admin/shared/FormField';
+import FormField      from '@/src/features/admin/shared/FormField';
 import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
 import { AppTextInput } from '@/src/shared/components';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
@@ -13,15 +14,19 @@ interface Props {
   onClose:     () => void;
   onSave:      (data: CreateApplicationData) => Promise<void>;
   submitting:  boolean;
+  /** 'page' renders a full-screen form. 'modal' renders a bottom sheet. Default: 'page' */
+  mode?:       'page' | 'modal';
 }
 
 /**
- * ApplicationForm — thin presentation component.
+ * ApplicationForm — works in both page and modal mode.
  *
- * All state, validation, and submit logic lives in useApplicationForm.
- * This component only renders fields and wires up hooks.
+ * mode="page"  → AdminFormPage  (recommended — no keyboard issues)
+ * mode="modal" → AdminFormModal (bottom sheet — use for quick edits)
  */
-const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting }) => {
+const ApplicationForm: React.FC<Props> = ({
+  item, onClose, onSave, submitting, mode = 'page',
+}) => {
   const { t }                  = useTranslation();
   const { scrollToFirstError } = useFormScroll();
 
@@ -36,39 +41,46 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
     handleSubmit,
   } = useApplicationForm({ item, onSave, onClose });
 
-  // Auto-focus the first input when the modal opens
-  const firstInputRef = useFocusInput({ inModal: true, enabled: true });
+  // Auto-focus first input — no delay needed in page mode (OS handles it)
+  const firstInputRef = useFocusInput({
+    inModal: mode === 'modal',
+    enabled: true,
+  });
 
-  const onSubmit = async () => {
+  // Stable per-field handlers
+  const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
+  const onChangeVersion     = useCallback((v: string) => handleChange('version', v),     [handleChange]);
+  const onChangeDescription = useCallback((v: string) => handleChange('description', v), [handleChange]);
+  const onClearName         = useCallback(() => handleClear('name'),        [handleClear]);
+  const onClearVersion      = useCallback(() => handleClear('version'),     [handleClear]);
+  const onClearDescription  = useCallback(() => handleClear('description'), [handleClear]);
+
+  const onSubmit = useCallback(async () => {
     await handleSubmit();
-    // Scroll to first error field after validation failure
     if (firstErrorFieldId) {
       scrollToFirstError([firstErrorFieldId]);
     }
-  };
+  }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
 
-  return (
-    <AdminFormModal
-      open
-      title={item ? t('applications.editTitle') : t('applications.addTitle')}
-      onClose={onClose}
-      onSubmit={onSubmit}
-      submitting={submitting || isSubmitting}
-      submitDisabled={submitting || isSubmitting || !isDirty}
-      submitLabel={t('common.save')}
-    >
+  const formTitle      = item ? t('applications.editTitle') : t('applications.addTitle');
+  const isDisabled     = submitting || isSubmitting || !isDirty;
+  const isSubmittingAll = submitting || isSubmitting;
+
+  // ── Shared fields ─────────────────────────────────────────────────────────
+  const fields_jsx = (
+    <>
       <FormField fieldId="name">
         <AppTextInput
           inputRef={firstInputRef}
           label={t('applications.form.name')}
           value={fields.name}
-          onChangeText={(v) => handleChange('name', v)}
+          onChangeText={onChangeName}
           placeholder={t('applications.form.namePlaceholder')}
           error={errors.name}
           autoCapitalize="words"
           maxLength={100}
           showClearButton
-          onClear={() => handleClear('name')}
+          onClear={onClearName}
         />
       </FormField>
 
@@ -76,13 +88,13 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
         <AppTextInput
           label={t('applications.form.version')}
           value={fields.version}
-          onChangeText={(v) => handleChange('version', v)}
+          onChangeText={onChangeVersion}
           placeholder={t('applications.form.versionPlaceholder')}
           error={errors.version}
           autoCapitalize="none"
           maxLength={50}
           showClearButton
-          onClear={() => handleClear('version')}
+          onClear={onClearVersion}
         />
       </FormField>
 
@@ -90,15 +102,46 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
         <AppTextInput
           label={t('applications.form.description')}
           value={fields.description}
-          onChangeText={(v) => handleChange('description', v)}
+          onChangeText={onChangeDescription}
           placeholder={t('applications.form.descriptionPlaceholder')}
           error={errors.description}
           autoCapitalize="sentences"
           maxLength={500}
           showClearButton
-          onClear={() => handleClear('description')}
+          onClear={onClearDescription}
         />
       </FormField>
+    </>
+  );
+
+  // ── Page mode (default — recommended) ────────────────────────────────────
+  if (mode === 'page') {
+    return (
+      <AdminFormPage
+        title={formTitle}
+        onBack={onClose}
+        onSubmit={onSubmit}
+        submitting={isSubmittingAll}
+        submitDisabled={isDisabled}
+        submitLabel={t('common.save')}
+      >
+        {fields_jsx}
+      </AdminFormPage>
+    );
+  }
+
+  // ── Modal mode (bottom sheet) ─────────────────────────────────────────────
+  return (
+    <AdminFormModal
+      open
+      title={formTitle}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      submitting={isSubmittingAll}
+      submitDisabled={isDisabled}
+      submitLabel={t('common.save')}
+    >
+      {fields_jsx}
     </AdminFormModal>
   );
 };

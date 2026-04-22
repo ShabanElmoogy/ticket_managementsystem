@@ -51,7 +51,7 @@ export function useFocusInput(options: Options = {}) {
     enabled = true,
   } = options;
 
-  const ref       = useRef<TextInput>(null);
+  const ref       = useRef<TextInput | null>(null);
   const mounted   = useRef(true);   // guards against focus after unmount
   const attempted = useRef(false);  // focus only once per mount
 

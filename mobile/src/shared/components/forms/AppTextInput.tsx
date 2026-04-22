@@ -22,7 +22,7 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
   /** Step for +/- stepper (default 1) */
   step?: number;
   /** Ref forwarded to the underlying TextInput — used for auto-focus */
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
 }
 
 const AppTextInput: React.FC<AppTextInputProps> = ({
@@ -157,7 +157,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
         {/* Text input */}
         <TextInput
-          ref={inputRef}
+          ref={inputRef as React.RefObject<TextInput>}
           style={{
             flex: 1,
             fontSize: 15,
