@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
+
+const PAGE_SIZE = 6;
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
   title: string;
@@ -159,6 +161,7 @@ function AdminCrudScreen<T extends { id: string }>({
   const [formOpen,    setFormOpen]    = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
   const [deleting,    setDeleting]    = useState(false);
+  const [page,        setPage]        = useState(1);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -174,6 +177,32 @@ function AdminCrudScreen<T extends { id: string }>({
         )
       )
     : entities;
+
+  // Reset to page 1 whenever search or data changes
+  const handleSearchChange = useCallback((q: string) => {
+    setSearch(q);
+    setPage(1);
+  }, []);
+
+  // Pagination derived values
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages);
+  const pageRows   = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage],
+  );
+
+  const pagination = useMemo(() => ({
+    page:       safePage,
+    totalPages,
+    totalItems,
+    pageSize:   PAGE_SIZE,
+    hasNext:    safePage < totalPages,
+    hasPrev:    safePage > 1,
+    next:       () => setPage((p) => Math.min(p + 1, totalPages)),
+    prev:       () => setPage((p) => Math.max(p - 1, 1)),
+  }), [safePage, totalPages, totalItems]);
 
   // Action column for table view
   const actionCol: ColDef<T> = {
@@ -198,7 +227,7 @@ function AdminCrudScreen<T extends { id: string }>({
 
   const renderTable = useCallback(() => (
     <AppDataTable<T>
-      rows={filtered}
+      rows={pageRows}
       columns={[...columns, actionCol]}
       loading={loading}
       emptyMessage={
@@ -208,7 +237,7 @@ function AdminCrudScreen<T extends { id: string }>({
       }
       onRowPress={onRowPress}
     />
-  ), [filtered, columns, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
+  ), [pageRows, columns, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
@@ -240,10 +269,11 @@ function AdminCrudScreen<T extends { id: string }>({
           rows={filtered}
           loading={loading}
           search={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           searchPlaceholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
           view={view}
           renderTable={renderTable}
+          pagination={pagination}
           renderGridItem={(item) =>
             renderCard
               ? renderCard(item, () => { setFormItem(item); setFormOpen(true); }, () => setDeleteTarget(item))
