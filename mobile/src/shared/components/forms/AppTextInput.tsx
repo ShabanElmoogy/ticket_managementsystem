@@ -50,9 +50,26 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const isNumber   = fieldType === 'number';
   const hasValue   = String(value ?? '').length > 0;
   const charCount  = String(value ?? '').length;
-  const atLimit    = maxLength !== undefined && charCount >= maxLength;
   const showClear  = (showClearButton ?? isSearch) && hasValue;
   const showBadge  = maxLength !== undefined && !isNumber;
+
+  // ── Three-level badge color ───────────────────────────────────────────────
+  // green  0–74%  | amber  75–89%  | red  90–100%
+  const badgeLevel: 'green' | 'amber' | 'red' = (() => {
+    if (!maxLength) return 'green';
+    const pct = charCount / maxLength;
+    if (pct >= 0.90) return 'red';
+    if (pct >= 0.75) return 'amber';
+    return 'green';
+  })();
+
+  const BADGE_COLORS = {
+    green: { bg: focused ? '#f0fdf4' : '#f3f4f6', border: focused ? '#bbf7d0' : '#e5e7eb', text: focused ? '#16a34a' : '#9ca3af' },
+    amber: { bg: '#fffbeb',  border: '#fde68a', text: '#d97706' },
+    red:   { bg: '#fef2f2',  border: '#fca5a5', text: '#ef4444' },
+  } as const;
+
+  const badge = BADGE_COLORS[badgeLevel];
 
   const keyboardType: TextInputProps['keyboardType'] =
     isNumber ? 'numeric' :
@@ -77,14 +94,14 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
       paddingHorizontal: 7,
       paddingVertical: 3,
       borderRadius: 999,
-      backgroundColor: atLimit ? '#fef2f2' : focused ? '#eff6ff' : '#f3f4f6',
+      backgroundColor: badge.bg,
       borderWidth: 1,
-      borderColor: atLimit ? '#fca5a5' : focused ? '#bfdbfe' : '#e5e7eb',
+      borderColor: badge.border,
     }}>
       <Text style={{
         fontSize: 11,
         fontWeight: '700',
-        color: atLimit ? '#ef4444' : focused ? '#3b82f6' : '#9ca3af',
+        color: badge.text,
         fontVariant: ['tabular-nums'],
       }}>
         {charCount}/{maxLength}
