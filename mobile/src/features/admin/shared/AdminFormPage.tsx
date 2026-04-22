@@ -113,7 +113,7 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
               { paddingBottom: insets.bottom + 32 },
             ]}
           >
-            <FormScrollProvider scrollRef={scrollRef}>
+            <FormScrollProvider scrollRef={scrollRef} mode="page">
               {children}
             </FormScrollProvider>
 

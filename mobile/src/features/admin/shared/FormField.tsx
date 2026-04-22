@@ -2,31 +2,30 @@ import React, { useRef } from 'react';
 import { View } from 'react-native';
 import { useFormScroll } from './FormScrollContext';
 
-/**
- * Module-level counter — incremented once per FormField mount, never on re-render.
- * Produces stable IDs like "field_1", "field_2", etc.
- */
 let fieldCounter = 0;
 
 interface FormFieldProps {
   children: React.ReactNode;
-  /** Optional semantic ID — e.g. "name", "version". Used by scrollToFirstError. */
   fieldId?: string;
 }
 
 /**
  * FormField — wraps a single form input.
  *
- * - Registers its Y position with FormScrollProvider on layout.
- * - Injects an onFocus handler into the direct child so scroll happens automatically.
- * - Uses a module-level counter for stable IDs — no useId(), no re-render churn.
- * - Wrapped in React.memo to prevent re-renders when the parent re-renders.
+ * In 'modal' mode: registers Y position + injects onFocus scroll handler.
+ * In 'page'  mode: renders children as-is — OS handles keyboard avoidance,
+ *                  no scroll injection needed.
  */
 const FormField: React.FC<FormFieldProps> = React.memo(({ children, fieldId }) => {
-  // Stable ID: computed once on first render, never changes
   const id = useRef(fieldId ?? `field_${++fieldCounter}`).current;
-  const { registerFieldY, scrollToField } = useFormScroll();
+  const { mode, registerFieldY, scrollToField } = useFormScroll();
 
+  // Page mode — plain wrapper, zero overhead
+  if (mode === 'page') {
+    return <View>{children}</View>;
+  }
+
+  // Modal mode — register Y + inject onFocus scroll
   return (
     <View onLayout={(e) => registerFieldY(id, e.nativeEvent.layout.y)}>
       {React.Children.map(children, (child) => {

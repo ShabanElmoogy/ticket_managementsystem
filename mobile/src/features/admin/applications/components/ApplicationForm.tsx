@@ -44,7 +44,8 @@ const ApplicationForm: React.FC<Props> = ({
   // Auto-focus first input — no delay needed in page mode (OS handles it)
   const firstInputRef = useFocusInput({
     inModal: mode === 'modal',
-    enabled: true,
+    // In page mode the OS focuses the first input automatically via the screen transition
+    enabled: mode === 'modal',
   });
 
   // Stable per-field handlers

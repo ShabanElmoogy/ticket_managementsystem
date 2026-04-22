@@ -111,7 +111,7 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 { paddingBottom: insets.bottom + 32 },
               ]}
             >
-              <FormScrollProvider scrollRef={scrollRef}>
+              <FormScrollProvider scrollRef={scrollRef} mode="modal">
                 {children}
               </FormScrollProvider>
 
