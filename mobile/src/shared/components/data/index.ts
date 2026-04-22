@@ -1,4 +1,6 @@
 export { default as AppTable } from './AppTable';
+export { useSorting, usePagination, STATUS_COLORS, PRIORITY_COLORS, W } from './AppTable';
+export type { SortState, SortDir, ColDef as AppTableColDef } from './AppTable';
 export { default as AppDataTable } from './AppDataTable';
 export type { ColDef } from './AppDataTable';
 export { default as DataCard } from './DataCard';

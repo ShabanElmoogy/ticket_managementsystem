@@ -145,17 +145,8 @@ export function useApplicationForm({
         version:     result.data.version     || undefined,
       });
       setIsDirty(false);
-
-      // Show success toast
-      toast.success(
-        item
-          ? t('applications.messages.updated')
-          : t('applications.messages.created')
-      );
-
       onClose();
-    } catch (error) {
-      // Show error toast
+    } catch {
       toast.error(
         item
           ? t('applications.messages.errorUpdate')

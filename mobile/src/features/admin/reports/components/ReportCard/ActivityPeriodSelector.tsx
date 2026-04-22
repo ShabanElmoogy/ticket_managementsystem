@@ -1,6 +1,6 @@
 import React from 'react';
 import { ACTIVITY_PERIODS, type ActivityPeriod } from '../../types';
-import FilterChipGroup, { type FilterChipOption } from '../../../../../shared/components';
+import { FilterChipGroup, type FilterChipOption } from '../../../../../shared/components';
 
 interface Props {
   value: ActivityPeriod;

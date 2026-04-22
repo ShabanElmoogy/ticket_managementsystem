@@ -39,7 +39,7 @@ const ApplicationsScreen: React.FC = () => {
           submitting={f.ui.submitting}
           mode="page"
           onSave={async (data: CreateApplicationData) => {
-            if (item) await f.update(item.id, data as any);
+            if (item) await f.update(item.id, data);
             else      await f.create(data);
             onClose();
           }}

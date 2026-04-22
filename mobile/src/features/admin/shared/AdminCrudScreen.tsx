@@ -4,7 +4,7 @@ import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef }
 import { useUiStore } from '../../../stores/uiStore';
 import { useToast } from '../../../shared/hooks/useToast';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 5;
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
   title: string;
@@ -278,7 +278,7 @@ function AdminCrudScreen<T extends { id: string }>({
           title={title}
           isDark={isDark}
           totalCount={entities.length}
-          rows={filtered}
+          rows={pageRows}
           loading={loading}
           search={search}
           onSearchChange={handleSearchChange}

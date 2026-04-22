@@ -16,8 +16,8 @@ export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
     {
       field: 'version', headerName: t('applications.columns.version'), width: 90, sortable: true,
       renderCell: (row) => (
-        <View className="bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
-          <Text className="text-blue-700 text-xs font-mono">{row.version ?? '—'}</Text>
+        <View style={{ backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+          <Text style={{ color: '#1d4ed8', fontSize: 11, fontFamily: 'monospace' }}>{row.version ?? '—'}</Text>
         </View>
       ),
     },
@@ -37,8 +37,8 @@ export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
       renderCell: (row) => {
         const count = row._count?.tickets ?? 0;
         return (
-          <View className="bg-blue-100 rounded-full px-2 py-0.5 min-w-[28px] items-center">
-            <Text className="text-blue-700 text-xs font-bold">{count}</Text>
+          <View style={{ backgroundColor: '#dbeafe', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, minWidth: 28, alignItems: 'center' }}>
+            <Text style={{ color: '#1d4ed8', fontSize: 11, fontWeight: '700' }}>{count}</Text>
           </View>
         );
       },
@@ -49,8 +49,8 @@ export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
       renderCell: (row) => {
         const count = row._count?.customers ?? 0;
         return (
-          <View className="bg-green-100 rounded-full px-2 py-0.5 min-w-[28px] items-center">
-            <Text className="text-green-700 text-xs font-bold">{count}</Text>
+          <View style={{ backgroundColor: '#d1fae5', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, minWidth: 28, alignItems: 'center' }}>
+            <Text style={{ color: '#065f46', fontSize: 11, fontWeight: '700' }}>{count}</Text>
           </View>
         );
       },
@@ -58,7 +58,7 @@ export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
     {
       field: 'createdAt', headerName: t('applications.columns.created'), width: 100, align: 'center',
       renderCell: (row) => (
-        <Text className="text-gray-500 text-xs">
+        <Text style={{ color: '#6b7280', fontSize: 11 }}>
           {row.createdAt ? formatDate(row.createdAt) : '—'}
         </Text>
       ),

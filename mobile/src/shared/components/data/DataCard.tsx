@@ -24,6 +24,7 @@ import AppDeleteDialog from '../dialogs/AppDeleteDialog';
 import SectionHeader   from '../display/SectionHeader';
 import CountBadge      from '../display/CountBadge';
 import PaginatedView   from './PaginatedView';
+import AppPagination   from './AppPagination';
 import type { AdminView } from '../../../stores/uiStore';
 
 // ── Pagination state shape ────────────────────────────────────────────────────
@@ -200,6 +201,21 @@ function DataCard<T extends { id: string }>({
           contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
           ListHeaderComponent={ListHeader}
           ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListFooterComponent={
+            pagination ? (
+              <AppPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.totalItems}
+                pageSize={pagination.pageSize}
+                hasNext={pagination.hasNext}
+                hasPrev={pagination.hasPrev}
+                onNext={pagination.next}
+                onPrev={pagination.prev}
+                isDark={isDark}
+              />
+            ) : null
+          }
           refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -218,6 +234,21 @@ function DataCard<T extends { id: string }>({
           contentContainerStyle={{ paddingBottom: 24 }}
           ListHeaderComponent={ListHeader}
           ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListFooterComponent={
+            pagination ? (
+              <AppPagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.totalItems}
+                pageSize={pagination.pageSize}
+                hasNext={pagination.hasNext}
+                hasPrev={pagination.hasPrev}
+                onNext={pagination.next}
+                onPrev={pagination.prev}
+                isDark={isDark}
+              />
+            ) : null
+          }
           refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"

@@ -42,7 +42,10 @@
     "refreshing": "جاري التحميل…",
     "exportPdf": "تصدير PDF",
     "exporting": "جاري التصدير…",
-    "phone": "الهاتف"
+    "phone": "الهاتف",
+    "priority": "الأولوية",
+    "assignedTo": "مسند إلى",
+    "created": "تاريخ الإنشاء"
   },
   "validation": {
     "required": "{{field}} مطلوب",
@@ -82,6 +85,7 @@
       "errorCreate": "خطأ في إنشاء التطبيق",
       "errorUpdate": "خطأ في تحديث التطبيق",
       "errorDelete": "خطأ في حذف التطبيق",
+      "validationError": "يرجى تصحيح الأخطاء أعلاه",
       "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF",
@@ -118,23 +122,110 @@
       "errorCreate": "خطأ في إنشاء العميل",
       "errorUpdate": "خطأ في تحديث العميل",
       "errorDelete": "خطأ في حذف العميل",
+      "validationError": "يرجى تصحيح الأخطاء أعلاه",
       "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF"
   },
   "users": {
-    "title": "إدارة المستخدمين",
-    "create": "إنشاء مستخدم جديد",
-    "edit": "تعديل المستخدم",
-    "email": "البريد الإلكتروني",
-    "role": "الدور",
-    "admin": "مدير",
-    "employee": "موظف",
-    "user": "مستخدم"
+    "title": "المستخدمون",
+    "itemType": "مستخدم",
+    "addTitle": "إضافة مستخدم",
+    "editTitle": "تعديل المستخدم",
+    "searchPlaceholder": "البحث في المستخدمين…",
+    "emptyMessage": "لا يوجد مستخدمون بعد",
+    "emptyFilteredMessage": "لا يوجد مستخدمون يطابقون بحثك",
+    "columns": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "role": "الدور"
+    },
+    "form": {
+      "name": "الاسم *",
+      "namePlaceholder": "الاسم الكامل",
+      "email": "البريد الإلكتروني *",
+      "emailPlaceholder": "email@example.com",
+      "password": "كلمة المرور *",
+      "passwordEdit": "كلمة المرور الجديدة (اتركها فارغة للإبقاء على الحالية)",
+      "passwordPlaceholder": "••••••••",
+      "phone": "الهاتف",
+      "phonePlaceholder": "+1234567890"
+    },
+    "messages": {
+      "created": "تم إنشاء المستخدم بنجاح",
+      "updated": "تم تحديث المستخدم بنجاح",
+      "deleted": "تم حذف المستخدم بنجاح",
+      "errorCreate": "خطأ في إنشاء المستخدم",
+      "errorUpdate": "خطأ في تحديث المستخدم",
+      "errorDelete": "خطأ في حذف المستخدم"
+    }
+  },
+  "tenants": {
+    "title": "المستأجرون",
+    "itemType": "مستأجر",
+    "addTitle": "إضافة مستأجر",
+    "editTitle": "تعديل المستأجر",
+    "searchPlaceholder": "البحث في المستأجرين…",
+    "emptyMessage": "لا يوجد مستأجرون بعد",
+    "emptyFilteredMessage": "لا يوجد مستأجرون يطابقون بحثك",
+    "columns": {
+      "name": "الاسم",
+      "slug": "المعرّف",
+      "status": "الحالة",
+      "plan": "الخطة",
+      "seats": "المقاعد"
+    },
+    "form": {
+      "name": "الاسم *",
+      "namePlaceholder": "اسم المستأجر",
+      "slug": "المعرّف",
+      "slugPlaceholder": "tenant-slug",
+      "supportEmail": "بريد الدعم",
+      "supportEmailPlaceholder": "support@tenant.com"
+    },
+    "messages": {
+      "created": "تم إنشاء المستأجر بنجاح",
+      "updated": "تم تحديث المستأجر بنجاح",
+      "deleted": "تم حذف المستأجر بنجاح",
+      "errorCreate": "خطأ في إنشاء المستأجر",
+      "errorUpdate": "خطأ في تحديث المستأجر",
+      "errorDelete": "خطأ في حذف المستأجر"
+    }
+  },
+  "templates": {
+    "title": "القوالب",
+    "itemType": "قالب",
+    "addTitle": "إضافة قالب",
+    "editTitle": "تعديل القالب",
+    "searchPlaceholder": "البحث في القوالب…",
+    "emptyMessage": "لا توجد قوالب بعد",
+    "emptyFilteredMessage": "لا توجد قوالب تطابق بحثك",
+    "columns": {
+      "name": "الاسم",
+      "description": "الوصف",
+      "priority": "الأولوية",
+      "estimatedHours": "الساعات المقدرة"
+    },
+    "form": {
+      "name": "الاسم *",
+      "namePlaceholder": "اسم القالب",
+      "description": "الوصف",
+      "descriptionPlaceholder": "وصف مختصر"
+    },
+    "messages": {
+      "created": "تم إنشاء القالب بنجاح",
+      "updated": "تم تحديث القالب بنجاح",
+      "deleted": "تم حذف القالب بنجاح",
+      "errorCreate": "خطأ في إنشاء القالب",
+      "errorUpdate": "خطأ في تحديث القالب",
+      "errorDelete": "خطأ في حذف القالب"
+    }
   },
   "tickets": {
     "title": "إدارة التذاكر",
     "create": "إنشاء تذكرة جديدة",
+    "emptyMessage": "لا توجد تذاكر بعد",
     "priority": "الأولوية",
     "high": "عالية",
     "medium": "متوسطة",

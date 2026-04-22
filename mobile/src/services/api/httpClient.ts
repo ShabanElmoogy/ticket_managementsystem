@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenManager } from './tokenManager';
 import { networkEvents } from './networkEvents';
+import { useAuthStore } from '../../stores/authStore';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -102,9 +103,7 @@ export function startTokenRefreshCycle(token: string): void {
       // If refresh token is expired/revoked (401), logout silently — this is expected
       if (status === 401) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
-        import('../../stores/authStore')
-          .then(({ useAuthStore }) => useAuthStore.getState().logout())
-          .catch(() => {});
+        try { useAuthStore.getState().logout(); } catch { }
       } else {
         // Unexpected failure (network error etc.) — log as warning
         if (__DEV__) {
@@ -158,24 +157,27 @@ async function callRefreshEndpoint(): Promise<{
 }
 
 /**
- * Updates tokenManager synchronously, then updates Zustand store async.
- * tokenManager MUST be updated before any retry fires — the request
- * interceptor reads from it synchronously on every outgoing request.
- * The Zustand update is fire-and-forget (just keeps persisted state in sync).
+ * Updates tokenManager synchronously AND Zustand store synchronously.
+ * Both must happen before any retry fires — the request interceptor reads
+ * from tokenManager, and Zustand persist writes to AsyncStorage immediately.
  */
 function applyNewTokens(newToken: string, newRefreshToken: string): void {
   // ⚠️ SYNCHRONOUS — must happen before any http.request() retry call
   tokenManager.setToken(newToken);
-  // Only update refresh token if we actually have a new one
   if (newRefreshToken) tokenManager.setRefreshToken(newRefreshToken);
 
-  // Async — only for persisted Zustand state, not needed for the retry
-  import('../../stores/authStore')
-    .then(({ useAuthStore }) => {
-      useAuthStore.getState().setToken(newToken);
-      if (newRefreshToken) useAuthStore.getState().setRefreshToken(newRefreshToken);
-    })
-    .catch(() => {});
+  // ⚠️ SYNCHRONOUS — update Zustand store immediately so the new refresh
+  // token is persisted to AsyncStorage before the app can be killed.
+  // Using dynamic import here caused a race condition where the old
+  // refresh token was persisted if the app restarted before the async
+  // import resolved.
+  try {
+    const store = useAuthStore.getState();
+    store.setToken(newToken);
+    if (newRefreshToken) store.setRefreshToken(newRefreshToken);
+  } catch {
+    // Store not yet initialized (very early in boot) — tokenManager is enough
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -364,10 +366,7 @@ http.interceptors.response.use(
         drainQueue(sessionExpiredError, null);
         tokenManager.clear();
         stopTokenRefreshCycle();
-
-        import('../../stores/authStore')
-          .then(({ useAuthStore }) => useAuthStore.getState().logout())
-          .catch(() => {});
+        try { useAuthStore.getState().logout(); } catch { }
 
         if (__DEV__) console.warn('🚪 Refresh failed — logging out');
         return Promise.reject(sessionExpiredError);

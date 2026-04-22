@@ -48,7 +48,10 @@
     "refreshing": "Loading…",
     "exportPdf": "Export PDF",
     "exporting": "Exporting…",
-    "phone": "Phone"
+    "phone": "Phone",
+    "priority": "Priority",
+    "assignedTo": "Assigned To",
+    "created": "Created"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -88,6 +91,7 @@
       "errorCreate": "Error creating application",
       "errorUpdate": "Error updating application",
       "errorDelete": "Error deleting application",
+      "validationError": "Please fix the errors above",
       "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF",
@@ -124,23 +128,110 @@
       "errorCreate": "Error creating customer",
       "errorUpdate": "Error updating customer",
       "errorDelete": "Error deleting customer",
+      "validationError": "Please fix the errors above",
       "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF"
   },
   "users": {
-    "title": "Users Management",
-    "create": "Create New User",
-    "edit": "Edit User",
-    "email": "Email",
-    "role": "Role",
-    "admin": "Administrator",
-    "employee": "Employee",
-    "user": "User"
+    "title": "Users",
+    "itemType": "user",
+    "addTitle": "Add User",
+    "editTitle": "Edit User",
+    "searchPlaceholder": "Search users…",
+    "emptyMessage": "No users yet",
+    "emptyFilteredMessage": "No users match your search",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role"
+    },
+    "form": {
+      "name": "Name *",
+      "namePlaceholder": "Full name",
+      "email": "Email *",
+      "emailPlaceholder": "email@example.com",
+      "password": "Password *",
+      "passwordEdit": "New Password (leave blank to keep)",
+      "passwordPlaceholder": "••••••••",
+      "phone": "Phone",
+      "phonePlaceholder": "+1234567890"
+    },
+    "messages": {
+      "created": "User created successfully",
+      "updated": "User updated successfully",
+      "deleted": "User deleted successfully",
+      "errorCreate": "Error creating user",
+      "errorUpdate": "Error updating user",
+      "errorDelete": "Error deleting user"
+    }
+  },
+  "tenants": {
+    "title": "Tenants",
+    "itemType": "tenant",
+    "addTitle": "Add Tenant",
+    "editTitle": "Edit Tenant",
+    "searchPlaceholder": "Search tenants…",
+    "emptyMessage": "No tenants yet",
+    "emptyFilteredMessage": "No tenants match your search",
+    "columns": {
+      "name": "Name",
+      "slug": "Slug",
+      "status": "Status",
+      "plan": "Plan",
+      "seats": "Seats"
+    },
+    "form": {
+      "name": "Name *",
+      "namePlaceholder": "Tenant name",
+      "slug": "Slug",
+      "slugPlaceholder": "tenant-slug",
+      "supportEmail": "Support Email",
+      "supportEmailPlaceholder": "support@tenant.com"
+    },
+    "messages": {
+      "created": "Tenant created successfully",
+      "updated": "Tenant updated successfully",
+      "deleted": "Tenant deleted successfully",
+      "errorCreate": "Error creating tenant",
+      "errorUpdate": "Error updating tenant",
+      "errorDelete": "Error deleting tenant"
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "itemType": "template",
+    "addTitle": "Add Template",
+    "editTitle": "Edit Template",
+    "searchPlaceholder": "Search templates…",
+    "emptyMessage": "No templates yet",
+    "emptyFilteredMessage": "No templates match your search",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "priority": "Priority",
+      "estimatedHours": "Est. Hours"
+    },
+    "form": {
+      "name": "Name *",
+      "namePlaceholder": "Template name",
+      "description": "Description",
+      "descriptionPlaceholder": "Brief description"
+    },
+    "messages": {
+      "created": "Template created successfully",
+      "updated": "Template updated successfully",
+      "deleted": "Template deleted successfully",
+      "errorCreate": "Error creating template",
+      "errorUpdate": "Error updating template",
+      "errorDelete": "Error deleting template"
+    }
   },
   "tickets": {
     "title": "Tickets Management",
     "create": "Create New Ticket",
+    "emptyMessage": "No tickets yet",
     "priority": "Priority",
     "high": "High",
     "medium": "Medium",

@@ -61,13 +61,13 @@ export function useReports() {
   const error   = tError ?? cError;
 
   // ── Row builders ───────────────────────────────────────────────────────────
-  const summaryRows  = useMemo(() => buildSummaryRows(tickets, customers),         [tickets, customers]);
-  const statusRows   = useMemo(() => buildCustomerStatusRows(tickets, customers),   [tickets, customers]);
+  const summaryRows  = useMemo(() => buildSummaryRows(tickets.filter(Boolean), customers),         [tickets, customers]);
+  const statusRows   = useMemo(() => buildCustomerStatusRows(tickets.filter(Boolean), customers),   [tickets, customers]);
   const activityRows = useMemo(
-    () => buildCustomerActivityRows(tickets, customers, activityPeriod.daysA, activityPeriod.daysB),
+    () => buildCustomerActivityRows(tickets.filter(Boolean), customers, activityPeriod.daysA, activityPeriod.daysB),
     [tickets, customers, activityPeriod],
   );
-  const slaRows = useMemo(() => buildSlaMetricsRows(tickets, customers), [tickets, customers]);
+  const slaRows = useMemo(() => buildSlaMetricsRows(tickets.filter(Boolean), customers), [tickets, customers]);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
   const refresh = () => { void refetchT(); void refetchC(); };

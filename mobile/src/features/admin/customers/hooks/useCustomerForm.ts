@@ -108,7 +108,6 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
         phone: result.data.phone || undefined,
       });
       setIsDirty(false);
-      toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
     } catch {
       toast.error(item ? t('customers.messages.errorUpdate') : t('customers.messages.errorCreate'));

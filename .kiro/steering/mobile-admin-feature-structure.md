@@ -13,10 +13,11 @@ features/admin/<feature>/
 ├── api/
 │   └── <feature>.ts              ← BaseApiService subclass + singleton + query keys
 ├── components/
-│   ├── <feature>Columns.tsx      ← ColDef array (pure data, no hooks)
-│   └── <Entity>Form.tsx          ← Form modal component
+│   ├── <feature>Columns.tsx      ← ColDef function (translated, no hooks)
+│   └── <Entity>Form.tsx          ← Form component (page + modal mode)
 ├── hooks/
-│   └── use<Feature>.ts           ← useAdminFeature wrapper + export logic
+│   ├── use<Feature>.ts           ← useAdminFeature wrapper + export logic
+│   └── use<Feature>Form.ts       ← form state, validation, submit logic
 ├── schemas/                      ← (optional) Zod validation schemas
 │   └── <feature>Schema.ts
 ├── types/                        ← (optional) local types — add when needed
@@ -30,27 +31,11 @@ features/admin/<feature>/
 
 ## When to Add `types/`
 
-Add a `types/` folder when the feature needs types that go beyond the global API types in `@/src/services/api/types`:
+Add a `types/` folder when the feature needs types beyond the global API types in `@/src/services/api/types`:
 
 - Local form value types that differ from the API payload type
 - UI-specific interfaces (`FilterState`, `CardProps`, derived row shapes)
 - Zod inferred types (if not already exported from `schemas/`)
-
-```ts
-// types/index.ts
-import type { Application } from '@/src/services/api/types';
-import type { applicationFormSchema } from '../schemas/applicationSchema';
-import { z } from 'zod';
-
-// Zod inferred form type (if not exported from schema file)
-export type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
-
-// UI-specific derived type
-export type ApplicationRow = Application & {
-  ticketCount: number;
-  customerCount: number;
-};
-```
 
 If the feature only uses types from `@/src/services/api/types` and Zod inferred types already exported from `schemas/`, skip the `types/` folder.
 
@@ -122,11 +107,10 @@ Zod schemas use a **factory function** pattern so error messages can be translat
 **Never hardcode English strings in Zod schemas.** Always use `createXSchema(t)`.
 
 ```ts
-// schemas/applicationSchema.ts
 import { z } from 'zod';
 import type { TFunction } from 'i18next';
 
-export const createApplicationFormSchema = (t: TFunction) =>
+export const createEntityFormSchema = (t: TFunction) =>
   z.object({
     name: z.string().trim()
       .min(3,   t('validation.minLength', { field: t('common.name'), min: 3 }))
@@ -136,46 +120,19 @@ export const createApplicationFormSchema = (t: TFunction) =>
       .optional().or(z.literal('')),
   });
 
-export type ApplicationFormValues = z.infer<ReturnType<typeof createApplicationFormSchema>>;
-```
-
-Call the factory inside `handleSubmit` where `t` is already available:
-
-```ts
-// In the form component
-const handleSubmit = async () => {
-  const result = createApplicationFormSchema(t).safeParse({ name, description });
-  if (!result.success) {
-    const fieldErrors: Record<string, string> = {};
-    result.error.issues.forEach((e) => {
-      if (e.path[0]) fieldErrors[String(e.path[0])] = e.message;
-    });
-    setErrors(fieldErrors);
-    return;
-  }
-  // ...
-};
+export type EntityFormValues = z.infer<ReturnType<typeof createEntityFormSchema>>;
 ```
 
 ### Shared validation keys (`validation` namespace)
 
-Add these keys to **both** `en.json` and `ar.json` — they are shared across all features:
+Add these to **both** `en.json` and `ar.json` — shared across all features:
 
 ```json
-// en.json
 "validation": {
-  "required":      "{{field}} is required",
-  "minLength":     "{{field}} must be at least {{min}} characters",
-  "maxLength":     "{{field}} must be at most {{max}} characters",
-  "invalidEmail":  "Invalid email address"
-}
-
-// ar.json
-"validation": {
-  "required":      "{{field}} مطلوب",
-  "minLength":     "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
-  "maxLength":     "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
-  "invalidEmail":  "البريد الإلكتروني غير صالح"
+  "required":     "{{field}} is required",
+  "minLength":    "{{field}} must be at least {{min}} characters",
+  "maxLength":    "{{field}} must be at most {{max}} characters",
+  "invalidEmail": "Invalid email address"
 }
 ```
 
@@ -183,45 +140,257 @@ Field names come from `common.*` keys (e.g. `t('common.name')`, `t('common.email
 
 ---
 
+### `hooks/use<Feature>Form.ts`
+
+Dedicated form hook — all state, validation, and submit logic extracted from the component.
+
+**Why a separate hook:**
+- Component stays pure JSX — no business logic
+- Logic is testable independently
+- `isDirty` tracking prevents accidental empty submits
+- `firstErrorFieldId` enables scroll-to-first-error
+- State syncs correctly when `item` changes (modal re-opened with different entity)
+
+```ts
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { createEntityFormSchema } from '../schemas/entitySchema';
+import { useToast } from '@/src/shared/hooks/useToast';
+import type { Entity, CreateEntityData } from '@/src/services/api/types';
+
+export interface EntityFormValues {
+  name:        string;
+  description: string;
+}
+
+interface Args {
+  item:    Entity | null;
+  onSave:  (data: CreateEntityData) => Promise<void>;
+  onClose: () => void;
+}
+
+export function useEntityForm({ item, onSave, onClose }: Args) {
+  const { t } = useTranslation();
+  const toast = useToast();
+
+  const getInitial = useCallback(
+    (): EntityFormValues => ({
+      name:        item?.name        ?? '',
+      description: item?.description ?? '',
+    }),
+    // Re-derive only when item identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [item?.id],
+  );
+
+  const [fields,            setFields]            = useState<EntityFormValues>(getInitial);
+  const [errors,            setErrors]            = useState<Record<string, string>>({});
+  const [isDirty,           setIsDirty]           = useState(false);
+  const [isSubmitting,      setIsSubmitting]      = useState(false);
+  const [firstErrorFieldId, setFirstErrorFieldId] = useState<string | null>(null);
+
+  // Sync state when item changes (modal re-opened with different item)
+  useEffect(() => {
+    setFields(getInitial());
+    setErrors({});
+    setIsDirty(false);
+    setFirstErrorFieldId(null);
+  }, [getInitial]);
+
+  const checkDirty = useCallback(
+    (next: EntityFormValues): boolean => {
+      const initial = getInitial();
+      return next.name !== initial.name || next.description !== initial.description;
+    },
+    [getInitial],
+  );
+
+  const handleChange = useCallback(
+    (field: keyof EntityFormValues, value: string) => {
+      setFields((prev) => {
+        const next = { ...prev, [field]: value };
+        setIsDirty(checkDirty(next));
+        return next;
+      });
+      // Delete the error key — never set to ''
+      setErrors((prev) => {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    },
+    [checkDirty],
+  );
+
+  const handleClear = useCallback(
+    (field: keyof EntityFormValues) => handleChange(field, ''),
+    [handleChange],
+  );
+
+  const handleSubmit = useCallback(async () => {
+    const result = createEntityFormSchema(t).safeParse(fields);
+
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const key = String(issue.path[0] ?? '');
+        if (key && !(key in fieldErrors)) fieldErrors[key] = issue.message;
+      });
+      setErrors(fieldErrors);
+
+      // First error in visual order
+      const ORDER: Array<keyof EntityFormValues> = ['name', 'description'];
+      setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
+
+      toast.error(t('<feature>.messages.validationError'));
+      return;
+    }
+
+    setErrors({});
+    setFirstErrorFieldId(null);
+    setIsSubmitting(true);
+
+    try {
+      await onSave({ name: result.data.name, description: result.data.description || undefined });
+      setIsDirty(false);
+      toast.success(item ? t('<feature>.messages.updated') : t('<feature>.messages.created'));
+      onClose();
+    } catch {
+      toast.error(item ? t('<feature>.messages.errorUpdate') : t('<feature>.messages.errorCreate'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [fields, t, onSave, onClose, item, toast]);
+
+  return { fields, errors, isDirty, firstErrorFieldId, isSubmitting, handleChange, handleClear, handleSubmit };
+}
+```
+
+**Rules:**
+- `getInitial` depends only on `item?.id` — prevents re-running on every render
+- Errors are **deleted** (not set to `''`) on field change — avoids stale empty strings
+- `isDirty` is `false` on open — submit button is disabled until user changes something
+- `isSubmitting` is separate from the parent `submitting` prop — both are combined in the form
+
+---
+
 ### `components/<Entity>Form.tsx`
-- Controlled form with local `useState` per field
-- Wrapped in `AdminFormModal`
-- Validates with Zod schema if one exists in `schemas/`
-- Uses `useTranslation()` — all labels and placeholders come from `t()`
-- Props: `item`, `onClose`, `onSave`, `submitting`
+
+Form component supports **two modes**:
+- `mode="page"` (default, recommended) — full-screen `AdminFormPage`, OS handles keyboard
+- `mode="modal"` — bottom sheet `AdminFormModal`, use for quick edits
 
 ```tsx
-import React, { useState } from 'react';
+import React, { useCallback, useRef } from 'react';
+import { TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
+import FormField      from '@/src/features/admin/shared/FormField';
+import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
 import { AppTextInput } from '@/src/shared/components';
+import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
+import { useEntityForm } from '../hooks/useEntityForm';
 import type { Entity, CreateEntityData } from '@/src/services/api/types';
 
 interface Props {
-  item: Entity | null;
-  onClose: () => void;
-  onSave: (data: CreateEntityData) => Promise<void>;
+  item:       Entity | null;
+  onClose:    () => void;
+  onSave:     (data: CreateEntityData) => Promise<void>;
   submitting: boolean;
+  mode?:      'page' | 'modal';  // default: 'page'
 }
 
-const EntityForm: React.FC<Props> = ({ item, onClose, onSave, submitting }) => {
-  const { t } = useTranslation();
-  const [name, setName] = useState(item?.name ?? '');
+const EntityForm: React.FC<Props> = ({ item, onClose, onSave, submitting, mode = 'page' }) => {
+  const { t }                  = useTranslation();
+  const { scrollToFirstError } = useFormScroll();
+
+  const {
+    fields, errors, isDirty, firstErrorFieldId,
+    isSubmitting, handleChange, handleClear, handleSubmit,
+  } = useEntityForm({ item, onSave, onClose });
+
+  // Auto-focus first input — longer delay in modal (animation)
+  const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true });
+
+  // Refs for return-key navigation between fields
+  const descriptionRef = useRef<TextInput | null>(null);
+
+  const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
+  const onChangeDescription = useCallback((v: string) => handleChange('description', v), [handleChange]);
+  const onClearName         = useCallback(() => handleClear('name'),        [handleClear]);
+  const onClearDescription  = useCallback(() => handleClear('description'), [handleClear]);
+
+  const onSubmit = useCallback(async () => {
+    await handleSubmit();
+    if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
+  }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
+
+  const formTitle   = item ? t('<feature>.editTitle') : t('<feature>.addTitle');
+  const isDisabled  = submitting || isSubmitting || !isDirty;
+
+  const fields_jsx = (
+    <>
+      <FormField fieldId="name">
+        <AppTextInput
+          inputRef={firstInputRef}
+          nextRef={descriptionRef}
+          label={t('<feature>.form.name')}
+          value={fields.name}
+          onChangeText={onChangeName}
+          placeholder={t('<feature>.form.namePlaceholder')}
+          error={errors.name}
+          autoCapitalize="words"
+          maxLength={100}
+          showClearButton
+          onClear={onClearName}
+        />
+      </FormField>
+
+      <FormField fieldId="description">
+        <AppTextInput
+          inputRef={descriptionRef}
+          label={t('<feature>.form.description')}
+          value={fields.description}
+          onChangeText={onChangeDescription}
+          placeholder={t('<feature>.form.descriptionPlaceholder')}
+          error={errors.description}
+          autoCapitalize="sentences"
+          maxLength={500}
+          showClearButton
+          onClear={onClearDescription}
+        />
+      </FormField>
+    </>
+  );
+
+  if (mode === 'page') {
+    return (
+      <AdminFormPage
+        title={formTitle}
+        onBack={onClose}
+        onSubmit={onSubmit}
+        submitting={submitting || isSubmitting}
+        submitDisabled={isDisabled}
+        submitLabel={t('common.save')}
+      >
+        {fields_jsx}
+      </AdminFormPage>
+    );
+  }
 
   return (
     <AdminFormModal
       open
-      title={item ? t('<feature>.editTitle') : t('<feature>.addTitle')}
+      title={formTitle}
       onClose={onClose}
-      onSubmit={() => onSave({ name })}
-      submitting={submitting}
+      onSubmit={onSubmit}
+      submitting={submitting || isSubmitting}
+      submitDisabled={isDisabled}
+      submitLabel={t('common.save')}
     >
-      <AppTextInput
-        label={t('<feature>.form.name')}
-        value={name}
-        onChangeText={setName}
-        placeholder={t('<feature>.form.namePlaceholder')}
-      />
+      {fields_jsx}
     </AdminFormModal>
   );
 };
@@ -229,13 +398,19 @@ const EntityForm: React.FC<Props> = ({ item, onClose, onSave, submitting }) => {
 export default EntityForm;
 ```
 
+**Key patterns:**
+- `FormField` wraps each input — registers Y position for scroll-to-error in modal mode
+- `useFocusInput` auto-focuses the first field on open
+- `nextRef` on `AppTextInput` enables return-key navigation between fields
+- `isDirty` disables submit until user changes something
+- `isDisabled = submitting || isSubmitting || !isDirty`
+
 ---
 
 ### `hooks/use<Feature>.ts`
 - Wraps `useAdminFeature` with feature-specific config
 - Calls `get<Feature>Columns(t)` with `useMemo` so columns rebuild on language change
 - Owns `exporting` state + `handleExport` function
-- Imports columns from `../components/<feature>Columns`
 - Returns `{ f, columns, exporting, handleExport }`
 
 ```ts
@@ -251,7 +426,6 @@ export function useEntities() {
   const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
 
-  // Rebuild columns when language changes
   const columns = useMemo(() => getEntityColumns(t), [t]);
 
   const f = useAdminFeature<Entity, CreateEntityData>({
@@ -285,8 +459,8 @@ export function useEntities() {
 ### `<Feature>Screen.tsx`
 - Thin orchestration — no business logic, no state
 - Renders `AdminCrudScreen` with data from the hook
-- Always passes `onRefresh`, `onExport`, `exporting`
-- Always passes `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` as translated strings
+- All strings passed as translated values via `t()`
+- `mode="page"` on the form (recommended default)
 
 ```tsx
 import React from 'react';
@@ -322,11 +496,13 @@ const EntitiesScreen: React.FC = () => {
       searchPlaceholder={t('<feature>.searchPlaceholder')}
       emptyMessage={t('<feature>.emptyMessage')}
       emptyFilteredMessage={t('<feature>.emptyFilteredMessage')}
+      deleteSuccessMessage={t('<feature>.messages.deleted')}
       renderForm={(item, onClose) => (
         <EntityForm
           item={item}
           onClose={onClose}
           submitting={f.ui.submitting}
+          mode="page"
           onSave={async (data: CreateEntityData) => {
             if (item) await f.update(item.id, data);
             else      await f.create(data);
@@ -343,14 +519,126 @@ export default EntitiesScreen;
 
 ---
 
-## Refresh & Export Buttons
+## Form Infrastructure (shared)
 
-The **Refresh**, **Export PDF**, and **Add** buttons are built into `AppScreenHeader` — they appear automatically when you pass the props to `AdminCrudScreen`. No extra UI code needed.
+These shared components live in `mobile/src/features/admin/shared/` and are used by all feature forms.
 
-All button labels must be passed as translated strings from the screen. Never rely on the default English fallbacks.
+### `AdminFormPage` vs `AdminFormModal`
+
+| | `AdminFormPage` | `AdminFormModal` |
+|---|---|---|
+| Layout | Full-screen Modal | Bottom sheet |
+| Keyboard | OS handles natively ✅ | Manual scroll needed |
+| Animation | Native screen slide | Slide up |
+| Space | Full screen | ~85% screen height |
+| **Use when** | Default — always prefer | Quick edits only |
+
+### `FormField`
+
+Wraps each input. In modal mode, registers the field's Y position for scroll-to-error. In page mode, it's a plain `View` wrapper with zero overhead.
 
 ```tsx
-// In <Feature>Screen.tsx — pass all button labels via t()
+import FormField from '@/src/features/admin/shared/FormField';
+
+<FormField fieldId="name">
+  <AppTextInput ... />
+</FormField>
+```
+
+Always pass a stable `fieldId` string matching the field name. Used by `scrollToFirstError`.
+
+### `FormScrollContext` / `useFormScroll`
+
+Provides `scrollToFirstError(ids)` — scrolls to the first field with an error.
+
+```tsx
+const { scrollToFirstError } = useFormScroll();
+
+// In onSubmit:
+await handleSubmit();
+if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
+```
+
+`FormScrollProvider` is already set up inside `AdminFormPage` and `AdminFormModal` — no manual setup needed.
+
+### `useFocusInput`
+
+Auto-focuses the first input when the form opens. Handles timing issues, modal animation delay, and Android IME.
+
+```ts
+import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
+
+// Page mode (shorter delay — no modal animation)
+const firstInputRef = useFocusInput({ inModal: false, enabled: true });
+
+// Modal mode (longer delay — wait for slide animation)
+const firstInputRef = useFocusInput({ inModal: true, enabled: true });
+
+// Only focus when creating (not editing)
+const firstInputRef = useFocusInput({ inModal: true, enabled: item === null });
+```
+
+Pass the ref to the first `AppTextInput` via `inputRef` prop.
+
+### Return-key navigation (`nextRef`)
+
+`AppTextInput` accepts a `nextRef` prop — when the user presses return/next on the keyboard, focus moves to the next field.
+
+```tsx
+const versionRef     = useRef<TextInput | null>(null);
+const descriptionRef = useRef<TextInput | null>(null);
+
+<AppTextInput inputRef={firstInputRef} nextRef={versionRef}     ... />
+<AppTextInput inputRef={versionRef}    nextRef={descriptionRef} ... />
+<AppTextInput inputRef={descriptionRef}                         ... />  // last field
+```
+
+---
+
+## Pagination
+
+Pagination is built into `AdminCrudScreen` — no extra code needed in feature screens.
+
+### How it works
+
+`AdminCrudScreen` maintains a `page` state and slices `filtered` rows into pages of `PAGE_SIZE = 6`. The same `pageRows` slice is passed to **all three views** (table, grid, compact). `AppPagination` renders at the bottom of each view and returns `null` automatically when `totalPages <= 1`.
+
+```
+filtered rows (all matching search)
+  └─ pageRows = filtered.slice((page-1)*6, page*6)
+       ├─ Table  → AppDataTable(pageRows) + AppPagination footer
+       ├─ Grid   → FlatList(pageRows)     + AppPagination footer
+       └─ Compact → FlatList(pageRows)   + AppPagination footer
+```
+
+### Page reset
+
+The page resets to 1 automatically when:
+- The search query changes
+- (The `safePage = Math.min(page, totalPages)` guard also prevents out-of-range pages when data shrinks after a delete)
+
+### Changing page size
+
+`PAGE_SIZE` is a module-level constant in `AdminCrudScreen.tsx`. Change it once to affect all admin screens:
+
+```ts
+const PAGE_SIZE = 6;  // ← change here
+```
+
+### AppPagination behaviour
+
+- Returns `null` when `totalPages <= 1` — no bar shown for small lists
+- Shows `from–to of total` range on the left
+- Shows `‹ page/total ›` controls on the right
+- Prev/Next buttons are disabled (opacity 0.35) at the boundaries
+
+---
+
+## Refresh & Export Buttons
+
+All button labels must be passed as translated strings. Never rely on English fallbacks.
+
+```tsx
 onRefresh={f.refetch}
 refreshLabel={t('common.refresh')}
 refreshingLabel={t('common.refreshing')}
@@ -360,14 +648,11 @@ exporting={exporting}
 exportLabel={t('common.exportPdf')}
 exportingLabel={t('common.exporting')}
 
-addLabel={t('<feature>.addTitle')}   // feature-specific: "Add Application", "Add Customer"
+addLabel={t('<feature>.addTitle')}
+deleteSuccessMessage={t('<feature>.messages.deleted')}
 ```
 
-The header renders: `[ViewToggle] | Title | 🔄 Refresh  📄 Export PDF | ➕ Add`
-
-### Shared button keys (in `common` namespace)
-
-These keys live in `common` — shared across all features, no duplication needed:
+### Shared button keys (`common` namespace)
 
 ```json
 "common": {
@@ -375,18 +660,10 @@ These keys live in `common` — shared across all features, no duplication neede
   "refresh": "Refresh",
   "refreshing": "Loading…",
   "exportPdf": "Export PDF",
-  "exporting": "Exporting…"
-}
-```
-
-```json
-// ar.json
-"common": {
-  "add": "إضافة",
-  "refresh": "تحديث",
-  "refreshing": "جاري التحميل…",
-  "exportPdf": "تصدير PDF",
-  "exporting": "جاري التصدير…"
+  "exporting": "Exporting…",
+  "save": "Save",
+  "saving": "Saving…",
+  "back": "Back"
 }
 ```
 
@@ -394,12 +671,9 @@ These keys live in `common` — shared across all features, no duplication neede
 
 ## Translation (i18n)
 
-Every feature must be fully translated. Add a namespace in both `en.json` and `ar.json`.
-
-### Translation key structure
+### Full key structure per feature
 
 ```json
-// src/i18n/locales/en.json
 "<feature>": {
   "title": "Entities",
   "itemType": "entity",
@@ -408,13 +682,18 @@ Every feature must be fully translated. Add a namespace in both `en.json` and `a
   "searchPlaceholder": "Search entities…",
   "emptyMessage": "No entities yet",
   "emptyFilteredMessage": "No entities match your search",
+  "active": "ACTIVE",
+  "inactive": "INACTIVE",
   "columns": {
     "name": "Name",
-    "status": "Status"
+    "status": "Status",
+    "created": "Created"
   },
   "form": {
     "name": "Name *",
-    "namePlaceholder": "Entity name"
+    "namePlaceholder": "Entity name",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief description"
   },
   "messages": {
     "created": "Entity created successfully",
@@ -422,9 +701,9 @@ Every feature must be fully translated. Add a namespace in both `en.json` and `a
     "deleted": "Entity deleted successfully",
     "errorCreate": "Error creating entity",
     "errorUpdate": "Error updating entity",
-    "errorDelete": "Error deleting entity"
-  },
-  "export": "Export PDF"
+    "errorDelete": "Error deleting entity",
+    "validationError": "Please fix the errors above"
+  }
 }
 ```
 
@@ -432,47 +711,11 @@ Every feature must be fully translated. Add a namespace in both `en.json` and `a
 
 | File | Keys used |
 |---|---|
-| `<Feature>Screen.tsx` | `title`, `itemType`, `addTitle`, `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` + `common.refresh`, `common.refreshing`, `common.exportPdf`, `common.exporting` |
-| `components/<Entity>Form.tsx` | `addTitle`, `editTitle`, `form.*` |
-| `hooks/use<Feature>.ts` | `messages.*`, `addTitle`, `editTitle`, `title` (export), `columns.*` via `getColumns(t)` |
-| `components/<feature>Columns.tsx` | `columns.*`, `active`, `inactive` — via `t` param, not hook |
-
-### Usage pattern
-
-```tsx
-// Screen — all strings via t(), nothing hardcoded
-const { t } = useTranslation();
-<AdminCrudScreen
-  title={t('applications.title')}
-  itemType={t('applications.itemType')}
-  addLabel={t('applications.addTitle')}
-  exportLabel={t('common.exportPdf')}
-  exportingLabel={t('common.exporting')}
-  refreshLabel={t('common.refresh')}
-  refreshingLabel={t('common.refreshing')}
-  searchPlaceholder={t('applications.searchPlaceholder')}
-  emptyMessage={t('applications.emptyMessage')}
-  emptyFilteredMessage={t('applications.emptyFilteredMessage')}
-  ...
-/>
-
-// Form
-title={item ? t('applications.editTitle') : t('applications.addTitle')}
-<AppTextInput label={t('applications.form.name')} placeholder={t('applications.form.namePlaceholder')} />
-
-// Hook
-messages: {
-  success: { created: t('applications.messages.created'), ... },
-  error:   { create: t('applications.messages.errorCreate'), ... },
-}
-```
-
-### Checklist — Translation
-
-- [ ] Add namespace to `src/i18n/locales/en.json`
-- [ ] Add namespace to `src/i18n/locales/ar.json`
-- [ ] `useTranslation()` in Screen, Form, and Hook
-- [ ] All hardcoded strings replaced with `t('...')`
+| `<Feature>Screen.tsx` | `title`, `itemType`, `addTitle`, `messages.deleted` + all `common.*` button labels |
+| `components/<Entity>Form.tsx` | `addTitle`, `editTitle`, `form.*`, `common.save` |
+| `hooks/use<Feature>Form.ts` | `messages.*`, `validation.*` via schema factory |
+| `hooks/use<Feature>.ts` | `messages.*`, `addTitle`, `editTitle`, `title` (export) |
+| `components/<feature>Columns.tsx` | `columns.*`, `active`, `inactive` — via `t` param |
 
 ---
 
@@ -487,17 +730,35 @@ messages: {
 
 ## Checklist — New Admin Feature
 
+### Files
 - [ ] `api/<feature>.ts` — service class + singleton + query keys
-- [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function export (not a plain array)
-- [ ] `components/<Entity>Form.tsx` — form with `AdminFormModal` + `useTranslation`
-- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export + `useTranslation`
-- [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory (if validation needed), uses `validation.*` keys
-- [ ] `<Feature>Screen.tsx` — thin, renders `AdminCrudScreen` + `useTranslation`
-- [ ] `en.json` + `ar.json` — translation namespace added with all required keys
+- [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function
+- [ ] `components/<Entity>Form.tsx` — dual-mode form (page + modal) + `useTranslation`
+- [ ] `hooks/use<Feature>Form.ts` — form state, validation, submit, `isDirty`, `firstErrorFieldId`
+- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export
+- [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory using `validation.*` keys
+- [ ] `<Feature>Screen.tsx` — thin, renders `AdminCrudScreen`, `mode="page"` on form
+
+### Translation
+- [ ] Add namespace to `en.json` and `ar.json` with all keys including `messages.validationError`
+- [ ] All hardcoded strings replaced with `t('...')`
+- [ ] `deleteSuccessMessage={t('<feature>.messages.deleted')}` passed to `AdminCrudScreen`
+
+### Form UX
+- [ ] `useFocusInput` on first field
+- [ ] `nextRef` chain for return-key navigation between fields
+- [ ] `FormField` wrapping each input with stable `fieldId`
+- [ ] `isDirty` disables submit until user changes something
+- [ ] `scrollToFirstError` called after failed submit
+
+### AdminCrudScreen props
+- [ ] `onRefresh`, `onExport`, `exporting` passed
+- [ ] All button labels: `addLabel`, `exportLabel`, `exportingLabel`, `refreshLabel`, `refreshingLabel`
+- [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`
+- [ ] `deleteSuccessMessage`
+
+### General
 - [ ] All cross-folder imports use `@/src/...` alias
-- [ ] `onRefresh`, `onExport`, `exporting` passed to `AdminCrudScreen`
-- [ ] `addLabel`, `exportLabel`, `exportingLabel`, `refreshLabel`, `refreshingLabel` passed as translated strings
-- [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage` passed as translated strings
 - [ ] Screen registered in the admin navigation
 
 ---

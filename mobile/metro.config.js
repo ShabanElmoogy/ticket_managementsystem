@@ -12,6 +12,11 @@ config.resolver = {
   sourceExts: [...new Set([...(config.resolver.sourceExts ?? []), 'mjs', 'cjs'])],
   // Disable exports field resolution — falls back to "main" (CJS build)
   unstable_enablePackageExports: false,
+  // Exclude large non-source files from bundling
+  blockList: [
+    /package-lock\.json$/,
+    /\.postman\.json$/,
+  ],
 };
 
 module.exports = withNativeWind(config, { input: './global.css' });
