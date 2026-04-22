@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
 import { useUiStore } from '@/src/stores/uiStore';
-import { AlertDialog } from '@/src/shared/components';
+import { AlertDialog, PrimaryButton } from '@/src/shared/components';
 import ErrorExtraBanner from './components/ErrorExtraBanner';
 import SharePanel       from './components/SharePanel';
 import ShareTrigger     from './components/ShareTrigger';
-import { darken, statusColor, statusIcon, statusLabel } from './utils';
+import { statusColor, statusIcon, statusLabel } from './utils';
 import type { ErrorState } from './types';
 
 const NetworkErrorDialog: React.FC = () => {
@@ -99,35 +98,21 @@ const NetworkErrorDialog: React.FC = () => {
   );
 
   // ── actions override: Share trigger + OK ──────────────────────────────────
+  //
+  // actionsOverride is an either/or with actions in AlertDialog — when set,
+  // actions is ignored. Both buttons must live here together.
   const actionsOverride = error && !retrying ? (
     <>
       <ShareTrigger
         isDark={isDark}
         onPress={() => setShareExpanded((v) => !v)}
       />
-      <Pressable
+      <PrimaryButton
+        label="OK"
+        icon="✓"
+        color={accentColor}
         onPress={dismiss}
-        style={({ pressed }) => ({
-          flex: 1,
-          flexDirection: 'row',
-          paddingVertical: 18,
-          borderRadius: 16,
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          minHeight: 58,
-          backgroundColor: pressed ? darken(accentColor) : accentColor,
-          shadowColor: accentColor,
-          shadowOffset: { width: 0, height: pressed ? 1 : 4 },
-          shadowOpacity: pressed ? 0.1 : 0.35,
-          shadowRadius: pressed ? 2 : 8,
-          elevation: pressed ? 1 : 4,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-        })}
-      >
-        <Text style={{ fontSize: 18 }}>✓</Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 }}>OK</Text>
-      </Pressable>
+      />
     </>
   ) : undefined;
 

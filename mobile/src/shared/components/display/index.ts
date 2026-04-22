@@ -21,5 +21,14 @@ export { default as SectionHeader } from './SectionHeader';
 
 export { default as ErrorBanner } from './ErrorBanner';
 
+export { default as InlineBanner } from './InlineBanner';
+export type { InlineBannerProps } from './InlineBanner';
+
+export { default as CodeBlock } from './CodeBlock';
+export type { CodeBlockProps } from './CodeBlock';
+
+export { default as ActionRow } from './ActionRow';
+export type { ActionRowProps } from './ActionRow';
+
 export { default as InfoCard } from './InfoCard';
 export type { InfoCardProps, InfoCardSection } from './InfoCard';
