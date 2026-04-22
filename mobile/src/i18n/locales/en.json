@@ -20,6 +20,15 @@
   "common": {
     "loading": "Loading...",
     "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "back": "Back",
+    "add": "Add",
+    "refresh": "Refresh",
+    "refreshing": "Loading…",
+    "exportPdf": "Export PDF",
+    "exporting": "Exporting…",
+    "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -78,7 +87,8 @@
       "deleted": "Application deleted successfully",
       "errorCreate": "Error creating application",
       "errorUpdate": "Error updating application",
-      "errorDelete": "Error deleting application"
+      "errorDelete": "Error deleting application",
+      "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF",
     "active": "ACTIVE",
@@ -113,7 +123,8 @@
       "deleted": "Customer deleted successfully",
       "errorCreate": "Error creating customer",
       "errorUpdate": "Error updating customer",
-      "errorDelete": "Error deleting customer"
+      "errorDelete": "Error deleting customer",
+      "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF"
   },

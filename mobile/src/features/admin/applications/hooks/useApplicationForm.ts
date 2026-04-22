@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createApplicationFormSchema } from '../schemas/applicationSchema';
+import { useToast } from '@/src/shared/hooks/useToast';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -45,7 +46,8 @@ export function useApplicationForm({
   onSave,
   onClose,
 }: UseApplicationFormArgs): UseApplicationFormReturn {
-  const { t } = useTranslation();
+  const { t }   = useTranslation();
+  const toast   = useToast();
 
   // ── Initial values ────────────────────────────────────────────────────────
   const getInitial = useCallback(
@@ -126,6 +128,9 @@ export function useApplicationForm({
       // First error in visual order
       const ORDER: Array<keyof ApplicationFormValues> = ['name', 'version', 'description'];
       setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
+
+      // Show validation error toast
+      toast.error(t('applications.messages.validationError'));
       return;
     }
 
@@ -140,11 +145,26 @@ export function useApplicationForm({
         version:     result.data.version     || undefined,
       });
       setIsDirty(false);
+
+      // Show success toast
+      toast.success(
+        item
+          ? t('applications.messages.updated')
+          : t('applications.messages.created')
+      );
+
       onClose();
+    } catch (error) {
+      // Show error toast
+      toast.error(
+        item
+          ? t('applications.messages.errorUpdate')
+          : t('applications.messages.errorCreate')
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }, [fields, t, onSave, onClose]);
+  }, [fields, t, onSave, onClose, item, toast]);
 
   return {
     fields,

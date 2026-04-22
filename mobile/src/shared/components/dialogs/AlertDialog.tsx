@@ -1,57 +1,69 @@
-import React from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Modal, View, Text, Pressable, StyleSheet,
+  Clipboard, Animated,
+} from 'react-native';
 
 export interface AlertDialogAction {
-  label: string;
-  onPress: () => void;
-  /** 'primary' = colored fill, 'secondary' = muted fill. Default: 'secondary' */
-  variant?: 'primary' | 'secondary';
-  /** Override button background color */
-  color?: string;
+  label:    string;
+  onPress:  () => void;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  color?:   string;
+  icon?:    string;
 }
 
 export interface AlertDialogProps {
-  visible: boolean;
-  onClose: () => void;
-  /** Top stripe + icon background accent color. Default: '#ef4444' (red) */
+  visible:      boolean;
+  onClose:      () => void;
   accentColor?: string;
-  /** Emoji or text icon shown in the icon badge */
-  icon?: string;
-  title: string;
-  subtitle?: string;
-  message?: string;
-  /** Optional extra content rendered below the message (e.g. count badge) */
-  extra?: React.ReactNode;
-  actions?: AlertDialogAction[];
-  isDark?: boolean;
+  icon?:        string;
+  title:        string;
+  subtitle?:    string;
+  message?:     string;
+  /** Show a copy-to-clipboard button next to the message */
+  copyable?:    boolean;
+  extra?:       React.ReactNode;
+  actions?:     AlertDialogAction[];
+  isDark?:      boolean;
 }
 
 /**
- * AlertDialog — generic modal alert with:
- *   - Colored top stripe
- *   - Icon badge + title + subtitle
- *   - Message body
- *   - Optional extra slot (badges, counts, etc.)
- *   - Configurable action buttons
+ * AlertDialog — production-grade modal alert.
  *
- * Zero app logic — no store, no events, no routing.
- * Used by NetworkErrorDialog, and any other alert/warning/info modal.
+ * Features:
+ * - Colored top stripe + icon badge
+ * - Title + subtitle + message
+ * - Optional copy-to-clipboard button on message
+ * - Configurable action buttons (primary / secondary / ghost)
+ * - Dark mode support
  */
 const AlertDialog: React.FC<AlertDialogProps> = ({
   visible,
   onClose,
   accentColor = '#ef4444',
-  icon = '⚠️',
+  icon        = '⚠️',
   title,
   subtitle,
   message,
+  copyable    = false,
   extra,
   actions,
-  isDark = false,
+  isDark      = false,
 }) => {
-  const cardBg   = isDark ? '#1e293b' : '#ffffff';
-  const titleCol = isDark ? '#f1f5f9' : '#0f172a';
-  const msgCol   = isDark ? '#94a3b8' : '#64748b';
+  const [copied, setCopied] = useState(false);
+
+  const cardBg    = isDark ? '#1e293b' : '#ffffff';
+  const titleCol  = isDark ? '#f1f5f9' : '#0f172a';
+  const msgCol    = isDark ? '#94a3b8' : '#64748b';
+  const msgBg     = isDark ? '#0f172a' : '#f8fafc';
+  const borderCol = isDark ? '#334155' : '#e2e8f0';
+
+  const handleCopy = () => {
+    if (!message) return;
+    Clipboard.setString(message);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const defaultActions: AlertDialogAction[] = actions ?? [
     { label: 'OK', onPress: onClose, variant: 'primary' },
@@ -63,16 +75,16 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      {/* Backdrop — tap to dismiss */}
       <Pressable style={styles.backdrop} onPress={onClose}>
-        {/* Card — stop tap propagation */}
         <Pressable onPress={() => {}} style={[styles.card, { backgroundColor: cardBg }]}>
 
           {/* Colored top stripe */}
           <View style={[styles.stripe, { backgroundColor: accentColor }]} />
 
           <View style={styles.body}>
+
             {/* Icon + title row */}
             <View style={styles.titleRow}>
               <View style={[styles.iconBadge, { backgroundColor: accentColor + '18' }]}>
@@ -86,9 +98,22 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
               </View>
             </View>
 
-            {/* Message */}
+            {/* Message — with optional copy button */}
             {message && (
-              <Text style={[styles.message, { color: msgCol }]}>{message}</Text>
+              <View style={[styles.messageBox, { backgroundColor: msgBg, borderColor: borderCol }]}>
+                <Text style={[styles.message, { color: msgCol }]}>{message}</Text>
+                {copyable && (
+                  <Pressable
+                    onPress={handleCopy}
+                    style={[styles.copyBtn, { borderColor: borderCol }]}
+                  >
+                    <Text style={{ fontSize: 14 }}>{copied ? '✅' : '📋'}</Text>
+                    <Text style={[styles.copyLabel, { color: copied ? '#10b981' : (isDark ? '#64748b' : '#94a3b8') }]}>
+                      {copied ? 'Copied!' : 'Copy'}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             )}
 
             {/* Extra slot */}
@@ -114,32 +139,35 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
   );
 };
 
-// ── Internal ActionButton ─────────────────────────────────────────────────────
+// ── ActionButton ──────────────────────────────────────────────────────────────
 
 interface ActionButtonProps {
-  action: AlertDialogAction;
+  action:      AlertDialogAction;
   accentColor: string;
-  isDark: boolean;
+  isDark:      boolean;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark }) => {
-  const isPrimary = action.variant === 'primary';
+  const isPrimary   = action.variant === 'primary';
+  const isSecondary = action.variant === 'secondary' || !action.variant;
+  const isGhost     = action.variant === 'ghost';
 
   return (
     <Pressable
       onPress={action.onPress}
       style={({ pressed }) => [
         styles.actionBtn,
-        isPrimary
-          ? { backgroundColor: pressed ? darken(action.color ?? accentColor) : (action.color ?? accentColor) }
-          : { backgroundColor: pressed
-              ? (isDark ? '#334155' : '#e2e8f0')
-              : (isDark ? '#273549' : '#f1f5f9') },
+        isPrimary   && { backgroundColor: pressed ? darken(action.color ?? accentColor) : (action.color ?? accentColor) },
+        isSecondary && { backgroundColor: pressed ? (isDark ? '#334155' : '#e2e8f0') : (isDark ? '#273549' : '#f1f5f9') },
+        isGhost     && { backgroundColor: 'transparent' },
       ]}
     >
+      {action.icon && <Text style={{ fontSize: 14, marginEnd: 4 }}>{action.icon}</Text>}
       <Text style={[
         styles.actionLabel,
-        { color: isPrimary ? '#fff' : (isDark ? '#e2e8f0' : '#374151') },
+        isPrimary   && { color: '#fff' },
+        isSecondary && { color: isDark ? '#e2e8f0' : '#374151' },
+        isGhost     && { color: accentColor },
       ]}>
         {action.label}
       </Text>
@@ -147,13 +175,15 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark
   );
 };
 
-/** Naive darken — just adds '99' alpha for pressed state on colored buttons */
 const darken = (hex: string) => {
-  if (hex === '#ef4444') return '#dc2626';
-  if (hex === '#3b82f6') return '#2563eb';
-  if (hex === '#f59e0b') return '#d97706';
-  if (hex === '#10b981') return '#059669';
-  return hex;
+  const map: Record<string, string> = {
+    '#ef4444': '#dc2626',
+    '#3b82f6': '#2563eb',
+    '#f59e0b': '#d97706',
+    '#10b981': '#059669',
+    '#8b5cf6': '#7c3aed',
+  };
+  return map[hex] ?? hex;
 };
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -161,24 +191,24 @@ const darken = (hex: string) => {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   card: {
     width: '100%',
-    maxWidth: 340,
-    borderRadius: 16,
+    maxWidth: 360,
+    borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 16,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 20,
   },
   stripe: {
-    height: 4,
+    height: 5,
   },
   body: {
     padding: 24,
@@ -186,43 +216,64 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    gap: 12,
   },
   iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   iconText: {
-    fontSize: 22,
+    fontSize: 24,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 1,
+  },
+  messageBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
   },
   message: {
     fontSize: 13,
     lineHeight: 20,
-    marginBottom: 20,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  copyLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 4,
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    flexDirection: 'row',
+    paddingVertical: 13,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   actionLabel: {
     fontSize: 14,

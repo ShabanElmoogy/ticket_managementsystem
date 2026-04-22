@@ -20,6 +20,9 @@
   "common": {
     "loading": "جاري التحميل...",
     "save": "حفظ",
+    "saving": "جاري الحفظ…",
+    "close": "إغلاق",
+    "back": "رجوع",
     "cancel": "إلغاء",
     "delete": "حذف",
     "edit": "تعديل",
@@ -78,7 +81,8 @@
       "deleted": "تم حذف التطبيق بنجاح",
       "errorCreate": "خطأ في إنشاء التطبيق",
       "errorUpdate": "خطأ في تحديث التطبيق",
-      "errorDelete": "خطأ في حذف التطبيق"
+      "errorDelete": "خطأ في حذف التطبيق",
+      "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF",
     "active": "نشط",
@@ -113,7 +117,8 @@
       "deleted": "تم حذف العميل بنجاح",
       "errorCreate": "خطأ في إنشاء العميل",
       "errorUpdate": "خطأ في تحديث العميل",
-      "errorDelete": "خطأ في حذف العميل"
+      "errorDelete": "خطأ في حذف العميل",
+      "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF"
   },

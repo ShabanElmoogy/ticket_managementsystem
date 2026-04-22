@@ -1,4 +1,5 @@
 import '../global.css';
+import 'react-native-gesture-handler'; // must be first import
 
 import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -7,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
@@ -16,6 +18,9 @@ import { DirectionProvider } from '@/src/providers/DirectionProvider';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetworkErrorDialog from '@/src/components/NetworkErrorDialog';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from '@/src/shared/components/feedback/AppToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,8 +35,16 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    async function bootstrap() {
-      // 1. Init i18n
+    // Start watching network connectivity for offline retry queue
+    networkEvents.startWatching();
+
+    return () => {
+      networkEvents.stopWatching();
+    };
+  }, []);
+
+  useEffect(() => {
+    async function bootstrap() {      // 1. Init i18n
       await initI18n();
 
       // 2. Wait for Zustand persist to finish reading AsyncStorage.
@@ -75,21 +88,24 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <DirectionProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(app)"  options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="auto" />
-            {/* Global network error dialog — mounted once, listens to all API errors */}
-            <NetworkErrorDialog />
-          </ThemeProvider>
-        </DirectionProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <DirectionProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(app)"  options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="auto" />
+              <NetworkErrorDialog />
+            </ThemeProvider>
+          </DirectionProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+      {/* Toast must be last — renders above all other UI including modals */}
+      <Toast config={toastConfig} />
+    </GestureHandlerRootView>
   );
 }

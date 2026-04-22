@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useEntityData, type EntityConfig } from './useEntityData';
+import { useToast } from './useToast';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,8 @@ export function useAdminFeature<T extends object, CreateT>(
   const { entities, loading, create, update, remove, refetch } =
     useEntityData<T, CreateT>(config);
 
+  const toast = useToast();
+
   const [ui, setUI] = useState<UIState<T>>({
     dialogOpen:   false,
     editingItem:  null,
@@ -128,9 +131,11 @@ export function useAdminFeature<T extends object, CreateT>(
           const id = (ui.editingItem as Record<string, unknown>).id as string;
           await update(id, values);
           showSnackbar(config.messages.success.updated, 'success');
+          toast.success(config.messages.success.updated);
         } else {
           await create(values);
           showSnackbar(config.messages.success.created, 'success');
+          toast.success(config.messages.success.created);
         }
         closeDialog();
         options?.onSuccess?.();
@@ -139,6 +144,7 @@ export function useAdminFeature<T extends object, CreateT>(
           ? config.messages.error.update
           : config.messages.error.create;
         showSnackbar(handleError(error, msg), 'error');
+        toast.error(handleError(error, msg));
         logError(ui.editingItem ? 'Update' : 'Create', error);
       } finally {
         setSubmitting(false);
@@ -154,10 +160,12 @@ export function useAdminFeature<T extends object, CreateT>(
       try {
         await remove(getId(ui.deleteDialog.item));
         showSnackbar(config.messages.success.deleted, 'success');
+        toast.success(config.messages.success.deleted);
         closeDeleteDialog();
         options?.onSuccess?.();
       } catch (error) {
         showSnackbar(handleError(error, config.messages.error.delete), 'error');
+        toast.error(handleError(error, config.messages.error.delete));
         logError('Delete', error);
       }
     },

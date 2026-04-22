@@ -396,6 +396,11 @@ http.interceptors.response.use(
     // Fire global network error event — UI can show a dialog
     if (isNetworkError) {
       networkEvents.emit('Network error. Please check your connection.');
+
+      // Enqueue the request for automatic retry when connectivity is restored
+      if (originalConfig) {
+        return networkEvents.enqueue(originalConfig);
+      }
     }
 
     const isRetryable =
@@ -415,3 +420,7 @@ http.interceptors.response.use(
 );
 
 export default http;
+
+// Register retry callback — httpClient re-executes queued requests when
+// connectivity is restored. Done after all interceptors are set up.
+networkEvents.setRetryCallback((config) => http.request(config));

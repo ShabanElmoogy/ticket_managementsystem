@@ -36,6 +36,7 @@ const CustomersScreen: React.FC = () => {
           item={item}
           onClose={onClose}
           submitting={f.ui.submitting}
+          mode="page"
           onSave={async (data: CreateCustomerData) => {
             if (item) await f.update(item.id, data);
             else      await f.create(data);
