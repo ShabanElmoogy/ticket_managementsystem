@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
+import { useToast } from '../../../shared/hooks/useToast';
 
 const PAGE_SIZE = 6;
 
@@ -36,6 +37,8 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   exportingLabel?: string;
   refreshLabel?: string;
   refreshingLabel?: string;
+  /** Shown as a toast after successful delete */
+  deleteSuccessMessage?: string;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
@@ -151,8 +154,10 @@ function AdminCrudScreen<T extends { id: string }>({
   onExport, exporting = false, onRefresh,
   searchPlaceholder, emptyMessage, emptyFilteredMessage,
   addLabel, exportLabel, exportingLabel, refreshLabel, refreshingLabel,
+  deleteSuccessMessage,
 }: AdminCrudScreenProps<T>) {
   const { colorMode, setAdminView } = useUiStore();
+  const toast  = useToast();
   const isDark = colorMode === 'dark';
   const view   = useUiStore((s) => s.adminViews[title] ?? 'table');
 
@@ -166,8 +171,15 @@ function AdminCrudScreen<T extends { id: string }>({
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    try { await onDelete(deleteTarget.id); }
-    finally { setDeleting(false); setDeleteTarget(null); }
+    try {
+      await onDelete(deleteTarget.id);
+      toast.success(deleteSuccessMessage ?? 'Deleted successfully');
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   const filtered = search.trim()

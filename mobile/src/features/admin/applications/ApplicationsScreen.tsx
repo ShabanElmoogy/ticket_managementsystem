@@ -31,6 +31,7 @@ const ApplicationsScreen: React.FC = () => {
       exportingLabel={t('common.exporting')}
       refreshLabel={t('common.refresh')}
       refreshingLabel={t('common.refreshing')}
+      deleteSuccessMessage={t('applications.messages.deleted')}
       renderForm={(item, onClose) => (
         <ApplicationForm
           item={item}

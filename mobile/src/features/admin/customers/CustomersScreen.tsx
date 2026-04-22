@@ -31,6 +31,7 @@ const CustomersScreen: React.FC = () => {
       exportingLabel={t('common.exporting')}
       refreshLabel={t('common.refresh')}
       refreshingLabel={t('common.refreshing')}
+      deleteSuccessMessage={t('customers.messages.deleted')}
       renderForm={(item, onClose) => (
         <CustomerForm
           item={item}
