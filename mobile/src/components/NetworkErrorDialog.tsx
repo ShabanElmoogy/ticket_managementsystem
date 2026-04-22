@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Linking } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as Sharing from 'expo-sharing';
 import ViewShot, { captureRef } from 'react-native-view-shot';
@@ -50,6 +50,15 @@ function statusIcon(status?: number): string {
   return '⚠️';
 }
 
+function darken(hex: string): string {
+  const map: Record<string, string> = {
+    '#ef4444': '#dc2626', '#dc2626': '#b91c1c',
+    '#3b82f6': '#2563eb', '#f59e0b': '#d97706',
+    '#10b981': '#059669', '#8b5cf6': '#7c3aed',
+  };
+  return map[hex] ?? hex;
+}
+
 function buildShareText(error: ErrorState): string {
   const lines: string[] = [
     `🐛 Error Report — ${error.timestamp}`,
@@ -68,6 +77,25 @@ function buildShareText(error: ErrorState): string {
     );
   }
   return lines.join('\n');
+}
+
+// WhatsApp sharing helper
+async function shareToWhatsApp(phoneNumber: string, message: string): Promise<void> {
+  try {
+    // Format phone number (remove any non-digits and ensure it starts with country code)
+    const cleanNumber = phoneNumber.replace(/\D/g, '');
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `whatsapp://send?phone=${cleanNumber}&text=${encodedMessage}`;
+    
+    const canOpen = await Linking.canOpenURL(whatsappUrl);
+    if (canOpen) {
+      await Linking.openURL(whatsappUrl);
+    } else {
+      throw new Error('WhatsApp not installed');
+    }
+  } catch (error) {
+    throw new Error('Failed to open WhatsApp');
+  }
 }
 
 // ── Screenshot card (what gets captured) ─────────────────────────────────────
@@ -150,8 +178,12 @@ interface ShareButtonProps {
 const ShareButton: React.FC<ShareButtonProps> = ({ error, accentColor, icon, isDark }) => {
   const cardRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
-  const handleShare = async () => {
+  // Configuration - you can modify this phone number
+  const SUPPORT_WHATSAPP_NUMBER = '+201284555561'; // Replace with your support WhatsApp number
+
+  const handleGeneralShare = async () => {
     if (sharing) return;
     setSharing(true);
     try {
@@ -179,12 +211,134 @@ const ShareButton: React.FC<ShareButtonProps> = ({ error, accentColor, icon, isD
       Toast.show({ type: 'error', text1: 'Could not share error report', position: 'bottom' });
     } finally {
       setSharing(false);
+      setShowOptions(false);
     }
   };
 
-  const btnBg     = isDark ? '#273549' : '#f1f5f9';
-  const btnBorder = isDark ? '#334155' : '#e2e8f0';
-  const btnText   = isDark ? '#e2e8f0' : '#374151';
+  const handleWhatsAppShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const shareText = buildShareText(error);
+      await shareToWhatsApp(SUPPORT_WHATSAPP_NUMBER, shareText);
+      Toast.show({ 
+        type: 'success', 
+        text1: 'Opened WhatsApp', 
+        text2: 'Error report ready to send',
+        position: 'bottom' 
+      });
+    } catch (e) {
+      if (__DEV__) console.warn('WhatsApp share failed:', e);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Could not open WhatsApp', 
+        text2: 'Make sure WhatsApp is installed',
+        position: 'bottom' 
+      });
+    } finally {
+      setSharing(false);
+      setShowOptions(false);
+    }
+  };
+
+  const toggleOptions = () => {
+    if (sharing) return;
+    setShowOptions(!showOptions);
+  };
+
+  if (showOptions) {
+    return (
+      <View style={{ flex: 1 }}>
+        {/* Hidden card rendered off-screen for capture */}
+        <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
+          <ViewShot ref={cardRef as any} options={{ format: 'png', quality: 1 }}>
+            <View style={{ padding: 20, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
+              <ErrorCard error={error} accentColor={accentColor} icon={icon} isDark={isDark} />
+            </View>
+          </ViewShot>
+        </View>
+
+        {/* Share options */}
+        <View style={{ gap: 8 }}>
+          {/* WhatsApp option */}
+          <Pressable
+            onPress={handleWhatsAppShare}
+            disabled={sharing}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              alignItems: 'center',
+              gap: 12,
+              backgroundColor: pressed
+                ? '#25D366'
+                : (isDark ? '#1e293b' : '#ffffff'),
+              borderWidth: 1.5,
+              borderColor: '#25D366',
+              opacity: sharing ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 16 }}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: isDark ? '#cbd5e1' : '#374151' }}>
+                Send to Support
+              </Text>
+              <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+                WhatsApp: {SUPPORT_WHATSAPP_NUMBER}
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* General share option */}
+          <Pressable
+            onPress={handleGeneralShare}
+            disabled={sharing}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              alignItems: 'center',
+              gap: 12,
+              backgroundColor: pressed
+                ? (isDark ? '#334155' : '#e2e8f0')
+                : (isDark ? '#1e293b' : '#ffffff'),
+              borderWidth: 1.5,
+              borderColor: isDark ? '#475569' : '#d1d5db',
+              opacity: sharing ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 16 }}>📤</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: isDark ? '#cbd5e1' : '#374151' }}>
+                Share Screenshot
+              </Text>
+              <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+                Save or share to other apps
+              </Text>
+            </View>
+          </Pressable>
+
+          {/* Back button */}
+          <Pressable
+            onPress={() => setShowOptions(false)}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              paddingVertical: 8,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 14 }}>←</Text>
+            <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b' }}>Back</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -197,29 +351,32 @@ const ShareButton: React.FC<ShareButtonProps> = ({ error, accentColor, icon, isD
         </ViewShot>
       </View>
 
-      {/* Visible share button */}
+      {/* Main share button */}
       <Pressable
-        onPress={handleShare}
+        onPress={toggleOptions}
         disabled={sharing}
         style={({ pressed }) => ({
           flex: 1,
           flexDirection: 'row',
-          paddingVertical: 13,
-          borderRadius: 12,
+          paddingVertical: 18,
+          borderRadius: 16,
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 6,
-          backgroundColor: pressed ? btnBorder : btnBg,
-          borderWidth: 1,
-          borderColor: btnBorder,
+          gap: 8,
+          minHeight: 58,
+          backgroundColor: pressed
+            ? (isDark ? '#334155' : '#e2e8f0')
+            : (isDark ? '#1e293b' : '#ffffff'),
+          borderWidth: 1.5,
+          borderColor: isDark ? '#475569' : '#d1d5db',
           opacity: sharing ? 0.6 : 1,
         })}
       >
         {sharing
-          ? <ActivityIndicator size="small" color={btnText} />
-          : <Text style={{ fontSize: 14 }}>📤</Text>
+          ? <ActivityIndicator size="small" color={isDark ? '#cbd5e1' : '#374151'} />
+          : <Text style={{ fontSize: 18 }}>📤</Text>
         }
-        <Text style={{ fontSize: 14, fontWeight: '700', color: btnText }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#cbd5e1' : '#374151' }}>
           {sharing ? 'Sharing…' : 'Share'}
         </Text>
       </Pressable>
@@ -355,7 +512,7 @@ const NetworkErrorDialog: React.FC = () => {
       ]}
       // Override the actions slot to inject the ShareButton
       actionsOverride={error && !retrying ? (
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flexDirection: 'row', gap: 25, flex: 1, justifyContent: 'flex-end' }}>
           <ShareButton
             error={error}
             accentColor={accentColor}
@@ -367,15 +524,23 @@ const NetworkErrorDialog: React.FC = () => {
             style={({ pressed }) => ({
               flex: 1,
               flexDirection: 'row',
-              paddingVertical: 13,
-              borderRadius: 12,
+              paddingVertical: 18,
+              borderRadius: 16,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: pressed ? accentColor + 'cc' : accentColor,
+              gap: 8,
+              minHeight: 58,
+              backgroundColor: pressed ? darken(accentColor) : accentColor,
+              shadowColor: accentColor,
+              shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+              shadowOpacity: pressed ? 0.1 : 0.35,
+              shadowRadius: pressed ? 2 : 8,
+              elevation: pressed ? 1 : 4,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
             })}
           >
-            <Text style={{ fontSize: 14, marginEnd: 4 }}>✓</Text>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>OK</Text>
+            <Text style={{ fontSize: 18 }}>✓</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 }}>OK</Text>
           </Pressable>
         </View>
       ) : undefined}
