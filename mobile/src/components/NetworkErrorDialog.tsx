@@ -268,14 +268,15 @@ const SharePanel: React.FC<SharePanelProps> = ({ error, accentColor, icon, isDar
           </View>
           <Pressable
             onPress={onClose}
+            hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
             style={({ pressed }) => ({
-              paddingHorizontal: 9,
-              paddingVertical: 3,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
               borderRadius: 20,
               backgroundColor: pressed ? (isDark ? '#334155' : '#e2e8f0') : (isDark ? '#1e293b' : '#f1f5f9'),
             })}
           >
-            <Text style={{ fontSize: 11, fontWeight: '600', color: textSec }}>✕</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: textSec }}>✕</Text>
           </Pressable>
         </View>
 
