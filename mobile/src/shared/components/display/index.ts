@@ -32,3 +32,6 @@ export type { ActionRowProps } from './ActionRow';
 
 export { default as InfoCard } from './InfoCard';
 export type { InfoCardProps, InfoCardSection } from './InfoCard';
+
+export { default as CalloutBox } from './CalloutBox';
+export type { CalloutBoxProps } from './CalloutBox';

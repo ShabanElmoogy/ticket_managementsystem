@@ -8,3 +8,6 @@ export { default as AppBadge } from './AppBadge';
 
 export { default as SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlProps, SegmentedOption } from './SegmentedControl';
+
+export { default as IconTypeSelector } from './IconTypeSelector';
+export type { IconTypeSelectorProps, IconTypeSelectorOption } from './IconTypeSelector';
