@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text } from 'react-native';
-import { getInitials, getRoleColor } from '@/src/components/layout/header/navItems';
+import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
 import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
 

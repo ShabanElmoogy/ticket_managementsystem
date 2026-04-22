@@ -1,4 +1,4 @@
-import { BaseApiService } from '../../../../services/api/base';
+import { BaseApiService } from '@/src/services/api/base';
 import type { Doc, DocBlock, ServerDocNode } from '../types/types';
 
 export class DocsApiService extends BaseApiService {

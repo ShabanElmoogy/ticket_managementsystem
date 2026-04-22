@@ -28,7 +28,6 @@
     "refreshing": "Loading…",
     "exportPdf": "Export PDF",
     "exporting": "Exporting…",
-    "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -38,16 +37,12 @@
     "filter": "Filter",
     "actions": "Actions",
     "name": "Name",
+    "email": "Email",
     "description": "Description",
     "version": "Version",
     "status": "Status",
     "active": "Active",
     "inactive": "Inactive",
-    "add": "Add",
-    "refresh": "Refresh",
-    "refreshing": "Loading…",
-    "exportPdf": "Export PDF",
-    "exporting": "Exporting…",
     "phone": "Phone",
     "priority": "Priority",
     "assignedTo": "Assigned To",
@@ -103,15 +98,19 @@
     "itemType": "customer",
     "addTitle": "Add Customer",
     "editTitle": "Edit Customer",
+    "notFound": "Customer not found",
     "searchPlaceholder": "Search customers…",
     "emptyMessage": "No customers yet",
     "emptyFilteredMessage": "No customers match your search",
+    "active": "ACTIVE",
+    "inactive": "INACTIVE",
     "columns": {
       "name": "Name",
       "email": "Email",
       "phone": "Phone",
       "status": "Status",
-      "tickets": "Tickets"
+      "tickets": "Tickets",
+      "created": "Created"
     },
     "form": {
       "name": "Name *",
@@ -119,7 +118,22 @@
       "email": "Email *",
       "emailPlaceholder": "email@example.com",
       "phone": "Phone",
-      "phonePlaceholder": "+1234567890"
+      "phonePlaceholder": "+1234567890",
+      "description": "Description",
+      "descriptionPlaceholder": "Additional notes",
+      "company": "Company",
+      "companyPlaceholder": "Company name",
+      "address": "Address",
+      "addressPlaceholder": "Street, City, Country"
+    },
+    "detail": {
+      "company": "Company",
+      "address": "Address",
+      "maintenance": "Maintenance",
+      "maintenanceType": "Type",
+      "subscriptionStart": "Start Date",
+      "subscriptionEnd": "End Date",
+      "applications": "Applications"
     },
     "messages": {
       "created": "Customer created successfully",
@@ -128,7 +142,6 @@
       "errorCreate": "Error creating customer",
       "errorUpdate": "Error updating customer",
       "errorDelete": "Error deleting customer",
-      "validationError": "Please fix the errors above",
       "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF"
@@ -247,6 +260,20 @@
     "total_users": "Total Users",
     "open_tickets": "Open Tickets",
     "recent_activity": "Recent Activity"
+  },
+  "adminDashboard": {
+    "statistics": "Statistics",
+    "overview": "Overview",
+    "totalCustomers": "Total Customers",
+    "activeCustomers": "Active Customers",
+    "totalApplications": "Total Applications",
+    "activeApplications": "Active Applications",
+    "totalTickets": "Total Tickets",
+    "openTickets": "Open Tickets",
+    "inProgress": "In Progress",
+    "resolved": "Resolved",
+    "open": "Open",
+    "resolutionRate": "Resolution Rate"
   },
   "deviceInfo": {
     "title": "Device Info",

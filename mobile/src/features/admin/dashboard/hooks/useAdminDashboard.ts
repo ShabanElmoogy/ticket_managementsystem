@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuxData } from '../../../../shared/hooks/useAuxData';
+import { useAuxData } from '@/src/shared/hooks/useAuxData';
 import { customersApi } from '../../customers/api/customers';
 import { applicationsApi } from '../../applications/api/applications';
 import { ticketsApi } from '../../tickets/api/tickets';

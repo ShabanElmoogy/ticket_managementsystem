@@ -32,6 +32,7 @@
     "filter": "تصفية",
     "actions": "الإجراءات",
     "name": "الاسم",
+    "email": "البريد الإلكتروني",
     "description": "الوصف",
     "version": "الإصدار",
     "status": "الحالة",
@@ -97,15 +98,19 @@
     "itemType": "عميل",
     "addTitle": "إضافة عميل",
     "editTitle": "تعديل العميل",
+    "notFound": "العميل غير موجود",
     "searchPlaceholder": "البحث في العملاء…",
     "emptyMessage": "لا يوجد عملاء بعد",
     "emptyFilteredMessage": "لا يوجد عملاء يطابقون بحثك",
+    "active": "نشط",
+    "inactive": "غير نشط",
     "columns": {
       "name": "الاسم",
       "email": "البريد الإلكتروني",
       "phone": "الهاتف",
       "status": "الحالة",
-      "tickets": "التذاكر"
+      "tickets": "التذاكر",
+      "created": "تاريخ الإنشاء"
     },
     "form": {
       "name": "الاسم *",
@@ -113,7 +118,22 @@
       "email": "البريد الإلكتروني *",
       "emailPlaceholder": "email@example.com",
       "phone": "الهاتف",
-      "phonePlaceholder": "+1234567890"
+      "phonePlaceholder": "+1234567890",
+      "description": "الوصف",
+      "descriptionPlaceholder": "ملاحظات إضافية",
+      "company": "الشركة",
+      "companyPlaceholder": "اسم الشركة",
+      "address": "العنوان",
+      "addressPlaceholder": "الشارع، المدينة، الدولة"
+    },
+    "detail": {
+      "company": "الشركة",
+      "address": "العنوان",
+      "maintenance": "الصيانة",
+      "maintenanceType": "النوع",
+      "subscriptionStart": "تاريخ البدء",
+      "subscriptionEnd": "تاريخ الانتهاء",
+      "applications": "التطبيقات"
     },
     "messages": {
       "created": "تم إنشاء العميل بنجاح",
@@ -122,7 +142,6 @@
       "errorCreate": "خطأ في إنشاء العميل",
       "errorUpdate": "خطأ في تحديث العميل",
       "errorDelete": "خطأ في حذف العميل",
-      "validationError": "يرجى تصحيح الأخطاء أعلاه",
       "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF"
@@ -241,6 +260,20 @@
     "total_users": "إجمالي المستخدمين",
     "open_tickets": "التذاكر المفتوحة",
     "recent_activity": "النشاط الأخير"
+  },
+  "adminDashboard": {
+    "statistics": "الإحصائيات",
+    "overview": "نظرة عامة",
+    "totalCustomers": "إجمالي العملاء",
+    "activeCustomers": "العملاء النشطون",
+    "totalApplications": "إجمالي التطبيقات",
+    "activeApplications": "التطبيقات النشطة",
+    "totalTickets": "إجمالي التذاكر",
+    "openTickets": "التذاكر المفتوحة",
+    "inProgress": "قيد التنفيذ",
+    "resolved": "محلولة",
+    "open": "مفتوحة",
+    "resolutionRate": "معدل الحل"
   },
   "deviceInfo": {
     "title": "معلومات الجهاز",

@@ -14,15 +14,16 @@ features/admin/<feature>/
 │   └── <feature>.ts              ← BaseApiService subclass + singleton + query keys
 ├── components/
 │   ├── <feature>Columns.tsx      ← ColDef function (translated, no hooks)
-│   └── <Entity>Form.tsx          ← Form component (page + modal mode)
+│   ├── <Entity>Form.tsx          ← Form component (page + modal mode)
+│   └── <Entity>DetailScreen.tsx  ← (optional) read-only detail view
 ├── hooks/
-│   ├── use<Feature>.ts           ← useAdminFeature wrapper + export logic
+│   ├── use<Feature>.ts           ← useAdminFeature wrapper + export logic + selectedId
 │   └── use<Feature>Form.ts       ← form state, validation, submit logic
 ├── schemas/                      ← (optional) Zod validation schemas
 │   └── <feature>Schema.ts
 ├── types/                        ← (optional) local types — add when needed
 │   └── index.ts
-└── <Feature>Screen.tsx           ← Thin orchestration — renders AdminCrudScreen
+└── <Feature>Screen.tsx           ← Orchestration: list / detail / edit views
 ```
 
 > **Note:** Columns live in `components/` alongside the form — no separate `columns/` folder.
@@ -41,12 +42,103 @@ If the feature only uses types from `@/src/services/api/types` and Zod inferred 
 
 ---
 
+## Screen View States
+
+`<Feature>Screen.tsx` manages **three mutually exclusive view states** using `selectedId` and `editingFromDetail` state:
+
+```
+selectedId === null                    → List view  (AdminCrudScreen)
+selectedId !== null && !editingFromDetail → Detail view (<Entity>DetailScreen)
+editingFromDetail !== null             → Edit-from-detail view (<Entity>Form)
+```
+
+```tsx
+// ── Detail view ────────────────────────────────────────────────────────────
+if (selectedId && !editingFromDetail) {
+  const selectedItem = f.entities.find((e) => e.id === selectedId);
+  return (
+    <>
+      <EntityDetailScreen
+        entityId={selectedId}
+        onClose={() => setSelectedId(null)}
+        onEdit={() => setEditingFromDetail(selectedItem ?? null)}
+        onDelete={() => setDeletingFromDetail(selectedItem ?? null)}
+        queryEnabled={!deletingFromDetail}
+      />
+      <AppDeleteDialog
+        open={!!deletingFromDetail}
+        onClose={() => setDeletingFromDetail(null)}
+        onConfirm={handleDeleteFromDetail}
+        itemName={deletingFromDetail?.name}
+        itemType={t('<feature>.itemType')}
+        loading={deleting}
+      />
+    </>
+  );
+}
+
+// ── Edit from detail ────────────────────────────────────────────────────────
+if (editingFromDetail) {
+  return (
+    <EntityForm
+      item={editingFromDetail}
+      onClose={() => {
+        setEditingFromDetail(null);
+        setSelectedId(editingFromDetail.id); // return to detail
+      }}
+      submitting={false}
+      mode="page"
+      onSave={async (data) => {
+        await f.update(editingFromDetail.id, data);
+        setEditingFromDetail(null);
+        setSelectedId(editingFromDetail.id); // return to detail after save
+      }}
+    />
+  );
+}
+
+// ── List view ───────────────────────────────────────────────────────────────
+return (
+  <AdminCrudScreen<Entity>
+    ...
+    onRowPress={(item) => setSelectedId(item.id)}
+    ...
+  />
+);
+```
+
+### Delete from detail — cache cleanup
+
+When deleting from the detail view, remove the detail query from cache immediately to prevent a background refetch hitting the now-deleted resource:
+
+```tsx
+const handleDeleteFromDetail = async () => {
+  if (!deletingFromDetail) return;
+  setDeleting(true);
+  try {
+    await f.remove(deletingFromDetail.id);
+    // Remove detail query — prevents refetch of deleted resource
+    queryClient.removeQueries({ queryKey: entityKeys.detail(deletingFromDetail.id) });
+    toast.success(t('<feature>.messages.deleted'));
+    setSelectedId(null);          // navigate away first
+    setDeletingFromDetail(null);
+  } catch {
+    toast.error(t('<feature>.messages.errorDelete'));
+  } finally {
+    setDeleting(false);
+  }
+};
+```
+
+---
+
 ## File Responsibilities
 
 ### `api/<feature>.ts`
 - Extends `BaseApiService`
 - Exports a singleton: `export const featureApi = new FeatureApiService()`
 - Exports query keys: `export const featureKeys = { all: [...], detail: (id) => [...] }`
+- Always include a `getOne` method — required by the detail screen
 
 ```ts
 import { BaseApiService } from '@/src/services/api/base';
@@ -54,6 +146,7 @@ import type { Entity, CreateEntityData } from '@/src/services/api/types';
 
 export class EntityApiService extends BaseApiService {
   getAll   = ()                                            => this.get<Entity[]>('/entities');
+  getOne   = (id: string)                                  => this.get<Entity>(`/entities/${id}`);
   create   = (data: CreateEntityData)                      => this.post<Entity>('/entities', data);
   update   = (id: string, data: Partial<CreateEntityData>) => this.put<Entity>(`/entities/${id}`, data);
   remove   = (id: string)                                  => this.delete<{ message: string }>(`/entities/${id}`);
@@ -404,6 +497,111 @@ export default EntityForm;
 - `nextRef` on `AppTextInput` enables return-key navigation between fields
 - `isDirty` disables submit until user changes something
 - `isDisabled = submitting || isSubmitting || !isDirty`
+- In edit mode, show linked stats (ticket count, customer count) as read-only info cards below the fields
+- For multiline fields use `multiline`, `numberOfLines`, and `submitBehavior="blurAndSubmit"` (not the deprecated `blurOnSubmit`)
+
+**Linked stats pattern (edit mode only):**
+```tsx
+{item && (
+  <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+    <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', alignItems: 'center' }}>
+      <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>{item._count?.tickets ?? 0}</Text>
+      <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('<feature>.columns.tickets')}</Text>
+    </View>
+  </View>
+)}
+```
+
+---
+
+### `components/<Entity>DetailScreen.tsx`
+
+Read-only detail view shown when a row is tapped. Fetches the single entity via `useQuery` with `staleTime: 2 * 60_000`.
+
+```tsx
+import React from 'react';
+import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { useIsDark } from '@/src/constants/theme';
+import { entityApi, entityKeys } from '../api/<feature>';
+
+interface Props {
+  entityId:      string;
+  onClose:       () => void;
+  onEdit:        () => void;
+  onDelete:      () => void;
+  /** Set false while delete is in progress — prevents refetch of deleted resource */
+  queryEnabled?: boolean;
+}
+
+const EntityDetailScreen: React.FC<Props> = ({
+  entityId, onClose, onEdit, onDelete, queryEnabled = true,
+}) => {
+  const { t }  = useTranslation();
+  const isDark = useIsDark();
+
+  const { data: entity, isLoading } = useQuery({
+    queryKey: entityKeys.detail(entityId),
+    queryFn:  () => entityApi.getOne(entityId),
+    staleTime: 2 * 60_000,
+    enabled:  queryEnabled,
+  });
+
+  // theme tokens
+  const bg       = isDark ? '#0f172a' : '#f8fafc';
+  const cardBg   = isDark ? '#1e293b' : '#ffffff';
+  const border   = isDark ? '#334155' : '#e5e7eb';
+  const textPri  = isDark ? '#f1f5f9' : '#111827';
+  const textSec  = isDark ? '#94a3b8' : '#6b7280';
+
+  return (
+    <View style={{ flex: 1, backgroundColor: bg }}>
+      {/* Header */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        paddingHorizontal: 16, paddingVertical: 12,
+        backgroundColor: cardBg, borderBottomWidth: 1, borderBottomColor: border,
+      }}>
+        <Pressable onPress={onClose} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? '#334155' : '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: textSec, fontSize: 18 }}>←</Text>
+        </Pressable>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: textPri }} numberOfLines={1}>
+          {entity?.name ?? t('<feature>.title')}
+        </Text>
+        <Pressable onPress={onEdit} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#2563eb' }}>✏️ {t('common.edit')}</Text>
+        </Pressable>
+        <Pressable onPress={onDelete} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fca5a5' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef4444' }}>🗑️ {t('common.delete')}</Text>
+        </Pressable>
+      </View>
+
+      {isLoading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+        </View>
+      ) : !entity ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: textSec }}>{t('<feature>.notFound')}</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+          {/* render entity fields */}
+        </ScrollView>
+      )}
+    </View>
+  );
+};
+
+export default EntityDetailScreen;
+```
+
+**Rules:**
+- Always pass `queryEnabled={!deletingFromDetail}` — prevents refetch while delete is in flight
+- `staleTime: 2 * 60_000` — detail data is fresh for 2 minutes
+- Use `useIsDark()` from `@/src/constants/theme` — not `useUiStore` directly
+- Header always has: back ←, title, Edit button, Delete button
 
 ---
 
@@ -411,7 +609,8 @@ export default EntityForm;
 - Wraps `useAdminFeature` with feature-specific config
 - Calls `get<Feature>Columns(t)` with `useMemo` so columns rebuild on language change
 - Owns `exporting` state + `handleExport` function
-- Returns `{ f, columns, exporting, handleExport }`
+- Owns `selectedId` / `setSelectedId` state for detail navigation
+- Returns `{ f, columns, exporting, handleExport, selectedId, setSelectedId }`
 
 ```ts
 import { useState, useMemo } from 'react';
@@ -424,7 +623,8 @@ import type { Entity, CreateEntityData } from '@/src/services/api/types';
 
 export function useEntities() {
   const { t } = useTranslation();
-  const [exporting, setExporting] = useState(false);
+  const [exporting,  setExporting]  = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const columns = useMemo(() => getEntityColumns(t), [t]);
 
@@ -450,30 +650,103 @@ export function useEntities() {
     finally { setExporting(false); }
   };
 
-  return { f, columns, exporting, handleExport };
+  return { f, columns, exporting, handleExport, selectedId, setSelectedId };
 }
 ```
 
 ---
 
 ### `<Feature>Screen.tsx`
-- Thin orchestration — no business logic, no state
-- Renders `AdminCrudScreen` with data from the hook
-- All strings passed as translated values via `t()`
-- `mode="page"` on the form (recommended default)
+- Orchestrates three view states: list → detail → edit-from-detail
+- Uses `selectedId` from `use<Feature>` hook for detail navigation
+- Uses local `editingFromDetail` + `deletingFromDetail` state for detail actions
+- Calls `queryClient.removeQueries` after delete to clean up the detail cache
+- `mode="page"` on all form renders
 
 ```tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
-import EntityForm      from './components/EntityForm';
-import { useEntities } from './hooks/useEntities';
+import { useQueryClient } from '@tanstack/react-query';
+import AdminCrudScreen    from '@/src/features/admin/shared/AdminCrudScreen';
+import EntityForm         from './components/EntityForm';
+import EntityDetailScreen from './components/EntityDetailScreen';
+import { AppDeleteDialog } from '@/src/shared/components';
+import { useEntities }    from './hooks/useEntities';
+import { entityKeys }     from './api/<feature>';
+import { useToast }       from '@/src/shared/hooks/useToast';
 import type { Entity, CreateEntityData } from '@/src/services/api/types';
 
 const EntitiesScreen: React.FC = () => {
-  const { t } = useTranslation();
-  const { f, columns, exporting, handleExport } = useEntities();
+  const { t }       = useTranslation();
+  const toast       = useToast();
+  const queryClient = useQueryClient();
+  const { f, columns, exporting, handleExport, selectedId, setSelectedId } = useEntities();
 
+  const [editingFromDetail,  setEditingFromDetail]  = useState<Entity | null>(null);
+  const [deletingFromDetail, setDeletingFromDetail] = useState<Entity | null>(null);
+  const [deleting,           setDeleting]           = useState(false);
+
+  const handleDeleteFromDetail = async () => {
+    if (!deletingFromDetail) return;
+    setDeleting(true);
+    try {
+      await f.remove(deletingFromDetail.id);
+      queryClient.removeQueries({ queryKey: entityKeys.detail(deletingFromDetail.id) });
+      toast.success(t('<feature>.messages.deleted'));
+      setSelectedId(null);
+      setDeletingFromDetail(null);
+    } catch {
+      toast.error(t('<feature>.messages.errorDelete'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Detail view ────────────────────────────────────────────────────────────
+  if (selectedId && !editingFromDetail) {
+    const selectedItem = f.entities.find((e) => e.id === selectedId);
+    return (
+      <>
+        <EntityDetailScreen
+          entityId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onEdit={() => setEditingFromDetail(selectedItem ?? null)}
+          onDelete={() => setDeletingFromDetail(selectedItem ?? null)}
+          queryEnabled={!deletingFromDetail}
+        />
+        <AppDeleteDialog
+          open={!!deletingFromDetail}
+          onClose={() => setDeletingFromDetail(null)}
+          onConfirm={handleDeleteFromDetail}
+          itemName={deletingFromDetail?.name}
+          itemType={t('<feature>.itemType')}
+          loading={deleting}
+        />
+      </>
+    );
+  }
+
+  // ── Edit from detail ────────────────────────────────────────────────────────
+  if (editingFromDetail) {
+    return (
+      <EntityForm
+        item={editingFromDetail}
+        onClose={() => {
+          setEditingFromDetail(null);
+          setSelectedId(editingFromDetail.id);
+        }}
+        submitting={false}
+        mode="page"
+        onSave={async (data: CreateEntityData) => {
+          await f.update(editingFromDetail.id, data);
+          setEditingFromDetail(null);
+          setSelectedId(editingFromDetail.id);
+        }}
+      />
+    );
+  }
+
+  // ── List view ───────────────────────────────────────────────────────────────
   return (
     <AdminCrudScreen<Entity>
       title={t('<feature>.title')}
@@ -488,15 +761,16 @@ const EntitiesScreen: React.FC = () => {
       onRefresh={f.refetch}
       onExport={handleExport}
       exporting={exporting}
+      searchPlaceholder={t('<feature>.searchPlaceholder')}
+      emptyMessage={t('<feature>.emptyMessage')}
+      emptyFilteredMessage={t('<feature>.emptyFilteredMessage')}
       addLabel={t('<feature>.addTitle')}
       exportLabel={t('common.exportPdf')}
       exportingLabel={t('common.exporting')}
       refreshLabel={t('common.refresh')}
       refreshingLabel={t('common.refreshing')}
-      searchPlaceholder={t('<feature>.searchPlaceholder')}
-      emptyMessage={t('<feature>.emptyMessage')}
-      emptyFilteredMessage={t('<feature>.emptyFilteredMessage')}
       deleteSuccessMessage={t('<feature>.messages.deleted')}
+      onRowPress={(item) => setSelectedId(item.id)}
       renderForm={(item, onClose) => (
         <EntityForm
           item={item}
@@ -731,18 +1005,20 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
 ## Checklist — New Admin Feature
 
 ### Files
-- [ ] `api/<feature>.ts` — service class + singleton + query keys
+- [ ] `api/<feature>.ts` — service class + singleton + query keys + `getOne` method
 - [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function
 - [ ] `components/<Entity>Form.tsx` — dual-mode form (page + modal) + `useTranslation`
+- [ ] `components/<Entity>DetailScreen.tsx` — read-only detail with Edit + Delete header buttons
 - [ ] `hooks/use<Feature>Form.ts` — form state, validation, submit, `isDirty`, `firstErrorFieldId`
-- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export
+- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export + `selectedId`
 - [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory using `validation.*` keys
-- [ ] `<Feature>Screen.tsx` — thin, renders `AdminCrudScreen`, `mode="page"` on form
+- [ ] `<Feature>Screen.tsx` — three view states: list / detail / edit-from-detail
 
 ### Translation
 - [ ] Add namespace to `en.json` and `ar.json` with all keys including `messages.validationError`
 - [ ] All hardcoded strings replaced with `t('...')`
 - [ ] `deleteSuccessMessage={t('<feature>.messages.deleted')}` passed to `AdminCrudScreen`
+- [ ] Add `common.edit` and `common.delete` keys if not already present
 
 ### Form UX
 - [ ] `useFocusInput` on first field
@@ -750,8 +1026,17 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
 - [ ] `FormField` wrapping each input with stable `fieldId`
 - [ ] `isDirty` disables submit until user changes something
 - [ ] `scrollToFirstError` called after failed submit
+- [ ] Linked stats shown in edit mode (if entity has `_count` relations)
+- [ ] Multiline fields use `submitBehavior="blurAndSubmit"` not deprecated `blurOnSubmit`
+
+### Detail screen
+- [ ] `queryEnabled={!deletingFromDetail}` passed to prevent refetch during delete
+- [ ] `staleTime: 2 * 60_000` on the detail query
+- [ ] `queryClient.removeQueries` called after successful delete
+- [ ] Navigate away (`setSelectedId(null)`) before closing delete dialog
 
 ### AdminCrudScreen props
+- [ ] `onRowPress={(item) => setSelectedId(item.id)}` wired for detail navigation
 - [ ] `onRefresh`, `onExport`, `exporting` passed
 - [ ] All button labels: `addLabel`, `exportLabel`, `exportingLabel`, `refreshLabel`, `refreshingLabel`
 - [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`
@@ -760,6 +1045,7 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
 ### General
 - [ ] All cross-folder imports use `@/src/...` alias
 - [ ] Screen registered in the admin navigation
+- [ ] Use `useIsDark()` from `@/src/constants/theme` — not `useUiStore` directly
 
 ---
 

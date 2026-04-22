@@ -8,7 +8,8 @@ import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 export function useCustomers() {
   const { t } = useTranslation();
-  const [exporting, setExporting] = useState(false);
+  const [exporting,  setExporting]  = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Rebuild columns when language changes
   const columns = useMemo(() => getCustomerColumns(t), [t]);
@@ -46,5 +47,5 @@ export function useCustomers() {
     finally { setExporting(false); }
   };
 
-  return { f, columns, exporting, handleExport };
+  return { f, columns, exporting, handleExport, selectedId, setSelectedId };
 }

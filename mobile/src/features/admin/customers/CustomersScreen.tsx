@@ -1,14 +1,90 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
-import CustomerForm    from './components/CustomerForm';
-import { useCustomers } from './hooks/useCustomers';
+import { useQueryClient } from '@tanstack/react-query';
+import AdminCrudScreen        from '@/src/features/admin/shared/AdminCrudScreen';
+import CustomerForm           from './components/CustomerForm';
+import CustomerDetailScreen   from './components/CustomerDetailScreen';
+import { AppDeleteDialog }    from '@/src/shared/components';
+import { useCustomers }       from './hooks/useCustomers';
+import { customersKeys }      from './api/customers';
+import { useToast }           from '@/src/shared/hooks/useToast';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 const CustomersScreen: React.FC = () => {
-  const { t } = useTranslation();
-  const { f, columns, exporting, handleExport } = useCustomers();
+  const { t }       = useTranslation();
+  const toast       = useToast();
+  const queryClient = useQueryClient();
+  const { f, columns, exporting, handleExport, selectedId, setSelectedId } = useCustomers();
 
+  // ── Detail → Edit state ────────────────────────────────────────────────────
+  const [editingFromDetail,  setEditingFromDetail]  = useState<Customer | null>(null);
+
+  // ── Detail → Delete state ──────────────────────────────────────────────────
+  const [deletingFromDetail, setDeletingFromDetail] = useState<Customer | null>(null);
+  const [deleting,           setDeleting]           = useState(false);
+
+  const handleDeleteFromDetail = async () => {
+    if (!deletingFromDetail) return;
+    setDeleting(true);
+    try {
+      await f.remove(deletingFromDetail.id);
+      // Remove detail query — prevents refetch of deleted resource
+      queryClient.removeQueries({ queryKey: customersKeys.detail(deletingFromDetail.id) });
+      toast.success(t('customers.messages.deleted'));
+      setSelectedId(null);           // navigate away first
+      setDeletingFromDetail(null);
+    } catch {
+      toast.error(t('customers.messages.errorDelete'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Detail view ────────────────────────────────────────────────────────────
+  if (selectedId && !editingFromDetail) {
+    const selectedCustomer = f.entities.find((c) => c.id === selectedId);
+    return (
+      <>
+        <CustomerDetailScreen
+          customerId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onEdit={() => setEditingFromDetail(selectedCustomer ?? null)}
+          onDelete={() => setDeletingFromDetail(selectedCustomer ?? null)}
+          queryEnabled={!deletingFromDetail}
+        />
+        <AppDeleteDialog
+          open={!!deletingFromDetail}
+          onClose={() => setDeletingFromDetail(null)}
+          onConfirm={handleDeleteFromDetail}
+          itemName={deletingFromDetail?.name}
+          itemType={t('customers.itemType')}
+          loading={deleting}
+        />
+      </>
+    );
+  }
+
+  // ── Edit from detail ────────────────────────────────────────────────────────
+  if (editingFromDetail) {
+    return (
+      <CustomerForm
+        item={editingFromDetail}
+        onClose={() => {
+          setEditingFromDetail(null);
+          setSelectedId(editingFromDetail.id); // return to detail
+        }}
+        submitting={false}
+        mode="page"
+        onSave={async (data: CreateCustomerData) => {
+          await f.update(editingFromDetail.id, data);
+          setEditingFromDetail(null);
+          setSelectedId(editingFromDetail.id); // return to detail after save
+        }}
+      />
+    );
+  }
+
+  // ── List view ───────────────────────────────────────────────────────────────
   return (
     <AdminCrudScreen<Customer>
       title={t('customers.title')}
@@ -17,7 +93,7 @@ const CustomersScreen: React.FC = () => {
       entities={f.entities}
       loading={f.loading}
       columns={columns}
-      searchFields={['name', 'email']}
+      searchFields={['name', 'email', 'phone']}
       getItemName={(c) => c.name}
       onDelete={(id) => f.remove(id)}
       onRefresh={f.refetch}
@@ -32,6 +108,7 @@ const CustomersScreen: React.FC = () => {
       refreshLabel={t('common.refresh')}
       refreshingLabel={t('common.refreshing')}
       deleteSuccessMessage={t('customers.messages.deleted')}
+      onRowPress={(customer) => setSelectedId(customer.id)}
       renderForm={(item, onClose) => (
         <CustomerForm
           item={item}

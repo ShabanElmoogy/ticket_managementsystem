@@ -174,11 +174,12 @@ function AdminCrudScreen<T extends { id: string }>({
     try {
       await onDelete(deleteTarget.id);
       toast.success(deleteSuccessMessage ?? 'Deleted successfully');
+      setDeleteTarget(null);
     } catch {
-      toast.error('Delete failed');
+      // Error is handled globally by NetworkErrorDialog — no toast here
+      setDeleteTarget(null);
     } finally {
       setDeleting(false);
-      setDeleteTarget(null);
     }
   };
 
