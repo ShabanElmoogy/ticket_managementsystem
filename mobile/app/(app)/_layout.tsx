@@ -1,5 +1,5 @@
 import { Stack, Redirect } from 'expo-router';
-import { View, KeyboardAvoidingView, Platform } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/stores/authStore';
 import AppHeader, {
@@ -18,14 +18,9 @@ function AppShell() {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <AppHeader />
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false }} />
-          </View>
-        </KeyboardAvoidingView>
+        <View style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false }} />
+        </View>
 
         <View onLayout={(e) => setBottomNavHeight(e.nativeEvent.layout.height)}>
           <AppBottomNav />
