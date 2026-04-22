@@ -1,41 +1,50 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField from '@/src/features/admin/shared/FormField';
+import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
 import { AppTextInput } from '@/src/shared/components';
-import { createApplicationFormSchema } from '../schemas/applicationSchema';
+import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
+import { useApplicationForm } from '../hooks/useApplicationForm';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 interface Props {
-  item: Application | null;
-  onClose: () => void;
-  onSave: (data: CreateApplicationData) => Promise<void>;
-  submitting: boolean;
+  item:        Application | null;
+  onClose:     () => void;
+  onSave:      (data: CreateApplicationData) => Promise<void>;
+  submitting:  boolean;
 }
 
+/**
+ * ApplicationForm — thin presentation component.
+ *
+ * All state, validation, and submit logic lives in useApplicationForm.
+ * This component only renders fields and wires up hooks.
+ */
 const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting }) => {
-  const { t } = useTranslation();
-  const [name,        setName]        = useState(item?.name        ?? '');
-  const [description, setDescription] = useState(item?.description ?? '');
-  const [version,     setVersion]     = useState(item?.version     ?? '');
-  const [errors,      setErrors]      = useState<Record<string, string>>({});
+  const { t }                  = useTranslation();
+  const { scrollToFirstError } = useFormScroll();
 
-  const handleSubmit = async () => {
-    const result = createApplicationFormSchema(t).safeParse({ name, description, version });
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((e) => {
-        if (e.path[0]) fieldErrors[String(e.path[0])] = e.message;
-      });
-      setErrors(fieldErrors);
-      return;
+  const {
+    fields,
+    errors,
+    isDirty,
+    firstErrorFieldId,
+    isSubmitting,
+    handleChange,
+    handleClear,
+    handleSubmit,
+  } = useApplicationForm({ item, onSave, onClose });
+
+  // Auto-focus the first input when the modal opens
+  const firstInputRef = useFocusInput({ inModal: true, enabled: true });
+
+  const onSubmit = async () => {
+    await handleSubmit();
+    // Scroll to first error field after validation failure
+    if (firstErrorFieldId) {
+      scrollToFirstError([firstErrorFieldId]);
     }
-    setErrors({});
-    await onSave({
-      name:        result.data.name,
-      description: result.data.description || undefined,
-      version:     result.data.version     || undefined,
-    });
   };
 
   return (
@@ -43,46 +52,51 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting })
       open
       title={item ? t('applications.editTitle') : t('applications.addTitle')}
       onClose={onClose}
-      onSubmit={handleSubmit}
-      submitting={submitting}
+      onSubmit={onSubmit}
+      submitting={submitting || isSubmitting}
+      submitDisabled={submitting || isSubmitting || !isDirty}
+      submitLabel={t('common.save')}
     >
-      <FormField>
+      <FormField fieldId="name">
         <AppTextInput
+          inputRef={firstInputRef}
           label={t('applications.form.name')}
-          value={name}
-          onChangeText={(v) => { setName(v); setErrors((e) => ({ ...e, name: '' })); }}
+          value={fields.name}
+          onChangeText={(v) => handleChange('name', v)}
           placeholder={t('applications.form.namePlaceholder')}
           error={errors.name}
           autoCapitalize="words"
           maxLength={100}
           showClearButton
-          onClear={() => { setName(''); setErrors((e) => ({ ...e, name: '' })); }}
+          onClear={() => handleClear('name')}
         />
       </FormField>
-      <FormField>
+
+      <FormField fieldId="version">
         <AppTextInput
           label={t('applications.form.version')}
-          value={version}
-          onChangeText={(v) => { setVersion(v); setErrors((e) => ({ ...e, version: '' })); }}
+          value={fields.version}
+          onChangeText={(v) => handleChange('version', v)}
           placeholder={t('applications.form.versionPlaceholder')}
           error={errors.version}
           autoCapitalize="none"
           maxLength={50}
           showClearButton
-          onClear={() => { setVersion(''); setErrors((e) => ({ ...e, version: '' })); }}
+          onClear={() => handleClear('version')}
         />
       </FormField>
-      <FormField>
+
+      <FormField fieldId="description">
         <AppTextInput
           label={t('applications.form.description')}
-          value={description}
-          onChangeText={(v) => { setDescription(v); setErrors((e) => ({ ...e, description: '' })); }}
+          value={fields.description}
+          onChangeText={(v) => handleChange('description', v)}
           placeholder={t('applications.form.descriptionPlaceholder')}
           error={errors.description}
           autoCapitalize="sentences"
           maxLength={500}
           showClearButton
-          onClear={() => { setDescription(''); setErrors((e) => ({ ...e, description: '' })); }}
+          onClear={() => handleClear('description')}
         />
       </FormField>
     </AdminFormModal>

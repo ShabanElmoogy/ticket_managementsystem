@@ -5,30 +5,53 @@ import {
   StyleSheet, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from '../../../shared/components';
 import { FormScrollProvider } from './FormScrollContext';
 import { useUiStore } from '../../../stores/uiStore';
 
 export interface AdminFormModalProps {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  onSubmit: () => void;
-  submitting?: boolean;
-  children: React.ReactNode;
+  open:             boolean;
+  title:            string;
+  onClose:          () => void;
+  onSubmit:         () => void;
+  submitting?:      boolean;
+  /** Disables the submit button — e.g. when form is not dirty */
+  submitDisabled?:  boolean;
+  /** Custom submit button label. Defaults to t('common.save') */
+  submitLabel?:     string;
+  children:         React.ReactNode;
 }
 
+/**
+ * AdminFormModal — bottom-sheet modal for admin CRUD forms.
+ *
+ * - KeyboardAvoidingView lifts the sheet above the keyboard
+ * - FormScrollProvider tracks field Y positions for auto-scroll on focus
+ * - submitDisabled: disables submit (e.g. !isDirty || submitting)
+ * - submitLabel: custom label (defaults to t('common.save'))
+ */
 const AdminFormModal: React.FC<AdminFormModalProps> = ({
-  open, title, onClose, onSubmit, submitting = false, children,
+  open,
+  title,
+  onClose,
+  onSubmit,
+  submitting     = false,
+  submitDisabled = false,
+  submitLabel,
+  children,
 }) => {
+  const { t }                  = useTranslation();
   const { colorMode, direction } = useUiStore();
-  const isDark = colorMode === 'dark';
-  const isRtl  = direction === 'rtl';
-  const insets = useSafeAreaInsets();
+  const isDark   = colorMode === 'dark';
+  const isRtl    = direction === 'rtl';
+  const insets   = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
 
-  const maxSheetHeight = screenHeight * 0.85;
+  const maxSheetHeight  = screenHeight * 0.85;
+  const resolvedLabel   = submitLabel ?? t('common.save');
+  const isDisabled      = submitDisabled || submitting;
 
   return (
     <Modal
@@ -51,9 +74,9 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
             style={[
               styles.sheet,
               {
-                maxHeight: maxSheetHeight,
+                maxHeight:       maxSheetHeight,
                 backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                direction: isRtl ? 'rtl' : 'ltr',
+                direction:       isRtl ? 'rtl' : 'ltr',
               },
             ]}
           >
@@ -62,17 +85,16 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               <View style={styles.handle} />
             </View>
 
-            {/* Header — fixed */}
-            <View style={[
-              styles.header,
-              { borderBottomColor: isDark ? '#334155' : '#f1f5f9' },
-            ]}>
+            {/* Header — fixed, never scrolls */}
+            <View style={[styles.header, { borderBottomColor: isDark ? '#334155' : '#f1f5f9' }]}>
               <Text style={[styles.headerTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>
                 {title}
               </Text>
               <Pressable
                 onPress={onClose}
                 style={[styles.closeBtn, { backgroundColor: isDark ? '#334155' : '#f3f4f6' }]}
+                accessibilityLabel={t('common.close')}
+                accessibilityRole="button"
               >
                 <Text style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 16 }}>✕</Text>
               </Pressable>
@@ -98,11 +120,12 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
                 color="primary"
                 fullWidth
                 loading={submitting}
-                loadingText="Saving…"
+                loadingText={t('common.saving')}
                 onPress={onSubmit}
+                disabled={isDisabled}
                 style={{ marginTop: 16 }}
               >
-                Save
+                {resolvedLabel}
               </AppButton>
             </ScrollView>
           </View>
