@@ -41,11 +41,13 @@ const ApplicationForm: React.FC<Props> = ({
     handleSubmit,
   } = useApplicationForm({ item, onSave, onClose });
 
-  // Auto-focus first input — no delay needed in page mode (OS handles it)
+  // Auto-focus first input
+  // Page mode: shorter delay (no modal animation to wait for)
+  // Modal mode: longer delay (wait for slide animation to complete)
   const firstInputRef = useFocusInput({
     inModal: mode === 'modal',
-    // In page mode the OS focuses the first input automatically via the screen transition
-    enabled: mode === 'modal',
+    enabled: true,
+    delay: mode === 'page' ? 100 : undefined,
   });
 
   // Stable per-field handlers
