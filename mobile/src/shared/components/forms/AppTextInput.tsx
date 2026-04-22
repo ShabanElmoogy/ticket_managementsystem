@@ -23,6 +23,8 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
   step?: number;
   /** Ref forwarded to the underlying TextInput — used for auto-focus */
   inputRef?: React.RefObject<TextInput | null>;
+  /** Ref to the next TextInput — pressing return key moves focus there */
+  nextRef?: React.RefObject<TextInput | null>;
 }
 
 const AppTextInput: React.FC<AppTextInputProps> = ({
@@ -39,6 +41,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   max,
   step = 1,
   inputRef,
+  nextRef,
   ...rest
 }) => {
   const [focused,      setFocused]      = useState(false);
@@ -177,6 +180,14 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           autoCorrect={false}
           maxLength={maxLength}
           placeholderTextColor="#9ca3af"
+          // If nextRef provided: show 'next' key and move focus on submit
+          // If no nextRef: show 'done' key and dismiss keyboard
+          returnKeyType={nextRef ? 'next' : 'done'}
+          onSubmitEditing={nextRef
+            ? () => nextRef.current?.focus()
+            : undefined
+          }
+          blurOnSubmit={!nextRef}
           {...rest}
         />
 

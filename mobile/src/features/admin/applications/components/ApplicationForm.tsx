@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
+import { TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
@@ -50,6 +51,10 @@ const ApplicationForm: React.FC<Props> = ({
     delay: mode === 'page' ? 100 : undefined,
   });
 
+  // Refs for next-field navigation (return key → next input)
+  const versionRef     = useRef<TextInput | null>(null);
+  const descriptionRef = useRef<TextInput | null>(null);
+
   // Stable per-field handlers
   const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
   const onChangeVersion     = useCallback((v: string) => handleChange('version', v),     [handleChange]);
@@ -75,6 +80,7 @@ const ApplicationForm: React.FC<Props> = ({
       <FormField fieldId="name">
         <AppTextInput
           inputRef={firstInputRef}
+          nextRef={versionRef}
           label={t('applications.form.name')}
           value={fields.name}
           onChangeText={onChangeName}
@@ -89,6 +95,8 @@ const ApplicationForm: React.FC<Props> = ({
 
       <FormField fieldId="version">
         <AppTextInput
+          inputRef={versionRef}
+          nextRef={descriptionRef}
           label={t('applications.form.version')}
           value={fields.version}
           onChangeText={onChangeVersion}
@@ -103,6 +111,7 @@ const ApplicationForm: React.FC<Props> = ({
 
       <FormField fieldId="description">
         <AppTextInput
+          inputRef={descriptionRef}
           label={t('applications.form.description')}
           value={fields.description}
           onChangeText={onChangeDescription}
