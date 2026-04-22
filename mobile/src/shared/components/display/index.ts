@@ -20,3 +20,6 @@ export type { StatItem } from './StatCard';
 export { default as SectionHeader } from './SectionHeader';
 
 export { default as ErrorBanner } from './ErrorBanner';
+
+export { default as InfoCard } from './InfoCard';
+export type { InfoCardProps, InfoCardSection } from './InfoCard';
