@@ -53,7 +53,8 @@
     "required": "{{field}} مطلوب",
     "minLength": "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
     "maxLength": "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
-    "invalidEmail": "البريد الإلكتروني غير صالح"
+    "invalidEmail": "البريد الإلكتروني غير صالح",
+    "endAfterStart": "تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء"
   },
   "applications": {
     "title": "التطبيقات",
@@ -133,11 +134,17 @@
     "detail": {
       "company": "الشركة",
       "address": "العنوان",
+      "contact": "معلومات الاتصال",
       "maintenance": "الصيانة",
       "maintenanceType": "النوع",
       "subscriptionStart": "تاريخ البدء",
       "subscriptionEnd": "تاريخ الانتهاء",
       "applications": "التطبيقات"
+    },
+    "maintenance": {
+      "monthly": "اشتراك شهري",
+      "trial": "تجربة مجانية",
+      "payAsYouGo": "الدفع حسب الاستخدام"
     },
     "messages": {
       "created": "تم إنشاء العميل بنجاح",

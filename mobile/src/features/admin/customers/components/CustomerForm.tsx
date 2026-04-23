@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useIsDark } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField      from '@/src/features/admin/shared/FormField';
@@ -25,6 +26,7 @@ const CustomerForm: React.FC<Props> = ({
 }) => {
   const { t }                  = useTranslation();
   const { scrollToFirstError } = useFormScroll();
+  const isDark                 = useIsDark();
 
   const {
     fields, errors, isDirty, firstErrorFieldId,
@@ -155,13 +157,13 @@ const CustomerForm: React.FC<Props> = ({
         <MaintenanceTypeSelector
           value={fields.maintenanceType}
           onChange={(v) => handleChange('maintenanceType', v)}
-          isDark={false}
+          isDark={isDark}
           t={t}
         />
       </FormField>
 
-      {/* ── Subscription dates (only when maintenance type is set) ── */}
-      {fields.maintenanceType && (
+      {/* ── Subscription dates — only for MONTHLY_SUBSCRIPTION and FREE_TRIAL ── */}
+      {fields.maintenanceType && fields.maintenanceType !== 'PAY_AS_YOU_GO' && (
         <>
           <FormField fieldId="subscriptionStartDate">
             <AppDatePicker
@@ -235,12 +237,6 @@ const CustomerForm: React.FC<Props> = ({
 
 // ── Maintenance type selector ─────────────────────────────────────────────────
 
-const MAINTENANCE_LABELS: Record<MaintenanceType, string> = {
-  MONTHLY_SUBSCRIPTION: 'Monthly Subscription',
-  FREE_TRIAL:           'Free Trial',
-  PAY_AS_YOU_GO:        'Pay As You Go',
-};
-
 interface SelectorProps {
   value:    MaintenanceType | null;
   onChange: (v: MaintenanceType | null) => void;
@@ -249,9 +245,16 @@ interface SelectorProps {
 }
 
 const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, isDark, t }) => {
-  const labelColor = isDark ? '#64748b' : '#374151';
+  const labelColor = isDark ? '#94a3b8' : '#374151';
   const border     = isDark ? '#334155' : '#d1d5db';
   const bg         = isDark ? '#1e293b' : '#ffffff';
+
+  // Labels via t() — RTL-safe
+  const MAINTENANCE_LABELS: Record<MaintenanceType, string> = {
+    MONTHLY_SUBSCRIPTION: t('customers.maintenance.monthly'),
+    FREE_TRIAL:           t('customers.maintenance.trial'),
+    PAY_AS_YOU_GO:        t('customers.maintenance.payAsYouGo'),
+  };
 
   return (
     <View style={{ marginBottom: 12 }}>
@@ -259,21 +262,6 @@ const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, isD
         {t('customers.detail.maintenanceType')}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {/* None option */}
-        <Pressable
-          onPress={() => onChange(null)}
-          style={{
-            paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
-            borderWidth: 1.5,
-            borderColor: value === null ? '#6b7280' : border,
-            backgroundColor: value === null ? '#6b728018' : bg,
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: value === null ? '#6b7280' : (isDark ? '#94a3b8' : '#6b7280') }}>
-            {t('common.inactive')}
-          </Text>
-        </Pressable>
-
         {MAINTENANCE_TYPES.map((type) => (
           <Pressable
             key={type}
@@ -282,7 +270,7 @@ const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, isD
               paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
               borderWidth: 1.5,
               borderColor: value === type ? '#3b82f6' : border,
-              backgroundColor: value === type ? '#eff6ff' : bg,
+              backgroundColor: value === type ? (isDark ? '#1e3a5f' : '#eff6ff') : bg,
             }}
           >
             <Text style={{ fontSize: 12, fontWeight: '600', color: value === type ? '#2563eb' : (isDark ? '#94a3b8' : '#6b7280') }}>

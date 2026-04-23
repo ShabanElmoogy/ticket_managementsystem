@@ -4,6 +4,9 @@ import type { TFunction } from 'i18next';
 export const MAINTENANCE_TYPES = ['MONTHLY_SUBSCRIPTION', 'FREE_TRIAL', 'PAY_AS_YOU_GO'] as const;
 export type MaintenanceType = typeof MAINTENANCE_TYPES[number];
 
+/** Types that require subscription start + end dates */
+const DATE_REQUIRED_TYPES: MaintenanceType[] = ['MONTHLY_SUBSCRIPTION', 'FREE_TRIAL'];
+
 /**
  * Returns the customer form schema with translated error messages.
  * Covers all fields accepted by POST/PUT /customers.
@@ -32,6 +35,40 @@ export const createCustomerFormSchema = (t: TFunction) =>
     maintenanceType: z.enum(MAINTENANCE_TYPES).nullable().optional(),
     subscriptionStartDate: z.string().nullable().optional(),
     subscriptionEndDate:   z.string().nullable().optional(),
-  });
+  })
+  // Cross-field: dates required when type is MONTHLY_SUBSCRIPTION or FREE_TRIAL
+  .refine(
+    (d) => {
+      if (!d.maintenanceType) return true;
+      if (!DATE_REQUIRED_TYPES.includes(d.maintenanceType)) return true;
+      return !!d.subscriptionStartDate;
+    },
+    {
+      message: t('validation.required', { field: t('customers.detail.subscriptionStart') }),
+      path: ['subscriptionStartDate'],
+    },
+  )
+  .refine(
+    (d) => {
+      if (!d.maintenanceType) return true;
+      if (!DATE_REQUIRED_TYPES.includes(d.maintenanceType)) return true;
+      return !!d.subscriptionEndDate;
+    },
+    {
+      message: t('validation.required', { field: t('customers.detail.subscriptionEnd') }),
+      path: ['subscriptionEndDate'],
+    },
+  )
+  // End date must be after start date
+  .refine(
+    (d) => {
+      if (!d.subscriptionStartDate || !d.subscriptionEndDate) return true;
+      return new Date(d.subscriptionEndDate) >= new Date(d.subscriptionStartDate);
+    },
+    {
+      message: t('validation.endAfterStart'),
+      path: ['subscriptionEndDate'],
+    },
+  );
 
 export type CustomerFormValues = z.infer<ReturnType<typeof createCustomerFormSchema>>;

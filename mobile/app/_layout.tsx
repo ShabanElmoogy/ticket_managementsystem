@@ -21,6 +21,7 @@ import NetworkErrorDialog from '@/src/components/NetworkErrorDialog';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/src/shared/components/feedback/AppToast';
 import { networkEvents } from '@/src/services/api/networkEvents';
+import { useTenantStore } from '@/src/stores/tenantStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +71,11 @@ export default function RootLayout() {
       if (tenantSlug) {
         tokenManager.setTenantSlug(tenantSlug);
         if (__DEV__) console.log('🏢 tenantSlug restored:', tenantSlug);
+      }
+
+      // 5. Sync tenant dateFormat from API (non-blocking — uses stored value if fails)
+      if (useAuthStore.getState().isAuthenticated) {
+        useTenantStore.getState().syncDateFormat();
       }
 
       // 4. Routes render now with correct auth state

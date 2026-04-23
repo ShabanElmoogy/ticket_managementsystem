@@ -1,42 +1,38 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useIsDark } from '@/src/constants/theme';
 
 export interface InfoField {
-  label: string;
-  value?: string | number | null;
-  /** Optional custom render — overrides value display */
+  label:   string;
+  value?:  string | number | null;
+  /** Emoji icon shown before the label */
+  icon?:   string;
+  /** Custom render — overrides value display */
   render?: () => React.ReactNode;
+  /** Accent color for the value text */
+  valueColor?: string;
 }
 
 interface Props {
-  /** Optional uppercase section title */
-  title?: string;
-  fields: InfoField[];
+  title?:  string;
+  fields:  InfoField[];
 }
 
 /**
- * DetailInfoCard — renders a list of label/value rows inside a card.
+ * DetailInfoCard — enhanced label/value rows inside a card.
  *
- * - Rows with null/undefined/empty value are hidden automatically
- * - `render` prop overrides the default text display for custom badges, etc.
- * - Returns null if all fields are empty
- *
- * Usage:
- *   <DetailInfoCard
- *     title="Contact"
- *     fields={[
- *       { label: 'Email', value: customer.email },
- *       { label: 'Status', render: () => <AppBadge label={customer.status} /> },
- *     ]}
- *   />
+ * - Optional emoji icon per row
+ * - Empty fields hidden automatically
+ * - `render` prop for custom content (badges, chips, etc.)
+ * - `valueColor` for colored values (e.g. expired dates in red)
  */
 const DetailInfoCard: React.FC<Props> = ({ title, fields }) => {
   const isDark     = useIsDark();
   const cardBg     = isDark ? '#1e293b' : '#ffffff';
-  const border     = isDark ? '#334155' : '#e5e7eb';
-  const textSec    = isDark ? '#94a3b8' : '#6b7280';
-  const labelColor = isDark ? '#64748b' : '#9ca3af';
+  const border     = isDark ? '#334155' : '#e2e8f0';
+  const rowBorder  = isDark ? '#1e293b22' : '#f8fafc';
+  const textVal    = isDark ? '#cbd5e1' : '#374151';
+  const labelColor = isDark ? '#64748b' : '#94a3b8';
 
   const visibleFields = fields.filter(
     (f) => f.render || (f.value !== null && f.value !== undefined && f.value !== ''),
@@ -45,39 +41,102 @@ const DetailInfoCard: React.FC<Props> = ({ title, fields }) => {
   if (visibleFields.length === 0) return null;
 
   return (
-    <View style={{ backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor: border, padding: 16 }}>
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor: border }]}>
       {title && (
-        <Text style={{
-          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
-          letterSpacing: 0.5, color: labelColor, marginBottom: 12,
-        }}>
-          {title}
-        </Text>
+        <View style={[styles.titleRow, { borderBottomColor: border }]}>
+          <Text style={[styles.title, { color: labelColor }]}>{title}</Text>
+        </View>
       )}
+
       {visibleFields.map((field, i) => (
         <View
           key={i}
-          style={{
-            flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-            marginBottom: i < visibleFields.length - 1 ? 10 : 0,
-          }}
+          style={[
+            styles.row,
+            i < visibleFields.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#f1f5f9' },
+          ]}
         >
-          {!!field.label && (
-            <Text style={{ fontSize: 12, color: labelColor, width: 100, paddingTop: 1, flexShrink: 0 }}>
-              {field.label}
-            </Text>
-          )}
-          {field.render ? (
-            <View style={{ flex: 1 }}>{field.render()}</View>
-          ) : (
-            <Text style={{ flex: 1, fontSize: 13, color: textSec, lineHeight: 20 }}>
-              {String(field.value)}
-            </Text>
-          )}
+          {/* Icon + label */}
+          <View style={styles.labelWrap}>
+            {field.icon && (
+              <Text style={styles.icon}>{field.icon}</Text>
+            )}
+            {!!field.label && (
+              <Text style={[styles.label, { color: labelColor }]}>{field.label}</Text>
+            )}
+          </View>
+
+          {/* Value */}
+          <View style={styles.valueWrap}>
+            {field.render ? (
+              field.render()
+            ) : (
+              <Text style={[styles.value, { color: field.valueColor ?? textVal }]}>
+                {String(field.value)}
+              </Text>
+            )}
+          </View>
         </View>
       ))}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  titleRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  labelWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    width: 110,
+    flexShrink: 0,
+  },
+  icon: {
+    fontSize: 14,
+    width: 20,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  valueWrap: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  value: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+});
 
 export default DetailInfoCard;

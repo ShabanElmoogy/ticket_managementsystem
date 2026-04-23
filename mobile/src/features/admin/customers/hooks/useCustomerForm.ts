@@ -37,16 +37,24 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
   const toast = useToast();
 
   const getInitial = useCallback(
-    (): CustomerFormValues => ({
-      name:                  item?.name                  ?? '',
-      email:                 item?.email                 ?? '',
-      phone:                 item?.phone                 ?? '',
-      company:               item?.company               ?? '',
-      address:               item?.address               ?? '',
-      maintenanceType:       (item?.maintenanceType as MaintenanceType | null) ?? null,
-      subscriptionStartDate: item?.subscriptionStartDate ?? '',
-      subscriptionEndDate:   item?.subscriptionEndDate   ?? '',
-    }),
+    (): CustomerFormValues => {
+      // API may return Date objects or ISO strings — normalize to YYYY-MM-DD
+      const toDateStr = (v: unknown): string => {
+        if (!v) return '';
+        const d = v instanceof Date ? v : new Date(v as string);
+        return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+      };
+      return {
+        name:                  item?.name                  ?? '',
+        email:                 item?.email                 ?? '',
+        phone:                 item?.phone                 ?? '',
+        company:               item?.company               ?? '',
+        address:               item?.address               ?? '',
+        maintenanceType:       (item?.maintenanceType as MaintenanceType | null) ?? null,
+        subscriptionStartDate: toDateStr(item?.subscriptionStartDate),
+        subscriptionEndDate:   toDateStr(item?.subscriptionEndDate),
+      };
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [item?.id],
   );
