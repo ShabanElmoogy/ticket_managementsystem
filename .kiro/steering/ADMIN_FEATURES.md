@@ -314,7 +314,7 @@ onClose();
 
 | View | Search | Action buttons | Layout |
 |---|---|---|---|
-| Table | Scrolls with content | 👁️ View · ✏️ Edit · ✕ Delete | Horizontal scroll |
+| Table | **Fixed above card** | 👁️ View · ✏️ Edit · ✕ Delete | Horizontal scroll |
 | Grid | **Fixed above card** | 👁️ View · ✏️ Edit · ✕ Delete (below separator) | Cards |
 | Compact | **Fixed above card** | 👁️ View · ✏️ Edit · ✕ Delete (right side) | Single-line rows |
 

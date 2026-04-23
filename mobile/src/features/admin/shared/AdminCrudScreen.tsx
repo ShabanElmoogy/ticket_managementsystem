@@ -337,23 +337,21 @@ function AdminCrudScreen<T extends { id: string }>({
         refreshingLabel={refreshingLabel}
       />
 
-      {/* Fixed search bar — same width as DataCard */}
-      {(view === 'grid' || view === 'compact') && (
-        <View style={{
-          marginTop: 8,
-          marginBottom: 4,
-        }}>
-          <AppSearchInput
-            value={search}
-            onChange={handleSearchChange}
-            isDark={isDark}
-            placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
-          />
-        </View>
-      )}
+      {/* Fixed search bar — same width as DataCard, all views */}
+      <View style={{
+        marginTop: 8,
+        marginBottom: 4,
+      }}>
+        <AppSearchInput
+          value={search}
+          onChange={handleSearchChange}
+          isDark={isDark}
+          placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
+        />
+      </View>
 
       {/* DataCard handles views, empty states */}
-      <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12, marginTop: view === 'table' ? 12 : 0 }}>
+      <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12 }}>
         <DataCard<T>
           title={title}
           isDark={isDark}

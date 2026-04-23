@@ -127,18 +127,10 @@ function DataCard<T extends { id: string }>({
   const emptyMsg    = isFiltered ? 'No results found' : 'No data available';
   const emptySub    = isFiltered ? `No rows match "${search}"` : undefined;
 
-  // ── Shared list header ────────────────────────────────────────────────────
+  // ── Table list header — no search (rendered outside by AdminCrudScreen) ──
   const ListHeader = useMemo(() => (
-    <View>
-      <AppSearchInput
-        value={search}
-        onChange={onSearchChange}
-        isDark={isDark}
-        placeholder={searchPlaceholder}
-      />
-      {headerExtras}
-    </View>
-  ), [search, onSearchChange, isDark, searchPlaceholder, headerExtras]);
+    headerExtras ? <View>{headerExtras}</View> : null
+  ), [headerExtras]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
