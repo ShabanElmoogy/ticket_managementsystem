@@ -70,9 +70,19 @@ export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
       field: 'name', headerName: t('customers.columns.name'), flex: 1, sortable: true,
     },
 
+    // Email — shown in table and used in PDF export
+    {
+      field: 'email', headerName: t('customers.columns.email'), width: 160, sortable: true,
+      renderCell: (row) => (
+        <Text style={{ fontSize: 11, color: '#475569' }} numberOfLines={1}>
+          {row.email || '—'}
+        </Text>
+      ),
+    },
+
     // Company — shown when available
     {
-      field: 'company', headerName: t('customers.detail.company'), width: 130, sortable: true,
+      field: 'company', headerName: t('customers.detail.company'), width: 120, sortable: true,
       renderCell: (row) => (
         <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>
           {row.company || '—'}

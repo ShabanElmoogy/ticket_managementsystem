@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { customersApi, customersKeys } from '../api/customers';
-import { exportEntityPdf } from '@/src/shared/utils/exportEntityPdf';
+import { exportCustomerPdf } from '../utils/exportCustomerPdf';
 import { getCustomerColumns } from '../components/customerColumns';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
@@ -43,7 +43,7 @@ export function useCustomers() {
 
   const handleExport = async () => {
     setExporting(true);
-    try { await exportEntityPdf(t('customers.title'), f.entities, columns); }
+    try { await exportCustomerPdf(f.entities, t); }
     finally { setExporting(false); }
   };
 

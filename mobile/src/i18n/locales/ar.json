@@ -94,6 +94,12 @@
       "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
     "export": "تصدير PDF",
+    "pdf": {
+      "totalApplications": "إجمالي التطبيقات",
+      "totalTickets": "إجمالي التذاكر",
+      "totalCustomers": "إجمالي العملاء",
+      "withVersion": "بإصدار محدد"
+    },
     "active": "نشط",
     "inactive": "غير نشط"
   },
@@ -155,7 +161,13 @@
       "errorDelete": "خطأ في حذف العميل",
       "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
     },
-    "export": "تصدير PDF"
+    "export": "تصدير PDF",
+    "pdf": {
+      "totalCustomers": "إجمالي العملاء",
+      "activeCustomers": "نشط",
+      "expiredCustomers": "منتهي",
+      "activeRate": "معدل النشاط"
+    }
   },
   "users": {
     "title": "المستخدمون",

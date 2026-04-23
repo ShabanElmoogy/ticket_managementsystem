@@ -142,6 +142,10 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 "customers.detail.contact"         → "Contact"
 "customers.form.datePlaceholder"   → "Select date"
 "customers.notFound"               → "Customer not found"
+"customers.pdf.totalCustomers"     → "Total Customers"
+"customers.pdf.activeCustomers"    → "Active / Trial"
+"customers.pdf.expiredCustomers"   → "Expired"
+"customers.pdf.activeRate"         → "Active Rate"
 ```
 
 ---
@@ -307,6 +311,96 @@ setErrors((prev) => {
 toast.success(item ? t('...updated') : t('...created'));
 onClose();
 ```
+
+---
+
+## PDF Export — Mobile Pattern
+
+Mobile PDF export uses `expo-print` + `expo-sharing` (not `jspdf`). The shared template lives in `src/shared/utils/`.
+
+### Shared utilities
+
+| File | Purpose |
+|---|---|
+| `src/shared/utils/pdfTemplate.ts` | `buildPdfPage(title, body)` — wraps HTML in a full styled page |
+| `src/shared/utils/htmlUtils.ts` | `esc(s)` — HTML-escape, `fmtDate(iso)` — locale date string |
+
+### Feature export file location
+
+```
+features/admin/<feature>/utils/export<Entity>Pdf.ts
+```
+
+### Pattern
+
+```ts
+import * as Print   from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { buildPdfPage } from '@/src/shared/utils/pdfTemplate';
+import { esc, fmtDate } from '@/src/shared/utils/htmlUtils';
+
+export async function exportEntityPdf(items: Entity[], t: TFunction): Promise<void> {
+  const head = `<tr><th>Name</th>...</tr>`;
+  const body = items.map((item) => `<tr><td>${esc(item.name)}</td>...</tr>`).join('');
+  const html = buildPdfPage(t('entity.title'), `<table><thead>${head}</thead><tbody>${body}</tbody></table>`);
+
+  const { uri } = await Print.printToFileAsync({ html, base64: false });
+
+  const canShare = await Sharing.isAvailableAsync();
+  if (canShare) {
+    await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+  } else {
+    await Print.printAsync({ uri });
+  }
+}
+```
+
+### Customer-specific additions
+
+`exportCustomerPdf` adds a **summary stats row** above the table (total / active / expired / active rate) and uses:
+- `statusBadge(status)` — inline HTML badge with status colors
+- `endDateCell(iso)` — 3-state color (green / amber ≤30 days / red expired)
+- `getCustomerStatus(c)` from `customerColumns` as fallback when `subscriptionStatus` is absent
+
+### Application-specific additions
+
+`exportApplicationPdf` adds a **4-card summary stats row** above the table and uses:
+- `buildSummary(apps, t)` — renders 4 stat cards: total apps (blue), total tickets (amber), total customers (green), apps with version (purple)
+- `countBadge(count, bg, color, border)` — reusable inline HTML badge for ticket/customer counts
+- Version cell: monospace blue badge when present, gray `—` when absent
+- Description column: truncated to 60 chars with `…` suffix
+- `dialogTitle` passed to `Sharing.shareAsync` for a labelled share sheet
+
+**Summary card colors:**
+
+| Stat | Background | Text color |
+|---|---|---|
+| Total apps | `#eff6ff` blue | `#1d4ed8` |
+| Total tickets | `#fef3c7` amber | `#b45309` |
+| Total customers | `#f0fdf4` green | `#16a34a` |
+| With version | `#f5f3ff` purple | `#7c3aed` |
+
+### Application PDF locale keys
+
+```json
+"applications.pdf.totalApplications" → "Total Applications"
+"applications.pdf.totalTickets"      → "Total Tickets"
+"applications.pdf.totalCustomers"    → "Total Customers"
+"applications.pdf.withVersion"       → "With Version"
+"applications.columns.name"          → "Name"
+"applications.columns.version"       → "Version"
+"applications.columns.tickets"       → "Tickets"
+"applications.columns.customers"     → "Customers"
+"applications.columns.created"       → "Created"
+```
+
+### CSS classes available in `PDF_CSS`
+
+Status: `.open` `.in_progress` `.resolved` `.closed`  
+Priority: `.low` `.medium` `.high` `.urgent`  
+Misc: `.badge` `.overdue` `.ontime` `.pct-open` `.pct-res` `.total`
+
+Use `class="badge"` with inline `style` for custom colors (status, subscription type).
 
 ---
 

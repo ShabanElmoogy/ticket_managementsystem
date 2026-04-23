@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { applicationsApi, applicationsKeys } from '../api/applications';
-import { exportEntityPdf } from '@/src/shared/utils/exportEntityPdf';
+import { exportApplicationPdf } from '../utils/exportApplicationPdf';
 import { getApplicationColumns } from '../components/applicationColumns';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
@@ -43,7 +43,7 @@ export function useApplications() {
 
   const handleExport = async () => {
     setExporting(true);
-    try { await exportEntityPdf(t('applications.title'), f.entities, columns); }
+    try { await exportApplicationPdf(f.entities, t); }
     finally { setExporting(false); }
   };
 

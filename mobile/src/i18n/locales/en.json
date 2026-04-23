@@ -94,6 +94,12 @@
       "validationError": "Please fix the errors before saving"
     },
     "export": "Export PDF",
+    "pdf": {
+      "totalApplications": "Total Applications",
+      "totalTickets": "Total Tickets",
+      "totalCustomers": "Total Customers",
+      "withVersion": "With Version"
+    },
     "active": "ACTIVE",
     "inactive": "INACTIVE"
   },
@@ -155,7 +161,13 @@
       "errorDelete": "Error deleting customer",
       "validationError": "Please fix the errors before saving"
     },
-    "export": "Export PDF"
+    "export": "Export PDF",
+    "pdf": {
+      "totalCustomers": "Total Customers",
+      "activeCustomers": "Active",
+      "expiredCustomers": "Expired",
+      "activeRate": "Active Rate"
+    }
   },
   "users": {
     "title": "Users",
