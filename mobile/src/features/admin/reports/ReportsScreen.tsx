@@ -28,7 +28,7 @@ const ReportsScreen: React.FC = () => {
     <View style={{ flex: 1, backgroundColor: bg }}>
 
       {/* Header */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+      <View style={{ paddingHorizontal: 4, paddingTop: 16, paddingBottom: 12 }}>
         <ReportsHeader
           isDark={isDark}
           view={view}

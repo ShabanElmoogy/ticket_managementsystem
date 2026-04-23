@@ -40,6 +40,12 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   refreshingLabel?: string;
   /** Shown as a toast after successful delete */
   deleteSuccessMessage?: string;
+  /**
+   * Called when onDelete throws. Receives the item that failed and the error.
+   * Use this to show a secondary dialog (e.g. force-delete) instead of the
+   * default silent error handling.
+   */
+  onDeleteFailed?: (item: T, error: unknown) => void;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
@@ -210,7 +216,7 @@ function AdminCrudScreen<T extends { id: string }>({
   onExport, exporting = false, onRefresh,
   searchPlaceholder, emptyMessage, emptyFilteredMessage,
   addLabel, exportLabel, exportingLabel, refreshLabel, refreshingLabel,
-  deleteSuccessMessage,
+  deleteSuccessMessage, onDeleteFailed,
 }: AdminCrudScreenProps<T>) {
   const { colorMode, setAdminView } = useUiStore();
   const toast  = useToast();
@@ -226,14 +232,18 @@ function AdminCrudScreen<T extends { id: string }>({
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    const targetSnapshot = deleteTarget; // capture before any state updates
     setDeleting(true);
     try {
-      await onDelete(deleteTarget.id);
+      await onDelete(targetSnapshot.id);
       toast.success(deleteSuccessMessage ?? 'Deleted successfully');
       setDeleteTarget(null);
-    } catch {
-      // Error is handled globally by NetworkErrorDialog — no toast here
+    } catch (error) {
       setDeleteTarget(null);
+      // Let the caller intercept the error (e.g. to show a force-delete dialog)
+      // Pass the snapshot — deleteTarget is already null by the time this runs
+      if (onDeleteFailed) onDeleteFailed(targetSnapshot, error);
+      // Otherwise NetworkErrorDialog handles it globally
     } finally {
       setDeleting(false);
     }

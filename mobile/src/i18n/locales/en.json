@@ -172,6 +172,7 @@
   "users": {
     "title": "Users",
     "itemType": "user",
+    "notFound": "User not found",
     "addTitle": "Add User",
     "editTitle": "Edit User",
     "searchPlaceholder": "Search users…",
@@ -181,7 +182,15 @@
       "name": "Name",
       "email": "Email",
       "phone": "Phone",
-      "role": "Role"
+      "role": "Role",
+      "tickets": "Tickets",
+      "created": "Created"
+    },
+    "roles": {
+      "superAdmin":  "Super Admin",
+      "tenantAdmin": "Admin",
+      "employee":    "Employee",
+      "programmer":  "Programmer"
     },
     "form": {
       "name": "Name *",
@@ -194,13 +203,37 @@
       "phone": "Phone",
       "phonePlaceholder": "+1234567890"
     },
+    "detail": {
+      "accountInfo":       "Account Info",
+      "notifications":     "Notifications",
+      "tenant":            "Tenant",
+      "assignedTickets":   "Assigned",
+      "createdTickets":    "Created",
+      "comments":          "Comments",
+      "reminders":         "Reminders",
+      "reminderInterval":  "Interval",
+      "whatsapp":          "WhatsApp"
+    },
     "messages": {
       "created": "User created successfully",
       "updated": "User updated successfully",
       "deleted": "User deleted successfully",
+      "forceDeleted": "User and all related data deleted",
       "errorCreate": "Error creating user",
       "errorUpdate": "Error updating user",
-      "errorDelete": "Error deleting user"
+      "errorDelete": "Error deleting user",
+      "validationError": "Please fix the errors before saving"
+    },
+    "forceDelete": {
+      "title": "Force Delete User",
+      "message": "\"{{name}}\" has tickets or comments. This will permanently delete the user and all their related data.",
+      "confirmLabel": "Delete Everything"
+    },
+    "pdf": {
+      "totalUsers":   "Total Users",
+      "admins":       "Admins",
+      "employees":    "Employees",
+      "programmers":  "Programmers"
     }
   },
   "tenants": {

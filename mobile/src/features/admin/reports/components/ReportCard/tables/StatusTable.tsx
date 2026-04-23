@@ -1,13 +1,10 @@
 import React, { useMemo } from 'react';
+import { View, Text } from 'react-native';
 import { AppDataTable, type ColDef } from '../../../../../../shared/components';
 import { W } from '../../../../../../shared/components';
 import type { SortState } from '../../../../../../shared/components';
 import type { CustomerStatusRow } from '../../../types';
-import {
-  createBadgeColumn,
-  createTotalColumn,
-  createPercentColumn,
-} from '../../../../../../shared/utils/tableUtils';
+import { createTotalColumn } from '../../../../../../shared/utils/tableUtils';
 
 interface Props {
   rows: CustomerStatusRow[];
@@ -16,15 +13,48 @@ interface Props {
   onSort: (field: string) => void;
 }
 
+/** Renders a count + percentage stacked in one cell */
+function CountPctCell({ count, pct, color }: { count: number; pct: number; color: string }) {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color }}>{count}</Text>
+      <Text style={{ fontSize: 10, color, opacity: 0.75 }}>{pct.toFixed(1)}%</Text>
+    </View>
+  );
+}
+
 const StatusTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
   const columns = useMemo<ColDef<CustomerStatusRow>[]>(() => [
     { field: 'customerName', headerName: 'Customer',  width: W.customer, align: 'left' },
     createTotalColumn<CustomerStatusRow>(isDark),
-    createBadgeColumn<CustomerStatusRow>('open',       'Open',     '#f59e0b'),
-    createBadgeColumn<CustomerStatusRow>('inProgress', 'In Prog.', '#8b5cf6'),
-    createBadgeColumn<CustomerStatusRow>('resolved',   'Resolved', '#10b981'),
-    createPercentColumn<CustomerStatusRow>('openPct',     'Open %', '#f59e0b'),
-    createPercentColumn<CustomerStatusRow>('resolvedPct', 'Res. %', '#10b981'),
+    // Open: count + % stacked — the key differentiator from SummaryTable
+    {
+      field: 'open',
+      headerName: 'Open / %',
+      width: 80,
+      align: 'center',
+      renderCell: (r) => <CountPctCell count={r.open} pct={r.openPct} color="#f59e0b" />,
+    },
+    // In Progress: count only
+    {
+      field: 'inProgress',
+      headerName: 'In Prog.',
+      width: W.num,
+      align: 'center',
+      renderCell: (r) => (
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#8b5cf6' }}>{r.inProgress}</Text>
+      ),
+    },
+    // Resolved + Closed combined with resolution %
+    {
+      field: 'resolved',
+      headerName: 'Res+Closed / %',
+      width: 100,
+      align: 'center',
+      renderCell: (r) => (
+        <CountPctCell count={r.resolved + r.closed} pct={r.resolvedPct} color="#10b981" />
+      ),
+    },
   ], [isDark]);
 
   return (

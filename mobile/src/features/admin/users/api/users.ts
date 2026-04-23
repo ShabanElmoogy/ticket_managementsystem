@@ -8,8 +8,15 @@ export class UsersApiService extends BaseApiService {
   createUser        = (data: CreateUserData)                   => this.post<User>('/users', data);
   createTenantUser  = (data: CreateUserData)                   => this.post<User>('/users/tenant', data);
   updateUser        = (id: string, data: UpdateUserData)       => this.put<User>(`/users/${id}`, data);
+  updateTenantUser  = (id: string, data: UpdateUserData)       => this.put<User>(`/users/tenant/${id}`, data);
   deleteUser        = (id: string, opts?: { force?: boolean }) =>
     this.delete<{ message: string }>(`/users/${id}`, { params: opts?.force ? { force: 'true' } : undefined });
+  forceDeleteUser   = (id: string) =>
+    this.delete<{ message: string }>(`/users/${id}`, { params: { force: 'true' } });
+  deleteTenantUser      = (id: string) =>
+    this.delete<{ message: string }>(`/users/tenant/${id}`);
+  forceTenantDeleteUser = (id: string) =>
+    this.delete<{ message: string }>(`/users/tenant/${id}`, { params: { force: 'true' } });
   resetPassword     = (id: string, password: string)          => this.post<{ message: string }>(`/users/${id}/reset-password`, { password });
   resetTenantUserPassword = (id: string, password: string)    => this.post<{ message: string }>(`/users/tenant/${id}/reset-password`, { password });
   getUserStats      = ()                                        => this.get<UserStats>('/users/stats');

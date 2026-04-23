@@ -32,10 +32,12 @@ function FilterChipGroup<T>({
     keyExtractor ? keyExtractor(v) : String(i);
 
   return (
-    <View style={{ marginTop: 8 }}>
+    <View style={{ marginTop: 8 , marginStart : 10 }}>
       {title && (
         <Text style={{
-          fontSize: 10, fontWeight: '700', textTransform: 'uppercase',
+          fontSize: 10, 
+          fontWeight: '700', 
+          textTransform: 'uppercase',
           letterSpacing: 0.5, color: isDark ? '#475569' : '#94a3b8',
           marginBottom: 6,
         }}>
@@ -54,7 +56,9 @@ function FilterChipGroup<T>({
               key={getKey(opt.value, i)}
               onPress={() => onChange(opt.value)}
               style={{
-                paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
+                paddingHorizontal: 12, 
+                paddingVertical: 6, 
+                borderRadius: 16,
                 backgroundColor: active ? activeColor : (isDark ? '#1e293b' : '#fff'),
                 borderWidth: 1.5,
                 borderColor: active ? activeColor : (isDark ? '#334155' : '#e2e8f0'),

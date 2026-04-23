@@ -10,8 +10,10 @@ const ReportCompactRow: React.FC<Props> = ({ row, isDark }) => {
   const name: string     = row.customerName ?? row.title ?? '—';
 
   const summary =
-    type === 'summary' || type === 'customers-status'
-      ? `Open: ${row.open ?? 0}  ·  Resolved: ${row.resolved ?? 0}  ·  Total: ${row.total ?? 0}`
+    type === 'summary'
+      ? `Open: ${row.open ?? 0}  ·  In Prog: ${row.inProgress ?? 0}  ·  Resolved: ${row.resolved ?? 0}  ·  Closed: ${row.closed ?? 0}`
+      : type === 'customers-status'
+      ? `Open: ${row.open ?? 0} (${(row.openPct ?? 0).toFixed(1)}%)  ·  Resolved: ${(row.resolvedPct ?? 0).toFixed(1)}% done`
       : type === 'customers-activity'
       ? `Created: ${row.created7 ?? 0}  ·  Closed: ${row.closed7 ?? 0}`
       : type === 'sla'

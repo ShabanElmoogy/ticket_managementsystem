@@ -191,6 +191,116 @@ removeCustomer(applicationId, customerId)         // DELETE /applications/:id/cu
 
 ---
 
+## Users Feature
+
+### Form Fields
+
+**Required:** Name · Email · Role
+
+**Optional:** Phone
+
+**Password:** Required on create (min 6 chars), optional on edit (leave blank to keep existing)
+
+### Schema Pattern
+
+The Users schema uses an `isEdit` flag to conditionally require password:
+
+```ts
+export const createUserFormSchema = (t: TFunction, isEdit: boolean) =>
+  z.object({
+    name:     z.string().trim().min(2).max(100),
+    email:    z.string().trim().check(z.email(...)),   // Zod v4 syntax
+    password: isEdit
+      ? z.string().max(100).optional().or(z.literal(''))
+      : z.string().min(6).max(100),
+    phone:    z.string().trim().max(30).optional().or(z.literal('')),
+    role:     z.enum(USER_ROLES),
+  });
+```
+
+**Note:** Email validation uses Zod v4 `.check(z.email())` syntax — not `.email()` directly on the string chain.
+
+### Role Options
+
+```ts
+export const USER_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER'] as const;
+export type UserRoleOption = typeof USER_ROLES[number];
+```
+
+`ROLE_CONFIG` (from `userColumns.tsx`) maps each role to `{ color, bg, label }` and is reused in the detail screen hero card. `RoleBadge` is a standalone component exported from `userColumns.tsx` — use it wherever a role chip is needed.
+
+### Detail Screen Layout
+
+1. **Hero card** — role-colored accent bar, initials avatar, name + email, `RoleBadge`, quick info row (phone + tenant name)
+2. **Stats row** — assigned tickets (blue) · created tickets (green) · comments (purple) — all from `_count`
+3. **Account info card** — email, phone, tenant name, role (`RoleBadge` via `render`), created date
+4. **Notification settings card** — shown only when `reminderEnabled` or `whatsappNotifications` is present; includes reminder interval when enabled
+
+### Role-based detail fetching
+
+`UserDetailScreen` accepts two props to handle the fact that `GET /users/:id` is only accessible to super admins:
+
+```tsx
+<UserDetailScreen
+  userId={id}
+  isSuperAdmin={isSuperAdmin}   // true → calls GET /users/:id
+  initialData={userFromList}    // pre-loaded User from the list query
+/>
+```
+
+**Pattern:**
+- `isSuperAdmin = true` → `queryFn` calls `usersApi.getUser(userId)` for full detail
+- `isSuperAdmin = false` → cache is seeded with `initialData` via `queryClient.setQueryData()` in a `useEffect`, and `queryFn` resolves to `initialData` directly (no network call)
+
+```ts
+// Seed cache for tenant admins so the screen shows instantly
+React.useEffect(() => {
+  if (!isSuperAdmin && initialData) {
+    queryClient.setQueryData(usersKeys.detail(userId), initialData);
+  }
+}, [isSuperAdmin, initialData, userId, queryClient]);
+
+const { data: user } = useQuery({
+  queryKey: usersKeys.detail(userId),
+  queryFn:  isSuperAdmin
+    ? () => usersApi.getUser(userId)
+    : () => Promise.resolve(initialData ?? null),
+  staleTime: 2 * 60_000,
+  enabled:  queryEnabled,
+});
+```
+
+Use this pattern for any detail screen where the full-detail endpoint is role-restricted.
+
+### Locale Keys
+
+```json
+"users.itemType"                   → "user"
+"users.messages.validationError"   → "Please fix the errors below"
+"users.messages.created"           → "User created"
+"users.messages.updated"           → "User updated"
+"users.messages.errorCreate"       → "Error creating user"
+"users.messages.errorUpdate"       → "Error updating user"
+"users.messages.deleted"           → "User deleted"
+"users.messages.errorDelete"       → "Error deleting user"
+"users.notFound"                   → "User not found"
+"users.columns.email"              → "Email"
+"users.columns.phone"              → "Phone"
+"users.columns.role"               → "Role"
+"users.columns.created"            → "Created"
+"users.detail.accountInfo"         → "Account Info"
+"users.detail.tenant"              → "Tenant"
+"users.detail.assignedTickets"     → "Assigned Tickets"
+"users.detail.createdTickets"      → "Created Tickets"
+"users.detail.comments"            → "Comments"
+"users.detail.notifications"       → "Notifications"
+"users.detail.reminders"           → "Reminders"
+"users.detail.reminderInterval"    → "Reminder Interval"
+"users.detail.whatsapp"            → "WhatsApp"
+```
+
+---
+
 ## Shared Infrastructure
 
 ### `AdminDetailScreen`
@@ -300,17 +410,63 @@ const toDateStr = (v: unknown): string => {
   return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
 };
 
+// getInitial — memoize with item?.id so it resets when a different item is opened
+const getInitial = useCallback((): FormFields => ({
+  name: item?.name ?? '',
+  // ...
+}), [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+// Reset all state when item changes
+useEffect(() => {
+  setFields(getInitial());
+  setErrors({});
+  setIsDirty(false);
+  setFirstErrorFieldId(null);
+}, [getInitial]);
+
+// Dirty check — compare current fields against getInitial()
+const checkDirty = useCallback((next: FormFields): boolean => {
+  const initial = getInitial();
+  return (Object.keys(next) as Array<keyof FormFields>).some((k) => next[k] !== initial[k]);
+}, [getInitial]);
+
 // Errors: delete, never set to ''
 setErrors((prev) => {
+  if (!(field in prev)) return prev;  // skip re-render if field has no error
   const next = { ...prev };
   delete next[field];
   return next;
 });
 
+// firstErrorFieldId — set after failed validation so the form can scroll to it
+const ORDER: Array<keyof FormFields> = ['name', 'email', 'password', 'phone', 'role'];
+setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
+
 // Toast BEFORE onClose — page unmounts on close
 toast.success(item ? t('...updated') : t('...created'));
 onClose();
 ```
+
+### Form hook return shape
+
+All `use<Feature>Form` hooks return this consistent interface:
+
+```ts
+interface UseFeatureFormReturn {
+  fields:            FormFields;
+  errors:            Record<string, string>;
+  isDirty:           boolean;
+  firstErrorFieldId: string | null;   // key of first invalid field — use to scroll on submit
+  isSubmitting:      boolean;
+  handleChange:      (field: keyof FormFields, value: string) => void;
+  handleClear:       (field: keyof FormFields) => void;  // sets field to ''
+  handleSubmit:      () => Promise<void>;
+}
+```
+
+- `firstErrorFieldId` — the form component uses this to scroll/focus the first invalid field after a failed submit
+- `handleClear` — convenience wrapper: `(field) => handleChange(field, '')`
+- `isDirty` — computed by comparing current fields against `getInitial()` on every `handleChange`
 
 ---
 

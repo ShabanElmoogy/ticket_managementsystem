@@ -172,6 +172,7 @@
   "users": {
     "title": "المستخدمون",
     "itemType": "مستخدم",
+    "notFound": "المستخدم غير موجود",
     "addTitle": "إضافة مستخدم",
     "editTitle": "تعديل المستخدم",
     "searchPlaceholder": "البحث في المستخدمين…",
@@ -181,7 +182,15 @@
       "name": "الاسم",
       "email": "البريد الإلكتروني",
       "phone": "الهاتف",
-      "role": "الدور"
+      "role": "الدور",
+      "tickets": "التذاكر",
+      "created": "تاريخ الإنشاء"
+    },
+    "roles": {
+      "superAdmin":  "مدير عام",
+      "tenantAdmin": "مدير",
+      "employee":    "موظف",
+      "programmer":  "مبرمج"
     },
     "form": {
       "name": "الاسم *",
@@ -194,13 +203,37 @@
       "phone": "الهاتف",
       "phonePlaceholder": "+1234567890"
     },
+    "detail": {
+      "accountInfo":       "معلومات الحساب",
+      "notifications":     "الإشعارات",
+      "tenant":            "المستأجر",
+      "assignedTickets":   "مسندة",
+      "createdTickets":    "أنشأها",
+      "comments":          "تعليقات",
+      "reminders":         "التذكيرات",
+      "reminderInterval":  "الفترة",
+      "whatsapp":          "واتساب"
+    },
     "messages": {
       "created": "تم إنشاء المستخدم بنجاح",
       "updated": "تم تحديث المستخدم بنجاح",
       "deleted": "تم حذف المستخدم بنجاح",
+      "forceDeleted": "تم حذف المستخدم وجميع بياناته المرتبطة",
       "errorCreate": "خطأ في إنشاء المستخدم",
       "errorUpdate": "خطأ في تحديث المستخدم",
-      "errorDelete": "خطأ في حذف المستخدم"
+      "errorDelete": "خطأ في حذف المستخدم",
+      "validationError": "يرجى تصحيح الأخطاء قبل الحفظ"
+    },
+    "forceDelete": {
+      "title": "حذف إجباري للمستخدم",
+      "message": "\"{{name}}\" لديه تذاكر أو تعليقات. سيؤدي هذا إلى حذف المستخدم وجميع بياناته المرتبطة نهائياً.",
+      "confirmLabel": "حذف كل شيء"
+    },
+    "pdf": {
+      "totalUsers":   "إجمالي المستخدمين",
+      "admins":       "المديرون",
+      "employees":    "الموظفون",
+      "programmers":  "المبرمجون"
     }
   },
   "tenants": {

@@ -13,11 +13,17 @@ const ReportGridCard: React.FC<Props> = ({ row, isDark }) => {
   // ── Build stat badges ────────────────────────────────────────────────────
   const stats: StatItem[] = [];
 
-  if (type === 'summary' || type === 'customers-status') {
+  if (type === 'summary') {
     if (row.open       != null) stats.push({ label: 'Open',     value: row.open,        color: '#f59e0b' });
     if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,  color: '#8b5cf6' });
     if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,    color: '#10b981' });
     if (row.closed     != null) stats.push({ label: 'Closed',   value: row.closed,      color: '#64748b' });
+  } else if (type === 'customers-status') {
+    if (row.open       != null) stats.push({ label: 'Open',     value: row.open,                          color: '#f59e0b' });
+    if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,                    color: '#8b5cf6' });
+    if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,                      color: '#10b981' });
+    if (row.openPct    != null) stats.push({ label: 'Open %',   value: Math.round(row.openPct),           color: '#f59e0b' });
+    if (row.resolvedPct != null) stats.push({ label: 'Res. %',  value: Math.round(row.resolvedPct),       color: '#10b981' });
   } else if (type === 'customers-activity') {
     if (row.created7   != null) stats.push({ label: 'Created',  value: row.created7,    color: '#3b82f6' });
     if (row.closed7    != null) stats.push({ label: 'Closed',   value: row.closed7,     color: '#10b981' });
