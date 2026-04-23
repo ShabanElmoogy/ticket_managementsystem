@@ -17,6 +17,8 @@ export interface AdminFormPageProps {
   submitting?:     boolean;
   submitDisabled?: boolean;
   submitLabel?:    string;
+  /** When false, button shows muted "fill required fields" hint */
+  isDirty?:        boolean;
   children:        React.ReactNode;
 }
 
@@ -39,6 +41,7 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
   submitting     = false,
   submitDisabled = false,
   submitLabel,
+  isDirty        = true,
   children,
 }) => {
   const { t }       = useTranslation();
@@ -51,6 +54,10 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
 
   const resolvedLabel = submitLabel ?? t('common.save');
   const isDisabled    = submitDisabled || submitting;
+
+  // Button label + color based on form state
+  const btnLabel  = submitting ? t('common.saving') : !isDirty ? t('common.fillRequired') : resolvedLabel;
+  const btnColor  = !isDirty && !submitting ? 'secondary' : 'primary';
 
   const bg         = isDark ? '#0f172a' : '#f8fafc';
   const headerBg   = isDark ? '#1e293b' : '#ffffff';
@@ -119,7 +126,7 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
 
             <AppButton
               variant="contained"
-              color="primary"
+              color={btnColor}
               fullWidth
               loading={submitting}
               loadingText={t('common.saving')}
@@ -127,7 +134,7 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
               disabled={isDisabled}
               style={styles.submitBtn}
             >
-              {resolvedLabel}
+              {btnLabel}
             </AppButton>
           </ScrollView>
         </KeyboardAvoidingView>

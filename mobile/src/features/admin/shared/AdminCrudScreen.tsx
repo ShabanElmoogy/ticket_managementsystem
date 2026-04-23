@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
+import { AppSearchInput } from '../../../shared/components';
 import { useUiStore } from '../../../stores/uiStore';
 import { useToast } from '../../../shared/hooks/useToast';
 
@@ -44,104 +45,159 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
 // ── Auto-generated grid card ───────────────────────────────────────────────
 
 function AutoCard<T extends { id: string }>({
-  item, columns, onEdit, onDelete: onDel, isDark,
+  item, columns, onView, onEdit, onDelete: onDel, isDark,
 }: {
   item: T; columns: ColDef<T>[];
+  onView?: () => void;
   onEdit: () => void; onDelete: () => void;
   isDark: boolean;
 }) {
   const visibleCols = columns.filter((c) => c.field !== '__actions__');
   return (
-    <View style={{
-      width: '100%',
-      marginBottom: 10,
-      padding: 14,
-      borderRadius: 10,
-      borderWidth: 1,
-      backgroundColor: isDark ? '#1e293b' : '#ffffff',
-      borderColor: isDark ? '#334155' : '#e5e7eb',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: isDark ? 0 : 0.05,
-      shadowRadius: 3,
-      elevation: 1,
-    }}>
-      {visibleCols.map((col, i) => {
-        const val = col.valueGetter ? col.valueGetter(item) : (item as any)[col.field as string];
-        return (
-          <View key={String(col.field)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: i > 0 ? 6 : 0 }}>
-            <Text style={{ fontSize: 11, width: 80, flexShrink: 0, color: isDark ? '#64748b' : '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={1}>
-              {col.headerName}
-            </Text>
-            {col.renderCell ? (
-              <View style={{ flex: 1, minWidth: 0 }}>{col.renderCell(item)}</View>
-            ) : (
-              <Text style={{ fontSize: 13, flex: 1, fontWeight: i === 0 ? '600' : '400', color: isDark ? (i === 0 ? '#f1f5f9' : '#cbd5e1') : (i === 0 ? '#111827' : '#4b5563') }} numberOfLines={2}>
-                {val == null || val === '' ? '—' : String(val)}
-              </Text>
-            )}
-          </View>
-        );
+    <Pressable
+      onPress={onView}
+      style={({ pressed }) => ({
+        width: '100%',
+        marginBottom: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        overflow: 'hidden',
+        backgroundColor: pressed
+          ? (isDark ? '#273549' : '#f1f5f9')
+          : (isDark ? '#1e293b' : '#ffffff'),
+        borderColor: isDark ? '#334155' : '#e5e7eb',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: isDark ? 0 : 0.05,
+        shadowRadius: 3,
+        elevation: 1,
       })}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? '#334155' : '#f1f5f9' }}>
-        <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#eff6ff' }}>
-          <Text style={{ fontSize: 13 }}>✏️</Text>
-          <Text style={{ fontSize: 12, color: '#2563eb', fontWeight: '600' }}>Edit</Text>
+    >
+      {/* ── Field rows ── */}
+      <View style={{ padding: 14 }}>
+        {visibleCols.map((col, i) => {
+          const val = col.valueGetter ? col.valueGetter(item) : (item as any)[col.field as string];
+          return (
+            <View key={String(col.field)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: i > 0 ? 6 : 0 }}>
+              <Text style={{ fontSize: 11, width: 80, flexShrink: 0, color: isDark ? '#64748b' : '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={1}>
+                {col.headerName}
+              </Text>
+              {col.renderCell ? (
+                <View style={{ flex: 1, minWidth: 0 }}>{col.renderCell(item)}</View>
+              ) : (
+                <Text style={{ fontSize: 13, flex: 1, fontWeight: i === 0 ? '600' : '400', color: isDark ? (i === 0 ? '#f1f5f9' : '#cbd5e1') : (i === 0 ? '#111827' : '#4b5563') }} numberOfLines={2}>
+                  {val == null || val === '' ? '—' : String(val)}
+                </Text>
+              )}
+            </View>
+          );
+        })}
+      </View>
+
+      {/* ── Action buttons ── */}
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+      }}>
+        {onView && (
+          <Pressable onPress={onView} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff' }}>
+            <Text style={{ fontSize: 12 }}>👁️</Text>
+            <Text style={{ fontSize: 11, color: '#3b82f6', fontWeight: '600' }}>View</Text>
+          </Pressable>
+        )}
+        <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff' }}>
+          <Text style={{ fontSize: 12 }}>✏️</Text>
+          <Text style={{ fontSize: 11, color: '#2563eb', fontWeight: '600' }}>Edit</Text>
         </Pressable>
-        <Pressable onPress={onDel} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#fef2f2' }}>
-          <Text style={{ color: '#ef4444', fontSize: 13 }}>✕</Text>
-          <Text style={{ fontSize: 12, color: '#ef4444', fontWeight: '600' }}>Delete</Text>
+        <Pressable onPress={onDel} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2' }}>
+          <Text style={{ color: '#ef4444', fontSize: 12 }}>✕</Text>
+          <Text style={{ fontSize: 11, color: '#ef4444', fontWeight: '600' }}>Delete</Text>
         </Pressable>
       </View>
-    </View>
+
+      {/* ── Divider under buttons ── */}
+      <View style={{ height: 1, backgroundColor: isDark ? '#334155' : '#f1f5f9' }} />
+    </Pressable>
   );
 }
 
 // ── Auto-generated compact row ─────────────────────────────────────────────
 
 function CompactRow<T extends { id: string }>({
-  item, columns, onEdit, onDelete: onDel, isDark,
+  item, columns, onView, onEdit, onDelete: onDel, isDark,
 }: {
   item: T; columns: ColDef<T>[];
+  onView?: () => void;
   onEdit: () => void; onDelete: () => void;
   isDark: boolean;
 }) {
+  // Show first col as primary, rest joined as subtitle
   const visibleCols = columns.filter((c) => c.field !== '__actions__').slice(0, 3);
   const primary   = visibleCols[0];
   const secondary = visibleCols.slice(1);
+
+  const subtitleParts = secondary
+    .filter((col) => !col.renderCell)
+    .map((col) => String((item as any)[col.field as string] ?? ''))
+    .filter(Boolean);
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#f3f4f6' }}>
-      <View style={{ flex: 1, marginRight: 8 }}>
-        {primary && (
-          primary.renderCell
-            ? <View>{primary.renderCell(item)}</View>
-            : <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#f1f5f9' : '#111827' }} numberOfLines={1}>
-                {String((item as any)[primary.field as string] ?? '—')}
-              </Text>
-        )}
-        {secondary.length > 0 && (
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
-            {secondary.map((col) => (
-              <View key={String(col.field)}>
-                {col.renderCell ? col.renderCell(item) : (
-                  <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#6b7280' }} numberOfLines={1}>
-                    {String((item as any)[col.field as string] ?? '—')}
-                  </Text>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
+    <Pressable
+      onPress={onView}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: isDark ? '#334155' : '#f3f4f6',
+        backgroundColor: pressed ? (isDark ? '#273549' : '#f8fafc') : 'transparent',
+        gap: 8,
+      })}
+    >
+      {/* Text — primary + subtitle on same line area, flex shrinks */}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
+          {primary && (
+            primary.renderCell
+              ? <View style={{ flexShrink: 1 }}>{primary.renderCell(item)}</View>
+              : <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#f1f5f9' : '#111827', flexShrink: 1 }} numberOfLines={1}>
+                  {String((item as any)[primary.field as string] ?? '—')}
+                </Text>
+          )}
+          {/* Render cell-based secondary cols inline */}
+          {secondary.filter((c) => c.renderCell).map((col) => (
+            <View key={String(col.field)} style={{ flexShrink: 0 }}>
+              {col.renderCell!(item)}
+            </View>
+          ))}
+          {/* Plain text secondary as muted subtitle */}
+          {subtitleParts.length > 0 && (
+            <Text style={{ fontSize: 11, color: isDark ? '#64748b' : '#9ca3af', flexShrink: 1 }} numberOfLines={1}>
+              {subtitleParts.join('  ·  ')}
+            </Text>
+          )}
+        </View>
       </View>
-      <View style={{ flexDirection: 'row', gap: 4 }}>
-        <Pressable onPress={onEdit} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 14 }}>✏️</Text>
+
+      {/* Action buttons — always on the right, same line */}
+      <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
+        {onView && (
+          <Pressable onPress={onView} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 13 }}>👁️</Text>
+          </Pressable>
+        )}
+        <Pressable onPress={onEdit} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 13 }}>✏️</Text>
         </Pressable>
-        <Pressable onPress={onDel} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#ef4444', fontSize: 16, lineHeight: 18 }}>✕</Text>
+        <Pressable onPress={onDel} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#ef4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -217,11 +273,19 @@ function AdminCrudScreen<T extends { id: string }>({
     prev:       () => setPage((p) => Math.max(p - 1, 1)),
   }), [safePage, totalPages, totalItems]);
 
-  // Action column for table view
+  // Action column for table view — View + Edit + Delete
   const actionCol: ColDef<T> = {
-    field: '__actions__', headerName: '', width: 88, sortable: false, align: 'center',
+    field: '__actions__', headerName: '', width: onRowPress ? 124 : 88, sortable: false, align: 'center',
     renderCell: (row: T) => (
       <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+        {onRowPress && (
+          <Pressable
+            onPress={() => onRowPress(row)}
+            style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ fontSize: 14 }}>👁️</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={() => { setFormItem(row); setFormOpen(true); }}
           style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
@@ -273,8 +337,25 @@ function AdminCrudScreen<T extends { id: string }>({
         refreshingLabel={refreshingLabel}
       />
 
-      {/* DataCard handles search, views, empty states, delete dialog */}
-      <View style={{ flex: 1, margin: 12 }}>
+      {/* Fixed search bar — shown above DataCard for grid/compact views */}
+      {(view === 'grid' || view === 'compact') && (
+        <View style={{
+          paddingHorizontal: 12,
+          paddingTop: 8,
+          paddingBottom: 4,
+          backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+        }}>
+          <AppSearchInput
+            value={search}
+            onChange={handleSearchChange}
+            isDark={isDark}
+            placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
+          />
+        </View>
+      )}
+
+      {/* DataCard handles views, empty states */}
+      <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12, marginTop: view === 'table' ? 12 : 0 }}>
         <DataCard<T>
           title={title}
           isDark={isDark}
@@ -290,10 +371,10 @@ function AdminCrudScreen<T extends { id: string }>({
           renderGridItem={(item) =>
             renderCard
               ? renderCard(item, () => { setFormItem(item); setFormOpen(true); }, () => setDeleteTarget(item))
-              : <AutoCard item={item} columns={columns} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
+              : <AutoCard item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
           }
           renderCompactItem={(item) =>
-            <CompactRow item={item} columns={columns} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
+            <CompactRow item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
           }
           renderForm={renderForm}
           onDelete={onDelete}

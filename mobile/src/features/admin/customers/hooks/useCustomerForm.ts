@@ -47,7 +47,7 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
   const [isSubmitting,      setIsSubmitting]      = useState(false);
   const [firstErrorFieldId, setFirstErrorFieldId] = useState<string | null>(null);
 
-  // Sync when item changes
+  // Sync when item changes (modal re-opened with different item)
   useEffect(() => {
     setFields(getInitial());
     setErrors({});
@@ -57,7 +57,11 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
 
   const checkDirty = useCallback((next: CustomerFormValues): boolean => {
     const initial = getInitial();
-    return next.name !== initial.name || next.email !== initial.email || next.phone !== initial.phone;
+    return (
+      next.name  !== initial.name  ||
+      next.email !== initial.email ||
+      next.phone !== initial.phone
+    );
   }, [getInitial]);
 
   const handleChange = useCallback((field: keyof CustomerFormValues, value: string) => {
@@ -66,6 +70,7 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
       setIsDirty(checkDirty(next));
       return next;
     });
+    // Delete the error key — never set to ''
     setErrors((prev) => {
       if (!(field in prev)) return prev;
       const next = { ...prev };
@@ -108,6 +113,8 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
         phone: result.data.phone || undefined,
       });
       setIsDirty(false);
+      // ⚠️ Toast BEFORE onClose — page unmounts on close
+      toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
     } catch {
       toast.error(item ? t('customers.messages.errorUpdate') : t('customers.messages.errorCreate'));
@@ -116,5 +123,14 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
     }
   }, [fields, t, onSave, onClose, item, toast]);
 
-  return { fields, errors, isDirty, firstErrorFieldId, isSubmitting, handleChange, handleClear, handleSubmit };
+  return {
+    fields,
+    errors,
+    isDirty,
+    firstErrorFieldId,
+    isSubmitting,
+    handleChange,
+    handleClear,
+    handleSubmit,
+  };
 }

@@ -19,37 +19,32 @@ features/admin/<feature>/
 ├── hooks/
 │   ├── use<Feature>.ts           ← useAdminFeature wrapper + export logic + selectedId
 │   └── use<Feature>Form.ts       ← form state, validation, submit logic
-├── schemas/                      ← (optional) Zod validation schemas
-│   └── <feature>Schema.ts
+├── schemas/
+│   └── <feature>Schema.ts        ← Zod factory function createXSchema(t)
 ├── types/                        ← (optional) local types — add when needed
 │   └── index.ts
 └── <Feature>Screen.tsx           ← Orchestration: list / detail / edit views
 ```
-
-> **Note:** Columns live in `components/` alongside the form — no separate `columns/` folder.
 
 ---
 
 ## When to Add `types/`
 
 Add a `types/` folder when the feature needs types beyond the global API types in `@/src/services/api/types`:
-
 - Local form value types that differ from the API payload type
 - UI-specific interfaces (`FilterState`, `CardProps`, derived row shapes)
 - Zod inferred types (if not already exported from `schemas/`)
-
-If the feature only uses types from `@/src/services/api/types` and Zod inferred types already exported from `schemas/`, skip the `types/` folder.
 
 ---
 
 ## Screen View States
 
-`<Feature>Screen.tsx` manages **three mutually exclusive view states** using `selectedId` and `editingFromDetail` state:
+`<Feature>Screen.tsx` manages **three mutually exclusive view states**:
 
 ```
-selectedId === null                    → List view  (AdminCrudScreen)
+selectedId === null                       → List view  (AdminCrudScreen)
 selectedId !== null && !editingFromDetail → Detail view (<Entity>DetailScreen)
-editingFromDetail !== null             → Edit-from-detail view (<Entity>Form)
+editingFromDetail !== null                → Edit-from-detail view (<Entity>Form)
 ```
 
 ```tsx
@@ -84,14 +79,14 @@ if (editingFromDetail) {
       item={editingFromDetail}
       onClose={() => {
         setEditingFromDetail(null);
-        setSelectedId(editingFromDetail.id); // return to detail
+        setSelectedId(editingFromDetail.id);
       }}
       submitting={false}
       mode="page"
       onSave={async (data) => {
         await f.update(editingFromDetail.id, data);
         setEditingFromDetail(null);
-        setSelectedId(editingFromDetail.id); // return to detail after save
+        setSelectedId(editingFromDetail.id);
       }}
     />
   );
@@ -109,18 +104,15 @@ return (
 
 ### Delete from detail — cache cleanup
 
-When deleting from the detail view, remove the detail query from cache immediately to prevent a background refetch hitting the now-deleted resource:
-
 ```tsx
 const handleDeleteFromDetail = async () => {
   if (!deletingFromDetail) return;
   setDeleting(true);
   try {
     await f.remove(deletingFromDetail.id);
-    // Remove detail query — prevents refetch of deleted resource
     queryClient.removeQueries({ queryKey: entityKeys.detail(deletingFromDetail.id) });
     toast.success(t('<feature>.messages.deleted'));
-    setSelectedId(null);          // navigate away first
+    setSelectedId(null);
     setDeletingFromDetail(null);
   } catch {
     toast.error(t('<feature>.messages.errorDelete'));
@@ -135,10 +127,6 @@ const handleDeleteFromDetail = async () => {
 ## File Responsibilities
 
 ### `api/<feature>.ts`
-- Extends `BaseApiService`
-- Exports a singleton: `export const featureApi = new FeatureApiService()`
-- Exports query keys: `export const featureKeys = { all: [...], detail: (id) => [...] }`
-- Always include a `getOne` method — required by the detail screen
 
 ```ts
 import { BaseApiService } from '@/src/services/api/base';
@@ -162,31 +150,16 @@ export const entityKeys = {
 ---
 
 ### `components/<feature>Columns.tsx`
-- Exports a **function** `get<Feature>Columns(t)` — not a plain array
-- Accepts `TFunction` so column headers and cell labels are translated
-- Called in `hooks/use<Feature>.ts` with `useMemo(() => get<Feature>Columns(t), [t])`
-- Rebuilds automatically when language changes
+
+Exports a **function** `get<Feature>Columns(t)` — not a plain array. Called with `useMemo(() => get<Feature>Columns(t), [t])` so columns rebuild on language change.
 
 ```tsx
-import React from 'react';
-import { AppBadge } from '@/src/shared/components';
-import type { Entity } from '@/src/services/api/types';
 import type { ColDef } from '@/src/shared/components/data/AppDataTable';
 import type { TFunction } from 'i18next';
 
 export function getEntityColumns(t: TFunction): ColDef<Entity>[] {
   return [
-    { field: 'name',   headerName: t('<feature>.columns.name'),   flex: 1,    sortable: true },
-    {
-      field: 'status', headerName: t('<feature>.columns.status'), width: 110, align: 'center',
-      renderCell: (row) => (
-        <AppBadge
-          label={row.isActive ? t('<feature>.active') : t('<feature>.inactive')}
-          color={row.isActive ? '#10b981' : '#6b7280'}
-          size="small"
-        />
-      ),
-    },
+    { field: 'name', headerName: t('<feature>.columns.name'), flex: 1, sortable: true },
   ];
 }
 ```
@@ -194,8 +167,6 @@ export function getEntityColumns(t: TFunction): ColDef<Entity>[] {
 ---
 
 ### `schemas/<feature>Schema.ts`
-
-Zod schemas use a **factory function** pattern so error messages can be translated.
 
 **Never hardcode English strings in Zod schemas.** Always use `createXSchema(t)`.
 
@@ -216,9 +187,7 @@ export const createEntityFormSchema = (t: TFunction) =>
 export type EntityFormValues = z.infer<ReturnType<typeof createEntityFormSchema>>;
 ```
 
-### Shared validation keys (`validation` namespace)
-
-Add these to **both** `en.json` and `ar.json` — shared across all features:
+### Shared validation keys
 
 ```json
 "validation": {
@@ -229,20 +198,19 @@ Add these to **both** `en.json` and `ar.json` — shared across all features:
 }
 ```
 
-Field names come from `common.*` keys (e.g. `t('common.name')`, `t('common.email')`).
-
 ---
 
 ### `hooks/use<Feature>Form.ts`
 
-Dedicated form hook — all state, validation, and submit logic extracted from the component.
+All state, validation, and submit logic extracted from the component.
 
-**Why a separate hook:**
-- Component stays pure JSX — no business logic
-- Logic is testable independently
-- `isDirty` tracking prevents accidental empty submits
-- `firstErrorFieldId` enables scroll-to-first-error
-- State syncs correctly when `item` changes (modal re-opened with different entity)
+**Key behaviours:**
+- `getInitial` depends only on `item?.id` — prevents re-running on every render
+- Errors are **deleted** (not set to `''`) on field change
+- `isDirty` starts `false` — tracks whether any field differs from initial values
+- `isSubmitting` is local — separate from the parent `submitting` prop
+- `firstErrorFieldId` exposed for `scrollToFirstError` integration
+- Toast shown **before** `onClose()` — page unmounts on close, toast must be queued first
 
 ```ts
 import { useState, useEffect, useCallback } from 'react';
@@ -251,27 +219,12 @@ import { createEntityFormSchema } from '../schemas/entitySchema';
 import { useToast } from '@/src/shared/hooks/useToast';
 import type { Entity, CreateEntityData } from '@/src/services/api/types';
 
-export interface EntityFormValues {
-  name:        string;
-  description: string;
-}
-
-interface Args {
-  item:    Entity | null;
-  onSave:  (data: CreateEntityData) => Promise<void>;
-  onClose: () => void;
-}
-
 export function useEntityForm({ item, onSave, onClose }: Args) {
   const { t } = useTranslation();
   const toast = useToast();
 
   const getInitial = useCallback(
-    (): EntityFormValues => ({
-      name:        item?.name        ?? '',
-      description: item?.description ?? '',
-    }),
-    // Re-derive only when item identity changes
+    (): EntityFormValues => ({ name: item?.name ?? '', description: item?.description ?? '' }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [item?.id],
   );
@@ -282,7 +235,6 @@ export function useEntityForm({ item, onSave, onClose }: Args) {
   const [isSubmitting,      setIsSubmitting]      = useState(false);
   const [firstErrorFieldId, setFirstErrorFieldId] = useState<string | null>(null);
 
-  // Sync state when item changes (modal re-opened with different item)
   useEffect(() => {
     setFields(getInitial());
     setErrors({});
@@ -290,36 +242,19 @@ export function useEntityForm({ item, onSave, onClose }: Args) {
     setFirstErrorFieldId(null);
   }, [getInitial]);
 
-  const checkDirty = useCallback(
-    (next: EntityFormValues): boolean => {
-      const initial = getInitial();
-      return next.name !== initial.name || next.description !== initial.description;
-    },
-    [getInitial],
-  );
-
-  const handleChange = useCallback(
-    (field: keyof EntityFormValues, value: string) => {
-      setFields((prev) => {
-        const next = { ...prev, [field]: value };
-        setIsDirty(checkDirty(next));
-        return next;
-      });
-      // Delete the error key — never set to ''
-      setErrors((prev) => {
-        if (!(field in prev)) return prev;
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    },
-    [checkDirty],
-  );
-
-  const handleClear = useCallback(
-    (field: keyof EntityFormValues) => handleChange(field, ''),
-    [handleChange],
-  );
+  const handleChange = useCallback((field: keyof EntityFormValues, value: string) => {
+    setFields((prev) => {
+      const next = { ...prev, [field]: value };
+      setIsDirty(/* checkDirty(next) */);
+      return next;
+    });
+    setErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];   // ← delete, never set to ''
+      return next;
+    });
+  }, [/* checkDirty */]);
 
   const handleSubmit = useCallback(async () => {
     const result = createEntityFormSchema(t).safeParse(fields);
@@ -331,11 +266,8 @@ export function useEntityForm({ item, onSave, onClose }: Args) {
         if (key && !(key in fieldErrors)) fieldErrors[key] = issue.message;
       });
       setErrors(fieldErrors);
-
-      // First error in visual order
       const ORDER: Array<keyof EntityFormValues> = ['name', 'description'];
       setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
-
       toast.error(t('<feature>.messages.validationError'));
       return;
     }
@@ -347,6 +279,7 @@ export function useEntityForm({ item, onSave, onClose }: Args) {
     try {
       await onSave({ name: result.data.name, description: result.data.description || undefined });
       setIsDirty(false);
+      // ⚠️ Toast BEFORE onClose — page unmounts on close
       toast.success(item ? t('<feature>.messages.updated') : t('<feature>.messages.created'));
       onClose();
     } catch {
@@ -356,64 +289,58 @@ export function useEntityForm({ item, onSave, onClose }: Args) {
     }
   }, [fields, t, onSave, onClose, item, toast]);
 
-  return { fields, errors, isDirty, firstErrorFieldId, isSubmitting, handleChange, handleClear, handleSubmit };
+  return { fields, errors, isDirty, firstErrorFieldId, isSubmitting, handleChange, handleClear: (f) => handleChange(f, ''), handleSubmit };
 }
 ```
-
-**Rules:**
-- `getInitial` depends only on `item?.id` — prevents re-running on every render
-- Errors are **deleted** (not set to `''`) on field change — avoids stale empty strings
-- `isDirty` is `false` on open — submit button is disabled until user changes something
-- `isSubmitting` is separate from the parent `submitting` prop — both are combined in the form
 
 ---
 
 ### `components/<Entity>Form.tsx`
 
-Form component supports **two modes**:
-- `mode="page"` (default, recommended) — full-screen `AdminFormPage`, OS handles keyboard
-- `mode="modal"` — bottom sheet `AdminFormModal`, use for quick edits
+Supports **two modes**:
+- `mode="page"` (default) — `AdminFormPage`, full-screen Modal, OS handles keyboard
+- `mode="modal"` — `AdminFormModal`, bottom sheet
+
+**Submit button behaviour:**
+- Always enabled (never disabled by `!isDirty`) — pressing it shows validation errors
+- Shows `t('common.fillRequired')` label + gray color when `!isDirty`
+- Shows `t('common.save')` label + blue color when `isDirty`
+- Disabled only while `submitting || isSubmitting`
 
 ```tsx
-import React, { useCallback, useRef } from 'react';
-import { TextInput } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
-import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
-import FormField      from '@/src/features/admin/shared/FormField';
-import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
-import { AppTextInput } from '@/src/shared/components';
-import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
-import { useEntityForm } from '../hooks/useEntityForm';
-import type { Entity, CreateEntityData } from '@/src/services/api/types';
+const isDisabled  = submitting || isSubmitting;   // ← NOT !isDirty
+const isSubmittingAll = submitting || isSubmitting;
 
-interface Props {
-  item:       Entity | null;
-  onClose:    () => void;
-  onSave:     (data: CreateEntityData) => Promise<void>;
-  submitting: boolean;
-  mode?:      'page' | 'modal';  // default: 'page'
-}
+// Pass isDirty to AdminFormPage so button label/color adapts
+<AdminFormPage
+  ...
+  submitDisabled={isDisabled}
+  isDirty={isDirty}
+  submitLabel={t('common.save')}
+>
+```
 
+**Key patterns:**
+- `FormField` wraps each input with stable `fieldId`
+- `useFocusInput` auto-focuses first field
+- `nextRef` chain for return-key navigation
+- `scrollToFirstError` called after failed submit
+- Linked stats shown in edit mode (if entity has `_count` relations)
+- Multiline fields: use `multiline`, `numberOfLines`, `blurOnSubmit` (or `submitBehavior="blurAndSubmit"`)
+
+```tsx
 const EntityForm: React.FC<Props> = ({ item, onClose, onSave, submitting, mode = 'page' }) => {
   const { t }                  = useTranslation();
   const { scrollToFirstError } = useFormScroll();
 
-  const {
-    fields, errors, isDirty, firstErrorFieldId,
-    isSubmitting, handleChange, handleClear, handleSubmit,
-  } = useEntityForm({ item, onSave, onClose });
+  const { fields, errors, isDirty, firstErrorFieldId, isSubmitting, handleChange, handleClear, handleSubmit }
+    = useEntityForm({ item, onSave, onClose });
 
-  // Auto-focus first input — longer delay in modal (animation)
-  const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true });
-
-  // Refs for return-key navigation between fields
+  const firstInputRef  = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
   const descriptionRef = useRef<TextInput | null>(null);
 
   const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
   const onChangeDescription = useCallback((v: string) => handleChange('description', v), [handleChange]);
-  const onClearName         = useCallback(() => handleClear('name'),        [handleClear]);
-  const onClearDescription  = useCallback(() => handleClear('description'), [handleClear]);
 
   const onSubmit = useCallback(async () => {
     await handleSubmit();
@@ -421,119 +348,72 @@ const EntityForm: React.FC<Props> = ({ item, onClose, onSave, submitting, mode =
   }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
 
   const formTitle   = item ? t('<feature>.editTitle') : t('<feature>.addTitle');
-  const isDisabled  = submitting || isSubmitting || !isDirty;
+  const isDisabled  = submitting || isSubmitting;
 
   const fields_jsx = (
     <>
       <FormField fieldId="name">
-        <AppTextInput
-          inputRef={firstInputRef}
-          nextRef={descriptionRef}
-          label={t('<feature>.form.name')}
-          value={fields.name}
-          onChangeText={onChangeName}
-          placeholder={t('<feature>.form.namePlaceholder')}
-          error={errors.name}
-          autoCapitalize="words"
-          maxLength={100}
-          showClearButton
-          onClear={onClearName}
-        />
+        <AppTextInput inputRef={firstInputRef} nextRef={descriptionRef} ... />
       </FormField>
-
       <FormField fieldId="description">
-        <AppTextInput
-          inputRef={descriptionRef}
-          label={t('<feature>.form.description')}
-          value={fields.description}
-          onChangeText={onChangeDescription}
-          placeholder={t('<feature>.form.descriptionPlaceholder')}
-          error={errors.description}
-          autoCapitalize="sentences"
-          maxLength={500}
-          showClearButton
-          onClear={onClearDescription}
-        />
+        <AppTextInput inputRef={descriptionRef} ... />
       </FormField>
     </>
   );
 
   if (mode === 'page') {
     return (
-      <AdminFormPage
-        title={formTitle}
-        onBack={onClose}
-        onSubmit={onSubmit}
-        submitting={submitting || isSubmitting}
-        submitDisabled={isDisabled}
-        submitLabel={t('common.save')}
-      >
+      <AdminFormPage title={formTitle} onBack={onClose} onSubmit={onSubmit}
+        submitting={isSubmittingAll} submitDisabled={isDisabled} isDirty={isDirty}
+        submitLabel={t('common.save')}>
         {fields_jsx}
       </AdminFormPage>
     );
   }
-
   return (
-    <AdminFormModal
-      open
-      title={formTitle}
-      onClose={onClose}
-      onSubmit={onSubmit}
-      submitting={submitting || isSubmitting}
-      submitDisabled={isDisabled}
-      submitLabel={t('common.save')}
-    >
+    <AdminFormModal open title={formTitle} onClose={onClose} onSubmit={onSubmit}
+      submitting={isSubmittingAll} submitDisabled={isDisabled}
+      submitLabel={t('common.save')}>
       {fields_jsx}
     </AdminFormModal>
   );
 };
-
-export default EntityForm;
-```
-
-**Key patterns:**
-- `FormField` wraps each input — registers Y position for scroll-to-error in modal mode
-- `useFocusInput` auto-focuses the first field on open
-- `nextRef` on `AppTextInput` enables return-key navigation between fields
-- `isDirty` disables submit until user changes something
-- `isDisabled = submitting || isSubmitting || !isDirty`
-- In edit mode, show linked stats (ticket count, customer count) as read-only info cards below the fields
-- For multiline fields use `multiline`, `numberOfLines`, and `submitBehavior="blurAndSubmit"` (not the deprecated `blurOnSubmit`)
-
-**Linked stats pattern (edit mode only):**
-```tsx
-{item && (
-  <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-    <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', alignItems: 'center' }}>
-      <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>{item._count?.tickets ?? 0}</Text>
-      <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('<feature>.columns.tickets')}</Text>
-    </View>
-  </View>
-)}
 ```
 
 ---
 
 ### `components/<Entity>DetailScreen.tsx`
 
-Read-only detail view shown when a row is tapped. Fetches the single entity via `useQuery` with `staleTime: 2 * 60_000`.
+Read-only detail view. Shown when a row is tapped in the list. Fetches the single entity via `useQuery` with `staleTime: 2 * 60_000`.
+
+**Location:** `mobile/src/features/admin/<feature>/components/<Entity>DetailScreen.tsx`
+
+**Reference implementation:** `mobile/src/features/admin/customers/components/CustomerDetailScreen.tsx`
+
+#### Props interface
 
 ```tsx
-import React from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { useIsDark } from '@/src/constants/theme';
-import { entityApi, entityKeys } from '../api/<feature>';
-
 interface Props {
-  entityId:      string;
+  <entity>Id:    string;
   onClose:       () => void;
   onEdit:        () => void;
   onDelete:      () => void;
   /** Set false while delete is in progress — prevents refetch of deleted resource */
   queryEnabled?: boolean;
 }
+```
+
+#### Full skeleton
+
+```tsx
+import React from 'react';
+import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { formatDate } from '@/src/shared/utils/dateUtils';
+import { AppBadge } from '@/src/shared/components';
+import { useIsDark } from '@/src/constants/theme';
+import { entityApi, entityKeys } from '../api/<feature>';
 
 const EntityDetailScreen: React.FC<Props> = ({
   entityId, onClose, onEdit, onDelete, queryEnabled = true,
@@ -544,39 +424,80 @@ const EntityDetailScreen: React.FC<Props> = ({
   const { data: entity, isLoading } = useQuery({
     queryKey: entityKeys.detail(entityId),
     queryFn:  () => entityApi.getOne(entityId),
-    staleTime: 2 * 60_000,
-    enabled:  queryEnabled,
+    staleTime: 2 * 60_000,   // fresh for 2 minutes
+    enabled:  queryEnabled,  // false while delete is in flight
   });
 
-  // theme tokens
-  const bg       = isDark ? '#0f172a' : '#f8fafc';
-  const cardBg   = isDark ? '#1e293b' : '#ffffff';
-  const border   = isDark ? '#334155' : '#e5e7eb';
-  const textPri  = isDark ? '#f1f5f9' : '#111827';
-  const textSec  = isDark ? '#94a3b8' : '#6b7280';
+  // ── Theme tokens ─────────────────────────────────────────────────────────
+  const bg         = isDark ? '#0f172a' : '#f8fafc';
+  const cardBg     = isDark ? '#1e293b' : '#ffffff';
+  const border     = isDark ? '#334155' : '#e5e7eb';
+  const textPri    = isDark ? '#f1f5f9' : '#111827';
+  const textSec    = isDark ? '#94a3b8' : '#6b7280';
+  const labelColor = isDark ? '#64748b' : '#9ca3af';
+
+  // ── Reusable label/value row ──────────────────────────────────────────────
+  const InfoRow = ({ label, value }: { label: string; value?: string | null }) => {
+    if (!value) return null;
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+        <Text style={{ fontSize: 12, color: labelColor, width: 90, paddingTop: 1 }}>{label}</Text>
+        <Text style={{ flex: 1, fontSize: 13, color: textSec, lineHeight: 20 }}>{value}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
-      {/* Header */}
+
+      {/* ── Header: back ← | title | Edit | Delete ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 12,
         paddingHorizontal: 16, paddingVertical: 12,
-        backgroundColor: cardBg, borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: cardBg,
+        borderBottomWidth: 1, borderBottomColor: border,
       }}>
-        <Pressable onPress={onClose} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: isDark ? '#334155' : '#f3f4f6', alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable
+          onPress={onClose}
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            backgroundColor: isDark ? '#334155' : '#f3f4f6',
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
           <Text style={{ color: textSec, fontSize: 18 }}>←</Text>
         </Pressable>
+
         <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: textPri }} numberOfLines={1}>
           {entity?.name ?? t('<feature>.title')}
         </Text>
-        <Pressable onPress={onEdit} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#2563eb' }}>✏️ {t('common.edit')}</Text>
+
+        <Pressable
+          onPress={onEdit}
+          style={{
+            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
+            backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#2563eb' }}>
+            ✏️ {t('common.edit')}
+          </Text>
         </Pressable>
-        <Pressable onPress={onDelete} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fca5a5' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef4444' }}>🗑️ {t('common.delete')}</Text>
+
+        <Pressable
+          onPress={onDelete}
+          style={{
+            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
+            backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fca5a5',
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef4444' }}>
+            🗑️ {t('common.delete')}
+          </Text>
         </Pressable>
       </View>
 
+      {/* ── Body ── */}
       {isLoading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color="#3b82f6" />
@@ -587,7 +508,70 @@ const EntityDetailScreen: React.FC<Props> = ({
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-          {/* render entity fields */}
+
+          {/* ── Main info card ── */}
+          <View style={{
+            backgroundColor: cardBg, borderRadius: 12,
+            borderWidth: 1, borderColor: border, padding: 16,
+          }}>
+            {/* Title row + status badge */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: textPri }} numberOfLines={2}>
+                {entity.name}
+              </Text>
+              {entity.status && (
+                <AppBadge label={entity.status} variant="status" size="small" />
+              )}
+            </View>
+
+            {/* Key fields via InfoRow */}
+            <InfoRow label={t('<feature>.columns.email')}   value={entity.email} />
+            <InfoRow label={t('<feature>.columns.phone')}   value={entity.phone} />
+            <InfoRow label={t('<feature>.detail.company')}  value={entity.company} />
+
+            {/* Created date */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: labelColor, width: 90 }}>
+                {t('<feature>.columns.created')}
+              </Text>
+              <Text style={{ fontSize: 13, color: textSec }}>
+                {formatDate(entity.createdAt)}
+              </Text>
+            </View>
+          </View>
+
+          {/* ── Optional: description card ── */}
+          {!!entity.description && (
+            <View style={{
+              backgroundColor: cardBg, borderRadius: 12,
+              borderWidth: 1, borderColor: border, padding: 16,
+            }}>
+              <Text style={{
+                fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+                letterSpacing: 0.5, color: labelColor, marginBottom: 8,
+              }}>
+                {t('common.description')}
+              </Text>
+              <Text style={{ fontSize: 14, color: textPri, lineHeight: 22 }}>
+                {entity.description}
+              </Text>
+            </View>
+          )}
+
+          {/* ── Stat card (ticket count, etc.) ── */}
+          <View style={{
+            backgroundColor: '#eff6ff', borderRadius: 12,
+            borderWidth: 1, borderColor: '#bfdbfe',
+            padding: 16, alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 28, fontWeight: '800', color: '#1d4ed8' }}>
+              {entity._count?.tickets ?? 0}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 4 }}>
+              {t('<feature>.columns.tickets')}
+            </Text>
+          </View>
+
         </ScrollView>
       )}
     </View>
@@ -597,30 +581,35 @@ const EntityDetailScreen: React.FC<Props> = ({
 export default EntityDetailScreen;
 ```
 
-**Rules:**
-- Always pass `queryEnabled={!deletingFromDetail}` — prevents refetch while delete is in flight
-- `staleTime: 2 * 60_000` — detail data is fresh for 2 minutes
-- Use `useIsDark()` from `@/src/constants/theme` — not `useUiStore` directly
-- Header always has: back ←, title, Edit button, Delete button
+#### Rules
+
+- **`queryEnabled={!deletingFromDetail}`** — prevents a refetch hitting the now-deleted resource while delete is in flight
+- **`staleTime: 2 * 60_000`** — detail data is fresh for 2 minutes; avoids redundant fetches when navigating back and forth
+- **`useIsDark()`** from `@/src/constants/theme` — not `useUiStore` directly
+- **Header always has:** back ←, entity name as title, Edit button (blue), Delete button (red)
+- **`InfoRow` helper** — renders `label | value` pairs; returns `null` when value is empty (no empty rows)
+- **Section cards** — group related fields into rounded cards with border; use uppercase section labels
+- **Stat cards** — show `_count` relations (tickets, applications) as large number + label
+- **`t('<feature>.notFound')`** — shown when entity is null after loading; add this key to both locale files
+
+#### Required locale keys
+
+```json
+"<feature>": {
+  "notFound": "Entity not found",
+  "detail": {
+    "company":   "Company",
+    "address":   "Address",
+    "maintenance": "Maintenance"
+  }
+}
+```
 
 ---
 
 ### `hooks/use<Feature>.ts`
-- Wraps `useAdminFeature` with feature-specific config
-- Calls `get<Feature>Columns(t)` with `useMemo` so columns rebuild on language change
-- Owns `exporting` state + `handleExport` function
-- Owns `selectedId` / `setSelectedId` state for detail navigation
-- Returns `{ f, columns, exporting, handleExport, selectedId, setSelectedId }`
 
 ```ts
-import { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
-import { entityApi, entityKeys } from '../api/<feature>';
-import { exportEntityPdf } from '@/src/shared/utils/exportEntityPdf';
-import { getEntityColumns } from '../components/<feature>Columns';
-import type { Entity, CreateEntityData } from '@/src/services/api/types';
-
 export function useEntities() {
   const { t } = useTranslation();
   const [exporting,  setExporting]  = useState(false);
@@ -631,24 +620,13 @@ export function useEntities() {
   const f = useAdminFeature<Entity, CreateEntityData>({
     entityName: 'entities',
     queryKey: entityKeys.all,
-    api: {
-      getAll:  entityApi.getAll.bind(entityApi),
-      create:  entityApi.create.bind(entityApi),
-      update:  entityApi.update.bind(entityApi),
-      delete:  entityApi.remove.bind(entityApi),
-    },
+    api: { getAll, create, update, delete: remove },
     messages: {
-      success: { created: t('<feature>.messages.created'), updated: t('<feature>.messages.updated'), deleted: t('<feature>.messages.deleted') },
-      error:   { create: t('<feature>.messages.errorCreate'), update: t('<feature>.messages.errorUpdate'), delete: t('<feature>.messages.errorDelete') },
-      titles:  { create: t('<feature>.addTitle'), edit: t('<feature>.editTitle') },
+      success: { created: t('...'), updated: t('...'), deleted: t('...') },
+      error:   { create:  t('...'), update:  t('...'), delete:  t('...') },
+      titles:  { create:  t('...'), edit:    t('...')                    },
     },
   });
-
-  const handleExport = async () => {
-    setExporting(true);
-    try { await exportEntityPdf(t('<feature>.title'), f.entities, columns); }
-    finally { setExporting(false); }
-  };
 
   return { f, columns, exporting, handleExport, selectedId, setSelectedId };
 }
@@ -656,261 +634,186 @@ export function useEntities() {
 
 ---
 
-### `<Feature>Screen.tsx`
-- Orchestrates three view states: list → detail → edit-from-detail
-- Uses `selectedId` from `use<Feature>` hook for detail navigation
-- Uses local `editingFromDetail` + `deletingFromDetail` state for detail actions
-- Calls `queryClient.removeQueries` after delete to clean up the detail cache
-- `mode="page"` on all form renders
-
-```tsx
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
-import AdminCrudScreen    from '@/src/features/admin/shared/AdminCrudScreen';
-import EntityForm         from './components/EntityForm';
-import EntityDetailScreen from './components/EntityDetailScreen';
-import { AppDeleteDialog } from '@/src/shared/components';
-import { useEntities }    from './hooks/useEntities';
-import { entityKeys }     from './api/<feature>';
-import { useToast }       from '@/src/shared/hooks/useToast';
-import type { Entity, CreateEntityData } from '@/src/services/api/types';
-
-const EntitiesScreen: React.FC = () => {
-  const { t }       = useTranslation();
-  const toast       = useToast();
-  const queryClient = useQueryClient();
-  const { f, columns, exporting, handleExport, selectedId, setSelectedId } = useEntities();
-
-  const [editingFromDetail,  setEditingFromDetail]  = useState<Entity | null>(null);
-  const [deletingFromDetail, setDeletingFromDetail] = useState<Entity | null>(null);
-  const [deleting,           setDeleting]           = useState(false);
-
-  const handleDeleteFromDetail = async () => {
-    if (!deletingFromDetail) return;
-    setDeleting(true);
-    try {
-      await f.remove(deletingFromDetail.id);
-      queryClient.removeQueries({ queryKey: entityKeys.detail(deletingFromDetail.id) });
-      toast.success(t('<feature>.messages.deleted'));
-      setSelectedId(null);
-      setDeletingFromDetail(null);
-    } catch {
-      toast.error(t('<feature>.messages.errorDelete'));
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // ── Detail view ────────────────────────────────────────────────────────────
-  if (selectedId && !editingFromDetail) {
-    const selectedItem = f.entities.find((e) => e.id === selectedId);
-    return (
-      <>
-        <EntityDetailScreen
-          entityId={selectedId}
-          onClose={() => setSelectedId(null)}
-          onEdit={() => setEditingFromDetail(selectedItem ?? null)}
-          onDelete={() => setDeletingFromDetail(selectedItem ?? null)}
-          queryEnabled={!deletingFromDetail}
-        />
-        <AppDeleteDialog
-          open={!!deletingFromDetail}
-          onClose={() => setDeletingFromDetail(null)}
-          onConfirm={handleDeleteFromDetail}
-          itemName={deletingFromDetail?.name}
-          itemType={t('<feature>.itemType')}
-          loading={deleting}
-        />
-      </>
-    );
-  }
-
-  // ── Edit from detail ────────────────────────────────────────────────────────
-  if (editingFromDetail) {
-    return (
-      <EntityForm
-        item={editingFromDetail}
-        onClose={() => {
-          setEditingFromDetail(null);
-          setSelectedId(editingFromDetail.id);
-        }}
-        submitting={false}
-        mode="page"
-        onSave={async (data: CreateEntityData) => {
-          await f.update(editingFromDetail.id, data);
-          setEditingFromDetail(null);
-          setSelectedId(editingFromDetail.id);
-        }}
-      />
-    );
-  }
-
-  // ── List view ───────────────────────────────────────────────────────────────
-  return (
-    <AdminCrudScreen<Entity>
-      title={t('<feature>.title')}
-      icon="📋"
-      itemType={t('<feature>.itemType')}
-      entities={f.entities}
-      loading={f.loading}
-      columns={columns}
-      searchFields={['name']}
-      getItemName={(e) => e.name}
-      onDelete={(id) => f.remove(id)}
-      onRefresh={f.refetch}
-      onExport={handleExport}
-      exporting={exporting}
-      searchPlaceholder={t('<feature>.searchPlaceholder')}
-      emptyMessage={t('<feature>.emptyMessage')}
-      emptyFilteredMessage={t('<feature>.emptyFilteredMessage')}
-      addLabel={t('<feature>.addTitle')}
-      exportLabel={t('common.exportPdf')}
-      exportingLabel={t('common.exporting')}
-      refreshLabel={t('common.refresh')}
-      refreshingLabel={t('common.refreshing')}
-      deleteSuccessMessage={t('<feature>.messages.deleted')}
-      onRowPress={(item) => setSelectedId(item.id)}
-      renderForm={(item, onClose) => (
-        <EntityForm
-          item={item}
-          onClose={onClose}
-          submitting={f.ui.submitting}
-          mode="page"
-          onSave={async (data: CreateEntityData) => {
-            if (item) await f.update(item.id, data);
-            else      await f.create(data);
-            onClose();
-          }}
-        />
-      )}
-    />
-  );
-};
-
-export default EntitiesScreen;
-```
-
----
-
 ## Form Infrastructure (shared)
 
-These shared components live in `mobile/src/features/admin/shared/` and are used by all feature forms.
+### `AdminFormPage` props
 
-### `AdminFormPage` vs `AdminFormModal`
-
-| | `AdminFormPage` | `AdminFormModal` |
+| Prop | Type | Description |
 |---|---|---|
-| Layout | Full-screen Modal | Bottom sheet |
-| Keyboard | OS handles natively ✅ | Manual scroll needed |
-| Animation | Native screen slide | Slide up |
-| Space | Full screen | ~85% screen height |
-| **Use when** | Default — always prefer | Quick edits only |
+| `title` | `string` | Page header title |
+| `onBack` | `() => void` | Back button handler |
+| `onSubmit` | `() => void` | Submit handler |
+| `submitting?` | `boolean` | Shows spinner on button |
+| `submitDisabled?` | `boolean` | Disables button (only while saving) |
+| `isDirty?` | `boolean` | Controls button label/color — `false` = gray "Fill required fields", `true` = blue "Save" |
+| `submitLabel?` | `string` | Custom label (default: `t('common.save')`) |
+| `children` | `ReactNode` | Form fields |
+
+**Button states:**
+
+| `isDirty` | `submitting` | Button | Color |
+|---|---|---|---|
+| `false` | `false` | "Fill required fields" | Gray |
+| `true` | `false` | "Save" | Blue |
+| any | `true` | "Saving…" + spinner | Blue |
+
+### `AdminFormModal` props
+
+Same as `AdminFormPage` except `onBack` → `onClose`, no `isDirty` prop (modal always shows "Save").
 
 ### `FormField`
 
-Wraps each input. In modal mode, registers the field's Y position for scroll-to-error. In page mode, it's a plain `View` wrapper with zero overhead.
+Wraps each input. In modal mode: registers Y position for scroll-to-error. In page mode: plain `View` wrapper.
 
 ```tsx
-import FormField from '@/src/features/admin/shared/FormField';
-
 <FormField fieldId="name">
   <AppTextInput ... />
 </FormField>
 ```
 
-Always pass a stable `fieldId` string matching the field name. Used by `scrollToFirstError`.
+Always pass a stable `fieldId` string matching the field name.
 
 ### `FormScrollContext` / `useFormScroll`
-
-Provides `scrollToFirstError(ids)` — scrolls to the first field with an error.
 
 ```tsx
 const { scrollToFirstError } = useFormScroll();
 
-// In onSubmit:
 await handleSubmit();
 if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
 ```
 
-`FormScrollProvider` is already set up inside `AdminFormPage` and `AdminFormModal` — no manual setup needed.
+`FormScrollProvider` is set up inside `AdminFormPage` and `AdminFormModal` — no manual setup needed.
 
 ### `useFocusInput`
 
-Auto-focuses the first input when the form opens. Handles timing issues, modal animation delay, and Android IME.
-
 ```ts
-import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
+// Page mode (100ms delay — no modal animation)
+const firstInputRef = useFocusInput({ inModal: false, enabled: true, delay: 100 });
 
-// Page mode (shorter delay — no modal animation)
-const firstInputRef = useFocusInput({ inModal: false, enabled: true });
-
-// Modal mode (longer delay — wait for slide animation)
+// Modal mode (platform-appropriate delay — wait for slide animation)
 const firstInputRef = useFocusInput({ inModal: true, enabled: true });
 
-// Only focus when creating (not editing)
+// Only focus when creating
 const firstInputRef = useFocusInput({ inModal: true, enabled: item === null });
 ```
 
-Pass the ref to the first `AppTextInput` via `inputRef` prop.
-
 ### Return-key navigation (`nextRef`)
 
-`AppTextInput` accepts a `nextRef` prop — when the user presses return/next on the keyboard, focus moves to the next field.
-
 ```tsx
-const versionRef     = useRef<TextInput | null>(null);
-const descriptionRef = useRef<TextInput | null>(null);
+const emailRef = useRef<TextInput | null>(null);
+const phoneRef = useRef<TextInput | null>(null);
 
-<AppTextInput inputRef={firstInputRef} nextRef={versionRef}     ... />
-<AppTextInput inputRef={versionRef}    nextRef={descriptionRef} ... />
-<AppTextInput inputRef={descriptionRef}                         ... />  // last field
+<AppTextInput inputRef={firstInputRef} nextRef={emailRef} ... />   // shows "Next"
+<AppTextInput inputRef={emailRef}      nextRef={phoneRef} ... />   // shows "Next"
+<AppTextInput inputRef={phoneRef}                         ... />   // shows "Done"
 ```
+
+Last field has no `nextRef` → `returnKeyType="done"` → keyboard dismisses.
+
+---
+
+## Toast System
+
+All CRUD operations show toasts via `useToast()`.
+
+```ts
+import { useToast } from '@/src/shared/hooks/useToast';
+
+const toast = useToast();
+toast.success('Application created successfully');
+toast.error('Error creating application');
+toast.info('No changes to save');
+```
+
+### Rules
+
+- Call `toast.success()` **before** `onClose()` in form hooks — the page unmounts on close
+- `useAdminFeature` automatically shows toasts for create/update/delete operations
+- `use<Feature>Form` shows toasts for validation errors and save success/failure
+- `<Feature>Screen` shows toasts for delete-from-detail operations
+
+### Custom toast config
+
+`AppToast.tsx` provides a custom config with:
+- Left accent bar colored by type (green/red/blue)
+- Icon badge per type (✅/❌/ℹ️)
+- **Copy button** on success and error toasts
+- Registered in root layout: `<Toast config={toastConfig} />`
+
+---
+
+## Network Error Dialog
+
+`NetworkErrorDialog` shows when API requests fail due to network issues.
+
+### Offline retry queue
+
+Failed network requests are automatically queued and retried when connectivity is restored:
+
+```
+Request fails (network error)
+  → networkEvents.emit() → dialog shows
+  → networkEvents.enqueue(config) → request saved in queue
+  → Promise stays pending
+
+Network returns
+  → expo-network listener fires
+  → drainQueue() → all queued requests retried
+  → Dialog transitions to "Reconnecting…" state
+  → After 600ms → dialog dismisses + success toast
+```
+
+### Dev vs Production
+
+| | Development (`__DEV__`) | Production |
+|---|---|---|
+| Message | Raw error from server | Generic friendly message |
+| Copy button | ✅ Shown | Hidden |
+| Count badge | ✅ Shown | Hidden |
+| Subtitle | "Network unavailable" | Hidden |
 
 ---
 
 ## Pagination
 
-Pagination is built into `AdminCrudScreen` — no extra code needed in feature screens.
+Built into `AdminCrudScreen` — no extra code needed in feature screens.
 
-### How it works
+`PAGE_SIZE = 5` (module-level constant in `AdminCrudScreen.tsx`).
 
-`AdminCrudScreen` maintains a `page` state and slices `filtered` rows into pages of `PAGE_SIZE = 6`. The same `pageRows` slice is passed to **all three views** (table, grid, compact). `AppPagination` renders at the bottom of each view and returns `null` automatically when `totalPages <= 1`.
+`AppPagination` returns `null` automatically when `totalPages <= 1`.
 
+---
+
+## Views — Table / Grid / Compact
+
+All three views are built into `AdminCrudScreen`. Each view shows action buttons for every row.
+
+### Action buttons per view
+
+| View | Tap row | Action buttons |
+|---|---|---|
+| Table | Navigates to detail (if `onRowPress` provided) | 👁️ View · ✏️ Edit · ✕ Delete |
+| Grid | Navigates to detail (if `onRowPress` provided) | 👁️ View · ✏️ Edit · ✕ Delete |
+| Compact | Navigates to detail (if `onRowPress` provided) | 👁️ View · ✏️ Edit · ✕ Delete |
+
+- **👁️ View** — only shown when `onRowPress` is provided. Calls `onRowPress(item)`.
+- **✏️ Edit** — opens the form in page mode.
+- **✕ Delete** — opens the delete confirmation dialog.
+- Tapping the row body (outside buttons) also calls `onRowPress` in grid and compact views.
+
+### Wiring detail navigation
+
+Pass `onRowPress` to `AdminCrudScreen` to enable the View button and row tap:
+
+```tsx
+onRowPress={(item) => setSelectedId(item.id)}
 ```
-filtered rows (all matching search)
-  └─ pageRows = filtered.slice((page-1)*6, page*6)
-       ├─ Table  → AppDataTable(pageRows) + AppPagination footer
-       ├─ Grid   → FlatList(pageRows)     + AppPagination footer
-       └─ Compact → FlatList(pageRows)   + AppPagination footer
-```
 
-### Page reset
-
-The page resets to 1 automatically when:
-- The search query changes
-- (The `safePage = Math.min(page, totalPages)` guard also prevents out-of-range pages when data shrinks after a delete)
-
-### Changing page size
-
-`PAGE_SIZE` is a module-level constant in `AdminCrudScreen.tsx`. Change it once to affect all admin screens:
-
-```ts
-const PAGE_SIZE = 6;  // ← change here
-```
-
-### AppPagination behaviour
-
-- Returns `null` when `totalPages <= 1` — no bar shown for small lists
-- Shows `from–to of total` range on the left
-- Shows `‹ page/total ›` controls on the right
-- Prev/Next buttons are disabled (opacity 0.35) at the boundaries
+If `onRowPress` is not provided, the View button is hidden and row tap does nothing.
 
 ---
 
 ## Refresh & Export Buttons
-
-All button labels must be passed as translated strings. Never rely on English fallbacks.
 
 ```tsx
 onRefresh={f.refetch}
@@ -926,20 +829,7 @@ addLabel={t('<feature>.addTitle')}
 deleteSuccessMessage={t('<feature>.messages.deleted')}
 ```
 
-### Shared button keys (`common` namespace)
-
-```json
-"common": {
-  "add": "Add",
-  "refresh": "Refresh",
-  "refreshing": "Loading…",
-  "exportPdf": "Export PDF",
-  "exporting": "Exporting…",
-  "save": "Save",
-  "saving": "Saving…",
-  "back": "Back"
-}
-```
+`RefreshButton` has a spin animation — the 🔄 icon spins while `loading=true` and also does a single spin on press for instant feedback.
 
 ---
 
@@ -958,11 +848,7 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
   "emptyFilteredMessage": "No entities match your search",
   "active": "ACTIVE",
   "inactive": "INACTIVE",
-  "columns": {
-    "name": "Name",
-    "status": "Status",
-    "created": "Created"
-  },
+  "columns": { "name": "Name", "status": "Status" },
   "form": {
     "name": "Name *",
     "namePlaceholder": "Entity name",
@@ -981,71 +867,74 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
 }
 ```
 
-### Where to use `t()`
+### Shared `common` keys required
 
-| File | Keys used |
-|---|---|
-| `<Feature>Screen.tsx` | `title`, `itemType`, `addTitle`, `messages.deleted` + all `common.*` button labels |
-| `components/<Entity>Form.tsx` | `addTitle`, `editTitle`, `form.*`, `common.save` |
-| `hooks/use<Feature>Form.ts` | `messages.*`, `validation.*` via schema factory |
-| `hooks/use<Feature>.ts` | `messages.*`, `addTitle`, `editTitle`, `title` (export) |
-| `components/<feature>Columns.tsx` | `columns.*`, `active`, `inactive` — via `t` param |
+```json
+"common": {
+  "save": "Save",
+  "saving": "Saving…",
+  "close": "Close",
+  "back": "Back",
+  "fillRequired": "Fill required fields",
+  "add": "Add",
+  "edit": "Edit",
+  "delete": "Delete",
+  "refresh": "Refresh",
+  "refreshing": "Loading…",
+  "exportPdf": "Export PDF",
+  "exporting": "Exporting…"
+}
+```
 
 ---
 
 ## Import Rules
 
 - Always use `@/src/...` alias — no relative `../../../` paths
-- Same-folder imports (`./components/EntityForm`, `./hooks/useEntities`) stay relative
-- `ColDef` comes from `@/src/shared/components/data/AppDataTable` (not the barrel)
-- `exportEntityPdf` comes from `@/src/shared/utils/exportEntityPdf`
+- Same-folder imports stay relative
+- `ColDef` from `@/src/shared/components/data/AppDataTable` (not the barrel)
+- `exportEntityPdf` from `@/src/shared/utils/exportEntityPdf`
+- `useIsDark()` from `@/src/constants/theme` — not `useUiStore` directly
 
 ---
 
 ## Checklist — New Admin Feature
 
 ### Files
-- [ ] `api/<feature>.ts` — service class + singleton + query keys + `getOne` method
+- [ ] `api/<feature>.ts` — service + singleton + query keys + `getOne`
 - [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function
-- [ ] `components/<Entity>Form.tsx` — dual-mode form (page + modal) + `useTranslation`
-- [ ] `components/<Entity>DetailScreen.tsx` — read-only detail with Edit + Delete header buttons
-- [ ] `hooks/use<Feature>Form.ts` — form state, validation, submit, `isDirty`, `firstErrorFieldId`
-- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` wrapper + `useMemo` columns + export + `selectedId`
-- [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory using `validation.*` keys
+- [ ] `components/<Entity>Form.tsx` — dual-mode (page + modal), `isDirty` passed to `AdminFormPage`
+- [ ] `components/<Entity>DetailScreen.tsx` — read-only detail with Edit + Delete
+- [ ] `hooks/use<Feature>Form.ts` — state, validation, submit, `isDirty`, `firstErrorFieldId`, toast before `onClose`
+- [ ] `hooks/use<Feature>.ts` — `useAdminFeature` + columns + export + `selectedId`
+- [ ] `schemas/<feature>Schema.ts` — `createXSchema(t)` factory
 - [ ] `<Feature>Screen.tsx` — three view states: list / detail / edit-from-detail
 
-### Translation
-- [ ] Add namespace to `en.json` and `ar.json` with all keys including `messages.validationError`
-- [ ] All hardcoded strings replaced with `t('...')`
-- [ ] `deleteSuccessMessage={t('<feature>.messages.deleted')}` passed to `AdminCrudScreen`
-- [ ] Add `common.edit` and `common.delete` keys if not already present
-
 ### Form UX
-- [ ] `useFocusInput` on first field
-- [ ] `nextRef` chain for return-key navigation between fields
+- [ ] `useFocusInput` on first field (`delay: 100` for page mode)
+- [ ] `nextRef` chain for return-key navigation
 - [ ] `FormField` wrapping each input with stable `fieldId`
-- [ ] `isDirty` disables submit until user changes something
+- [ ] `submitDisabled={submitting || isSubmitting}` — NOT `!isDirty`
+- [ ] `isDirty` passed to `AdminFormPage` for button label/color
 - [ ] `scrollToFirstError` called after failed submit
-- [ ] Linked stats shown in edit mode (if entity has `_count` relations)
-- [ ] Multiline fields use `submitBehavior="blurAndSubmit"` not deprecated `blurOnSubmit`
+- [ ] Toast called before `onClose()` in form hook
+- [ ] Linked stats shown in edit mode (if entity has `_count`)
 
 ### Detail screen
-- [ ] `queryEnabled={!deletingFromDetail}` passed to prevent refetch during delete
-- [ ] `staleTime: 2 * 60_000` on the detail query
-- [ ] `queryClient.removeQueries` called after successful delete
-- [ ] Navigate away (`setSelectedId(null)`) before closing delete dialog
+- [ ] `queryEnabled={!deletingFromDetail}` passed
+- [ ] `staleTime: 2 * 60_000` on detail query
+- [ ] `queryClient.removeQueries` after delete
+- [ ] Navigate away before closing delete dialog
+
+### Translation
+- [ ] `en.json` + `ar.json` namespace with all keys including `messages.validationError`
+- [ ] `common.fillRequired` key present in both locales
+- [ ] `deleteSuccessMessage={t('<feature>.messages.deleted')}` passed to `AdminCrudScreen`
 
 ### AdminCrudScreen props
-- [ ] `onRowPress={(item) => setSelectedId(item.id)}` wired for detail navigation
-- [ ] `onRefresh`, `onExport`, `exporting` passed
+- [ ] `onRowPress={(item) => setSelectedId(item.id)}` — enables 👁️ View button + row tap in all three views (table, grid, compact)
 - [ ] All button labels: `addLabel`, `exportLabel`, `exportingLabel`, `refreshLabel`, `refreshingLabel`
-- [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`
-- [ ] `deleteSuccessMessage`
-
-### General
-- [ ] All cross-folder imports use `@/src/...` alias
-- [ ] Screen registered in the admin navigation
-- [ ] Use `useIsDark()` from `@/src/constants/theme` — not `useUiStore` directly
+- [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`, `deleteSuccessMessage`
 
 ---
 

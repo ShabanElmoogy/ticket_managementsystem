@@ -52,7 +52,7 @@ const ApplicationForm: React.FC<Props> = ({
   }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
 
   const formTitle       = item ? t('applications.editTitle') : t('applications.addTitle');
-  const isDisabled      = submitting || isSubmitting || !isDirty;
+  const isDisabled      = submitting || isSubmitting;   // only disable while saving
   const isSubmittingAll = submitting || isSubmitting;
 
   // ── Linked stats (edit mode only) ─────────────────────────────────────────
@@ -147,6 +147,7 @@ const ApplicationForm: React.FC<Props> = ({
         onSubmit={onSubmit}
         submitting={isSubmittingAll}
         submitDisabled={isDisabled}
+        isDirty={isDirty}
         submitLabel={t('common.save')}
       >
         {fields_jsx}

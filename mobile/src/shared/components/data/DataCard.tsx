@@ -194,70 +194,70 @@ function DataCard<T extends { id: string }>({
         )
 
       ) : view === 'grid' ? (
-        /* ── Grid view ── */
-        <FlatList
-          data={rows}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-          ListFooterComponent={
-            pagination ? (
-              <AppPagination
-                page={pagination.page}
-                totalPages={pagination.totalPages}
-                totalItems={pagination.totalItems}
-                pageSize={pagination.pageSize}
-                hasNext={pagination.hasNext}
-                hasPrev={pagination.hasPrev}
-                onNext={pagination.next}
-                onPrev={pagination.prev}
-                isDark={isDark}
-              />
-            ) : null
-          }
-          refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) =>
-            renderGridItem
-              ? (renderGridItem(item) ?? null)
-              : null
-          }
-        />
+        /* ── Grid view — search is rendered outside by AdminCrudScreen ── */
+        <View style={{ flex: 1 }}>
+          <FlatList
+            style={{ flex: 1 }}
+            data={rows}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
+            ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+            ListFooterComponent={
+              pagination ? (
+                <AppPagination
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  pageSize={pagination.pageSize}
+                  hasNext={pagination.hasNext}
+                  hasPrev={pagination.hasPrev}
+                  onNext={pagination.next}
+                  onPrev={pagination.prev}
+                  isDark={isDark}
+                />
+              ) : null
+            }
+            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) =>
+              renderGridItem ? (renderGridItem(item) ?? null) : null
+            }
+          />
+        </View>
 
       ) : (
-        /* ── Compact view ── */
-        <FlatList
-          data={rows}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-          ListFooterComponent={
-            pagination ? (
-              <AppPagination
-                page={pagination.page}
-                totalPages={pagination.totalPages}
-                totalItems={pagination.totalItems}
-                pageSize={pagination.pageSize}
-                hasNext={pagination.hasNext}
-                hasPrev={pagination.hasPrev}
-                onNext={pagination.next}
-                onPrev={pagination.prev}
-                isDark={isDark}
-              />
-            ) : null
-          }
-          refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) =>
-            renderCompactItem
-              ? (renderCompactItem(item) ?? null)
-              : null
-          }
-        />
+        /* ── Compact view — search is rendered outside by AdminCrudScreen ── */
+        <View style={{ flex: 1 }}>
+          <FlatList
+            style={{ flex: 1 }}
+            data={rows}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+            ListFooterComponent={
+              pagination ? (
+                <AppPagination
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  pageSize={pagination.pageSize}
+                  hasNext={pagination.hasNext}
+                  hasPrev={pagination.hasPrev}
+                  onNext={pagination.next}
+                  onPrev={pagination.prev}
+                  isDark={isDark}
+                />
+              ) : null
+            }
+            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) =>
+              renderCompactItem ? (renderCompactItem(item) ?? null) : null
+            }
+          />
+        </View>
       )}
 
       {/* CRUD: form modal */}

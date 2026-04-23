@@ -131,6 +131,13 @@ export function useApplicationForm({
         version:     result.data.version     || undefined,
       });
       setIsDirty(false);
+      // Show toast BEFORE onClose — the page unmounts on close which can
+      // prevent the toast from rendering if shown after
+      toast.success(
+        item
+          ? t('applications.messages.updated')
+          : t('applications.messages.created')
+      );
       onClose();
     } catch {
       toast.error(

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
@@ -29,11 +29,18 @@ const CustomerForm: React.FC<Props> = ({
     isSubmitting, handleChange, handleClear, handleSubmit,
   } = useCustomerForm({ item, onSave, onClose });
 
-  const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
-  const emailRef      = useRef<TextInput | null>(null);
-  const phoneRef      = useRef<TextInput | null>(null);
+  // Auto-focus first input — shorter delay in page mode (no modal animation)
+  const firstInputRef = useFocusInput({
+    inModal: mode === 'modal',
+    enabled: true,
+    delay:   mode === 'page' ? 100 : undefined,
+  });
 
-  // Stable handlers
+  // Refs for return-key navigation: Name → Email → Phone → done
+  const emailRef = useRef<TextInput | null>(null);
+  const phoneRef = useRef<TextInput | null>(null);
+
+  // Stable per-field handlers — prevent re-renders on every keystroke
   const onChangeName  = useCallback((v: string) => handleChange('name',  v), [handleChange]);
   const onChangeEmail = useCallback((v: string) => handleChange('email', v), [handleChange]);
   const onChangePhone = useCallback((v: string) => handleChange('phone', v), [handleChange]);
@@ -46,9 +53,14 @@ const CustomerForm: React.FC<Props> = ({
     if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
   }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
 
-  const formTitle      = item ? t('customers.editTitle') : t('customers.addTitle');
-  const isDisabled     = submitting || isSubmitting || !isDirty;
+  const formTitle       = item ? t('customers.editTitle') : t('customers.addTitle');
+  // Only disable while actually submitting — button always pressable so user sees errors
+  const isDisabled      = submitting || isSubmitting;
   const isSubmittingAll = submitting || isSubmitting;
+
+  // Linked stats (edit mode only)
+  const linkedTickets      = item?._count?.tickets      ?? 0;
+  const linkedApplications = item?.applications?.length ?? 0;
 
   const fields_jsx = (
     <>
@@ -97,6 +109,36 @@ const CustomerForm: React.FC<Props> = ({
           onClear={onClearPhone}
         />
       </FormField>
+
+      {/* Linked stats — edit mode only */}
+      {item && (
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          <View style={{
+            flex: 1, padding: 12, borderRadius: 10,
+            backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>
+              {linkedTickets}
+            </Text>
+            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>
+              {t('customers.columns.tickets')}
+            </Text>
+          </View>
+          <View style={{
+            flex: 1, padding: 12, borderRadius: 10,
+            backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#065f46' }}>
+              {linkedApplications}
+            </Text>
+            <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>
+              {t('customers.detail.applications')}
+            </Text>
+          </View>
+        </View>
+      )}
     </>
   );
 
@@ -108,6 +150,7 @@ const CustomerForm: React.FC<Props> = ({
         onSubmit={onSubmit}
         submitting={isSubmittingAll}
         submitDisabled={isDisabled}
+        isDirty={isDirty}
         submitLabel={t('common.save')}
       >
         {fields_jsx}
