@@ -1,8 +1,7 @@
 {
-  "enabled": true,
   "name": "Sync Admin Features MD",
+  "version": "1.0.0",
   "description": "When any file in mobile/src/features/admin/ is saved, reviews the changes and updates .kiro/steering/ADMIN_FEATURES.md to reflect new patterns, components, improvements, or checklist items",
-  "version": "1",
   "when": {
     "type": "fileEdited",
     "patterns": [
