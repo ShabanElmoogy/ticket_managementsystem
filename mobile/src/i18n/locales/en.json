@@ -58,12 +58,14 @@
   "applications": {
     "title": "Applications",
     "itemType": "application",
+    "notFound": "Application not found",
     "addButton": "Add Application",
     "editTitle": "Edit Application",
     "addTitle": "Add Application",
     "searchPlaceholder": "Search applications…",
     "emptyMessage": "No applications yet",
     "emptyFilteredMessage": "No applications match your search",
+    "notFound": "Application not found",
     "columns": {
       "name": "Name",
       "version": "Version",
@@ -125,7 +127,8 @@
       "company": "Company",
       "companyPlaceholder": "Company name",
       "address": "Address",
-      "addressPlaceholder": "Street, City, Country"
+      "addressPlaceholder": "Street, City, Country",
+      "datePlaceholder": "Select date"
     },
     "detail": {
       "company": "Company",

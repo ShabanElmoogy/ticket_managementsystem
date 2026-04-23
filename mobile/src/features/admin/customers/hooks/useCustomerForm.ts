@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createCustomerFormSchema } from '../schemas/customerSchema';
+import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
 import { useToast } from '@/src/shared/hooks/useToast';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 export interface CustomerFormValues {
-  name:  string;
-  email: string;
-  phone: string;
+  name:                  string;
+  email:                 string;
+  phone:                 string;
+  company:               string;
+  address:               string;
+  maintenanceType:       MaintenanceType | null;
+  subscriptionStartDate: string;
+  subscriptionEndDate:   string;
 }
 
 export interface UseCustomerFormReturn {
@@ -16,7 +21,7 @@ export interface UseCustomerFormReturn {
   isDirty:           boolean;
   firstErrorFieldId: string | null;
   isSubmitting:      boolean;
-  handleChange:      (field: keyof CustomerFormValues, value: string) => void;
+  handleChange:      (field: keyof CustomerFormValues, value: string | MaintenanceType | null) => void;
   handleClear:       (field: keyof CustomerFormValues) => void;
   handleSubmit:      () => Promise<void>;
 }
@@ -33,9 +38,14 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
 
   const getInitial = useCallback(
     (): CustomerFormValues => ({
-      name:  item?.name  ?? '',
-      email: item?.email ?? '',
-      phone: item?.phone ?? '',
+      name:                  item?.name                  ?? '',
+      email:                 item?.email                 ?? '',
+      phone:                 item?.phone                 ?? '',
+      company:               item?.company               ?? '',
+      address:               item?.address               ?? '',
+      maintenanceType:       (item?.maintenanceType as MaintenanceType | null) ?? null,
+      subscriptionStartDate: item?.subscriptionStartDate ?? '',
+      subscriptionEndDate:   item?.subscriptionEndDate   ?? '',
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [item?.id],
@@ -47,7 +57,6 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
   const [isSubmitting,      setIsSubmitting]      = useState(false);
   const [firstErrorFieldId, setFirstErrorFieldId] = useState<string | null>(null);
 
-  // Sync when item changes (modal re-opened with different item)
   useEffect(() => {
     setFields(getInitial());
     setErrors({});
@@ -57,27 +66,27 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
 
   const checkDirty = useCallback((next: CustomerFormValues): boolean => {
     const initial = getInitial();
-    return (
-      next.name  !== initial.name  ||
-      next.email !== initial.email ||
-      next.phone !== initial.phone
+    return (Object.keys(next) as Array<keyof CustomerFormValues>).some(
+      (k) => next[k] !== initial[k],
     );
   }, [getInitial]);
 
-  const handleChange = useCallback((field: keyof CustomerFormValues, value: string) => {
-    setFields((prev) => {
-      const next = { ...prev, [field]: value };
-      setIsDirty(checkDirty(next));
-      return next;
-    });
-    // Delete the error key — never set to ''
-    setErrors((prev) => {
-      if (!(field in prev)) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  }, [checkDirty]);
+  const handleChange = useCallback(
+    (field: keyof CustomerFormValues, value: string | MaintenanceType | null) => {
+      setFields((prev) => {
+        const next = { ...prev, [field]: value };
+        setIsDirty(checkDirty(next));
+        return next;
+      });
+      setErrors((prev) => {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    },
+    [checkDirty],
+  );
 
   const handleClear = useCallback(
     (field: keyof CustomerFormValues) => handleChange(field, ''),
@@ -95,9 +104,11 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
       });
       setErrors(fieldErrors);
 
-      const ORDER: Array<keyof CustomerFormValues> = ['name', 'email', 'phone'];
+      const ORDER: Array<keyof CustomerFormValues> = [
+        'name', 'email', 'phone', 'company', 'address',
+        'maintenanceType', 'subscriptionStartDate', 'subscriptionEndDate',
+      ];
       setFirstErrorFieldId(ORDER.find((k) => k in fieldErrors) ?? null);
-
       toast.error(t('customers.messages.validationError'));
       return;
     }
@@ -107,13 +118,18 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
     setIsSubmitting(true);
 
     try {
+      const data = result.data;
       await onSave({
-        name:  result.data.name,
-        email: result.data.email,
-        phone: result.data.phone || undefined,
-      });
+        name:                  data.name,
+        email:                 data.email,
+        phone:                 data.phone                 || undefined,
+        company:               data.company               || undefined,
+        address:               data.address               || undefined,
+        maintenanceType:       data.maintenanceType       ?? undefined,
+        subscriptionStartDate: data.subscriptionStartDate ?? undefined,
+        subscriptionEndDate:   data.subscriptionEndDate   ?? undefined,
+      } as CreateCustomerData);
       setIsDirty(false);
-      // ⚠️ Toast BEFORE onClose — page unmounts on close
       toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
     } catch {
@@ -124,13 +140,7 @@ export function useCustomerForm({ item, onSave, onClose }: Args): UseCustomerFor
   }, [fields, t, onSave, onClose, item, toast]);
 
   return {
-    fields,
-    errors,
-    isDirty,
-    firstErrorFieldId,
-    isSubmitting,
-    handleChange,
-    handleClear,
-    handleSubmit,
+    fields, errors, isDirty, firstErrorFieldId,
+    isSubmitting, handleChange, handleClear, handleSubmit,
   };
 }

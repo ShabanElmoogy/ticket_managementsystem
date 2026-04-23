@@ -390,6 +390,14 @@ Read-only detail view. Shown when a row is tapped in the list. Fetches the singl
 
 **Reference implementation:** `mobile/src/features/admin/customers/components/CustomerDetailScreen.tsx`
 
+#### Shared infrastructure (use these — don't rebuild from scratch)
+
+| Component | Location | Purpose |
+|---|---|---|
+| `AdminDetailScreen` | `mobile/src/features/admin/shared/AdminDetailScreen.tsx` | Shell: header (back, title, edit, delete), loading, not-found, scrollable body |
+| `DetailInfoCard` | `mobile/src/features/admin/shared/DetailInfoCard.tsx` | Label/value rows card. Hides empty fields automatically. Supports custom `render` |
+| `DetailStatRow` | `mobile/src/features/admin/shared/DetailStatRow.tsx` | Horizontal row of colored stat cards (number + label) |
+
 #### Props interface
 
 ```tsx
@@ -398,8 +406,143 @@ interface Props {
   onClose:       () => void;
   onEdit:        () => void;
   onDelete:      () => void;
-  /** Set false while delete is in progress — prevents refetch of deleted resource */
-  queryEnabled?: boolean;
+  queryEnabled?: boolean;  // false while delete is in flight
+}
+```
+
+#### Full skeleton
+
+```tsx
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { formatDate } from '@/src/shared/utils/dateUtils';
+import { useIsDark } from '@/src/constants/theme';
+import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
+import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
+import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
+import { entityApi, entityKeys } from '../api/<feature>';
+
+const EntityDetailScreen: React.FC<Props> = ({
+  entityId, onClose, onEdit, onDelete, queryEnabled = true,
+}) => {
+  const { t }  = useTranslation();
+  const isDark = useIsDark();
+
+  const { data: entity, isLoading } = useQuery({
+    queryKey: entityKeys.detail(entityId),
+    queryFn:  () => entityApi.getOne(entityId),
+    staleTime: 2 * 60_000,
+    enabled:  queryEnabled,
+  });
+
+  const textPri = isDark ? '#f1f5f9' : '#111827';
+
+  return (
+    <AdminDetailScreen
+      title={entity?.name ?? t('<feature>.title')}
+      isLoading={isLoading}
+      notFound={!isLoading && !entity}
+      notFoundText={t('<feature>.notFound')}
+      onClose={onClose}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    >
+      {entity && (
+        <>
+          {/* ── All columns as info rows ── */}
+          <DetailInfoCard
+            fields={[
+              {
+                label: t('<feature>.columns.name'),
+                render: () => (
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: textPri }}>
+                    {entity.name}
+                  </Text>
+                ),
+              },
+              { label: t('<feature>.columns.email'),   value: entity.email },
+              { label: t('<feature>.columns.phone'),   value: entity.phone },
+              { label: t('<feature>.columns.created'), value: formatDate(entity.createdAt) },
+            ]}
+          />
+
+          {/* ── Optional description card ── */}
+          {!!entity.description && (
+            <DetailInfoCard
+              title={t('common.description')}
+              fields={[{ label: '', value: entity.description }]}
+            />
+          )}
+
+          {/* ── Stats (ticket count, customer count, etc.) ── */}
+          <DetailStatRow
+            stats={[
+              { value: entity._count?.tickets ?? 0, label: t('<feature>.columns.tickets'), color: '#1d4ed8', bgColor: '#eff6ff' },
+            ]}
+          />
+        </>
+      )}
+    </AdminDetailScreen>
+  );
+};
+
+export default EntityDetailScreen;
+```
+
+#### `DetailInfoCard` — field types
+
+```tsx
+// Plain text value
+{ label: 'Email', value: customer.email }
+
+// Custom render (badge, version chip, etc.)
+{ label: 'Status', render: () => <AppBadge label={entity.status} variant="status" size="small" /> }
+
+// Version badge
+{
+  label: t('applications.columns.version'),
+  render: app.version ? () => (
+    <View style={{ backgroundColor: '#eff6ff', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' }}>
+      <Text style={{ color: '#1d4ed8', fontSize: 12, fontWeight: '600' }}>{app.version}</Text>
+    </View>
+  ) : undefined,
+  value: app.version ? undefined : null,
+}
+
+// Description (no label)
+{ label: '', value: entity.description }
+```
+
+Empty fields (`null`, `undefined`, `''`) are hidden automatically — no need to conditionally include them.
+
+#### `DetailStatRow` — stat colors
+
+```tsx
+// Tickets (blue)
+{ value: entity._count?.tickets ?? 0, label: t('...tickets'), color: '#1d4ed8', bgColor: '#eff6ff' }
+
+// Customers (green)
+{ value: entity._count?.customers ?? 0, label: t('...customers'), color: '#065f46', bgColor: '#f0fdf4' }
+
+// Applications (purple)
+{ value: entity._count?.applications ?? 0, label: t('...applications'), color: '#7c3aed', bgColor: '#f5f3ff' }
+```
+
+#### Rules
+
+- **`queryEnabled={!deletingFromDetail}`** — prevents refetch during delete
+- **`staleTime: 2 * 60_000`** — fresh for 2 minutes
+- **`useIsDark()`** from `@/src/constants/theme` — not `useUiStore` directly
+- **Show ALL columns** — every column defined in `<feature>Columns.tsx` should appear in the detail screen
+- **`t('<feature>.notFound')`** — add this key to both locale files
+- Use `AdminDetailScreen` + `DetailInfoCard` + `DetailStatRow` — never rebuild the shell from scratch
+
+#### Required locale keys
+
+```json
+"<feature>": {
+  "notFound": "Entity not found"
 }
 ```
 
@@ -921,10 +1064,13 @@ deleteSuccessMessage={t('<feature>.messages.deleted')}
 - [ ] Linked stats shown in edit mode (if entity has `_count`)
 
 ### Detail screen
+- [ ] Uses `AdminDetailScreen` + `DetailInfoCard` + `DetailStatRow` — no custom shell
+- [ ] Shows ALL columns from `<feature>Columns.tsx` as info rows
 - [ ] `queryEnabled={!deletingFromDetail}` passed
 - [ ] `staleTime: 2 * 60_000` on detail query
 - [ ] `queryClient.removeQueries` after delete
 - [ ] Navigate away before closing delete dialog
+- [ ] `t('<feature>.notFound')` key in both locale files
 
 ### Translation
 - [ ] `en.json` + `ar.json` namespace with all keys including `messages.validationError`

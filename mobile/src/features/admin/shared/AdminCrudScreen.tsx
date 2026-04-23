@@ -134,70 +134,70 @@ function CompactRow<T extends { id: string }>({
   onEdit: () => void; onDelete: () => void;
   isDark: boolean;
 }) {
-  // Show first col as primary, rest joined as subtitle
-  const visibleCols = columns.filter((c) => c.field !== '__actions__').slice(0, 3);
-  const primary   = visibleCols[0];
-  const secondary = visibleCols.slice(1);
+  // Collect all plain-text values from all visible columns
+  const allValues = columns
+    .filter((c) => c.field !== '__actions__' && !c.renderCell)
+    .map((c) => {
+      const val = c.valueGetter
+        ? c.valueGetter(item)
+        : (item as any)[c.field as string];
+      return val != null && val !== '' ? String(val) : null;
+    })
+    .filter(Boolean) as string[];
 
-  const subtitleParts = secondary
-    .filter((col) => !col.renderCell)
-    .map((col) => String((item as any)[col.field as string] ?? ''))
-    .filter(Boolean);
+  const lineText = allValues.join('  ·  ');
+
+  // Button count determines fixed right width
+  const btnCount  = onView ? 3 : 2;
+  const btnsWidth = btnCount * 30 + (btnCount - 1) * 4; // 30px each + 4px gap
 
   return (
-    <Pressable
-      onPress={onView}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: isDark ? '#334155' : '#f3f4f6',
-        backgroundColor: pressed ? (isDark ? '#273549' : '#f8fafc') : 'transparent',
-        gap: 8,
-      })}
-    >
-      {/* Text — primary + subtitle on same line area, flex shrinks */}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
-          {primary && (
-            primary.renderCell
-              ? <View style={{ flexShrink: 1 }}>{primary.renderCell(item)}</View>
-              : <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#f1f5f9' : '#111827', flexShrink: 1 }} numberOfLines={1}>
-                  {String((item as any)[primary.field as string] ?? '—')}
-                </Text>
-          )}
-          {/* Render cell-based secondary cols inline */}
-          {secondary.filter((c) => c.renderCell).map((col) => (
-            <View key={String(col.field)} style={{ flexShrink: 0 }}>
-              {col.renderCell!(item)}
-            </View>
-          ))}
-          {/* Plain text secondary as muted subtitle */}
-          {subtitleParts.length > 0 && (
-            <Text style={{ fontSize: 11, color: isDark ? '#64748b' : '#9ca3af', flexShrink: 1 }} numberOfLines={1}>
-              {subtitleParts.join('  ·  ')}
-            </Text>
-          )}
-        </View>
-      </View>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#334155' : '#f3f4f6',
+    }}>
+      {/* Text — takes all remaining space, truncates with ellipsis */}
+      <Pressable
+        onPress={onView}
+        style={{ flex: 1, minWidth: 0, marginEnd: 8 }}
+      >
+        <Text
+          style={{ fontSize: 13, color: isDark ? '#e2e8f0' : '#111827' }}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {lineText || '—'}
+        </Text>
+      </Pressable>
 
-      {/* Action buttons — always on the right, same line */}
-      <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
+      {/* Buttons — fixed width, never shrink */}
+      <View style={{ flexDirection: 'row', gap: 4, width: btnsWidth }}>
         {onView && (
-          <Pressable onPress={onView} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable
+            onPress={onView}
+            style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
+          >
             <Text style={{ fontSize: 13 }}>👁️</Text>
           </Pressable>
         )}
-        <Pressable onPress={onEdit} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable
+          onPress={onEdit}
+          style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
+        >
           <Text style={{ fontSize: 13 }}>✏️</Text>
         </Pressable>
-        <Pressable onPress={onDel} style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2', alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable
+          onPress={onDel}
+          style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2', alignItems: 'center', justifyContent: 'center' }}
+        >
           <Text style={{ color: '#ef4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
         </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -337,13 +337,11 @@ function AdminCrudScreen<T extends { id: string }>({
         refreshingLabel={refreshingLabel}
       />
 
-      {/* Fixed search bar — shown above DataCard for grid/compact views */}
+      {/* Fixed search bar — same width as DataCard */}
       {(view === 'grid' || view === 'compact') && (
         <View style={{
-          paddingHorizontal: 12,
-          paddingTop: 8,
-          paddingBottom: 4,
-          backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+          marginTop: 8,
+          marginBottom: 4,
         }}>
           <AppSearchInput
             value={search}

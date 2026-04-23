@@ -58,12 +58,14 @@
   "applications": {
     "title": "التطبيقات",
     "itemType": "تطبيق",
+    "notFound": "التطبيق غير موجود",
     "addButton": "إضافة تطبيق",
     "editTitle": "تعديل التطبيق",
     "addTitle": "إضافة تطبيق",
     "searchPlaceholder": "البحث في التطبيقات…",
     "emptyMessage": "لا توجد تطبيقات بعد",
     "emptyFilteredMessage": "لا توجد تطبيقات تطابق بحثك",
+    "notFound": "التطبيق غير موجود",
     "columns": {
       "name": "الاسم",
       "version": "الإصدار",
@@ -125,7 +127,8 @@
       "company": "الشركة",
       "companyPlaceholder": "اسم الشركة",
       "address": "العنوان",
-      "addressPlaceholder": "الشارع، المدينة، الدولة"
+      "addressPlaceholder": "الشارع، المدينة، الدولة",
+      "datePlaceholder": "اختر تاريخاً"
     },
     "detail": {
       "company": "الشركة",
