@@ -118,9 +118,15 @@ export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
         if (!row.subscriptionEndDate) return (
           <Text style={{ fontSize: 11, color: '#9ca3af' }}>—</Text>
         );
-        const isExpired = new Date(row.subscriptionEndDate) < new Date();
+        const end      = new Date(row.subscriptionEndDate);
+        const now      = new Date();
+        const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const isExpired = daysLeft < 0;
+        const isSoon    = daysLeft >= 0 && daysLeft <= 30;  // expires within 30 days
+
+        const color = isExpired ? '#dc2626' : isSoon ? '#d97706' : '#16a34a';
         return (
-          <Text style={{ fontSize: 11, color: isExpired ? '#dc2626' : '#374151', fontWeight: isExpired ? '700' : '400' }}>
+          <Text style={{ fontSize: 11, color, fontWeight: isExpired || isSoon ? '700' : '500' }}>
             {formatDate(row.subscriptionEndDate)}
           </Text>
         );

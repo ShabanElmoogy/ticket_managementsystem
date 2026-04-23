@@ -155,13 +155,21 @@ const CustomerDetailScreen: React.FC<Props> = ({
               fields={[
                 { icon: '📋', label: t('customers.detail.maintenanceType'),   value: MAINTENANCE_LABELS[customer.maintenanceType] ?? customer.maintenanceType },
                 { icon: '▶️', label: t('customers.detail.subscriptionStart'), value: customer.subscriptionStartDate ? formatDate(customer.subscriptionStartDate) : null },
-                {
-                  icon: '⏹️',
-                  label: t('customers.detail.subscriptionEnd'),
-                  value: customer.subscriptionEndDate ? formatDate(customer.subscriptionEndDate) : null,
-                  valueColor: customer.subscriptionEndDate && new Date(customer.subscriptionEndDate) < new Date()
-                    ? '#dc2626' : undefined,
-                },
+                (() => {
+                  const endDate  = customer.subscriptionEndDate;
+                  const end      = endDate ? new Date(endDate) : null;
+                  const now      = new Date();
+                  const daysLeft = end ? Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                  const isExpired = daysLeft !== null && daysLeft < 0;
+                  const isSoon    = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+                  const color     = isExpired ? '#dc2626' : isSoon ? '#d97706' : undefined;
+                  return {
+                    icon: '⏹️',
+                    label: t('customers.detail.subscriptionEnd'),
+                    value: endDate ? formatDate(endDate) : null,
+                    valueColor: color,
+                  };
+                })(),
               ]}
             />
           )}

@@ -97,8 +97,17 @@ Status colors:
 | Company | `company` | 130 | Shows `—` if empty |
 | Status | `subscriptionStatus` | 120 | Colored badge, computed client-side |
 | Type | `maintenanceType` | 130 | Monthly / Trial / Pay/Go |
-| End Date | `subscriptionEndDate` | 110 | Red + bold if expired |
+| End Date | `subscriptionEndDate` | 110 | 3-state color: green / amber / red |
 | Tickets | `_count.tickets` | 70 | Blue count badge |
+
+#### End date color logic (3 states)
+
+```ts
+const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+const color = daysLeft < 0    ? '#dc2626'  // expired — red
+            : daysLeft <= 30  ? '#d97706'  // expiring soon — amber
+            :                   '#16a34a'; // active — green
+```
 
 ### Form Fields
 
@@ -121,7 +130,7 @@ Status colors:
 1. **Hero card** — status-colored accent bar, initials avatar, name, company, status badge, quick contact row
 2. **Stats row** — ticket count (blue) + linked applications (green)
 3. **Contact card** — email, phone, company, address, created (with emoji icons)
-4. **Subscription card** — type, start date, end date (red if expired)
+4. **Subscription card** — type, start date, end date (3-state color: green/amber/red)
 5. **Linked applications card** — app name + version badge
 
 ### Locale Keys
@@ -233,7 +242,7 @@ Color palette: blue (tickets) · green (customers) · purple (applications)
 
 ### `AppDatePicker`
 
-Native OS date picker. Stores `YYYY-MM-DD`, displays `DD/MM/YYYY`.
+Native OS date picker. Stores `YYYY-MM-DD`, displays using tenant's date format.
 
 ```tsx
 <AppDatePicker
@@ -245,6 +254,25 @@ Native OS date picker. Stores `YYYY-MM-DD`, displays `DD/MM/YYYY`.
   minDate={fields.subscriptionStartDate ? new Date(fields.subscriptionStartDate) : undefined}
 />
 ```
+
+### Tenant Date Format
+
+The tenant's `dateFormat` is stored in the DB as **date-fns tokens** (e.g. `dd/MM/yyyy`). The mobile app converts to **dayjs tokens** at format time.
+
+```ts
+// tenantStore.ts
+import { getDayjsFormat } from '../../stores/tenantStore';
+
+// dateUtils.ts — always use getDayjsFormat(), never getDateFormat()
+export const formatDate = (date) => dayjs(date).format(getDayjsFormat());
+```
+
+**Flow:**
+1. Login response includes `tenant.dateFormat` (date-fns token) → stored in `tenantStore`
+2. On app boot: `useTenantStore.getState().syncDateFormat()` fetches from `GET /reminders/date-format-settings`
+3. `formatDate()` / `formatDateTime()` call `getDayjsFormat()` which converts date-fns → dayjs token
+
+**Never** use `getDateFormat()` for display — it returns the date-fns token which dayjs cannot parse correctly.
 
 ### `AdminFormPage` props
 
@@ -345,7 +373,7 @@ Custom config in `AppToast.tsx`: left accent bar + icon badge + copy button.
 - [ ] Hero card with accent bar + initials avatar + status badge
 - [ ] Stats row for `_count` relations
 - [ ] `DetailInfoCard` fields with emoji `icon` props
-- [ ] `valueColor` on expired/warning values
+- [ ] `valueColor` on expired/warning values — use 3-state: green (active) / amber (≤30 days) / red (expired)
 - [ ] `queryEnabled={!deletingFromDetail}`
 - [ ] `staleTime: 2 * 60_000`
 - [ ] `queryClient.removeQueries` after delete

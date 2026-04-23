@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Sync Admin Features MD",
+  "description": "When any file in mobile/src/features/admin/ is saved, reviews the changes and updates .kiro/steering/ADMIN_FEATURES.md to reflect new patterns, components, improvements, or checklist items",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "mobile/src/features/admin/**/*.tsx",
+      "mobile/src/features/admin/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file in mobile/src/features/admin/ was just modified. Review the change and update .kiro/steering/ADMIN_FEATURES.md if needed.\n\nRules:\n1. Read the modified file to understand what changed\n2. Read the current .kiro/steering/ADMIN_FEATURES.md\n3. Only update the MD if the change introduces something new or different:\n   - New pattern, component, or hook\n   - New API method or endpoint\n   - New form field or validation rule\n   - New column or detail screen section\n   - Bug fix that changes the recommended approach\n   - New locale key requirement\n4. Do NOT update for minor refactors, formatting, or changes that don't affect the documented patterns\n5. Keep updates concise — add/modify only the relevant section\n6. If the Feature Status table needs updating (e.g. a feature moved from ⏳ to ✅), update it\n7. If a new reusable component or pattern was added to shared infrastructure, document it"
+  }
+}
