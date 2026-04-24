@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
 
 export interface PanelCardProps {
   /** Title shown in the header bar */
@@ -9,6 +10,7 @@ export interface PanelCardProps {
   /** Called when the ✕ close button is pressed */
   onClose:     () => void;
   children:    React.ReactNode;
+  /** @deprecated — component reads theme internally via useThemeColors() */
   isDark?:     boolean;
   marginBottom?: number;
 }
@@ -20,7 +22,7 @@ export interface PanelCardProps {
  * Used for expandable option panels inside dialogs or bottom sheets.
  *
  * @example
- * <PanelCard title="Share Report" titleIcon="📤" onClose={() => setOpen(false)} isDark={isDark}>
+ * <PanelCard title="Share Report" titleIcon="📤" onClose={() => setOpen(false)}>
  *   <ActionRow ... />
  *   <ActionRow ... />
  * </PanelCard>
@@ -30,21 +32,16 @@ const PanelCard: React.FC<PanelCardProps> = ({
   titleIcon,
   onClose,
   children,
-  isDark       = false,
   marginBottom = 4,
 }) => {
-  const surface   = isDark ? '#1e293b' : '#ffffff';
-  const surfaceHi = isDark ? '#273549' : '#f8fafc';
-  const border    = isDark ? '#334155' : '#e2e8f0';
-  const textPri   = isDark ? '#f1f5f9' : '#0f172a';
-  const textSec   = isDark ? '#94a3b8' : '#64748b';
+  const c = useThemeColors();
 
   return (
     <View style={{
-      borderRadius:    16,
+      borderRadius:    Radius.xl,
       borderWidth:     1,
-      borderColor:     border,
-      backgroundColor: surface,
+      borderColor:     c.border.primary,
+      backgroundColor: c.surface.primary,
       overflow:        'hidden',
       marginBottom,
     }}>
@@ -55,13 +52,13 @@ const PanelCard: React.FC<PanelCardProps> = ({
         justifyContent:   'space-between',
         paddingHorizontal: 14,
         paddingVertical:   10,
-        backgroundColor:  surfaceHi,
+        backgroundColor:  c.surface.tertiary,
         borderBottomWidth: 1,
-        borderBottomColor: border,
+        borderBottomColor: c.border.primary,
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          {!!titleIcon && <Text style={{ fontSize: 13 }}>{titleIcon}</Text>}
-          <Text style={{ fontSize: 12, fontWeight: '700', color: textPri, letterSpacing: 0.2 }}>
+          {!!titleIcon && <Text style={{ fontSize: FontSize.base }}>{titleIcon}</Text>}
+          <Text style={{ fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: c.text.primary, letterSpacing: 0.2 }}>
             {title}
           </Text>
         </View>
@@ -72,13 +69,11 @@ const PanelCard: React.FC<PanelCardProps> = ({
           style={({ pressed }) => ({
             paddingHorizontal: 12,
             paddingVertical:   6,
-            borderRadius:      20,
-            backgroundColor:   pressed
-              ? (isDark ? '#334155' : '#e2e8f0')
-              : (isDark ? '#1e293b' : '#f1f5f9'),
+            borderRadius:      Radius.full,
+            backgroundColor:   pressed ? c.interactive.pressed : c.surface.secondary,
           })}
         >
-          <Text style={{ fontSize: 13, fontWeight: '700', color: textSec }}>✕</Text>
+          <Text style={{ fontSize: FontSize.base, fontWeight: FontWeight.bold, color: c.text.secondary }}>✕</Text>
         </Pressable>
       </View>
 

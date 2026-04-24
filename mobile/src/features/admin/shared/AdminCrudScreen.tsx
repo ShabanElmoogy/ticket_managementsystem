@@ -2,96 +2,80 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
 import { AppSearchInput } from '../../../shared/components';
+import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '../../../constants/theme';
 import { useUiStore } from '../../../stores/uiStore';
 import { useToast } from '../../../shared/hooks/useToast';
 
 const PAGE_SIZE = 5;
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
-  title: string;
-  icon: string;
-  entities: T[];
-  loading: boolean;
-  columns: ColDef<T>[];
-  searchFields: (keyof T)[];
-  renderForm: (item: T | null, onClose: () => void) => React.ReactNode;
-  onDelete: (id: string) => Promise<void>;
-  getItemName?: (item: T) => string;
-  renderCard?: (item: T, onEdit: () => void, onDelete: () => void) => React.ReactElement | null;
-  itemType?: string;
-  canAdd?: boolean;
-  onRowPress?: (item: T) => void;
-  /** Optional PDF export — shows Export PDF button in header */
-  onExport?: () => void;
-  exporting?: boolean;
-  /** Optional refresh — shows Refresh button in header */
-  onRefresh?: () => void;
-  /** Translated search placeholder — e.g. t('applications.searchPlaceholder') */
-  searchPlaceholder?: string;
-  /** Translated empty message when no items exist */
-  emptyMessage?: string;
-  /** Translated empty message when search has no results */
+  title:                string;
+  icon:                 string;
+  entities:             T[];
+  loading:              boolean;
+  columns:              ColDef<T>[];
+  searchFields:         (keyof T)[];
+  renderForm:           (item: T | null, onClose: () => void) => React.ReactNode;
+  onDelete:             (id: string) => Promise<void>;
+  getItemName?:         (item: T) => string;
+  renderCard?:          (item: T, onEdit: () => void, onDelete: () => void) => React.ReactElement | null;
+  itemType?:            string;
+  canAdd?:              boolean;
+  onRowPress?:          (item: T) => void;
+  onExport?:            () => void;
+  exporting?:           boolean;
+  onRefresh?:           () => void;
+  searchPlaceholder?:   string;
+  emptyMessage?:        string;
   emptyFilteredMessage?: string;
-  /** Translated button labels — passed from screen via t() */
-  addLabel?: string;
-  exportLabel?: string;
-  exportingLabel?: string;
-  refreshLabel?: string;
-  refreshingLabel?: string;
-  /** Shown as a toast after successful delete */
+  addLabel?:            string;
+  exportLabel?:         string;
+  exportingLabel?:      string;
+  refreshLabel?:        string;
+  refreshingLabel?:     string;
   deleteSuccessMessage?: string;
-  /**
-   * Called when onDelete throws. Receives the item that failed and the error.
-   * Use this to show a secondary dialog (e.g. force-delete) instead of the
-   * default silent error handling.
-   */
-  onDeleteFailed?: (item: T, error: unknown) => void;
+  onDeleteFailed?:      (item: T, error: unknown) => void;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
 
 function AutoCard<T extends { id: string }>({
-  item, columns, onView, onEdit, onDelete: onDel, isDark,
+  item, columns, onView, onEdit, onDelete: onDel,
 }: {
-  item: T; columns: ColDef<T>[];
-  onView?: () => void;
-  onEdit: () => void; onDelete: () => void;
-  isDark: boolean;
+  item:     T;
+  columns:  ColDef<T>[];
+  onView?:  () => void;
+  onEdit:   () => void;
+  onDelete: () => void;
 }) {
-  const visibleCols = columns.filter((c) => c.field !== '__actions__');
+  const c           = useThemeColors();
+  const visibleCols = columns.filter((col) => col.field !== '__actions__');
+
   return (
     <Pressable
       onPress={onView}
       style={({ pressed }) => ({
-        width: '100%',
-        marginBottom: 10,
-        borderRadius: 10,
-        borderWidth: 1,
-        overflow: 'hidden',
-        backgroundColor: pressed
-          ? (isDark ? '#273549' : '#f1f5f9')
-          : (isDark ? '#1e293b' : '#ffffff'),
-        borderColor: isDark ? '#334155' : '#e5e7eb',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: isDark ? 0 : 0.05,
-        shadowRadius: 3,
-        elevation: 1,
+        width: '100%', marginBottom: 10,
+        borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden',
+        backgroundColor: pressed ? c.surface.elevated : c.surface.primary,
+        borderColor:     c.border.primary,
+        shadowColor:     c.shadow,
+        shadowOffset:    { width: 0, height: 1 },
+        shadowOpacity:   0.05, shadowRadius: 3, elevation: 1,
       })}
     >
-      {/* ── Field rows ── */}
       <View style={{ padding: 14 }}>
         {visibleCols.map((col, i) => {
           const val = col.valueGetter ? col.valueGetter(item) : (item as any)[col.field as string];
           return (
             <View key={String(col.field)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: i > 0 ? 6 : 0 }}>
-              <Text style={{ fontSize: 11, width: 80, flexShrink: 0, color: isDark ? '#64748b' : '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={1}>
+              <Text style={{ fontSize: FontSize.xs, width: 80, flexShrink: 0, color: c.text.muted, textTransform: 'uppercase', letterSpacing: 0.3 }} numberOfLines={1}>
                 {col.headerName}
               </Text>
               {col.renderCell ? (
                 <View style={{ flex: 1, minWidth: 0 }}>{col.renderCell(item)}</View>
               ) : (
-                <Text style={{ fontSize: 13, flex: 1, fontWeight: i === 0 ? '600' : '400', color: isDark ? (i === 0 ? '#f1f5f9' : '#cbd5e1') : (i === 0 ? '#111827' : '#4b5563') }} numberOfLines={2}>
+                <Text style={{ fontSize: FontSize.base, flex: 1, fontWeight: i === 0 ? FontWeight.semibold : FontWeight.normal, color: i === 0 ? c.text.primary : c.text.secondary }} numberOfLines={2}>
                   {val == null || val === '' ? '—' : String(val)}
                 </Text>
               )}
@@ -100,32 +84,24 @@ function AutoCard<T extends { id: string }>({
         })}
       </View>
 
-      {/* ── Action buttons ── */}
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-      }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
         {onView && (
-          <Pressable onPress={onView} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff' }}>
-            <Text style={{ fontSize: 12 }}>👁️</Text>
-            <Text style={{ fontSize: 11, color: '#3b82f6', fontWeight: '600' }}>View</Text>
+          <Pressable onPress={onView} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface }}>
+            <Text style={{ fontSize: FontSize.sm }}>👁️</Text>
+            <Text style={{ fontSize: FontSize.xs, color: c.interactive.primary, fontWeight: FontWeight.semibold }}>View</Text>
           </Pressable>
         )}
-        <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff' }}>
-          <Text style={{ fontSize: 12 }}>✏️</Text>
-          <Text style={{ fontSize: 11, color: '#2563eb', fontWeight: '600' }}>Edit</Text>
+        <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface }}>
+          <Text style={{ fontSize: FontSize.sm }}>✏️</Text>
+          <Text style={{ fontSize: FontSize.xs, color: c.interactive.primary, fontWeight: FontWeight.semibold }}>Edit</Text>
         </Pressable>
-        <Pressable onPress={onDel} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2' }}>
-          <Text style={{ color: '#ef4444', fontSize: 12 }}>✕</Text>
-          <Text style={{ fontSize: 11, color: '#ef4444', fontWeight: '600' }}>Delete</Text>
+        <Pressable onPress={onDel} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.errorSurface }}>
+          <Text style={{ color: c.intent.error, fontSize: FontSize.sm }}>✕</Text>
+          <Text style={{ fontSize: FontSize.xs, color: c.intent.error, fontWeight: FontWeight.semibold }}>Delete</Text>
         </Pressable>
       </View>
 
-      {/* ── Divider under buttons ── */}
-      <View style={{ height: 1, backgroundColor: isDark ? '#334155' : '#f1f5f9' }} />
+      <View style={{ height: 1, backgroundColor: c.border.primary }} />
     </Pressable>
   );
 }
@@ -133,74 +109,51 @@ function AutoCard<T extends { id: string }>({
 // ── Auto-generated compact row ─────────────────────────────────────────────
 
 function CompactRow<T extends { id: string }>({
-  item, columns, onView, onEdit, onDelete: onDel, isDark,
+  item, columns, onView, onEdit, onDelete: onDel,
 }: {
-  item: T; columns: ColDef<T>[];
-  onView?: () => void;
-  onEdit: () => void; onDelete: () => void;
-  isDark: boolean;
+  item:     T;
+  columns:  ColDef<T>[];
+  onView?:  () => void;
+  onEdit:   () => void;
+  onDelete: () => void;
 }) {
-  // Collect all plain-text values from all visible columns
+  const c = useThemeColors();
+
   const allValues = columns
-    .filter((c) => c.field !== '__actions__' && !c.renderCell)
-    .map((c) => {
-      const val = c.valueGetter
-        ? c.valueGetter(item)
-        : (item as any)[c.field as string];
+    .filter((col) => col.field !== '__actions__' && !col.renderCell)
+    .map((col) => {
+      const val = col.valueGetter ? col.valueGetter(item) : (item as any)[col.field as string];
       return val != null && val !== '' ? String(val) : null;
     })
     .filter(Boolean) as string[];
 
-  const lineText = allValues.join('  ·  ');
-
-  // Button count determines fixed right width
+  const lineText  = allValues.join('  ·  ');
   const btnCount  = onView ? 3 : 2;
-  const btnsWidth = btnCount * 30 + (btnCount - 1) * 4; // 30px each + 4px gap
+  const btnsWidth = btnCount * 30 + (btnCount - 1) * 4;
 
   return (
     <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#334155' : '#f3f4f6',
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 12, paddingVertical: 10,
+      borderBottomWidth: 1, borderBottomColor: c.border.primary,
     }}>
-      {/* Text — takes all remaining space, truncates with ellipsis */}
-      <Pressable
-        onPress={onView}
-        style={{ flex: 1, minWidth: 0, marginEnd: 8 }}
-      >
-        <Text
-          style={{ fontSize: 13, color: isDark ? '#e2e8f0' : '#111827' }}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
+      <Pressable onPress={onView} style={{ flex: 1, minWidth: 0, marginEnd: 8 }}>
+        <Text style={{ fontSize: FontSize.base, color: c.text.primary }} numberOfLines={1} ellipsizeMode="tail">
           {lineText || '—'}
         </Text>
       </Pressable>
 
-      {/* Buttons — fixed width, never shrink */}
       <View style={{ flexDirection: 'row', gap: 4, width: btnsWidth }}>
         {onView && (
-          <Pressable
-            onPress={onView}
-            style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Text style={{ fontSize: 13 }}>👁️</Text>
+          <Pressable onPress={onView} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: FontSize.base }}>👁️</Text>
           </Pressable>
         )}
-        <Pressable
-          onPress={onEdit}
-          style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#1e3a5f' : '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text style={{ fontSize: 13 }}>✏️</Text>
+        <Pressable onPress={onEdit} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: FontSize.base }}>✏️</Text>
         </Pressable>
-        <Pressable
-          onPress={onDel}
-          style={{ width: 30, height: 30, borderRadius: 7, backgroundColor: isDark ? '#3b1515' : '#fef2f2', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text style={{ color: '#ef4444', fontSize: 14, lineHeight: 16 }}>✕</Text>
+        <Pressable onPress={onDel} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: c.intent.error, fontSize: FontSize.md, lineHeight: 16 }}>✕</Text>
         </Pressable>
       </View>
     </View>
@@ -218,21 +171,22 @@ function AdminCrudScreen<T extends { id: string }>({
   addLabel, exportLabel, exportingLabel, refreshLabel, refreshingLabel,
   deleteSuccessMessage, onDeleteFailed,
 }: AdminCrudScreenProps<T>) {
-  const { colorMode, setAdminView } = useUiStore();
+  const c      = useThemeColors();
+  const isDark = useIsDark();
+  const { setAdminView } = useUiStore();
   const toast  = useToast();
-  const isDark = colorMode === 'dark';
   const view   = useUiStore((s) => s.adminViews[title] ?? 'table');
 
-  const [search,      setSearch]      = useState('');
-  const [formItem,    setFormItem]    = useState<T | null>(null);
-  const [formOpen,    setFormOpen]    = useState(false);
+  const [search,       setSearch]       = useState('');
+  const [formItem,     setFormItem]     = useState<T | null>(null);
+  const [formOpen,     setFormOpen]     = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
-  const [deleting,    setDeleting]    = useState(false);
-  const [page,        setPage]        = useState(1);
+  const [deleting,     setDeleting]     = useState(false);
+  const [page,         setPage]         = useState(1);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const targetSnapshot = deleteTarget; // capture before any state updates
+    const targetSnapshot = deleteTarget;
     setDeleting(true);
     try {
       await onDelete(targetSnapshot.id);
@@ -240,10 +194,7 @@ function AdminCrudScreen<T extends { id: string }>({
       setDeleteTarget(null);
     } catch (error) {
       setDeleteTarget(null);
-      // Let the caller intercept the error (e.g. to show a force-delete dialog)
-      // Pass the snapshot — deleteTarget is already null by the time this runs
       if (onDeleteFailed) onDeleteFailed(targetSnapshot, error);
-      // Otherwise NetworkErrorDialog handles it globally
     } finally {
       setDeleting(false);
     }
@@ -257,56 +208,34 @@ function AdminCrudScreen<T extends { id: string }>({
       )
     : entities;
 
-  // Reset to page 1 whenever search or data changes
-  const handleSearchChange = useCallback((q: string) => {
-    setSearch(q);
-    setPage(1);
-  }, []);
+  const handleSearchChange = useCallback((q: string) => { setSearch(q); setPage(1); }, []);
 
-  // Pagination derived values
   const totalItems = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
-  const pageRows   = useMemo(
-    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
-    [filtered, safePage],
-  );
+  const pageRows   = useMemo(() => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE), [filtered, safePage]);
 
   const pagination = useMemo(() => ({
-    page:       safePage,
-    totalPages,
-    totalItems,
-    pageSize:   PAGE_SIZE,
-    hasNext:    safePage < totalPages,
-    hasPrev:    safePage > 1,
-    next:       () => setPage((p) => Math.min(p + 1, totalPages)),
-    prev:       () => setPage((p) => Math.max(p - 1, 1)),
+    page: safePage, totalPages, totalItems, pageSize: PAGE_SIZE,
+    hasNext: safePage < totalPages, hasPrev: safePage > 1,
+    next: () => setPage((p) => Math.min(p + 1, totalPages)),
+    prev: () => setPage((p) => Math.max(p - 1, 1)),
   }), [safePage, totalPages, totalItems]);
 
-  // Action column for table view — View + Edit + Delete
   const actionCol: ColDef<T> = {
     field: '__actions__', headerName: '', width: onRowPress ? 124 : 88, sortable: false, align: 'center',
     renderCell: (row: T) => (
       <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
         {onRowPress && (
-          <Pressable
-            onPress={() => onRowPress(row)}
-            style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Text style={{ fontSize: 14 }}>👁️</Text>
+          <Pressable onPress={() => onRowPress(row)} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: FontSize.md }}>👁️</Text>
           </Pressable>
         )}
-        <Pressable
-          onPress={() => { setFormItem(row); setFormOpen(true); }}
-          style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text style={{ fontSize: 14 }}>✏️</Text>
+        <Pressable onPress={() => { setFormItem(row); setFormOpen(true); }} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: FontSize.md }}>✏️</Text>
         </Pressable>
-        <Pressable
-          onPress={() => setDeleteTarget(row)}
-          style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text style={{ color: '#ef4444', fontSize: 16, lineHeight: 18 }}>✕</Text>
+        <Pressable onPress={() => setDeleteTarget(row)} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: c.intent.error, fontSize: FontSize.xl, lineHeight: 18 }}>✕</Text>
         </Pressable>
       </View>
     ),
@@ -317,89 +246,54 @@ function AdminCrudScreen<T extends { id: string }>({
       rows={pageRows}
       columns={[...columns, actionCol]}
       loading={loading}
-      emptyMessage={
-        search
-          ? (emptyFilteredMessage ?? `No ${title.toLowerCase()} match "${search}"`)
-          : (emptyMessage ?? `No ${title.toLowerCase()} yet`)
-      }
+      emptyMessage={search ? (emptyFilteredMessage ?? `No ${title.toLowerCase()} match "${search}"`) : (emptyMessage ?? `No ${title.toLowerCase()} yet`)}
       onRowPress={onRowPress}
     />
   ), [pageRows, columns, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
-      {/* Screen header with Add button + ViewToggle */}
+    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
-        title={title}
-        isDark={isDark}
-        view={view}
-        onViewChange={(v) => setAdminView(title, v)}
+        title={title} isDark={isDark}
+        view={view} onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}
         addLabel={addLabel ?? `Add ${itemType}`}
         loading={loading}
-        onExport={onExport}
-        exporting={exporting}
-        exportDisabled={loading || entities.length === 0}
-        exportLabel={exportLabel}
-        exportingLabel={exportingLabel}
-        onRefresh={onRefresh}
-        refreshLabel={refreshLabel}
-        refreshingLabel={refreshingLabel}
+        onExport={onExport} exporting={exporting} exportDisabled={loading || entities.length === 0}
+        exportLabel={exportLabel} exportingLabel={exportingLabel}
+        onRefresh={onRefresh} refreshLabel={refreshLabel} refreshingLabel={refreshingLabel}
       />
 
-      {/* Fixed search bar — same width as DataCard, all views */}
-      <View style={{
-        marginTop: 8,
-        marginBottom: 4,
-      }}>
-        <AppSearchInput
-          value={search}
-          onChange={handleSearchChange}
-          isDark={isDark}
-          placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
-        />
+      <View style={{ marginTop: 8, marginBottom: 4 }}>
+        <AppSearchInput value={search} onChange={handleSearchChange} isDark={isDark} placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`} />
       </View>
 
-      {/* DataCard handles views, empty states */}
       <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12 }}>
         <DataCard<T>
-          title={title}
-          isDark={isDark}
-          totalCount={entities.length}
-          rows={pageRows}
-          loading={loading}
-          search={search}
-          onSearchChange={handleSearchChange}
+          title={title} isDark={isDark}
+          totalCount={entities.length} rows={pageRows} loading={loading}
+          search={search} onSearchChange={handleSearchChange}
           searchPlaceholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
-          view={view}
-          renderTable={renderTable}
-          pagination={pagination}
+          view={view} renderTable={renderTable} pagination={pagination}
           renderGridItem={(item) =>
             renderCard
               ? renderCard(item, () => { setFormItem(item); setFormOpen(true); }, () => setDeleteTarget(item))
-              : <AutoCard item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
+              : <AutoCard item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} />
           }
           renderCompactItem={(item) =>
-            <CompactRow item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} isDark={isDark} />
+            <CompactRow item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} />
           }
-          renderForm={renderForm}
-          onDelete={onDelete}
-          getItemName={getItemName}
-          itemType={itemType}
+          renderForm={renderForm} onDelete={onDelete} getItemName={getItemName} itemType={itemType}
         />
       </View>
 
-      {/* Form modal */}
       {formOpen && renderForm(formItem, () => setFormOpen(false))}
 
-      {/* Delete dialog — owned here so table column can trigger it */}
       <AppDeleteDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         itemName={deleteTarget && getItemName ? getItemName(deleteTarget) : undefined}
-        itemType={itemType}
-        loading={deleting}
+        itemType={itemType} loading={deleting}
       />
     </View>
   );

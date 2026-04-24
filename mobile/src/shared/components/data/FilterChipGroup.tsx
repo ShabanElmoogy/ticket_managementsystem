@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
 
 export interface FilterChipOption<T> {
   value: T;
@@ -7,48 +8,36 @@ export interface FilterChipOption<T> {
 }
 
 interface Props<T> {
-  options: FilterChipOption<T>[];
-  value: T;
-  onChange: (v: T) => void;
-  isDark: boolean;
-  /** Label shown above the chip row. Hidden when omitted. */
-  title?: string;
-  /** Active chip accent color. Default purple. */
-  activeColor?: string;
-  keyExtractor?: (v: T) => string;
+  options:        FilterChipOption<T>[];
+  value:          T;
+  onChange:       (v: T) => void;
+  isDark?:        boolean;
+  title?:         string;
+  activeColor?:   string;
+  keyExtractor?:  (v: T) => string;
 }
 
-/**
- * Horizontal scrollable row of filter chips.
- * Generic — works with any value type (string, number, object).
- * Used for period selectors, status filters, category pickers, etc.
- */
 function FilterChipGroup<T>({
-  options, value, onChange, isDark,
-  title, activeColor = '#8b5cf6',
+  options, value, onChange,
+  title, activeColor,
   keyExtractor,
 }: Props<T>) {
-  const getKey = (v: T, i: number) =>
-    keyExtractor ? keyExtractor(v) : String(i);
+  const c          = useThemeColors();
+  const chipActive = activeColor ?? c.interactive.primary;
+  const getKey     = (v: T, i: number) => keyExtractor ? keyExtractor(v) : String(i);
 
   return (
-    <View style={{ marginTop: 8 , marginStart : 10 }}>
+    <View style={{ marginTop: 8, marginStart: 10 }}>
       {title && (
         <Text style={{
-          fontSize: 10, 
-          fontWeight: '700', 
-          textTransform: 'uppercase',
-          letterSpacing: 0.5, color: isDark ? '#475569' : '#94a3b8',
-          marginBottom: 6,
+          fontSize: FontSize.xs, fontWeight: FontWeight.bold,
+          textTransform: 'uppercase', letterSpacing: 0.5,
+          color: c.text.muted, marginBottom: 6,
         }}>
           {title}
         </Text>
       )}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: 'row', gap: 6 }}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 6 }}>
         {options.map((opt, i) => {
           const active = opt.value === value;
           return (
@@ -56,17 +45,15 @@ function FilterChipGroup<T>({
               key={getKey(opt.value, i)}
               onPress={() => onChange(opt.value)}
               style={{
-                paddingHorizontal: 12, 
-                paddingVertical: 6, 
-                borderRadius: 16,
-                backgroundColor: active ? activeColor : (isDark ? '#1e293b' : '#fff'),
+                paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full,
+                backgroundColor: active ? chipActive : c.surface.primary,
                 borderWidth: 1.5,
-                borderColor: active ? activeColor : (isDark ? '#334155' : '#e2e8f0'),
+                borderColor: active ? chipActive : c.border.primary,
               }}
             >
               <Text style={{
-                fontSize: 12, fontWeight: '600',
-                color: active ? '#fff' : (isDark ? '#94a3b8' : '#64748b'),
+                fontSize: FontSize.sm, fontWeight: FontWeight.semibold,
+                color: active ? c.text.inverse : c.text.secondary,
               }}>
                 {opt.label}
               </Text>

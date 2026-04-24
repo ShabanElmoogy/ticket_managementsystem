@@ -1,24 +1,6 @@
-/**
- * DataCard — unified data display component.
- *
- * Combines all features from AdminCrudScreen and ReportCard:
- *   - Search / filter
- *   - Table / Grid / Compact views
- *   - Sorting + Pagination (table view)
- *   - Pull-to-refresh
- *   - Loading state
- *   - Empty state
- *   - CRUD: form modal + delete dialog (optional)
- *   - Section header with count badge
- *   - Optional extra header content (period selectors, etc.)
- *
- * Both AdminCrudScreen and ReportCard are thin wrappers around this.
- */
 import React, { useState, useMemo } from 'react';
-import {
-  View, Text, FlatList, ActivityIndicator, RefreshControl,
-} from 'react-native';
-import AppSearchInput  from '../forms/AppSearchInput';
+import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { useThemeColors, FontSize } from '../../../constants/theme';
 import AppEmptyState   from '../feedback/AppEmptyState';
 import AppDeleteDialog from '../dialogs/AppDeleteDialog';
 import SectionHeader   from '../display/SectionHeader';
@@ -30,69 +12,45 @@ import type { AdminView } from '../../../stores/uiStore';
 // ── Pagination state shape ────────────────────────────────────────────────────
 
 export interface PaginationState {
-  page: number;
+  page:       number;
   totalPages: number;
   totalItems: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-  next: () => void;
-  prev: () => void;
+  pageSize:   number;
+  hasNext:    boolean;
+  hasPrev:    boolean;
+  next:       () => void;
+  prev:       () => void;
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 export interface DataCardProps<T extends { id: string }> {
-  // ── Identity ────────────────────────────────────────────────────────────
-  title: string;
-  isDark: boolean;
-
-  // ── Data ────────────────────────────────────────────────────────────────
-  /** All rows (unfiltered) — used for the total count in the header badge */
-  totalCount: number;
-  /** Filtered rows passed to grid/compact views */
-  rows: T[];
-  loading: boolean;
-
-  // ── Search ──────────────────────────────────────────────────────────────
-  search: string;
-  onSearchChange: (q: string) => void;
+  title:              string;
+  /** @deprecated — theme is resolved automatically via useThemeColors() */
+  isDark?:            boolean;
+  totalCount:         number;
+  rows:               T[];
+  loading:            boolean;
+  search:             string;
+  onSearchChange:     (q: string) => void;
   searchPlaceholder?: string;
-
-  // ── View ────────────────────────────────────────────────────────────────
-  view: AdminView;
-
-  // ── Renderers ───────────────────────────────────────────────────────────
-  /** Table view — rendered inside PaginatedView */
-  renderTable: () => React.ReactElement | null;
-  /** Pagination state for table view */
-  pagination?: PaginationState;
-  /** Grid view card per row */
-  renderGridItem?: (item: T) => React.ReactElement | null;
-  /** Compact view row per item */
+  view:               AdminView;
+  renderTable:        () => React.ReactElement | null;
+  pagination?:        PaginationState;
+  renderGridItem?:    (item: T) => React.ReactElement | null;
   renderCompactItem?: (item: T) => React.ReactElement | null;
-
-  // ── Header extras ────────────────────────────────────────────────────────
-  /** Extra content rendered below the search bar (period selectors, filters, etc.) */
-  headerExtras?: React.ReactNode;
-
-  // ── Refresh ──────────────────────────────────────────────────────────────
-  onRefresh?: () => void;
-
-  // ── CRUD (optional) ──────────────────────────────────────────────────────
-  /** Form modal — rendered when formOpen is true */
-  renderForm?: (editingItem: T | null, onClose: () => void) => React.ReactNode;
-  /** Called when delete is confirmed */
-  onDelete?: (id: string) => Promise<void>;
-  /** Extract display name for delete dialog */
-  getItemName?: (item: T) => string;
-  itemType?: string;
+  headerExtras?:      React.ReactNode;
+  onRefresh?:         () => void;
+  renderForm?:        (editingItem: T | null, onClose: () => void) => React.ReactNode;
+  onDelete?:          (id: string) => Promise<void>;
+  getItemName?:       (item: T) => string;
+  itemType?:          string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function DataCard<T extends { id: string }>({
-  title, isDark,
+  title,
   totalCount, rows, loading,
   search, onSearchChange, searchPlaceholder = 'Search…',
   view,
@@ -102,15 +60,12 @@ function DataCard<T extends { id: string }>({
   onRefresh,
   renderForm, onDelete, getItemName, itemType = 'item',
 }: DataCardProps<T>) {
-  // ── CRUD state ────────────────────────────────────────────────────────────
-  const [formOpen,   setFormOpen]   = useState(false);
-  const [editingItem, setEditingItem] = useState<T | null>(null);
-  const [deleteItem, setDeleteItem] = useState<T | null>(null);
-  const [deleting,   setDeleting]   = useState(false);
+  const c = useThemeColors();
 
-  const openEdit   = (item: T)  => { setEditingItem(item); setFormOpen(true); };
-  const openAdd    = ()          => { setEditingItem(null); setFormOpen(true); };
-  const openDelete = (item: T)  => setDeleteItem(item);
+  const [formOpen,    setFormOpen]    = useState(false);
+  const [editingItem, setEditingItem] = useState<T | null>(null);
+  const [deleteItem,  setDeleteItem]  = useState<T | null>(null);
+  const [deleting,    setDeleting]    = useState(false);
 
   const handleDelete = async () => {
     if (!deleteItem || !onDelete) return;
@@ -119,50 +74,52 @@ function DataCard<T extends { id: string }>({
     finally { setDeleting(false); setDeleteItem(null); }
   };
 
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const isFiltered  = search.trim().length > 0;
-  const border      = isDark ? '#334155' : '#e2e8f0';
-  const cardBg      = isDark ? '#1e293b' : '#ffffff';
-  const emptyIcon   = isFiltered ? '🔍' : '📭';
-  const emptyMsg    = isFiltered ? 'No results found' : 'No data available';
-  const emptySub    = isFiltered ? `No rows match "${search}"` : undefined;
+  const isFiltered = search.trim().length > 0;
+  const emptyIcon  = isFiltered ? '🔍' : '📭';
+  const emptyMsg   = isFiltered ? 'No results found' : 'No data available';
+  const emptySub   = isFiltered ? `No rows match "${search}"` : undefined;
 
-  // ── Table list header — no search (rendered outside by AdminCrudScreen) ──
   const ListHeader = useMemo(() => (
-    headerExtras ? <View>{headerExtras}</View> : null
+    headerExtras ? <View>{headerExtras}</View> : undefined
   ), [headerExtras]);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  const paginationBar = pagination ? (
+    <AppPagination
+      page={pagination.page}
+      totalPages={pagination.totalPages}
+      totalItems={pagination.totalItems}
+      pageSize={pagination.pageSize}
+      hasNext={pagination.hasNext}
+      hasPrev={pagination.hasPrev}
+      onNext={pagination.next}
+      onPrev={pagination.prev}
+    />
+  ) : null;
+
   return (
     <View style={{
       flex: 1, borderRadius: 12, overflow: 'hidden',
-      borderWidth: 1, borderColor: border,
-      backgroundColor: cardBg,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0 : 0.06, shadowRadius: 6, elevation: 2,
+      borderWidth: 1, borderColor: c.border.primary,
+      backgroundColor: c.surface.primary,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
     }}>
-      {/* Header */}
+      {/* ── Header ── */}
       <SectionHeader
         title={title}
-        isDark={isDark}
-        right={
-          <CountBadge
-            count={rows.length}
-            total={totalCount}
-            isFiltered={isFiltered}
-          />
-        }
+        isDark={false}
+        right={<CountBadge count={rows.length} total={totalCount} isFiltered={isFiltered} />}
       />
 
-      {/* Loading */}
+      {/* ── Loading ── */}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={{ fontSize: 13, color: isDark ? '#64748b' : '#94a3b8' }}>Loading…</Text>
+          <ActivityIndicator size="large" color={c.interactive.primary} />
+          <Text style={{ fontSize: FontSize.base, color: c.text.muted }}>Loading…</Text>
         </View>
 
       ) : view === 'table' ? (
-        /* ── Table view ── */
         pagination ? (
           <PaginatedView
             renderContent={renderTable}
@@ -170,10 +127,9 @@ function DataCard<T extends { id: string }>({
             pagination={pagination}
             loading={loading}
             onRefresh={onRefresh ?? (() => {})}
-            isDark={isDark}
+            isDark={false}
           />
         ) : (
-          /* No pagination — render table directly with header */
           <FlatList
             data={[{ key: 'table' }]}
             keyExtractor={(i) => i.key}
@@ -186,7 +142,6 @@ function DataCard<T extends { id: string }>({
         )
 
       ) : view === 'grid' ? (
-        /* ── Grid view — search is rendered outside by AdminCrudScreen ── */
         <View style={{ flex: 1 }}>
           <FlatList
             style={{ flex: 1 }}
@@ -194,32 +149,15 @@ function DataCard<T extends { id: string }>({
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
             ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-            ListFooterComponent={
-              pagination ? (
-                <AppPagination
-                  page={pagination.page}
-                  totalPages={pagination.totalPages}
-                  totalItems={pagination.totalItems}
-                  pageSize={pagination.pageSize}
-                  hasNext={pagination.hasNext}
-                  hasPrev={pagination.hasPrev}
-                  onNext={pagination.next}
-                  onPrev={pagination.prev}
-                  isDark={isDark}
-                />
-              ) : null
-            }
+            ListFooterComponent={paginationBar}
             refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) =>
-              renderGridItem ? (renderGridItem(item) ?? null) : null
-            }
+            renderItem={({ item }) => renderGridItem ? (renderGridItem(item) ?? null) : null}
           />
         </View>
 
       ) : (
-        /* ── Compact view — search is rendered outside by AdminCrudScreen ── */
         <View style={{ flex: 1 }}>
           <FlatList
             style={{ flex: 1 }}
@@ -227,35 +165,17 @@ function DataCard<T extends { id: string }>({
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: 24 }}
             ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-            ListFooterComponent={
-              pagination ? (
-                <AppPagination
-                  page={pagination.page}
-                  totalPages={pagination.totalPages}
-                  totalItems={pagination.totalItems}
-                  pageSize={pagination.pageSize}
-                  hasNext={pagination.hasNext}
-                  hasPrev={pagination.hasPrev}
-                  onNext={pagination.next}
-                  onPrev={pagination.prev}
-                  isDark={isDark}
-                />
-              ) : null
-            }
+            ListFooterComponent={paginationBar}
             refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) =>
-              renderCompactItem ? (renderCompactItem(item) ?? null) : null
-            }
+            renderItem={({ item }) => renderCompactItem ? (renderCompactItem(item) ?? null) : null}
           />
         </View>
       )}
 
-      {/* CRUD: form modal */}
       {formOpen && renderForm && renderForm(editingItem, () => setFormOpen(false))}
 
-      {/* CRUD: delete dialog */}
       {onDelete && (
         <AppDeleteDialog
           open={!!deleteItem}

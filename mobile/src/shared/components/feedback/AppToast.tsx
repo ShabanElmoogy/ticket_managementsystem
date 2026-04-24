@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Clipboard } from 'react-native';
 import Toast, { BaseToast, ErrorToast, type BaseToastProps } from 'react-native-toast-message';
+import { Palette, Colors } from '../../../constants/theme';
 
 // ── Toast item component ──────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ export const toastConfig = {
   success: (props: BaseToastProps) => (
     <ToastItem
       {...props}
-      accentColor="#10b981"
+      accentColor={Palette.green500}
       icon="✅"
       showCopy
     />
@@ -64,7 +65,7 @@ export const toastConfig = {
   error: (props: BaseToastProps) => (
     <ToastItem
       {...props}
-      accentColor="#ef4444"
+      accentColor={Palette.red500}
       icon="❌"
       showCopy
     />
@@ -73,7 +74,7 @@ export const toastConfig = {
   info: (props: BaseToastProps) => (
     <ToastItem
       {...props}
-      accentColor="#3b82f6"
+      accentColor={Palette.blue500}
       icon="ℹ️"
     />
   ),
@@ -85,14 +86,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: Colors.light.surface.primary,
     borderRadius: 14,
     borderLeftWidth: 5,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginHorizontal: 16,
     gap: 12,
-    shadowColor: '#000',
+    shadowColor: Palette.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -112,11 +113,11 @@ const styles = StyleSheet.create({
   text1: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0f172a',
+    color: Colors.light.text.primary,
   },
   text2: {
     fontSize: 12,
-    color: '#64748b',
+    color: Colors.light.text.secondary,
     marginTop: 2,
   },
   copyBtn: {

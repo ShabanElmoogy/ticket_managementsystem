@@ -2,7 +2,8 @@ import React from 'react';
 import { OutlineButton } from '@/src/shared/components';
 
 interface Props {
-  isDark:  boolean;
+  /** @deprecated — OutlineButton reads theme internally */
+  isDark?:  boolean;
   onPress: () => void;
 }
 
@@ -10,8 +11,8 @@ interface Props {
  * Thin wrapper — renders the shared OutlineButton pre-configured
  * as the "Share" trigger in the NetworkErrorDialog action row.
  */
-const ShareTrigger: React.FC<Props> = ({ isDark, onPress }) => (
-  <OutlineButton icon="📤" label="Share" onPress={onPress} isDark={isDark} />
+const ShareTrigger: React.FC<Props> = ({ onPress }) => (
+  <OutlineButton icon="📤" label="Share" onPress={onPress} />
 );
 
 export default ShareTrigger;

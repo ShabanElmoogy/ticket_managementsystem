@@ -1,4 +1,5 @@
-import type { Customer, SubscriptionStatus } from '../../services/api/types';
+import type { Customer, SubscriptionStatus } from '@/src/services/api/types';
+import type { ThemeColors } from '@/src/constants/tokens';
 
 export const getCustomerStatus = (customer: Customer): SubscriptionStatus => {
   const now = new Date();
@@ -33,11 +34,21 @@ export const MAINTENANCE_LABELS: Record<string, string> = {
   PAY_AS_YOU_GO:        'Pay As You Go',
 };
 
-/** Color keys mapped to RN-friendly semantic names instead of MUI severity */
-export const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  ACTIVE:        { label: 'Active',          color: '#10b981' },
-  TRIAL:         { label: 'Trial',           color: '#3b82f6' },
-  EXPIRED:       { label: 'Expired',         color: '#ef4444' },
-  PAY_AS_YOU_GO: { label: 'Pay per Service', color: '#f59e0b' },
-  INACTIVE:      { label: 'Inactive',        color: '#6b7280' },
-};
+export interface StatusConfigEntry {
+  label: string;
+  color: string;
+}
+
+/**
+ * Returns subscription status config using semantic theme tokens.
+ * Call inside a component: const cfg = getStatusConfig(useThemeColors());
+ */
+export function getStatusConfig(c: ThemeColors): Record<string, StatusConfigEntry> {
+  return {
+    ACTIVE:        { label: 'Active',          color: c.intent.success  },
+    TRIAL:         { label: 'Trial',           color: c.interactive.primary },
+    EXPIRED:       { label: 'Expired',         color: c.intent.error    },
+    PAY_AS_YOU_GO: { label: 'Pay per Service', color: c.intent.warning  },
+    INACTIVE:      { label: 'Inactive',        color: c.text.muted      },
+  };
+}

@@ -7,21 +7,30 @@ import ar from './locales/ar.json';
 
 const LANG_KEY = 'i18nextLng';
 
+/**
+ * Synchronous init — called at module load time so i18n is always ready
+ * before any component mounts. Defaults to English; initI18n() will switch
+ * to the persisted language asynchronously once AsyncStorage is readable.
+ */
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    ar: { translation: ar },
+  },
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+  detection: undefined,
+});
+
 export async function initI18n() {
   const saved = await AsyncStorage.getItem(LANG_KEY);
   const lng = (saved === 'ar' ? 'ar' : 'en') as 'en' | 'ar';
 
-  await i18n.use(initReactI18next).init({
-    resources: {
-      en: { translation: en },
-      ar: { translation: ar },
-    },
-    lng,
-    fallbackLng: 'en',
-    interpolation: { escapeValue: false },
-    // Disable i18next's own language detection — we manage it manually
-    detection: undefined,
-  });
+  // Switch to the persisted language (no-op if already 'en')
+  if (lng !== i18n.language) {
+    await i18n.changeLanguage(lng);
+  }
 
   // Sync direction store to match the persisted language
   // Import lazily to avoid circular deps at module load time

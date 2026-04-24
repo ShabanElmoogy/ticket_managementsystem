@@ -1,32 +1,27 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useThemeColors, FontWeight } from '../../../constants/theme';
 
 interface Props {
-  name: string;
-  size?: number;
-  color?: string;       // accent color — used for background tint and text
+  name:   string;
+  size?:  number;
+  color?: string;
 }
 
-/**
- * Circular avatar showing the first letter of a name.
- * Used in compact list rows, cards, user displays, etc.
- */
-const InitialAvatar: React.FC<Props> = ({
-  name, size = 32, color = '#3b82f6',
-}) => (
-  <View style={{
-    width: size, height: size, borderRadius: size / 2,
-    backgroundColor: color + '20',
-    alignItems: 'center', justifyContent: 'center',
-  }}>
-    <Text style={{
-      fontSize: Math.round(size * 0.4),
-      fontWeight: '700',
-      color,
+const InitialAvatar: React.FC<Props> = ({ name, size = 32, color }) => {
+  const c           = useThemeColors();
+  const accentColor = color ?? c.interactive.primary;
+  return (
+    <View style={{
+      width: size, height: size, borderRadius: size / 2,
+      backgroundColor: accentColor + '20',
+      alignItems: 'center', justifyContent: 'center',
     }}>
-      {name.charAt(0).toUpperCase()}
-    </Text>
-  </View>
-);
+      <Text style={{ fontSize: Math.round(size * 0.4), fontWeight: FontWeight.bold, color: accentColor }}>
+        {name.charAt(0).toUpperCase()}
+      </Text>
+    </View>
+  );
+};
 
 export default InitialAvatar;

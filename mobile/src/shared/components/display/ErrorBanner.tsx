@@ -1,44 +1,42 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
 
 interface Props {
-  message: string;
-  isDark: boolean;
-  onRetry?: () => void;
+  message:     string;
+  isDark?:     boolean;
+  onRetry?:    () => void;
   retryLabel?: string;
 }
 
-/**
- * Inline error banner with an optional retry button.
- * Reusable across any screen that needs to show an error with a retry action.
- */
-const ErrorBanner: React.FC<Props> = ({
-  message, isDark, onRetry, retryLabel = 'Retry',
-}) => (
-  <View style={{
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 16, marginBottom: 8,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 10, borderWidth: 1,
-    borderColor: isDark ? '#7f1d1d' : '#fecaca',
-    backgroundColor: isDark ? '#3b1515' : '#fef2f2',
-  }}>
-    <Text style={{ fontSize: 16, marginRight: 8 }}>⚠️</Text>
-    <Text style={{ flex: 1, fontSize: 12, color: isDark ? '#fca5a5' : '#b91c1c', lineHeight: 17 }}>
-      {message}
-    </Text>
-    {onRetry && (
-      <Pressable
-        onPress={onRetry}
-        style={({ pressed }) => ({
-          paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7, marginLeft: 8,
-          backgroundColor: pressed ? '#dc2626' : '#ef4444',
-        })}
-      >
-        <Text style={{ fontSize: 11, fontWeight: '700', color: '#fff' }}>{retryLabel}</Text>
-      </Pressable>
-    )}
-  </View>
-);
+const ErrorBanner: React.FC<Props> = ({ message, onRetry, retryLabel = 'Retry' }) => {
+  const c = useThemeColors();
+  return (
+    <View style={{
+      flexDirection: 'row', alignItems: 'center',
+      marginHorizontal: 16, marginBottom: 8,
+      paddingHorizontal: 14, paddingVertical: 10,
+      borderRadius: Radius.lg, borderWidth: 1,
+      borderColor: c.intent.error + '66', backgroundColor: c.intent.errorSurface,
+    }}>
+      <Text style={{ fontSize: FontSize.xl, marginEnd: 8 }}>⚠️</Text>
+      <Text style={{ flex: 1, fontSize: FontSize.sm, color: c.intent.error, lineHeight: 17 }}>{message}</Text>
+      {onRetry && (
+        <Pressable
+          onPress={onRetry}
+          style={({ pressed }) => ({
+            paddingHorizontal: 10, paddingVertical: 5,
+            borderRadius: Radius.sm, marginStart: 8,
+            backgroundColor: pressed ? c.interactive.errorPressed : c.interactive.error,
+          })}
+        >
+          <Text style={{ fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: c.text.inverse }}>
+            {retryLabel}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+};
 
 export default ErrorBanner;

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
-import { useUiStore } from '@/src/stores/uiStore';
+import { useThemeColors, useIsDark, Radius, FontSize, FontWeight } from '@/src/constants/theme';
 import { AlertDialog, PrimaryButton } from '@/src/shared/components';
 import ErrorExtraBanner from './components/ErrorExtraBanner';
 import SharePanel       from './components/SharePanel';
@@ -10,8 +11,8 @@ import { statusColor, statusIcon, statusLabel } from './utils';
 import type { ErrorState } from './types';
 
 const NetworkErrorDialog: React.FC = () => {
-  const { colorMode } = useUiStore();
-  const isDark = colorMode === 'dark';
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   const [visible,       setVisible]       = useState(false);
   const [retrying,      setRetrying]      = useState(false);
@@ -83,37 +84,62 @@ const NetworkErrorDialog: React.FC = () => {
   // ── extra slot: banner + share panel ──────────────────────────────────────
   const extra = (
     <>
-      <ErrorExtraBanner error={error} retrying={retrying} isDark={isDark} />
+      <ErrorExtraBanner error={error} retrying={retrying} />
 
       {shareExpanded && error && !retrying && (
         <SharePanel
           error={error}
           accentColor={accentColor}
           icon={icon}
-          isDark={isDark}
           onClose={() => setShareExpanded(false)}
         />
       )}
     </>
   );
 
-  // ── actions override: Share trigger + OK ──────────────────────────────────
-  //
-  // actionsOverride is an either/or with actions in AlertDialog — when set,
-  // actions is ignored. Both buttons must live here together.
+  // ── actions override: Share (left) | OK + Cancel (right) — one row ────────
   const actionsOverride = error && !retrying ? (
-    <>
+    <View style={{ flexDirection: 'row', width: '100%', gap: 10, alignItems: 'stretch' }}>
+
+      {/* Share — left */}
       <ShareTrigger
-        isDark={isDark}
         onPress={() => setShareExpanded((v) => !v)}
       />
-      <PrimaryButton
-        label="OK"
-        icon="✓"
-        color={accentColor}
-        onPress={dismiss}
-      />
-    </>
+
+      {/* OK + Cancel — right side */}
+      <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
+
+        {/* OK */}
+        <PrimaryButton
+          label="OK"
+          icon="✓"
+          color={accentColor}
+          onPress={dismiss}
+        />
+
+        {/* Cancel */}
+        <Pressable
+          onPress={dismiss}
+          style={({ pressed }) => ({
+            flex:           1,
+            flexDirection:  'row',
+            alignItems:     'center',
+            justifyContent: 'center',
+            borderRadius:   Radius.xl,
+            borderWidth:    1.5,
+            borderColor:    c.border.secondary,
+            backgroundColor: pressed ? c.interactive.pressed : 'transparent',
+            minHeight:      58,
+          })}
+        >
+          <Text style={{ fontSize: FontSize.lg, color: c.text.secondary, marginEnd: 6 }}>✕</Text>
+          <Text style={{ fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: c.text.secondary }}>
+            Cancel
+          </Text>
+        </Pressable>
+
+      </View>
+    </View>
   ) : undefined;
 
   return (
@@ -129,7 +155,6 @@ const NetworkErrorDialog: React.FC = () => {
       extra={extra}
       actions={retrying ? [] : undefined}
       actionsOverride={actionsOverride}
-      isDark={isDark}
     />
   );
 };

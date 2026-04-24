@@ -39,24 +39,14 @@ import {
   View, Text, Pressable, FlatList,
   type StyleProp, type ViewStyle,
 } from 'react-native';
+import { Colors, StatusColors, PriorityColors } from '../../../constants/tokens';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Color maps
+// Color maps — re-exported from tokens for backward compat
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const STATUS_COLORS: Record<string, string> = {
-  OPEN:        '#f59e0b',
-  IN_PROGRESS: '#8b5cf6',
-  RESOLVED:    '#10b981',
-  CLOSED:      '#64748b',
-};
-
-export const PRIORITY_COLORS: Record<string, string> = {
-  LOW:    '#10b981',
-  MEDIUM: '#f59e0b',
-  HIGH:   '#ef4444',
-  URGENT: '#dc2626',
-};
+export const STATUS_COLORS: Record<string, string> = StatusColors;
+export const PRIORITY_COLORS: Record<string, string> = PriorityColors;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Column width constants
@@ -173,15 +163,18 @@ export const Badge: React.FC<{ label: string | number; color: string }> = ({ lab
 // TH — static header cell
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const TH: React.FC<{ children: string; width: number; isDark: boolean }> = ({ children, width, isDark }) => (
-  <Text style={{
-    width, fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
-    letterSpacing: 0.4, color: isDark ? '#94a3b8' : '#64748b',
-    textAlign: 'center', paddingVertical: 20, paddingHorizontal: 6,
-  }}>
-    {children}
-  </Text>
-);
+export const TH: React.FC<{ children: string; width: number; isDark: boolean }> = ({ children, width, isDark }) => {
+  const c = isDark ? Colors.dark : Colors.light;
+  return (
+    <Text style={{
+      width, fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+      letterSpacing: 0.4, color: c.text.secondary,
+      textAlign: 'center', paddingVertical: 20, paddingHorizontal: 6,
+    }}>
+      {children}
+    </Text>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STH — sortable header cell
@@ -195,9 +188,10 @@ export const STH: React.FC<{
   sort: SortState;
   onSort: (field: string) => void;
 }> = ({ children, width, isDark, field, sort, onSort }) => {
+  const c        = isDark ? Colors.dark : Colors.light;
   const isActive = sort.field === field;
   const arrow    = isActive ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '';
-  const color    = isActive ? '#3b82f6' : (isDark ? '#94a3b8' : '#64748b');
+  const color    = isActive ? c.border.focus : c.text.secondary;
 
   return (
     <View style={{ width }}>
@@ -225,13 +219,16 @@ export const STH: React.FC<{
 // TD — data cell
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const TD: React.FC<{ children: React.ReactNode; width: number; isDark: boolean }> = ({ children, width, isDark }) => (
-  <View style={{ width, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 6 }}>
-    {typeof children === 'string' || typeof children === 'number'
-      ? <Text style={{ fontSize: 12, color: isDark ? '#e2e8f0' : '#1e293b', textAlign: 'center' }} numberOfLines={1}>{children}</Text>
-      : children}
-  </View>
-);
+export const TD: React.FC<{ children: React.ReactNode; width: number; isDark: boolean }> = ({ children, width, isDark }) => {
+  const c = isDark ? Colors.dark : Colors.light;
+  return (
+    <View style={{ width, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, paddingHorizontal: 6 }}>
+      {typeof children === 'string' || typeof children === 'number'
+        ? <Text style={{ fontSize: 12, color: c.text.primary, textAlign: 'center' }} numberOfLines={1}>{children}</Text>
+        : children}
+    </View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TableRow
@@ -243,13 +240,12 @@ export const TableRow: React.FC<{
   children: React.ReactNode;
   onPress?: () => void;
 }> = ({ index, isDark, children, onPress }) => {
+  const c = isDark ? Colors.dark : Colors.light;
   const base: StyleProp<ViewStyle> = {
     flexDirection: 'row',
-    backgroundColor: index % 2 === 0
-      ? 'transparent'
-      : (isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'),
+    backgroundColor: index % 2 === 0 ? 'transparent' : (isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'),
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
+    borderBottomColor: c.border.primary,
   };
 
   if (!onPress) return <View style={base}>{children}</View>;
@@ -271,16 +267,19 @@ export const TableRow: React.FC<{
 // TableHeader
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const TableHeader: React.FC<{ isDark: boolean; children: React.ReactNode }> = ({ isDark, children }) => (
-  <View style={{
-    flexDirection: 'row',
-    backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-    borderBottomWidth: 1.5,
-    borderBottomColor: isDark ? '#334155' : '#e2e8f0',
-  }}>
-    {children}
-  </View>
-);
+export const TableHeader: React.FC<{ isDark: boolean; children: React.ReactNode }> = ({ isDark, children }) => {
+  const c = isDark ? Colors.dark : Colors.light;
+  return (
+    <View style={{
+      flexDirection: 'row',
+      backgroundColor: c.surface.tertiary,
+      borderBottomWidth: 1.5,
+      borderBottomColor: c.border.primary,
+    }}>
+      {children}
+    </View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VirtualTable<T>

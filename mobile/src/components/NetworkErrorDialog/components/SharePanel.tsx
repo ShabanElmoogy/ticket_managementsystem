@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as Sharing from 'expo-sharing';
 import ViewShot, { captureRef } from 'react-native-view-shot';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import { PanelCard, ActionRow } from '@/src/shared/components';
 import { WA_GREEN, WA_GREEN_DARK, SUPPORT_WHATSAPP_NUMBER } from '../constants';
 import { buildShareText, shareToWhatsApp } from '../utils';
@@ -13,18 +14,19 @@ interface Props {
   error:       ErrorState;
   accentColor: string;
   icon:        string;
-  isDark:      boolean;
+  /** @deprecated — component reads theme internally */
+  isDark?:     boolean;
   onClose:     () => void;
 }
 
-const SharePanel: React.FC<Props> = ({ error, accentColor, icon, isDark, onClose }) => {
+const SharePanel: React.FC<Props> = ({ error, accentColor, icon, onClose }) => {
   const cardRef = useRef<View>(null);
   const [sharingWA,  setSharingWA]  = useState(false);
   const [sharingImg, setSharingImg] = useState(false);
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
-  const busy    = sharingWA || sharingImg;
-  const border  = isDark ? '#334155' : '#e2e8f0';
-  const textSec = isDark ? '#94a3b8' : '#64748b';
+  const busy = sharingWA || sharingImg;
 
   // ── handlers ───────────────────────────────────────────────────────────────
 
@@ -80,8 +82,8 @@ const SharePanel: React.FC<Props> = ({ error, accentColor, icon, isDark, onClose
       {/* Off-screen capture target */}
       <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
         <ViewShot ref={cardRef as any} options={{ format: 'png', quality: 1 }}>
-          <View style={{ padding: 20, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
-            <ErrorCard error={error} accentColor={accentColor} icon={icon} isDark={isDark} />
+          <View style={{ padding: 20, backgroundColor: c.surface.secondary }}>
+            <ErrorCard error={error} accentColor={accentColor} icon={icon} />
           </View>
         </ViewShot>
       </View>
@@ -90,7 +92,6 @@ const SharePanel: React.FC<Props> = ({ error, accentColor, icon, isDark, onClose
         title="Share Error Report"
         titleIcon="📤"
         onClose={onClose}
-        isDark={isDark}
       >
         {/* WhatsApp row */}
         <ActionRow
@@ -100,27 +101,25 @@ const SharePanel: React.FC<Props> = ({ error, accentColor, icon, isDark, onClose
           title={sharingWA ? 'Opening WhatsApp…' : 'Send to Support'}
           subtitle={SUPPORT_WHATSAPP_NUMBER}
           rightSlot={!sharingWA ? whatsAppBadge : undefined}
-          pressedBg={isDark ? '#0d2b1a' : '#f0fdf4'}
+          pressedBg={c.intent.successSurface}
           onPress={handleWhatsAppShare}
           loading={sharingWA}
           disabled={busy}
-          isDark={isDark}
         />
 
         {/* Divider */}
-        <View style={{ height: 1, backgroundColor: border, marginHorizontal: 14 }} />
+        <View style={{ height: 1, backgroundColor: c.border.primary, marginHorizontal: 14 }} />
 
         {/* Screenshot row */}
         <ActionRow
           badgeContent={<Text style={{ fontSize: 19 }}>🖼️</Text>}
-          badgeColor={isDark ? '#334155' : '#e2e8f0'}
+          badgeColor={c.surface.elevated}
           title={sharingImg ? 'Capturing…' : 'Share Screenshot'}
           subtitle="Save or send to any app"
-          rightSlot={<Text style={{ fontSize: 18, color: textSec }}>›</Text>}
+          rightSlot={<Text style={{ fontSize: 18, color: c.text.secondary }}>›</Text>}
           onPress={handleImageShare}
           loading={sharingImg}
           disabled={busy}
-          isDark={isDark}
         />
       </PanelCard>
     </View>

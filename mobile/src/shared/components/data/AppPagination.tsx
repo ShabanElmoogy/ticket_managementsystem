@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
 
 interface Props {
-  page: number;
+  page:       number;
   totalPages: number;
   totalItems: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-  onNext: () => void;
-  onPrev: () => void;
-  isDark: boolean;
+  pageSize:   number;
+  hasNext:    boolean;
+  hasPrev:    boolean;
+  onNext:     () => void;
+  onPrev:     () => void;
+  isDark?:    boolean;
 }
 
 /**
@@ -18,49 +19,46 @@ interface Props {
  * Returns null when there is only one page (nothing to paginate).
  */
 const AppPagination: React.FC<Props> = ({
-  page, totalPages, totalItems, pageSize,
-  hasNext, hasPrev, onNext, onPrev, isDark,
+  page, totalPages, totalItems, pageSize, hasNext, hasPrev, onNext, onPrev,
 }) => {
   if (totalPages <= 1) return null;
 
-  const from   = Math.min((page - 1) * pageSize + 1, totalItems);
-  const to     = Math.min(page * pageSize, totalItems);
-  const bg     = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const text   = isDark ? '#94a3b8' : '#64748b';
-  const btnBg  = isDark ? '#273549' : '#ffffff';
+  const c    = useThemeColors();
+  const from = Math.min((page - 1) * pageSize + 1, totalItems);
+  const to   = Math.min(page * pageSize, totalItems);
 
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       paddingHorizontal: 16, paddingVertical: 10,
-      backgroundColor: bg,
-      borderTopWidth: 1, borderTopColor: border,
+      backgroundColor: c.surface.secondary,
+      borderTopWidth: 1, borderTopColor: c.border.primary,
     }}>
-      {/* Range info */}
-      <Text style={{ fontSize: 12, color: text }}>
+      <Text style={{ fontSize: FontSize.sm, color: c.text.secondary }}>
         {from}–{to} of {totalItems}
       </Text>
 
-      {/* Controls */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Pressable
           onPress={onPrev}
           disabled={!hasPrev}
           hitSlop={6}
           style={({ pressed }) => ({
-            width: 34, height: 34, borderRadius: 8,
+            width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',
-            backgroundColor: pressed ? (isDark ? '#334155' : '#e2e8f0') : btnBg,
-            borderWidth: 1, borderColor: border,
+            backgroundColor: pressed ? c.surface.elevated : c.surface.primary,
+            borderWidth: 1, borderColor: c.border.primary,
             opacity: hasPrev ? 1 : 0.35,
           })}
         >
-          <Text style={{ fontSize: 16, color: isDark ? '#e2e8f0' : '#374151' }}>‹</Text>
+          <Text style={{ fontSize: FontSize.xl, color: c.text.primary }}>‹</Text>
         </Pressable>
 
-        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: '#3b82f6' }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>
+        <View style={{
+          paddingHorizontal: 12, paddingVertical: 4, borderRadius: Radius.md,
+          backgroundColor: c.interactive.primary,
+        }}>
+          <Text style={{ fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: c.text.inverse }}>
             {page} / {totalPages}
           </Text>
         </View>
@@ -70,14 +68,14 @@ const AppPagination: React.FC<Props> = ({
           disabled={!hasNext}
           hitSlop={6}
           style={({ pressed }) => ({
-            width: 34, height: 34, borderRadius: 8,
+            width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',
-            backgroundColor: pressed ? (isDark ? '#334155' : '#e2e8f0') : btnBg,
-            borderWidth: 1, borderColor: border,
+            backgroundColor: pressed ? c.surface.elevated : c.surface.primary,
+            borderWidth: 1, borderColor: c.border.primary,
             opacity: hasNext ? 1 : 0.35,
           })}
         >
-          <Text style={{ fontSize: 16, color: isDark ? '#e2e8f0' : '#374151' }}>›</Text>
+          <Text style={{ fontSize: FontSize.xl, color: c.text.primary }}>›</Text>
         </Pressable>
       </View>
     </View>

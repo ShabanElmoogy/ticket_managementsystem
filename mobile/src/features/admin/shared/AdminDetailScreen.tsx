@@ -1,11 +1,8 @@
 import React from 'react';
-import {
-  View, Text, ScrollView, ActivityIndicator,
-  Pressable, StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsDark } from '@/src/constants/theme';
+import { useThemeColors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface AdminDetailScreenProps {
   title:         string;
@@ -23,90 +20,45 @@ const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({
   title, subtitle, isLoading, notFound, notFoundText,
   onClose, onEdit, onDelete, children,
 }) => {
-  const { t }    = useTranslation();
-  const isDark   = useIsDark();
-  const insets   = useSafeAreaInsets();
-
-  const bg      = isDark ? '#0f172a' : '#f1f5f9';
-  const cardBg  = isDark ? '#1e293b' : '#ffffff';
-  const border  = isDark ? '#334155' : '#e2e8f0';
-  const textPri = isDark ? '#f1f5f9' : '#0f172a';
-  const textSec = isDark ? '#94a3b8' : '#64748b';
+  const { t }  = useTranslation();
+  const c      = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.root, { backgroundColor: bg }]}>
-
-      {/* ── Header bar ── */}
-      <View style={[
-        styles.header,
-        {
-          paddingTop: insets.top + 8,
-          backgroundColor: cardBg,
-          borderBottomColor: border,
-        },
-      ]}>
-        {/* Back */}
-        <Pressable
-          onPress={onClose}
-          style={[styles.backBtn, { backgroundColor: isDark ? '#334155' : '#f1f5f9' }]}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.back')}
-        >
-          <Text style={{ color: textSec, fontSize: 18, lineHeight: 22 }}>←</Text>
+    <View style={[styles.root, { backgroundColor: c.surface.secondary }]}>
+      {/* ── Header ── */}
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: c.surface.primary, borderBottomColor: c.border.primary }]}>
+        <Pressable onPress={onClose} style={[styles.backBtn, { backgroundColor: c.surface.tertiary }]} accessibilityRole="button" accessibilityLabel={t('common.back')}>
+          <Text style={{ color: c.text.secondary, fontSize: FontSize['2xl'], lineHeight: 22 }}>←</Text>
         </Pressable>
 
-        {/* Title + subtitle */}
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.headerTitle, { color: textPri }]} numberOfLines={1}>
-            {title}
-          </Text>
-          {subtitle && (
-            <Text style={[styles.headerSubtitle, { color: textSec }]} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
+          <Text style={[styles.headerTitle, { color: c.text.primary }]} numberOfLines={1}>{title}</Text>
+          {subtitle && <Text style={[styles.headerSubtitle, { color: c.text.secondary }]} numberOfLines={1}>{subtitle}</Text>}
         </View>
 
-        {/* Edit */}
-        <Pressable
-          onPress={onEdit}
-          style={styles.editBtn}
-          accessibilityRole="button"
-        >
-          <Text style={styles.editBtnText}>✏️  {t('common.edit')}</Text>
+        <Pressable onPress={onEdit} style={[styles.editBtn, { backgroundColor: c.intent.infoSurface, borderColor: c.interactive.primary + '44' }]} accessibilityRole="button">
+          <Text style={[styles.editBtnText, { color: c.interactive.primary }]}>✏️  {t('common.edit')}</Text>
         </Pressable>
 
-        {/* Delete */}
-        <Pressable
-          onPress={onDelete}
-          style={styles.deleteBtn}
-          accessibilityRole="button"
-        >
-          <Text style={styles.deleteBtnText}>🗑️</Text>
+        <Pressable onPress={onDelete} style={[styles.deleteBtn, { backgroundColor: c.intent.errorSurface, borderColor: c.intent.error + '66' }]} accessibilityRole="button">
+          <Text style={{ fontSize: FontSize.xl }}>🗑️</Text>
         </Pressable>
       </View>
 
       {/* ── Body ── */}
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={[styles.loadingText, { color: textSec }]}>Loading…</Text>
+          <ActivityIndicator size="large" color={c.interactive.primary} />
+          <Text style={[styles.loadingText, { color: c.text.secondary }]}>Loading…</Text>
         </View>
       ) : notFound ? (
         <View style={styles.center}>
           <Text style={{ fontSize: 40, marginBottom: 12 }}>🔍</Text>
-          <Text style={[styles.notFoundText, { color: textSec }]}>
-            {notFoundText ?? 'Not found'}
-          </Text>
+          <Text style={[styles.notFoundText, { color: c.text.secondary }]}>{notFoundText ?? 'Not found'}</Text>
         </View>
       ) : (
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: insets.bottom + 32 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
           {children}
         </ScrollView>
       )}
@@ -115,73 +67,18 @@ const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    gap: 8,
-  },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 1,
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: '#eff6ff',
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-    flexShrink: 0,
-  },
-  editBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  deleteBtn: {
-    width: 36, height: 36, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fef2f2',
-    borderWidth: 1,
-    borderColor: '#fca5a5',
-    flexShrink: 0,
-  },
-  deleteBtnText: {
-    fontSize: 16,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 13,
-    marginTop: 8,
-  },
-  notFoundText: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 12,
-  },
+  root:           { flex: 1 },
+  header:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 10, borderBottomWidth: 1, gap: 8 },
+  backBtn:        { width: 36, height: 36, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  headerTitle:    { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  headerSubtitle: { fontSize: FontSize.sm, marginTop: 1 },
+  editBtn:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.md, borderWidth: 1, flexShrink: 0 },
+  editBtnText:    { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  deleteBtn:      { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1, flexShrink: 0 },
+  center:         { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  loadingText:    { fontSize: FontSize.base, marginTop: 8 },
+  notFoundText:   { fontSize: FontSize.lg, fontWeight: FontWeight.medium },
+  scrollContent:  { padding: 16, gap: 12 },
 });
 
 export default AdminDetailScreen;

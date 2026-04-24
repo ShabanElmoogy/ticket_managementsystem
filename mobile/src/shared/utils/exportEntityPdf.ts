@@ -4,7 +4,7 @@
  */
 import * as Print   from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import type { ColDef } from '../components/AppDataTable';
+import type { ColDef } from '@/src/shared/components/data/AppDataTable';
 import { esc }         from './htmlUtils';
 import { buildPdfPage } from './pdfTemplate';
 

@@ -1,4 +1,5 @@
 import { Linking } from 'react-native';
+import { Palette } from '@/src/constants/theme';
 import type { ErrorState } from './types';
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -13,16 +14,16 @@ export function statusLabel(status: number): string {
 }
 
 export function statusColor(status?: number): string {
-  if (!status) return '#ef4444';
-  if (status >= 500) return '#dc2626';
-  if (status === 403) return '#f59e0b';
-  if (status === 429) return '#8b5cf6';
-  return '#ef4444';
+  if (!status)        return Palette.red500;
+  if (status >= 500)  return Palette.red600;
+  if (status === 403) return Palette.amber500;
+  if (status === 429) return Palette.violet500;
+  return Palette.red500;
 }
 
 export function statusIcon(status?: number): string {
-  if (!status) return '📡';
-  if (status >= 500) return '🔥';
+  if (!status)        return '📡';
+  if (status >= 500)  return '🔥';
   if (status === 403) return '🔒';
   if (status === 429) return '⏱️';
   if (status === 408) return '⏰';
@@ -33,9 +34,12 @@ export function statusIcon(status?: number): string {
 
 export function darken(hex: string): string {
   const map: Record<string, string> = {
-    '#ef4444': '#dc2626', '#dc2626': '#b91c1c',
-    '#3b82f6': '#2563eb', '#f59e0b': '#d97706',
-    '#10b981': '#059669', '#8b5cf6': '#7c3aed',
+    [Palette.red500]:    Palette.red600,
+    [Palette.red600]:    Palette.red700,
+    [Palette.blue500]:   Palette.blue600,
+    [Palette.amber500]:  Palette.amber600,
+    [Palette.green500]:  Palette.green600,
+    [Palette.violet500]: Palette.violet600,
   };
   return map[hex] ?? hex;
 }

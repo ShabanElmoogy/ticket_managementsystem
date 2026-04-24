@@ -1,22 +1,22 @@
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
 import AppButton from '../forms/AppButton';
-import { useUiStore } from '../../../stores/uiStore';
+import { useThemeColors, Radius, FontSize, FontWeight, Palette } from '../../../constants/theme';
 
 export interface AppDeleteDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title?: string;
-  message?: string;
-  itemName?: string;
-  itemType?: string;
-  loading?: boolean;
-  warningMessage?: string;
+  open:             boolean;
+  onClose:          () => void;
+  onConfirm:        () => void;
+  title?:           string;
+  message?:         string;
+  itemName?:        string;
+  itemType?:        string;
+  loading?:         boolean;
+  warningMessage?:  string;
   softDeleteLabel?: string;
-  onSoftDelete?: () => void;
-  confirmLabel?: string;
-  cancelLabel?: string;
+  onSoftDelete?:    () => void;
+  confirmLabel?:    string;
+  cancelLabel?:     string;
 }
 
 const AppDeleteDialog: React.FC<AppDeleteDialogProps> = ({
@@ -26,97 +26,93 @@ const AppDeleteDialog: React.FC<AppDeleteDialogProps> = ({
   title,
   message,
   itemName,
-  itemType = 'item',
-  loading = false,
+  itemType      = 'item',
+  loading       = false,
   warningMessage,
   softDeleteLabel,
   onSoftDelete,
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
+  confirmLabel  = 'Delete',
+  cancelLabel   = 'Cancel',
 }) => {
-  const { colorMode } = useUiStore();
-  const isDark = colorMode === 'dark';
+  const c = useThemeColors();
+  const hasSoftDelete = !!(softDeleteLabel && onSoftDelete);
 
   const defaultTitle   = `Delete ${itemType}`;
   const defaultMessage = itemName
     ? `Are you sure you want to delete "${itemName}"?`
     : `Are you sure you want to delete this ${itemType}?`;
 
-  const hasSoftDelete = !!(softDeleteLabel && onSoftDelete);
-
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
-        className="flex-1 bg-black/50 justify-center items-center px-5"
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}
         onPress={onClose}
       >
         <Pressable
-          className={`rounded-2xl p-5 w-full max-w-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
-          style={{ elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12 }}
+          style={{
+            backgroundColor: c.surface.primary,
+            borderRadius:    Radius['2xl'],
+            padding:         20,
+            width:           '100%',
+            maxWidth:        400,
+            shadowColor:     c.shadow,
+            shadowOffset:    { width: 0, height: 4 },
+            shadowOpacity:   0.2,
+            shadowRadius:    12,
+            elevation:       8,
+          }}
           onPress={() => {}}
         >
-          {/* Title row */}
-          <View className="flex-row items-center gap-3 mb-3">
-            <View className="w-10 h-10 rounded-full bg-red-100 items-center justify-center shrink-0">
-              <Text className="text-lg">⚠️</Text>
+          {/* ── Title row ── */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <View style={{
+              width: 40, height: 40, borderRadius: Radius.full,
+              backgroundColor: c.intent.errorSurface,
+              alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Text style={{ fontSize: FontSize['2xl'] }}>⚠️</Text>
             </View>
-            <Text className={`text-base font-bold flex-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <Text style={{ fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: c.text.primary, flex: 1 }}>
               {title ?? defaultTitle}
             </Text>
           </View>
 
-          {/* Body */}
-          <Text className={`text-sm mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+          {/* ── Body ── */}
+          <Text style={{ fontSize: FontSize.base, color: c.text.secondary, marginBottom: 12, lineHeight: 20 }}>
             {message ?? defaultMessage}
           </Text>
 
+          {/* ── Warning banner ── */}
           {warningMessage && (
-            <View className={`rounded-lg p-3 mb-3 ${isDark ? 'bg-amber-900/30 border border-amber-700' : 'bg-amber-50 border border-amber-200'}`}>
-              <Text className={`text-xs ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
-                ⚠️ {warningMessage}
+            <View style={{
+              backgroundColor: c.intent.warningSurface,
+              borderWidth: 1, borderColor: c.intent.warning + '55',
+              borderRadius: Radius.md, padding: 12, marginBottom: 12,
+            }}>
+              <Text style={{ fontSize: FontSize.xs, color: c.intent.warning }}>
+                ⚠️  {warningMessage}
               </Text>
             </View>
           )}
 
-          <Text className={`text-xs mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+          {/* ── Irreversible note ── */}
+          <Text style={{ fontSize: FontSize.xs, color: c.text.muted, marginBottom: 16 }}>
             This action cannot be undone.
           </Text>
 
-          {/* Actions — stacked vertically to prevent overflow */}
-          <View className="gap-2">
-            {/* Delete button — primary action, full width on top */}
-            <AppButton
-              variant="contained"
-              color="error"
-              onPress={onConfirm}
-              loading={loading}
-              loadingText={`${confirmLabel}ing…`}
-              fullWidth
-            >
+          {/* ── Actions — stacked vertically ── */}
+          <View style={{ gap: 8 }}>
+            <AppButton variant="contained" color="error" onPress={onConfirm} loading={loading} loadingText={`${confirmLabel}ing…`} fullWidth>
               {confirmLabel}
             </AppButton>
 
-            {/* Soft delete option */}
             {hasSoftDelete && (
-              <AppButton
-                variant="outlined"
-                color="warning"
-                onPress={onSoftDelete}
-                disabled={loading}
-                fullWidth
-              >
+              <AppButton variant="outlined" color="warning" onPress={onSoftDelete} disabled={loading} fullWidth>
                 {softDeleteLabel}
               </AppButton>
             )}
 
-            {/* Cancel — secondary, below */}
-            <AppButton
-              variant="text"
-              color="secondary"
-              onPress={onClose}
-              disabled={loading}
-              fullWidth
-            >
+            <AppButton variant="outlined" color="secondary" onPress={onClose} disabled={loading} fullWidth>
               {cancelLabel}
             </AppButton>
           </View>

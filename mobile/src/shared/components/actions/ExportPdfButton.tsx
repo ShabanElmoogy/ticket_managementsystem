@@ -1,46 +1,44 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 interface Props {
-  onPress: () => void;
-  loading?: boolean;   // exporting in progress
-  disabled?: boolean;  // no data to export
-  isDark?: boolean;
-  label?: string;
+  onPress:       () => void;
+  loading?:      boolean;
+  disabled?:     boolean;
+  isDark?:       boolean;
+  label?:        string;
   loadingLabel?: string;
 }
 
-/**
- * Red "Export PDF" button with loading/disabled states.
- * Reusable across any admin screen that supports PDF export.
- */
 const ExportPdfButton: React.FC<Props> = ({
-  onPress, loading = false, disabled = false, isDark = false,
+  onPress, loading = false, disabled = false,
   label = 'Export PDF', loadingLabel = 'Exporting…',
 }) => {
+  const c          = useThemeColors();
   const isDisabled = loading || disabled;
-  const icon = loading ? '⏳' : disabled ? '🚫' : '📄';
-  const text = loading ? loadingLabel : label;
+  const icon       = loading ? '⏳' : disabled ? '🚫' : '📄';
+  const text       = loading ? loadingLabel : label;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
       style={({ pressed }) => ({
-        alignItems: 'center', justifyContent: 'center', gap: 2,
-        height: 44, paddingHorizontal: 12, borderRadius: 10,
-        backgroundColor: loading ? '#b91c1c' : pressed ? '#dc2626' : '#ef4444',
-        opacity: isDisabled ? 0.4 : 1,
-        shadowColor: '#ef4444',
-        shadowOffset: { width: 0, height: 2 },
+        alignItems: 'center', justifyContent: 'center',
+        height: 44, paddingHorizontal: 12, borderRadius: Radius.lg,
+        backgroundColor: pressed ? c.interactive.errorPressed : c.interactive.error,
+        opacity:       isDisabled ? 0.4 : 1,
+        shadowColor:   c.interactive.error,
+        shadowOffset:  { width: 0, height: 2 },
         shadowOpacity: isDisabled ? 0 : 0.35,
-        shadowRadius: 5,
-        elevation: isDisabled ? 0 : 3,
+        shadowRadius:  5,
+        elevation:     isDisabled ? 0 : 3,
       })}
     >
       <View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-        <Text style={{ fontSize: 16, lineHeight: 18 }}>{icon}</Text>
-        <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>{text}</Text>
+        <Text style={{ fontSize: FontSize.xl, lineHeight: 18 }}>{icon}</Text>
+        <Text style={{ fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, color: c.text.primary }}>{text}</Text>
       </View>
     </Pressable>
   );

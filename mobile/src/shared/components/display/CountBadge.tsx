@@ -1,26 +1,26 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
 
 interface Props {
-  count: number;
-  total?: number;       // when provided shows "count / total" (filtered state)
+  count:       number;
+  total?:      number;
   isFiltered?: boolean;
 }
 
-/**
- * Small pill badge showing a row/item count.
- * Turns amber when `isFiltered` is true to signal active filtering.
- * Shows "count / total" when both are provided and filtered.
- */
-const CountBadge: React.FC<Props> = ({ count, total, isFiltered = false }) => (
-  <View style={{
-    paddingHorizontal: 8, paddingVertical: 1, borderRadius: 8,
-    backgroundColor: isFiltered ? '#f59e0b22' : '#3b82f620',
-  }}>
-    <Text style={{ fontSize: 11, fontWeight: '700', color: isFiltered ? '#f59e0b' : '#3b82f6' }}>
-      {isFiltered && total != null ? `${count} / ${total}` : `${count} rows`}
-    </Text>
-  </View>
-);
+const CountBadge: React.FC<Props> = ({ count, total, isFiltered = false }) => {
+  const c = useThemeColors();
+  const color = isFiltered ? c.intent.warning : c.interactive.primary;
+  return (
+    <View style={{
+      paddingHorizontal: 8, paddingVertical: 1, borderRadius: Radius.md,
+      backgroundColor: color + '22',
+    }}>
+      <Text style={{ fontSize: FontSize.xs, fontWeight: FontWeight.bold, color }}>
+        {isFiltered && total != null ? `${count} / ${total}` : `${count} rows`}
+      </Text>
+    </View>
+  );
+};
 
 export default CountBadge;

@@ -3,28 +3,26 @@ import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
+import { useThemeColors, useIsDark, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
-import { getInitials, getRoleColor } from '@/src/components/layout/header/navItems';
+import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { Avatar, IconButton } from '@/src/shared/components';
 
 const AppHeaderBar: React.FC = () => {
-  const { user }                       = useAuthStore();
-  const { colorMode, unreadCount }     = useUiStore();
+  const { user } = useAuthStore();
+  const { unreadCount } = useUiStore();
   const { open, setOpen, setHeaderHeight } = useDrawer();
-  const router                         = useRouter();
+  const router = useRouter();
+  const c = useThemeColors();
 
   if (!user) return null;
-
-  const isDark   = colorMode === 'dark';
-  const headerBg = isDark ? '#1e293b' : '#6366f1';
 
   return (
     <View
       style={{
         flexDirection: 'row', alignItems: 'center',
-        // No paddingTop for safe area — SafeAreaView in _layout.tsx handles it
         paddingTop: 8, paddingBottom: 12, paddingHorizontal: 16,
-        backgroundColor: headerBg, gap: 8,
+        backgroundColor: c.surface.header, gap: 8,
       }}
       onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
     >
@@ -33,10 +31,10 @@ const AppHeaderBar: React.FC = () => {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
         onPress={() => router.push('/(app)' as any)}
       >
-        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: c.text.primary, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 16 }}>🎫</Text>
         </View>
-        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 18 }}>TicketFlow</Text>
+        <Text style={{ color: c.text.primary, fontWeight: FontWeight.bold, fontSize: 18 }}>TicketFlow</Text>
       </Pressable>
 
       {/* Right actions */}

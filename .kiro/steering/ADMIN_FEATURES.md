@@ -4,6 +4,124 @@ Complete documentation of all implemented admin features in `mobile/src/features
 
 ---
 
+## Import Alias
+
+All imports use the `@/src/` alias (configured in `tsconfig.json`). Never use relative `../../../` paths from feature files.
+
+```ts
+// ✅ Correct — alias
+import { useThemeColors } from '@/src/constants/theme';
+import { customersApi }   from '@/src/features/admin/customers/api/customers';
+
+// ❌ Wrong — relative from a feature file
+import { useThemeColors } from '../../../constants/theme';
+```
+
+**Exception:** shared components inside `mobile/src/shared/components/` use relative `../../../constants/theme` because they are not feature files.
+
+---
+
+## Theme Colors — Rules
+
+### The only correct pattern
+
+```ts
+// 1. Call once at the top of the component
+const c = useThemeColors();
+
+// 2. Use semantic tokens everywhere
+backgroundColor: c.surface.primary
+color:           c.text.primary
+borderColor:     c.border.primary
+```
+
+### Never use `Palette` directly in components
+
+```ts
+// ❌ Wrong — hardcoded, ignores dark mode
+color: Palette.slate800
+
+// ✅ Correct — semantic, auto-switches
+color: c.text.primary
+```
+
+### `Palette` is allowed ONLY in two places
+
+1. **Module-level constant maps** (outside components/functions) — e.g. `STATUS_COLORS`, `DARKEN` maps. These are safe because `Palette` is a plain object with no imports.
+2. **`theme.ts` itself** — where `Colors.light` and `Colors.dark` are defined.
+
+```ts
+// ✅ OK — module-level constant, Palette is a plain object
+const DARKEN: Record<string, string> = {
+  [Palette.red500]: Palette.red600,
+};
+
+// ❌ Wrong — inside a component render
+<View style={{ backgroundColor: Palette.slate800 }} />
+```
+
+### Never use `Colors.dark.x` or `Colors.light.x` at module level
+
+`Colors` is exported from `theme.ts` which imports `uiStore` which creates a circular dependency. Using `Colors.x` as computed object keys at module level will crash at runtime.
+
+```ts
+// ❌ Crashes — circular dep, Colors may be undefined at module init
+const MAP = { [Colors.light.intent.error]: Colors.light.interactive.errorPressed };
+
+// ✅ Safe — Palette has no imports
+const MAP = { [Palette.red500]: Palette.red600 };
+```
+
+### `useThemeColors()` token reference
+
+```
+c.surface.primary      // main card/dialog bg
+c.surface.secondary    // subtle tinted bg (inputs, code blocks)
+c.surface.tertiary     // panel headers, table headers
+c.surface.elevated     // pressed/hover state
+
+c.text.primary         // main text
+c.text.secondary       // secondary/label text
+c.text.muted           // placeholder, disabled, captions
+c.text.inverse         // white text on colored buttons
+
+c.border.primary       // main border
+c.border.secondary     // secondary border
+c.border.focus         // focus ring (blue)
+
+c.intent.success / .successSurface
+c.intent.error   / .errorSurface
+c.intent.warning / .warningSurface
+c.intent.info    / .infoSurface
+
+c.interactive.primary        // blue button bg
+c.interactive.primaryPressed // blue button pressed
+c.interactive.success        // green button bg
+c.interactive.successPressed // green button pressed
+c.interactive.error          // red button bg
+c.interactive.errorPressed   // red button pressed
+c.interactive.pressed        // generic pressed surface
+
+c.shadow   // iOS shadowColor / Android elevation tint (adapts to dark mode)
+```
+
+### `isDark` prop is deprecated
+
+Components that previously accepted `isDark: boolean` and used `isDark ? Colors.dark.x : Colors.light.x` should be migrated to `useThemeColors()`. The `isDark` prop may still exist for backward compat but should not be used for color decisions.
+
+```ts
+// ❌ Old pattern — manual, error-prone
+const bg = isDark ? Colors.dark.surface.primary : Colors.light.surface.primary;
+
+// ✅ New pattern — automatic
+const c  = useThemeColors();
+const bg = c.surface.primary;
+```
+
+---
+
+---
+
 ## Feature Status
 
 | Feature | List | Detail | Form | Export | Status |

@@ -1,4 +1,4 @@
-import type { NotificationType } from '../../services/api/types/notification';
+import type { NotificationType } from '@/src/services/api/types/notification';
 
 export interface SocketNotificationPayload {
   id?: string;

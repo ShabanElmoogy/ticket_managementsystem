@@ -9,9 +9,11 @@
     { "key": "token",     "value": "" },
     { "key": "docId",     "value": "" },
     { "key": "nodeId",    "value": "" },
-    { "key": "tenantId",  "value": "" },
-    { "key": "tenantSlug","value": "" },
-    { "key": "userId",    "value": "" }
+    { "key": "tenantId",      "value": "" },
+    { "key": "tenantSlug",    "value": "" },
+    { "key": "userId",        "value": "" },
+    { "key": "applicationId", "value": "" },
+    { "key": "customerId",    "value": "" }
   ],
   "item": [
     {
@@ -478,6 +480,131 @@
               "raw": "{{baseUrl}}/tenants/{{tenantId}}",
               "host": ["{{baseUrl}}"],
               "path": ["tenants", "{{tenantId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "List Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] }
+          }
+        },
+        {
+          "name": "Get Application by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Application (TENANT_ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('applicationId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Application\",\n  \"description\": \"A test application for API testing\",\n  \"version\": \"1.0.0\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] }
+          }
+        },
+        {
+          "name": "Update Application (TENANT_ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Application\",\n  \"description\": \"Updated description\",\n  \"version\": \"1.1.0\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Application (TENANT_ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Assign Customer to Application (TENANT_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\",\n  \"customerId\": \"{{customerId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/applications/assign-customer", "host": ["{{baseUrl}}"], "path": ["applications", "assign-customer"] }
+          }
+        },
+        {
+          "name": "Remove Customer from Application (TENANT_ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/applications/{{applicationId}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["applications", "{{applicationId}}", "customers", "{{customerId}}"]
             }
           }
         }

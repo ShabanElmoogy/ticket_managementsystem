@@ -1,41 +1,34 @@
 import React from 'react';
 import { Pressable, Text } from 'react-native';
+import { Radius, FontSize, FontWeight } from '@/src/constants/tokens';
+import { useThemeColors } from '@/src/constants/theme';
 
 export interface OutlineButtonProps {
   /** Emoji or short string shown left of the label */
-  icon?:        string;
-  label:        string;
-  onPress:      () => void;
-  disabled?:    boolean;
-  isDark?:      boolean;
+  icon?:       string;
+  label:       string;
+  onPress:     () => void;
+  disabled?:   boolean;
+  /** @deprecated — component reads theme internally via useThemeColors() */
+  isDark?:     boolean;
   /** Stretch to fill available flex space (default true) */
-  flex?:        boolean;
-  minHeight?:   number;
+  flex?:       boolean;
+  minHeight?:  number;
 }
 
 /**
  * OutlineButton — a bordered pill button with an optional icon and label.
- *
- * Used as a secondary action alongside a primary button (e.g. Share + OK).
- * Matches the visual weight of the primary action without competing with it.
- *
- * @example
- * <OutlineButton icon="📤" label="Share" onPress={() => setOpen(true)} isDark={isDark} />
- * <OutlineButton icon="🔄" label="Retry" onPress={onRetry} isDark={isDark} />
+ * Uses semantic theme tokens — no raw hex strings.
  */
 const OutlineButton: React.FC<OutlineButtonProps> = ({
   icon,
   label,
   onPress,
-  disabled   = false,
-  isDark     = false,
-  flex       = true,
-  minHeight  = 58,
+  disabled  = false,
+  flex      = true,
+  minHeight = 58,
 }) => {
-  const surface   = isDark ? '#1e293b' : '#ffffff';
-  const surfaceHi = isDark ? '#273549' : '#f8fafc';
-  const border    = isDark ? '#475569' : '#d1d5db';
-  const textColor = isDark ? '#cbd5e1' : '#374151';
+  const c = useThemeColors();
 
   return (
     <Pressable
@@ -43,22 +36,30 @@ const OutlineButton: React.FC<OutlineButtonProps> = ({
       disabled={disabled}
       style={({ pressed }) => ({
         ...(flex && { flex: 1 }),
-        flexDirection:  'row',
-        alignItems:     'center',
-        justifyContent: 'center',
-        gap:            8,
-        paddingVertical: 18,
+        flexDirection:     'row',
+        alignItems:        'center',
+        justifyContent:    'center',
+        paddingVertical:   18,
+        paddingHorizontal: 10,
         minHeight,
-        borderRadius:   16,
-        borderWidth:    1.5,
-        borderColor:    border,
-        backgroundColor: pressed ? surfaceHi : surface,
-        opacity:        disabled ? 0.5 : 1,
-        transform:      [{ scale: pressed ? 0.97 : 1 }],
+        borderRadius:      Radius.xl,
+        borderWidth:       1.5,
+        borderColor:       c.border.secondary,
+        backgroundColor:   pressed ? c.interactive.pressed : c.surface.primary,
+        opacity:           disabled ? 0.5 : 1,
       })}
     >
-      {!!icon && <Text style={{ fontSize: 18 }}>{icon}</Text>}
-      <Text style={{ fontSize: 15, fontWeight: '700', color: textColor, letterSpacing: 0.2 }}>
+      {!!icon && (
+        <Text style={{ fontSize: FontSize['2xl'], marginEnd: 8 }}>{icon}</Text>
+      )}
+      <Text style={{
+        fontSize:      FontSize.xl,
+        fontWeight:    FontWeight.bold,
+        color:         c.text.secondary,
+        letterSpacing: 0.2,
+      }}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>

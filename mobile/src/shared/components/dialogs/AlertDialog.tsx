@@ -3,6 +3,7 @@ import {
   Modal, View, Text, Pressable, StyleSheet,
   Clipboard,
 } from 'react-native';
+import { useThemeColors, useIsDark, Palette, Radius, FontSize, FontWeight } from '../../../constants/theme';
 import { useDirection } from '../../../providers/DirectionProvider';
 
 export interface AlertDialogAction {
@@ -27,23 +28,14 @@ export interface AlertDialogProps {
   actions?:     AlertDialogAction[];
   /** Replaces the entire actions row with custom content */
   actionsOverride?: React.ReactNode;
+  /** @deprecated — component reads theme internally via useThemeColors() */
   isDark?:      boolean;
 }
 
-/**
- * AlertDialog — production-grade modal alert.
- *
- * Features:
- * - Colored top stripe + icon badge
- * - Title + subtitle + message
- * - Optional copy-to-clipboard button on message
- * - Configurable action buttons (primary / secondary / ghost)
- * - Dark mode support
- */
 const AlertDialog: React.FC<AlertDialogProps> = ({
   visible,
   onClose,
-  accentColor = '#ef4444',
+  accentColor = Palette.red500,
   icon        = '⚠️',
   title,
   subtitle,
@@ -52,16 +44,11 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
   extra,
   actions,
   actionsOverride,
-  isDark      = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const { isRtl } = useDirection();
-
-  const cardBg    = isDark ? '#1e293b' : '#ffffff';
-  const titleCol  = isDark ? '#f1f5f9' : '#0f172a';
-  const msgCol    = isDark ? '#94a3b8' : '#64748b';
-  const msgBg     = isDark ? '#0f172a' : '#f8fafc';
-  const borderCol = isDark ? '#334155' : '#e2e8f0';
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   const handleCopy = () => {
     if (!message) return;
@@ -83,7 +70,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
       statusBarTranslucent
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable onPress={() => {}} style={[styles.card, { backgroundColor: cardBg, direction: isRtl ? 'rtl' : 'ltr' }]}>
+        <Pressable onPress={() => {}} style={[styles.card, { backgroundColor: c.surface.primary, direction: isRtl ? 'rtl' : 'ltr' }]}>
 
           {/* Colored top stripe */}
           <View style={[styles.stripe, { backgroundColor: accentColor }]} />
@@ -96,7 +83,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
                 <Text style={styles.iconText}>{icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.title, { color: titleCol }]}>{title}</Text>
+                <Text style={[styles.title, { color: c.text.primary }]}>{title}</Text>
                 {subtitle && (
                   <Text style={[styles.subtitle, { color: accentColor }]}>{subtitle}</Text>
                 )}
@@ -105,15 +92,15 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
 
             {/* Message — with optional copy button */}
             {message && (
-              <View style={[styles.messageBox, { backgroundColor: msgBg, borderColor: borderCol }]}>
-                <Text style={[styles.message, { color: msgCol }]}>{message}</Text>
+              <View style={[styles.messageBox, { backgroundColor: c.surface.secondary, borderColor: c.border.primary }]}>
+                <Text style={[styles.message, { color: c.text.secondary }]}>{message}</Text>
                 {copyable && (
                   <Pressable
                     onPress={handleCopy}
-                    style={[styles.copyBtn, { borderColor: borderCol }]}
+                    style={[styles.copyBtn, { borderColor: c.border.primary }]}
                   >
-                    <Text style={{ fontSize: 14 }}>{copied ? '✅' : '📋'}</Text>
-                    <Text style={[styles.copyLabel, { color: copied ? '#10b981' : (isDark ? '#64748b' : '#94a3b8') }]}>
+                    <Text style={{ fontSize: FontSize.base }}>{copied ? '✅' : '📋'}</Text>
+                    <Text style={[styles.copyLabel, { color: copied ? c.intent.success : c.text.muted }]}>
                       {copied ? 'Copied!' : 'Copy'}
                     </Text>
                   </Pressable>
@@ -127,12 +114,12 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
             {/* Actions — override takes priority */}
             {actionsOverride
               ? (
-                <View style={[styles.actions, { marginTop: 4, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.actionsBase, { marginTop: 4 }]}>
                   {actionsOverride}
                 </View>
               )
               : (defaultActions.length > 0 && (
-                <View style={[styles.actions, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.actionsBase, styles.actionsRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   {defaultActions.map((action, i) => (
                     <ActionButton
                       key={i}
@@ -163,6 +150,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark
   const isPrimary   = action.variant === 'primary';
   const isSecondary = action.variant === 'secondary' || !action.variant;
   const isGhost     = action.variant === 'ghost';
+  const c           = useThemeColors();
 
   const resolvedColor = action.color ?? accentColor;
 
@@ -181,16 +169,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark
           transform: [{ scale: pressed ? 0.97 : 1 }],
         },
         isSecondary && {
-          backgroundColor: pressed
-            ? (isDark ? '#334155' : '#e2e8f0')
-            : (isDark ? '#1e293b' : '#ffffff'),
+          backgroundColor: pressed ? c.interactive.pressed : c.surface.primary,
           borderWidth: 1.5,
-          borderColor: isDark ? '#475569' : '#d1d5db',
+          borderColor: c.border.secondary,
         },
         isGhost && {
-          backgroundColor: pressed
-            ? (isDark ? resolvedColor + '18' : resolvedColor + '10')
-            : 'transparent',
+          backgroundColor: pressed ? resolvedColor + '18' : 'transparent',
         },
       ]}
     >
@@ -201,8 +185,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark
       )}
       <Text style={[
         styles.actionLabel,
-        isPrimary   && { color: '#fff', letterSpacing: 0.3 },
-        isSecondary && { color: isDark ? '#cbd5e1' : '#374151' },
+        isPrimary   && { color: c.text.inverse, letterSpacing: 0.3 },
+        isSecondary && { color: c.text.secondary },
         isGhost     && { color: resolvedColor },
       ]}>
         {action.label}
@@ -213,11 +197,11 @@ const ActionButton: React.FC<ActionButtonProps> = ({ action, accentColor, isDark
 
 const darken = (hex: string) => {
   const map: Record<string, string> = {
-    '#ef4444': '#dc2626',
-    '#3b82f6': '#2563eb',
-    '#f59e0b': '#d97706',
-    '#10b981': '#059669',
-    '#8b5cf6': '#7c3aed',
+    [Palette.red500]:    Palette.red600,
+    [Palette.blue500]:   Palette.blue600,
+    [Palette.amber500]:  Palette.amber600,
+    [Palette.green500]:  Palette.green600,
+    [Palette.violet500]: Palette.violet600,
   };
   return map[hex] ?? hex;
 };
@@ -299,13 +283,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 16,
+  actionsBase: {
     marginTop: 4,
     paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(0,0,0,0.08)',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 16,
   },
   actionBtn: {
     flex: 1,

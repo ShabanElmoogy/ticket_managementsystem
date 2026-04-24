@@ -6,14 +6,15 @@ interface Props {
   error:       ErrorState;
   accentColor: string;
   icon:        string;
-  isDark:      boolean;
+  /** @deprecated — InfoCard reads theme internally */
+  isDark?:     boolean;
 }
 
 /**
  * Thin wrapper around the shared InfoCard.
  * Maps NetworkErrorDialog's ErrorState to InfoCard's flat props.
  */
-const ErrorCard: React.FC<Props> = ({ error, accentColor, icon, isDark }) => (
+const ErrorCard: React.FC<Props> = ({ error, accentColor, icon }) => (
   <InfoCard
     accentColor={accentColor}
     icon={icon}
@@ -33,7 +34,6 @@ const ErrorCard: React.FC<Props> = ({ error, accentColor, icon, isDark }) => (
         : []
     }
     caption={error.timestamp}
-    isDark={isDark}
   />
 );
 

@@ -3,23 +3,26 @@ import { View } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useUiStore } from '@/src/stores/uiStore';
+import { useThemeColors } from '@/src/constants/theme';
 import { BottomNavItem } from '@/src/shared/components';
 import { TABS } from './tabItems';
 
 const AppBottomNav: React.FC = () => {
-  const router        = useRouter();
-  const pathname      = usePathname();
-  const { colorMode } = useUiStore();
-  const insets        = useSafeAreaInsets();
-  const { t }         = useTranslation();
-  const isDark        = colorMode === 'dark';
+  const router   = useRouter();
+  const pathname = usePathname();
+  const c        = useThemeColors();
+  const insets   = useSafeAreaInsets();
+  const { t }    = useTranslation();
 
   return (
-    <View
-      className={`flex-row border-t ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}
-      style={{ paddingBottom: insets.bottom + 4, paddingTop: 8 }}
-    >
+    <View style={{
+      flexDirection:   'row',
+      borderTopWidth:  1,
+      borderTopColor:  c.border.primary,
+      backgroundColor: c.surface.primary,
+      paddingBottom:   insets.bottom + 4,
+      paddingTop:      8,
+    }}>
       {TABS.map((tab) => {
         const isActive =
           tab.match === '/(app)'
@@ -33,7 +36,6 @@ const AppBottomNav: React.FC = () => {
             activeIcon={tab.activeIcon}
             label={t(tab.labelKey)}
             isActive={isActive}
-            isDark={isDark}
             onPress={() => router.push(tab.route as any)}
           />
         );

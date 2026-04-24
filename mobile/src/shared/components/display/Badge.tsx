@@ -1,64 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { useThemeColors, FontWeight } from '../../../constants/theme';
 
 export interface BadgeProps {
-  /** Badge text */
-  label: string;
-  /** Background color (with alpha for tint effect) */
+  label:            string;
   backgroundColor?: string;
-  /** Text color */
-  textColor?: string;
-  /** Font size */
-  fontSize?: number;
-  /** Custom container style */
-  style?: ViewStyle;
+  textColor?:       string;
+  fontSize?:        number;
+  style?:           ViewStyle;
 }
 
-/**
- * Badge component - colored pill with text
- * Used for role badges, status indicators, etc.
- */
 const Badge: React.FC<BadgeProps> = ({
-  label,
-  backgroundColor = 'rgba(16, 185, 129, 0.27)',
-  textColor = '#fff',
-  fontSize = 11,
-  style,
+  label, backgroundColor = 'rgba(16,185,129,0.27)',
+  textColor, fontSize = 11, style,
 }) => {
+  const c  = useThemeColors();
+  const fg = textColor ?? c.text.inverse;
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor,
-        },
-        style,
-      ]}
-    >
-      <Text
-        style={[
-          styles.text,
-          {
-            color: textColor,
-            fontSize,
-          },
-        ]}
-      >
-        {label}
-      </Text>
+    <View style={[styles.container, { backgroundColor }, style]}>
+      <Text style={[styles.text, { color: fg, fontSize }]}>{label}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: 99,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  text: {
-    fontWeight: '500',
-  },
+  container: { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
+  text:      { fontWeight: FontWeight.medium },
 });
 
 export default Badge;
