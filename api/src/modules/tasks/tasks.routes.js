@@ -1,7 +1,7 @@
 import express from 'express';
 import * as tasksController from './tasks.controller.js';
 import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
-import { resolveTenant } from '../../middleware/tenant.js';
+import { enforceTenantScope, requireTenantScopeMiddleware } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
 import { createTaskSchema, updateTaskSchema, moveTaskSchema } from './tasks.validation.js';
 
@@ -15,7 +15,6 @@ const router = express.Router();
  */
 
 router.use(authenticateToken);
-router.use(resolveTenant);
 
 /**
  * @swagger
@@ -44,8 +43,8 @@ router.use(resolveTenant);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/', tasksController.getTasks);
-router.post('/', requireTenantAdmin, validate(createTaskSchema), tasksController.createTask);
+router.get('/', enforceTenantScope, tasksController.getTasks);
+router.post('/', requireTenantScopeMiddleware, requireTenantAdmin, validate(createTaskSchema), tasksController.createTask);
 
 /**
  * @swagger
@@ -81,9 +80,9 @@ router.post('/', requireTenantAdmin, validate(createTaskSchema), tasksController
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/:id', tasksController.getTask);
-router.put('/:id', requireTenantAdmin, validate(updateTaskSchema), tasksController.updateTask);
-router.delete('/:id', requireTenantAdmin, tasksController.deleteTask);
+router.get('/:id', enforceTenantScope, tasksController.getTask);
+router.put('/:id', requireTenantScopeMiddleware, requireTenantAdmin, validate(updateTaskSchema), tasksController.updateTask);
+router.delete('/:id', requireTenantScopeMiddleware, requireTenantAdmin, tasksController.deleteTask);
 
 /**
  * @swagger
@@ -99,6 +98,6 @@ router.delete('/:id', requireTenantAdmin, tasksController.deleteTask);
  *       200:
  *         $ref: '#/components/responses/NoContent'
  */
-router.put('/:id/move', validate(moveTaskSchema), tasksController.moveTask);
+router.put('/:id/move', enforceTenantScope, validate(moveTaskSchema), tasksController.moveTask);
 
 export default router;

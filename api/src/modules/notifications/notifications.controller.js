@@ -1,121 +1,53 @@
-import { db } from '../../config/database.js';
-import { notifications } from './notifications.schema.js';
-import { users } from '../users/users.schema.js';
-import { eq, and, count } from 'drizzle-orm';
-import { getUserNotifications, markNotificationAsRead } from '../../utils/notificationUtils.js';
+/**
+ * notifications.controller.js
+ * HTTP handlers — extract request data, call service, send response.
+ * No business logic or direct DB access here.
+ *
+ * Tenant scoping on GET/count routes is enforced by enforceTenantScope middleware.
+ * Controllers read req.tenantScope — never call getTenantScope() directly.
+ * Mutation routes (mark-read, delete) are user-scoped only — no tenant needed.
+ */
 
-// Get user notifications
+import { handleError } from '../../errors/index.js';
+import * as notificationsService from './notifications.service.js';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const userId   = (req) => req.user?.userId ?? req.user?.id;
+const tenantId = (req) => req.tenantScope?.type === 'TENANT' ? req.tenantScope.tenantId : null;
+
+// ── Handlers ──────────────────────────────────────────────────────────────────
+
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { limit, unreadOnly } = req.query;
-
-    // Tenant scoping: prefer resolved tenant context (header/param) but fall back to token tenant.
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-
-    const rows = await getUserNotifications(userId, {
-      limit: limit ? parseInt(limit) : 50,
-      unreadOnly: unreadOnly === 'true',
-      tenantId,
-    });
-
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    res.status(500).json({ error: 'Failed to fetch notifications' });
-  }
+    res.json(await notificationsService.listNotifications(userId(req), {
+      limit:      req.query.limit,
+      unreadOnly: req.query.unreadOnly,
+      tenantId:   tenantId(req),
+    }));
+  } catch (e) { handleError(res, e, 'Get notifications'); }
 };
 
-// Mark notification as read
-export const markAsRead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    // Verify notification belongs to user
-    const notification = await db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
-      .limit(1);
-
-    if (!notification.length) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    const updatedNotification = await markNotificationAsRead(id);
-    res.json(updatedNotification);
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
-    res.status(500).json({ error: 'Failed to mark notification as read' });
-  }
-};
-
-// Mark all notifications as read
-export const markAllAsRead = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
-
-    res.json({ message: 'All notifications marked as read' });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    res.status(500).json({ error: 'Failed to mark all notifications as read' });
-  }
-};
-
-// Get notification count
 export const getNotificationCount = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const tenantId = req.tenantId ?? req.user?.tenantId ?? null;
-
-    const baseWhere = and(eq(notifications.userId, userId), eq(notifications.isRead, false));
-
-    const [result] = tenantId
-      ? await db
-          .select({ count: count() })
-          .from(notifications)
-          .leftJoin(users, eq(notifications.userId, users.id))
-          .where(and(baseWhere, eq(users.tenantId, tenantId)))
-      : await db
-          .select({ count: count() })
-          .from(notifications)
-          .where(baseWhere);
-
-    res.json({ unreadCount: result.count });
-  } catch (error) {
-    console.error('Error fetching notification count:', error);
-    res.status(500).json({ error: 'Failed to fetch notification count' });
-  }
+    res.json(await notificationsService.getUnreadCount(userId(req), tenantId(req)));
+  } catch (e) { handleError(res, e, 'Get notification count'); }
 };
 
-// Delete notification
+export const markAsRead = async (req, res) => {
+  try {
+    res.json(await notificationsService.markAsRead(req.params.id, userId(req)));
+  } catch (e) { handleError(res, e, 'Mark notification as read'); }
+};
+
+export const markAllAsRead = async (req, res) => {
+  try {
+    res.json(await notificationsService.markAllAsRead(userId(req)));
+  } catch (e) { handleError(res, e, 'Mark all notifications as read'); }
+};
+
 export const deleteNotification = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    // Verify notification belongs to user
-    const notification = await db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
-      .limit(1);
-
-    if (!notification.length) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    await db.delete(notifications).where(eq(notifications.id, id));
-
-    res.json({ message: 'Notification deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting notification:', error);
-    res.status(500).json({ error: 'Failed to delete notification' });
-  }
+    res.json(await notificationsService.deleteNotification(req.params.id, userId(req)));
+  } catch (e) { handleError(res, e, 'Delete notification'); }
 };

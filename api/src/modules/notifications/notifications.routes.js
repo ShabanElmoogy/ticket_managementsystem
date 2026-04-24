@@ -1,7 +1,7 @@
 import express from 'express';
 import * as notificationsController from './notifications.controller.js';
 import { authenticateToken } from '../../middleware/auth.js';
-import { resolveTenant } from '../../middleware/tenant.js';
+import { enforceTenantScope } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
 import { notificationQuerySchema } from './notifications.validation.js';
 
@@ -20,13 +20,11 @@ const router = express.Router();
  *   get:
  *     tags: [Notifications]
  *     summary: List notifications for the current user
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NotificationList'
  */
-router.get('/', authenticateToken, resolveTenant, validate(notificationQuerySchema, 'query'), notificationsController.getNotifications);
+router.get('/', authenticateToken, enforceTenantScope, validate(notificationQuerySchema, 'query'), notificationsController.getNotifications);
 
 /**
  * @swagger
@@ -34,8 +32,6 @@ router.get('/', authenticateToken, resolveTenant, validate(notificationQuerySche
  *   get:
  *     tags: [Notifications]
  *     summary: Get unread notification count
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
  *         description: Count object
@@ -44,7 +40,7 @@ router.get('/', authenticateToken, resolveTenant, validate(notificationQuerySche
  *             schema:
  *               $ref: '#/components/schemas/NotificationCount'
  */
-router.get('/count', authenticateToken, resolveTenant, notificationsController.getNotificationCount);
+router.get('/count', authenticateToken, enforceTenantScope, notificationsController.getNotificationCount);
 
 /**
  * @swagger
@@ -52,13 +48,11 @@ router.get('/count', authenticateToken, resolveTenant, notificationsController.g
  *   put:
  *     tags: [Notifications]
  *     summary: Mark all notifications as read
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NoContent'
  */
-router.put('/read-all', authenticateToken, resolveTenant, notificationsController.markAllAsRead);
+router.put('/read-all', authenticateToken, notificationsController.markAllAsRead);
 
 /**
  * @swagger
@@ -67,13 +61,12 @@ router.put('/read-all', authenticateToken, resolveTenant, notificationsControlle
  *     tags: [Notifications]
  *     summary: Mark a notification as read
  *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
  *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NoContent'
  */
-router.put('/:id/read', authenticateToken, resolveTenant, notificationsController.markAsRead);
+router.put('/:id/read', authenticateToken, notificationsController.markAsRead);
 
 /**
  * @swagger
@@ -82,12 +75,11 @@ router.put('/:id/read', authenticateToken, resolveTenant, notificationsControlle
  *     tags: [Notifications]
  *     summary: Delete a notification
  *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
  *       - $ref: '#/components/parameters/PathId'
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NoContent'
  */
-router.delete('/:id', authenticateToken, resolveTenant, notificationsController.deleteNotification);
+router.delete('/:id', authenticateToken, notificationsController.deleteNotification);
 
 export default router;

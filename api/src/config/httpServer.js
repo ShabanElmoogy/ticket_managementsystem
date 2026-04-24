@@ -4,45 +4,44 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ── Certificate paths ─────────────────────────────────────────────────────────
+
+const KEY_PATH  = path.join(__dirname, '..', '..', '.cert', 'key.pem');
+const CERT_PATH = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
+
+function certsExist() {
+  return fs.existsSync(KEY_PATH) && fs.existsSync(CERT_PATH);
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+
+/**
+ * Creates an HTTP or HTTPS server depending on USE_HTTPS env var and cert availability.
+ * Logging is intentionally omitted — let the caller (bootstrap.js) log the result.
+ */
 export function createHttpOrHttpsServer(app) {
-  const USE_HTTPS = process.env.USE_HTTPS === 'true';
-  let server;
-  if (USE_HTTPS) {
-    try {
-      const keyPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
-      const certPath = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
-
-      if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  if (process.env.USE_HTTPS === 'true') {
+    if (certsExist()) {
+      try {
         const httpsOptions = {
-          key: fs.readFileSync(keyPath),
-          cert: fs.readFileSync(certPath),
+          key:  fs.readFileSync(KEY_PATH),
+          cert: fs.readFileSync(CERT_PATH),
         };
-        server = createHttpsServer(httpsOptions, app);
-        console.log('HTTPS server enabled with certificates from .cert directory');
-      } else {
-        console.warn('HTTPS certificates not found in .cert directory, falling back to HTTP');
-        server = createServer(app);
+        return createHttpsServer(httpsOptions, app);
+      } catch (error) {
+        // Cert files exist but are unreadable — fall through to HTTP
+        console.error('Error loading HTTPS certificates, falling back to HTTP:', error.message);
       }
-    } catch (error) {
-      console.error('Error loading HTTPS certificates, falling back to HTTP:', error.message);
-      server = createServer(app);
     }
-  } else {
-    server = createServer(app);
   }
-  return server;
+  return createServer(app);
 }
 
 /**
- * Detects the protocol (http or https) based on USE_HTTPS and certificate availability.
- * @returns {string} 'https' if HTTPS is enabled and certificates exist, otherwise 'http'.
+ * Returns 'https' if HTTPS is enabled and certificates are present, otherwise 'http'.
  */
 export function detectProtocol() {
-  const USE_HTTPS = process.env.USE_HTTPS === 'true';
-  const keyPath = path.join(__dirname, '..', '..', '.cert', 'key.pem');
-  const certPath = path.join(__dirname, '..', '..', '.cert', 'cert.pem');
-  return USE_HTTPS && fs.existsSync(keyPath) && fs.existsSync(certPath) ? 'https' : 'http';
+  return process.env.USE_HTTPS === 'true' && certsExist() ? 'https' : 'http';
 }

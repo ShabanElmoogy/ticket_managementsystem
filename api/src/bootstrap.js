@@ -1,49 +1,89 @@
-import dotenv from 'dotenv';
-dotenv.config();
+// dotenv must be the first import so all subsequent modules read env vars correctly.
+// In ESM, import statements are hoisted — using the side-effect form ensures
+// process.env is populated before any other module initialises.
+import 'dotenv/config';
 
-import express from "express";
+import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createHttpOrHttpsServer, detectProtocol } from "./config/httpServer.js";
-import { setupSocket } from "./sockets/io.js";
-import { registerCoreMiddleware } from "./middleware/index.js";
-import { registerRoutes } from "./routes/index.js";
-import { registerErrorHandlers } from "./errors/index.js";
-import { startNotificationScheduler } from "./utils/scheduler.js";
-import { startEmailIngestScheduler } from "./utils/emailIngest.js";
+import { createHttpOrHttpsServer, detectProtocol } from './config/httpServer.js';
+import { setupSocket } from './sockets/io.js';
+import { registerCoreMiddleware } from './middleware/index.js';
+import { registerRoutes } from './routes/index.js';
+import { registerErrorHandlers } from './errors/index.js';
+import { startNotificationScheduler } from './utils/scheduler.js';
+import { startEmailIngestScheduler } from './utils/emailIngest.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : process.env.HOST || 'localhost';
+
+// ── Server configuration ──────────────────────────────────────────────────────
+
+const PORT = parseInt(process.env.PORT ?? '3000', 10);
+
+// Bind to all interfaces in production (required for containers/load balancers).
+// Bind to localhost only in development to avoid accidental network exposure.
+const HOST = process.env.NODE_ENV === 'production'
+  ? '0.0.0.0'
+  : (process.env.HOST ?? 'localhost');
+
+// Allow the uploads directory to be overridden per deployment.
+const UPLOADS_DIR = process.env.UPLOADS_DIR ?? path.join(__dirname, '../uploads');
+
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
+
+function shutdown(server, signal) {
+  console.log(`${signal} received — shutting down gracefully`);
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+  // Force exit after 10 s if in-flight requests haven't finished
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10_000).unref();
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
 
 export async function startServer() {
-  const app = express();
+  const app    = express();
   const server = createHttpOrHttpsServer(app);
 
-  const { io, notificationEmitter } = setupSocket(server);
+  const { notificationEmitter } = setupSocket(server);
 
   registerCoreMiddleware(app, notificationEmitter);
 
-  // Serve uploaded attachments as static files
-  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  // Serve uploaded files as static assets.
+  // acceptRanges: true enables HTTP Range requests required by video players.
+  // setHeaders ensures correct Content-Type for .mp4 and other media files.
+  app.use('/uploads', express.static(UPLOADS_DIR, {
+    acceptRanges: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.mp4'))  res.setHeader('Content-Type', 'video/mp4');
+      if (filePath.endsWith('.webm')) res.setHeader('Content-Type', 'video/webm');
+      if (filePath.endsWith('.mov'))  res.setHeader('Content-Type', 'video/quicktime');
+    },
+  }));
 
   registerRoutes(app);
   registerErrorHandlers(app);
+
   startNotificationScheduler(notificationEmitter);
   startEmailIngestScheduler(notificationEmitter);
 
-  try {
-    server.listen(PORT, HOST, () => {
-      const protocol = detectProtocol();
-      console.log(`Server running on ${protocol}://${HOST}:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
+  // server.listen is async — errors (e.g. EADDRINUSE) are emitted, not thrown
+  server.on('error', (error) => {
+    console.error('Failed to start server:', error.message);
     process.exit(1);
-  }
-
-  process.on("SIGINT", async () => {
-    console.log("Shutting down server...");
-    process.exit(0);
   });
+
+  server.listen(PORT, HOST, () => {
+    const protocol = detectProtocol();
+    console.log(`Server running on ${protocol}://${HOST}:${PORT}`);
+  });
+
+  // Handle both SIGINT (Ctrl+C) and SIGTERM (Docker/Kubernetes stop)
+  process.on('SIGINT',  () => shutdown(server, 'SIGINT'));
+  process.on('SIGTERM', () => shutdown(server, 'SIGTERM'));
 }

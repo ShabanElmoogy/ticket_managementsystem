@@ -9,7 +9,7 @@ import { applications } from './applications.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
 import { customers, customerApplications } from '../customers/customers.schema.js';
-import { eq, desc, count, countDistinct, and } from 'drizzle-orm';
+import { eq, desc, count, countDistinct, and, inArray } from 'drizzle-orm';
 
 // ── Shared column selection ───────────────────────────────────────────────────
 
@@ -153,6 +153,43 @@ export async function deleteApplicationById(id, tenantId) {
     : eq(applications.id, id);
 
   await db.delete(applications).where(where);
+}
+
+/** Force-delete an application and cascade all related tickets in a transaction. */
+export async function forceDeleteApplication(id, tenantId) {
+  await db.transaction(async (tx) => {
+    // 1. Find all tickets linked to this application
+    const where = tenantId
+      ? and(eq(tickets.applicationId, id), eq(users.tenantId, tenantId))
+      : eq(tickets.applicationId, id);
+
+    const ticketRows = await tx
+      .select({ id: tickets.id })
+      .from(tickets)
+      .innerJoin(users, eq(tickets.createdById, users.id))
+      .where(where);
+
+    if (ticketRows.length > 0) {
+      const ticketIds = ticketRows.map((t) => t.id);
+      const { comments, ticketActivities } = await import('../tickets/tickets.schema.js');
+
+      // 2. Delete ticket children first
+      await tx.delete(comments).where(inArray(comments.ticketId, ticketIds));
+      await tx.delete(ticketActivities).where(inArray(ticketActivities.ticketId, ticketIds));
+
+      // 3. Delete the tickets
+      await tx.delete(tickets).where(inArray(tickets.id, ticketIds));
+    }
+
+    // 4. Delete customer assignments
+    await tx.delete(customerApplications).where(eq(customerApplications.applicationId, id));
+
+    // 5. Delete the application last
+    const appWhere = tenantId
+      ? and(eq(applications.id, id), eq(applications.tenantId, tenantId))
+      : eq(applications.id, id);
+    await tx.delete(applications).where(appWhere);
+  });
 }
 
 // ── Customer assignment ───────────────────────────────────────────────────────

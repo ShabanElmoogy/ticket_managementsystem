@@ -3,47 +3,41 @@ import express from 'express';
 import pinoHttp from 'pino-http';
 import rateLimit from 'express-rate-limit';
 import socketMiddleware from './socketMiddleware.js';
-import { authenticateToken } from './auth.js';
 import { resolveTenant, invalidateTenantCache } from './tenant.js';
+import { CORS_ORIGINS } from '../config/cors.js';
 
 export { resolveTenant, invalidateTenantCache };
 
-export const authenticateAndResolveTenant = [authenticateToken, resolveTenant];
-
-const CORS_ORIGINS = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://localhost:5173',
-      'https://localhost:5174',
-      'https://ticketmanagement-ab491.web.app',
-      'https://ticketmanagement-ab491.firebaseapp.com',
-    ];
+// ── Pino HTTP logger ──────────────────────────────────────────────────────────
 
 const logger = pinoHttp({
-  autoLogging: true,
+  autoLogging:    true,
   quietReqLogger: true,
-  customLogLevel: (req, res) => (res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info'),
+  customLogLevel: (req, res) =>
+    res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
   serializers: {
     req: (req) => ({ method: req.method, url: req.url, id: req.id }),
     res: (res) => ({ statusCode: res.statusCode }),
   },
 });
 
+// ── Rate limiter for auth endpoints ──────────────────────────────────────────
+
 export const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+  windowMs:       15 * 60 * 1000, // 15 minutes
+  max:            parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? '20', 10),
   standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' },
+  legacyHeaders:  false,
+  message:        { error: 'Too many requests, please try again later.' },
 });
+
+// ── Core middleware registration ──────────────────────────────────────────────
 
 export function registerCoreMiddleware(app, notificationEmitter) {
   app.use(cors({
-    origin: CORS_ORIGINS,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    origin:       CORS_ORIGINS,
+    credentials:  true,
+    methods:      ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -55,7 +49,9 @@ export function registerCoreMiddleware(app, notificationEmitter) {
     exposedHeaders: ['X-Request-ID'],
     maxAge: 86400,
   }));
-  app.use(express.json());
+
+  // Explicit body size limit — prevents oversized JSON payloads
+  app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? '1mb' }));
   app.use(logger);
   app.use(socketMiddleware(notificationEmitter));
 }

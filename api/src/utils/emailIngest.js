@@ -71,10 +71,9 @@ export const runEmailIngest = async (emitNotification) => {
 
     try {
       const uids = await client.search({ seen: false }, { uid: true });
-      console.log(`[EmailIngest] Found ${uids?.length || 0} unseen message(s).`);
 
       if (!uids || uids.length === 0) {
-        console.log('[EmailIngest] No unseen messages.');
+        // nothing to process
       } else {
         for await (const msg of client.fetch(uids, { envelope: true, source: true }, { uid: true })) {
           try {
@@ -83,24 +82,19 @@ export const runEmailIngest = async (emitNotification) => {
             const fromEmail = parsed.from?.value?.[0]?.address || '';
             const subject   = parsed.subject || '(No Subject)';
             const toAddresses = (parsed.to?.value || []).map((a) => a.address?.toLowerCase()).filter(Boolean);
-            console.log(`[EmailIngest] Processing: from=${fromEmail} to=${toAddresses.join(',')} subject="${subject}"`);
 
             const [existing] = await db
               .select({ id: tickets.id })
               .from(tickets)
               .where(eq(tickets.emailMessageId, messageId))
               .limit(1);
-            if (existing) { console.log('[EmailIngest] Already imported, skipping.'); continue; }
+            if (existing) { continue; } // already imported
 
             const fromName = parsed.from?.value?.[0]?.name || fromEmail;
             const body     = parsed.text || parsed.html?.replace(/<[^>]+>/g, '') || '';
 
             const tenant = await resolveTenant(toAddresses);
-            if (!tenant) {
-              console.warn(`[EmailIngest] No tenant matched for To: ${toAddresses.join(', ')} — skipping. Make sure supportEmail is set on the tenant.`);
-              continue;
-            }
-            console.log(`[EmailIngest] Matched tenant: ${tenant.id}`);
+            if (!tenant) { continue; } // no tenant matched this recipient — not a support email
 
             const [adminUser] = await db
               .select({ id: users.id })
@@ -153,8 +147,6 @@ export const runEmailIngest = async (emitNotification) => {
             tenantUsers.forEach(({ id }) => emitNotification?.(id, notifPayload));
             // Also broadcast so any connected user in this tenant sees it
             emitNotification?.('broadcast', notifPayload);
-
-            console.log(`[EmailIngest] Created ticket from ${fromEmail}: "${subject}"`);
           } catch (msgErr) {
             console.error('[EmailIngest] Error processing message:', msgErr.message);
           }
@@ -180,7 +172,6 @@ export const startEmailIngestScheduler = (emitNotification) => {
 
   const ms = cfg.intervalMinutes * 60 * 1000;
   pollerInterval = setInterval(() => runEmailIngest(emitNotification).catch((e) => console.error('[EmailIngest] Scheduler error:', e.message)), ms);
-  console.log(`[EmailIngest] Scheduler started — polling every ${cfg.intervalMinutes} min`);
 
   runEmailIngest(emitNotification).catch((e) => console.error('[EmailIngest] Initial run error:', e.message));
 };

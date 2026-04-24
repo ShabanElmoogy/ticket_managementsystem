@@ -1,194 +1,65 @@
-import { eq, and, count } from 'drizzle-orm';
-import { db } from '../../config/database.js';
-import { tenants } from './tenants.schema.js';
-import { users } from '../users/users.schema.js';
-import { tickets } from '../tickets/tickets.schema.js';
-import { Role } from '../../constants/roles.js';
+/**
+ * tenants.controller.js
+ * HTTP handlers — extract request data, call service, send response.
+ * No business logic or direct DB access here.
+ */
 
-const toSlug = (value) =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+import { handleError } from '../../errors/index.js';
+import * as tenantsService from './tenants.service.js';
 
-const parseOptionalDate = (value) => {
-  if (value === undefined) return undefined;
-  if (value === null || value === '') return null;
-  const d = new Date(value);
-  // If invalid date, let DB/driver throw by passing the original value
-  return Number.isNaN(d.getTime()) ? value : d;
+// ── Handlers ──────────────────────────────────────────────────────────────────
+
+export const listTenants = async (req, res) => {
+  try {
+    res.json(await tenantsService.listTenants());
+  } catch (e) { handleError(res, e, 'List tenants'); }
 };
 
 export const listTenantsPublic = async (req, res) => {
   try {
-    const rows = await db
-      .select({ id: tenants.id, name: tenants.name, slug: tenants.slug })
-      .from(tenants)
-      .orderBy(tenants.name);
-
-    const withAdmin = await Promise.all(
-      rows.map(async (t) => {
-        const [admin] = await db.select({ email: users.email }).from(users)
-          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.TENANT_ADMIN))).limit(1);
-        const [employee] = await db.select({ email: users.email }).from(users)
-          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.EMPLOYEE))).limit(1);
-        const [programmer] = await db.select({ email: users.email }).from(users)
-          .where(and(eq(users.tenantId, t.id), eq(users.role, Role.PROGRAMMER))).limit(1);
-        return {
-          ...t,
-          adminEmail:      admin?.email ?? null,
-          employeeEmail:   employee?.email ?? null,
-          programmerEmail: programmer?.email ?? null,
-        };
-      })
-    );
-
-    return res.json(withAdmin);
-  } catch (error) {
-    console.error('listTenantsPublic error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-export const listTenants = async (req, res) => {
-  const rows = await db.select().from(tenants).orderBy(tenants.createdAt);
-  return res.json(rows);
-};
-
-export const createTenant = async (req, res) => {
-  const {
-    name, slug, subscriptionPlan, subscriptionStatus,
-    subscriptionStart, subscriptionEnd, subscriptionSeats, supportEmail,
-  } = req.body || {};
-
-  if (!name) return res.status(400).json({ error: 'name is required' });
-
-  const finalSlug = toSlug(slug || name);
-  if (!finalSlug) return res.status(400).json({ error: 'slug is required' });
-
-  const inserted = await db
-    .insert(tenants)
-    .values({
-      name, slug: finalSlug,
-      subscriptionPlan: subscriptionPlan || undefined,
-      subscriptionStatus: subscriptionStatus || undefined,
-      subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : undefined,
-      subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
-      subscriptionSeats: typeof subscriptionSeats === 'number' ? subscriptionSeats : undefined,
-      supportEmail: supportEmail || null,
-    })
-    .returning();
-
-  return res.status(201).json(inserted[0]);
-};
-
-export const updateTenant = async (req, res) => {
-  const { id } = req.params;
-  if (!id) return res.status(400).json({ error: 'id is required' });
-
-  const {
-    name, slug, subscriptionPlan, subscriptionStatus,
-    subscriptionStart, subscriptionEnd, subscriptionSeats, supportEmail,
-  } = req.body || {};
-
-  const patch = {
-    ...(name !== undefined ? { name } : {}),
-    ...(slug !== undefined ? { slug: toSlug(slug) } : {}),
-    ...(subscriptionPlan !== undefined ? { subscriptionPlan } : {}),
-    ...(subscriptionStatus !== undefined ? { subscriptionStatus } : {}),
-    ...(subscriptionSeats !== undefined ? { subscriptionSeats } : {}),
-    ...(subscriptionStart !== undefined ? { subscriptionStart: parseOptionalDate(subscriptionStart) } : {}),
-    ...(subscriptionEnd !== undefined ? { subscriptionEnd: parseOptionalDate(subscriptionEnd) } : {}),
-    ...(supportEmail !== undefined ? { supportEmail: supportEmail || null } : {}),
-    updatedAt: new Date(),
-  };
-
-  const updated = await db
-    .update(tenants)
-    .set(patch)
-    .where(eq(tenants.id, id))
-    .returning();
-
-  if (!updated.length) return res.status(404).json({ error: 'Tenant not found' });
-  return res.json(updated[0]);
+    res.json(await tenantsService.listTenantsPublic());
+  } catch (e) { handleError(res, e, 'List tenants public'); }
 };
 
 export const getTenantBySlug = async (req, res) => {
-  const { slug } = req.params;
-  const rows = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
-  if (!rows.length) return res.status(404).json({ error: 'Tenant not found' });
-  return res.json(rows[0]);
+  try {
+    res.json(await tenantsService.getTenantBySlug(req.params.slug));
+  } catch (e) { handleError(res, e, 'Get tenant by slug'); }
 };
 
 export const getTenantStats = async (req, res) => {
-  const { id } = req.params;
-  const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.id, id)).limit(1);
-  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+  try {
+    res.json(await tenantsService.getTenantStats(req.params.id));
+  } catch (e) { handleError(res, e, 'Get tenant stats'); }
+};
 
-  const [userCount] = await db.select({ count: count() }).from(users).where(eq(users.tenantId, id));
-  const [ticketCount] = await db.select({ count: count() }).from(tickets).where(
-    and(eq(tickets.createdById, id), eq(tickets.deletedAt, null))
-  );
+export const createTenant = async (req, res) => {
+  try {
+    const tenant = await tenantsService.createTenant(req.body);
+    res.status(201).json(tenant);
+  } catch (e) { handleError(res, e, 'Create tenant'); }
+};
 
-  // Count tickets via users belonging to this tenant
-  const tenantUsers = await db.select({ id: users.id }).from(users).where(eq(users.tenantId, id));
-  const userIds = tenantUsers.map(u => u.id);
-  const [tenantTicketCount] = userIds.length > 0
-    ? await db.select({ count: count() }).from(tickets)
-        .where(and(
-          eq(tickets.deletedAt, null),
-        ))
-    : [{ count: 0 }];
-
-  return res.json({
-    userCount: userCount.count,
-    ticketCount: tenantTicketCount.count,
-  });
+export const updateTenant = async (req, res) => {
+  try {
+    res.json(await tenantsService.updateTenant(req.params.id, req.body));
+  } catch (e) { handleError(res, e, 'Update tenant'); }
 };
 
 export const activateTenant = async (req, res) => {
-  const { id } = req.params;
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
-  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
-
-  const [updated] = await db
-    .update(tenants)
-    .set({ subscriptionStatus: 'ACTIVE', updatedAt: new Date() })
-    .where(eq(tenants.id, id))
-    .returning();
-
-  return res.json(updated);
+  try {
+    res.json(await tenantsService.activateTenant(req.params.id));
+  } catch (e) { handleError(res, e, 'Activate tenant'); }
 };
 
 export const deactivateTenant = async (req, res) => {
-  const { id } = req.params;
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
-  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
-  if (tenant.subscriptionStatus === 'SUSPENDED') {
-    return res.status(400).json({ error: 'Tenant is already deactivated' });
-  }
-
-  const [updated] = await db
-    .update(tenants)
-    .set({ subscriptionStatus: 'SUSPENDED', updatedAt: new Date() })
-    .where(eq(tenants.id, id))
-    .returning();
-
-  return res.json(updated);
+  try {
+    res.json(await tenantsService.deactivateTenant(req.params.id));
+  } catch (e) { handleError(res, e, 'Deactivate tenant'); }
 };
 
 export const deleteTenant = async (req, res) => {
-  const { id } = req.params;
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
-  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
-
-  // Soft-delete: mark subscription as SUSPENDED
-  await db.transaction(async (tx) => {
-    await tx.update(tenants)
-      .set({ subscriptionStatus: 'SUSPENDED', updatedAt: new Date() })
-      .where(eq(tenants.id, id));
-  });
-
-  return res.json({ message: 'Tenant deactivated successfully' });
+  try {
+    res.json(await tenantsService.deleteTenant(req.params.id));
+  } catch (e) { handleError(res, e, 'Delete tenant'); }
 };

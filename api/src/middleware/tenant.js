@@ -136,7 +136,12 @@ export const resolveTenant = async (req, res, next) => {
     }
 
     // Block suspended / cancelled tenants before any controller runs.
-    if (row.subscriptionStatus === 'SUSPENDED' || row.subscriptionStatus === 'CANCELED') {
+    // subscriptionStatus is a plain text column — check both spellings defensively.
+    if (
+      row.subscriptionStatus === 'SUSPENDED' ||
+      row.subscriptionStatus === 'CANCELED'  ||
+      row.subscriptionStatus === 'CANCELLED'
+    ) {
       return res.status(403).json({ error: 'Tenant subscription is inactive' });
     }
 

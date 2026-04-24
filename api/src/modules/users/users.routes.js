@@ -1,7 +1,7 @@
 import express from 'express';
 import * as usersController from './users.controller.js';
 import { authenticateToken, requireSuperAdmin, requireTenantAdmin, requireAdmin } from '../../middleware/auth.js';
-import { resolveTenant } from '../../middleware/tenant.js';
+import { enforceTenantScope, requireTenantScopeMiddleware } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
 import { createUserSchema, updateUserSchema, updateOwnProfileSchema } from './users.validation.js';
 
@@ -39,7 +39,8 @@ const router = express.Router();
  *         $ref: '#/components/responses/Forbidden'
  */
 router.get('/', authenticateToken, requireSuperAdmin, usersController.getAllUsers);
-router.post('/', authenticateToken, requireSuperAdmin, resolveTenant, validate(createUserSchema), usersController.createUser);
+// SUPER_ADMIN creates a user in a specific tenant — requires tenant scope from header
+router.post('/', authenticateToken, requireSuperAdmin, requireTenantScopeMiddleware, validate(createUserSchema), usersController.createUser);
 
 /**
  * @swagger
@@ -79,12 +80,12 @@ router.get('/stats', authenticateToken, requireTenantAdmin, usersController.getU
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantUsers);
-router.post('/tenant', authenticateToken, resolveTenant, requireTenantAdmin, validate(createUserSchema), usersController.createTenantUser);
-router.get('/tenant/seats', authenticateToken, resolveTenant, requireTenantAdmin, usersController.getTenantSeats);
-router.put('/tenant/:id', authenticateToken, resolveTenant, requireTenantAdmin, validate(updateUserSchema), usersController.updateTenantUser);
-router.delete('/tenant/:id', authenticateToken, resolveTenant, requireTenantAdmin, usersController.deleteTenantUser);
-router.post('/tenant/:id/reset-password', authenticateToken, requireTenantAdmin, usersController.resetTenantUserPassword);
+router.get('/tenant',       authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, usersController.getTenantUsers);
+router.post('/tenant',      authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(createUserSchema), usersController.createTenantUser);
+router.get('/tenant/seats', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, usersController.getTenantSeats);
+router.put('/tenant/:id',   authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(updateUserSchema), usersController.updateTenantUser);
+router.delete('/tenant/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, usersController.deleteTenantUser);
+router.post('/tenant/:id/reset-password', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, usersController.resetTenantUserPassword);
 
 /**
  * @swagger
@@ -122,8 +123,8 @@ router.get('/profile/tenant-status', authenticateToken, usersController.getTenan
  *       200:
  *         $ref: '#/components/responses/UserList'
  */
-router.get('/employees', authenticateToken, usersController.getEmployees);
-router.get('/programmers', authenticateToken, requireAdmin, usersController.getProgrammers);
+router.get('/employees',  authenticateToken, enforceTenantScope, usersController.getEmployees);
+router.get('/programmers', authenticateToken, requireAdmin, enforceTenantScope, usersController.getProgrammers);
 
 /**
  * @swagger

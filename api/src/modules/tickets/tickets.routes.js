@@ -1,12 +1,12 @@
 import express from 'express';
 import * as ticketController from './tickets.controller.js';
 import { authenticateToken, requireTenantAdmin, requireAdmin } from '../../middleware/auth.js';
-import { resolveTenant } from '../../middleware/tenant.js';
+import { enforceTenantScope, requireTenantScopeMiddleware } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
-import { createTicketSchema, updateTicketSchema, ticketQuerySchema } from './tickets.validation.js';
+import { createTicketSchema, updateTicketSchema, ticketQuerySchema, bulkUpdateStatusSchema, reassignTicketSchema } from './tickets.validation.js';
 import { upload } from '../attachments/attachments.upload.js';
 import { uploadAttachments, getAttachments, deleteAttachment } from '../attachments/attachments.controller.js';
-import { getWatchers, watchTicket, unwatchTicket } from './watchers.controller.js';
+import watchersRouter from './watchers/watchers.routes.js';
 
 const router = express.Router();
 
@@ -17,8 +17,8 @@ const router = express.Router();
  *   description: Ticket lifecycle management
  */
 
-// authenticateToken must run before resolveTenant (which requires req.user)
-router.use(authenticateToken, resolveTenant);
+// authenticateToken runs on every ticket route
+router.use(authenticateToken);
 
 /**
  * @swagger
@@ -41,7 +41,7 @@ router.use(authenticateToken, resolveTenant);
  *       200:
  *         $ref: '#/components/responses/TicketList'
  */
-router.get('/', validate(ticketQuerySchema, 'query'), ticketController.getAllTickets);
+router.get('/', enforceTenantScope, validate(ticketQuerySchema, 'query'), ticketController.getAllTickets);
 
 /**
  * @swagger
@@ -55,12 +55,10 @@ router.get('/', validate(ticketQuerySchema, 'query'), ticketController.getAllTic
  *       200:
  *         $ref: '#/components/responses/TicketList'
  */
-router.get('/delayed', ticketController.getDelayedTickets);
+router.get('/delayed', enforceTenantScope, ticketController.getDelayedTickets);
 
 // Watchers — must be before /:id to avoid route conflict
-router.get('/:id/watchers',    getWatchers);
-router.post('/:id/watch',      watchTicket);
-router.delete('/:id/watch',    unwatchTicket);
+router.use('/', watchersRouter);
 
 /**
  * @swagger
@@ -77,7 +75,7 @@ router.delete('/:id/watch',    unwatchTicket);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id', ticketController.getTicketById);
+router.get('/:id', enforceTenantScope, ticketController.getTicketById);
 
 /**
  * @swagger
@@ -97,7 +95,7 @@ router.get('/:id', ticketController.getTicketById);
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/', requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
+router.post('/', requireTenantScopeMiddleware, requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
 
 /**
  * @swagger
@@ -116,7 +114,7 @@ router.post('/', requireTenantAdmin, validate(createTicketSchema), ticketControl
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  */
-router.put('/:id', validate(updateTicketSchema), ticketController.updateTicket);
+router.put('/:id', enforceTenantScope, validate(updateTicketSchema), ticketController.updateTicket);
 
 /**
  * @swagger
@@ -135,11 +133,11 @@ router.put('/:id', validate(updateTicketSchema), ticketController.updateTicket);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:id', requireTenantAdmin, ticketController.deleteTicket);
+router.delete('/:id', requireTenantScopeMiddleware, requireTenantAdmin, ticketController.deleteTicket);
 
-router.patch('/bulk', requireAdmin, ticketController.bulkUpdateStatus);
-router.patch('/:id/restore', requireTenantAdmin, ticketController.restoreTicket);
-router.patch('/:id/reassign', requireTenantAdmin, ticketController.reassignTicket);
+router.patch('/bulk', requireAdmin, validate(bulkUpdateStatusSchema), ticketController.bulkUpdateStatus);
+router.patch('/:id/restore', requireTenantScopeMiddleware, requireTenantAdmin, ticketController.restoreTicket);
+router.patch('/:id/reassign', requireTenantScopeMiddleware, requireTenantAdmin, validate(reassignTicketSchema), ticketController.reassignTicket);
 
 /**
  * @swagger
@@ -154,7 +152,7 @@ router.patch('/:id/reassign', requireTenantAdmin, ticketController.reassignTicke
  *       200:
  *         $ref: '#/components/responses/Ticket'
  */
-router.post('/:id/take', ticketController.takeTicket);
+router.post('/:id/take', enforceTenantScope, ticketController.takeTicket);
 
 // Attachments — mounted here so :id param is in scope
 router.get('/:id/attachments',                    getAttachments);

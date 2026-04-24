@@ -11,5 +11,5 @@ export const comments = pgTable('comments', {
   
   // Foreign keys
   ticketId: uuid('ticket_id').notNull().references(() => tickets.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id)
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 });

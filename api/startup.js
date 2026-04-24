@@ -1,31 +1,31 @@
-import { execSync } from 'child_process';
+/**
+ * startup.js — IIS deployment entry point.
+ *
+ * IIS Node uses this file instead of server.js so it can:
+ *  1. Ensure the logs/ directory exists (IIS redirects stdout/stderr there)
+ *  2. Verify node_modules is present before launching
+ *
+ * Normal development: use `npm start` (server.js directly).
+ */
+
 import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Ensure logs directory exists (IIS won't create it)
+// Ensure logs/ directory exists — IIS redirects stdout/stderr here
 const logsDir = join(__dirname, 'logs');
 if (!existsSync(logsDir)) mkdirSync(logsDir, { recursive: true });
-const nodeModules = join(__dirname, 'node_modules');
 
+// Fail fast if node_modules is missing — deployment is incomplete.
+// Run `npm install --omit=dev` as part of the deploy step, not at runtime.
+const nodeModules = join(__dirname, 'node_modules');
 if (!existsSync(nodeModules)) {
-  console.log('[startup] node_modules not found, running npm install...');
-  try {
-    execSync('npm install --omit=dev --prefer-offline', {
-      stdio: 'inherit',
-      cwd: __dirname,
-      timeout: 300000, // 5 min max
-    });
-    console.log('[startup] npm install completed.');
-  } catch (err) {
-    console.error('[startup] npm install failed:', err.message);
-    process.exit(1);
-  }
+  console.error('[startup] node_modules not found. Run npm install before starting.');
+  process.exit(1);
 }
 
-console.log('[startup] Starting server...');
 import('./server.js').catch((err) => {
   console.error('[startup] Failed to start server:', err);
   process.exit(1);

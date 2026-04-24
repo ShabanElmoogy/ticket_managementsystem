@@ -57,13 +57,21 @@ export async function updateApplication(id, tenantId, { name, description, versi
   return repo.updateApplicationById(id, tenantId ?? null, data);
 }
 
-export async function deleteApplication(id, tenantId) {
+export async function deleteApplication(id, tenantId, force = false) {
   const existing = await repo.findApplicationById(id, tenantId ?? null);
   if (!existing) throw fail('Application not found', 404);
 
   const ticketCount = await repo.countApplicationTickets(id, tenantId ?? null);
-  if (ticketCount > 0) {
-    throw fail('Cannot delete application with existing tickets. Please reassign or delete tickets first.');
+
+  if (!force && ticketCount > 0) {
+    throw fail(
+      'Cannot delete application with existing tickets. Use ?force=true to cascade delete all linked tickets.',
+    );
+  }
+
+  if (force && ticketCount > 0) {
+    await repo.forceDeleteApplication(id, tenantId ?? null);
+    return { message: 'Application and all linked tickets deleted successfully' };
   }
 
   await repo.deleteApplicationById(id, tenantId ?? null);

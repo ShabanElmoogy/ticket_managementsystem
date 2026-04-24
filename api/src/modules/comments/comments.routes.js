@@ -30,6 +30,29 @@ const router = express.Router();
  *         $ref: '#/components/responses/BadRequest'
  */
 router.post('/:id/comments', authenticateToken, validate(createCommentSchema), commentsController.createComment);
+
+/**
+ * @swagger
+ * /tickets/{id}/comments/{commentId}:
+ *   delete:
+ *     tags: [Comments]
+ *     summary: Delete a comment
+ *     parameters:
+ *       - $ref: '#/components/parameters/PathId'
+ *       - name: commentId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Comment deleted
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.delete('/:id/comments/:commentId', authenticateToken, commentsController.deleteComment);
 
 export default router;

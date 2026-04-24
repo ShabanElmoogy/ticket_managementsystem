@@ -18,7 +18,7 @@ const router = express.Router();
  * /labels:
  *   get:
  *     tags: [Labels]
- *     summary: List all labels
+ *     summary: List all labels with ticket counts
  *     responses:
  *       200:
  *         $ref: '#/components/responses/LabelList'
@@ -26,14 +26,25 @@ const router = express.Router();
  *     tags: [Labels]
  *     summary: Create a label (TENANT_ADMIN)
  *     requestBody:
- *       $ref: '#/components/requestBodies/CreateLabel'
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:        { type: string, maxLength: 100 }
+ *               color:       { type: string }
+ *               description: { type: string, nullable: true }
  *     responses:
  *       201:
  *         $ref: '#/components/responses/Label'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/', authenticateToken, labelsController.getAllLabels);
+router.get('/',  authenticateToken, labelsController.getAllLabels);
 router.post('/', authenticateToken, requireTenantAdmin, validate(createLabelSchema), labelsController.createLabel);
 
 /**
@@ -43,10 +54,20 @@ router.post('/', authenticateToken, requireTenantAdmin, validate(createLabelSche
  *     tags: [Labels]
  *     summary: Assign a label to a ticket
  *     requestBody:
- *       $ref: '#/components/requestBodies/AssignLabel'
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [ticketId, labelId]
+ *             properties:
+ *               ticketId: { type: string, format: uuid }
+ *               labelId:  { type: string, format: uuid }
  *     responses:
- *       200:
- *         $ref: '#/components/responses/NoContent'
+ *       201:
+ *         description: Assignment with full label object
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  */
 router.post('/assign', authenticateToken, validate(addLabelToTicketSchema), labelsController.addLabelToTicket);
 
@@ -58,16 +79,18 @@ router.post('/assign', authenticateToken, validate(addLabelToTicketSchema), labe
  *     summary: Update a label (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/PathId'
- *     requestBody:
- *       $ref: '#/components/requestBodies/UpdateLabel'
  *     responses:
  *       200:
  *         $ref: '#/components/responses/Label'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  *   delete:
  *     tags: [Labels]
- *     summary: Delete a label (TENANT_ADMIN)
+ *     summary: Delete a label and remove it from all tickets (TENANT_ADMIN)
  *     parameters:
  *       - $ref: '#/components/parameters/PathId'
  *     responses:
@@ -76,7 +99,7 @@ router.post('/assign', authenticateToken, validate(addLabelToTicketSchema), labe
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.put('/:id', authenticateToken, requireTenantAdmin, validate(updateLabelSchema), labelsController.updateLabel);
+router.put('/:id',    authenticateToken, requireTenantAdmin, validate(updateLabelSchema), labelsController.updateLabel);
 router.delete('/:id', authenticateToken, requireTenantAdmin, labelsController.deleteLabel);
 
 /**
@@ -84,10 +107,16 @@ router.delete('/:id', authenticateToken, requireTenantAdmin, labelsController.de
  * /labels/{labelId}/tickets/{ticketId}:
  *   delete:
  *     tags: [Labels]
- *     summary: Remove a label from a ticket
+ *     summary: Remove a label from a specific ticket
  *     parameters:
- *       - $ref: '#/components/parameters/PathLabelId'
- *       - $ref: '#/components/parameters/PathTicketId'
+ *       - name: labelId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - name: ticketId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NoContent'

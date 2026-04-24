@@ -1,425 +1,57 @@
-import { db } from '../../config/database.js';
-import { tasks } from './tasks.schema.js';
-import { users } from '../users/users.schema.js';
-import { kanbanBoards, kanbanColumns } from '../kanban/kanban.schema.js';
-import { eq, desc, asc, and } from 'drizzle-orm';
+/**
+ * tasks.controller.js
+ * HTTP handlers — extract request data, call service, send response.
+ * No business logic or direct DB access here.
+ *
+ * Tenant scoping is enforced by enforceTenantScope / requireTenantScopeMiddleware
+ * before these handlers run. Controllers read req.tenantScope.
+ */
 
-import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
+import { handleError } from '../../errors/index.js';
+import * as tasksService from './tasks.service.js';
 
-// Get all tasks for a board
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const tenantId = (req) => req.tenantScope?.type === 'TENANT' ? req.tenantScope.tenantId : null;
+
+// ── Handlers ──────────────────────────────────────────────────────────────────
+
 export const getTasks = async (req, res) => {
   try {
-    const { boardId } = req.query;
-
-    const scope = getTenantScope(req);
-    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-
-    // Build base query first to avoid passing undefined into where()
-    let query = db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        boardId: tasks.boardId,
-        columnId: tasks.columnId,
-        assigneeId: tasks.assigneeId,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        position: tasks.position,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
-        assignee: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-        board: {
-          id: kanbanBoards.id,
-          name: kanbanBoards.name,
-          type: kanbanBoards.type,
-        },
-        column: {
-          id: kanbanColumns.id,
-          name: kanbanColumns.name,
-          color: kanbanColumns.color,
-        },
-      })
-      .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id));
-
-    // Tenant scoping is enforced via the board's tenantId.
-    // (Tasks table has no tenantId column.)
-    const whereConditions = [];
-    if (boardId) whereConditions.push(eq(tasks.boardId, boardId));
-    if (tenantId) whereConditions.push(eq(kanbanBoards.tenantId, tenantId));
-    if (whereConditions.length) query = query.where(and(...whereConditions));
-
-    const tasksData = await query.orderBy(asc(tasks.position), desc(tasks.createdAt));
-
-    res.json(tasksData);
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
-  }
+    res.json(await tasksService.listTasks({
+      boardId:  req.query.boardId,
+      tenantId: tenantId(req),
+    }));
+  } catch (e) { handleError(res, e, 'Get tasks'); }
 };
 
-// Get a single task
 export const getTask = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const scope = getTenantScope(req);
-    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-
-    const task = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        boardId: tasks.boardId,
-        columnId: tasks.columnId,
-        assigneeId: tasks.assigneeId,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        position: tasks.position,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
-        assignee: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-        board: {
-          id: kanbanBoards.id,
-          name: kanbanBoards.name,
-          type: kanbanBoards.type,
-        },
-        column: {
-          id: kanbanColumns.id,
-          name: kanbanColumns.name,
-          color: kanbanColumns.color,
-        },
-      })
-      .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    if (!task.length) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    res.json(task[0]);
-  } catch (error) {
-    console.error('Error fetching task:', error);
-    res.status(500).json({ error: 'Failed to fetch task' });
-  }
+    res.json(await tasksService.getTask(req.params.id, tenantId(req)));
+  } catch (e) { handleError(res, e, 'Get task'); }
 };
 
-// Create a new task
 export const createTask = async (req, res) => {
   try {
-    const { title, description, boardId, columnId, assigneeId, dueDate, status } = req.body;
-
-    const tenantId = requireTenantScope(req);
-
-    if (!title || !boardId || !columnId) {
-      return res.status(400).json({ error: 'Title, boardId, and columnId are required' });
-    }
-
-    // Verify board exists, belongs to tenant, and is of type TASKS
-    const board = await db
-      .select()
-      .from(kanbanBoards)
-      .where(and(eq(kanbanBoards.id, boardId), eq(kanbanBoards.tenantId, tenantId)))
-      .limit(1);
-
-    if (!board.length) {
-      return res.status(404).json({ error: 'Board not found' });
-    }
-
-    if (board[0].type !== 'TASKS') {
-      return res.status(400).json({ error: 'Board must be of type TASKS' });
-    }
-
-    // Verify column exists and belongs to the board + tenant
-    const column = await db
-      .select()
-      .from(kanbanColumns)
-      .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.boardId, boardId), eq(kanbanColumns.tenantId, tenantId)))
-      .limit(1);
-
-    if (!column.length) {
-      return res.status(404).json({ error: 'Column not found or does not belong to this board' });
-    }
-
-    // Get the next position for this column (within tenant)
-    const lastTask = await db
-      .select({ position: tasks.position })
-      .from(tasks)
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .where(and(eq(tasks.columnId, columnId), eq(kanbanBoards.tenantId, tenantId)))
-      .orderBy(desc(tasks.position))
-      .limit(1);
-
-    const position = lastTask.length ? lastTask[0].position + 1 : 0;
-
-    const [newTask] = await db
-      .insert(tasks)
-      .values({
-        title,
-        description: description || '',
-        boardId,
-        columnId,
-        assigneeId: assigneeId || null,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        status: status || 'TODO',
-        position,
-      })
-      .returning();
-
-    const task = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        boardId: tasks.boardId,
-        columnId: tasks.columnId,
-        assigneeId: tasks.assigneeId,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        position: tasks.position,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
-        assignee: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-        board: {
-          id: kanbanBoards.id,
-          name: kanbanBoards.name,
-          type: kanbanBoards.type,
-        },
-        column: {
-          id: kanbanColumns.id,
-          name: kanbanColumns.name,
-          color: kanbanColumns.color,
-        },
-      })
-      .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(and(eq(tasks.id, newTask.id), eq(kanbanBoards.tenantId, tenantId)))
-      .limit(1);
-
-    res.status(201).json(task[0]);
-  } catch (error) {
-    console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Failed to create task' });
-  }
+    const task = await tasksService.createTask(tenantId(req), req.body);
+    res.status(201).json(task);
+  } catch (e) { handleError(res, e, 'Create task'); }
 };
 
-// Update a task
 export const updateTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, description, assigneeId, dueDate, status, columnId, position } = req.body;
-
-    const scope = getTenantScope(req);
-    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-
-    const existingTask = await db
-      .select({ id: tasks.id, boardId: tasks.boardId })
-      .from(tasks)
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    if (!existingTask.length) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    // If moving to a different column, ensure the target column belongs to the same tenant.
-    if (columnId !== undefined && columnId !== null && tenantId) {
-      const [col] = await db
-        .select({ id: kanbanColumns.id })
-        .from(kanbanColumns)
-        .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.tenantId, tenantId)))
-        .limit(1);
-      if (!col) {
-        return res.status(400).json({ error: 'Invalid columnId for tenant' });
-      }
-    }
-
-    const updateData = {};
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (assigneeId !== undefined) updateData.assigneeId = assigneeId;
-    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
-    if (status !== undefined) updateData.status = status;
-    if (columnId !== undefined) updateData.columnId = columnId;
-    if (position !== undefined) updateData.position = position;
-
-    await db.update(tasks).set(updateData).where(eq(tasks.id, id));
-
-    const task = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        boardId: tasks.boardId,
-        columnId: tasks.columnId,
-        assigneeId: tasks.assigneeId,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        position: tasks.position,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
-        assignee: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-        board: {
-          id: kanbanBoards.id,
-          name: kanbanBoards.name,
-          type: kanbanBoards.type,
-        },
-        column: {
-          id: kanbanColumns.id,
-          name: kanbanColumns.name,
-          color: kanbanColumns.color,
-        },
-      })
-      .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    res.json(task[0]);
-  } catch (error) {
-    console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Failed to update task' });
-  }
+    res.json(await tasksService.updateTask(req.params.id, tenantId(req), req.body));
+  } catch (e) { handleError(res, e, 'Update task'); }
 };
 
-// Delete a task
 export const deleteTask = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const scope = getTenantScope(req);
-    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-
-    const existingTask = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    if (!existingTask.length) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    await db.delete(tasks).where(eq(tasks.id, id));
-
-    res.json({ message: 'Task deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting task:', error);
-    res.status(500).json({ error: 'Failed to delete task' });
-  }
+    res.json(await tasksService.deleteTask(req.params.id, tenantId(req)));
+  } catch (e) { handleError(res, e, 'Delete task'); }
 };
 
-// Move task to different column/position
 export const moveTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { columnId, position, status } = req.body;
-
-    const scope = getTenantScope(req);
-    const tenantId = scope.type === 'TENANT' ? scope.tenantId : null;
-
-    const task = await db
-      .select({ id: tasks.id, status: tasks.status })
-      .from(tasks)
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    if (!task.length) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    // Ensure target column belongs to tenant (if provided)
-    if (columnId && tenantId) {
-      const [col] = await db
-        .select({ id: kanbanColumns.id })
-        .from(kanbanColumns)
-        .where(and(eq(kanbanColumns.id, columnId), eq(kanbanColumns.tenantId, tenantId)))
-        .limit(1);
-      if (!col) {
-        return res.status(400).json({ error: 'Invalid columnId for tenant' });
-      }
-    }
-
-    // Update task position and column
-    await db
-      .update(tasks)
-      .set({
-        columnId,
-        position,
-        status: status || task[0].status,
-      })
-      .where(eq(tasks.id, id));
-
-    const updatedTask = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        description: tasks.description,
-        boardId: tasks.boardId,
-        columnId: tasks.columnId,
-        assigneeId: tasks.assigneeId,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        position: tasks.position,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
-        assignee: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-        board: {
-          id: kanbanBoards.id,
-          name: kanbanBoards.name,
-          type: kanbanBoards.type,
-        },
-        column: {
-          id: kanbanColumns.id,
-          name: kanbanColumns.name,
-          color: kanbanColumns.color,
-        },
-      })
-      .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id))
-      .leftJoin(kanbanColumns, eq(tasks.columnId, kanbanColumns.id))
-      .where(tenantId ? and(eq(tasks.id, id), eq(kanbanBoards.tenantId, tenantId)) : eq(tasks.id, id))
-      .limit(1);
-
-    res.json(updatedTask[0]);
-  } catch (error) {
-    console.error('Error moving task:', error);
-    res.status(500).json({ error: 'Failed to move task' });
-  }
+    res.json(await tasksService.moveTask(req.params.id, tenantId(req), req.body));
+  } catch (e) { handleError(res, e, 'Move task'); }
 };

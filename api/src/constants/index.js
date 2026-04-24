@@ -1,27 +1,16 @@
-// Re-export roles as the canonical source
-export { Role, TENANT_SCOPED_ROLES } from './roles.js';
+/**
+ * constants/index.js
+ * Barrel export for all application constants.
+ *
+ * Role strings are the only constants defined here — they have no Drizzle or
+ * Zod equivalent at the module level and are imported in 8+ files.
+ *
+ * Ticket status / priority strings are enforced by:
+ *   - Drizzle enums  → tickets.schema.js  (ticketStatusEnum, ticketPriorityEnum)
+ *   - Zod enums      → tickets.validation.js
+ *
+ * Notification type strings are socket payload values enforced by the
+ * frontend ActivityFeed handler — no backend constant needed.
+ */
 
-export const TICKET_STATUS = {
-  OPEN:              'OPEN',
-  IN_PROGRESS:       'IN_PROGRESS',
-  PROGRAMMING:       'PROGRAMMING',
-  UNDER_DEVELOPMENT: 'UNDER_DEVELOPMENT',
-  CODE_REVIEW:       'CODE_REVIEW',
-  TESTING:           'TESTING',
-  RESOLVED:          'RESOLVED',
-  CLOSED:            'CLOSED',
-};
-
-export const TICKET_PRIORITY = {
-  LOW: 'LOW',
-  MEDIUM: 'MEDIUM',
-  HIGH: 'HIGH',
-  URGENT: 'URGENT',
-};
-
-export const NOTIFICATION_TYPES = {
-  TICKET_CREATED: 'TICKET_CREATED',
-  TICKET_UPDATED: 'TICKET_UPDATED',
-  TICKET_ASSIGNED: 'TICKET_ASSIGNED',
-  COMMENT_ADDED: 'COMMENT_ADDED',
-};
+export { Role, TENANT_SCOPED_ROLES, ADMIN_ROLES } from './roles.js';

@@ -16,20 +16,8 @@ const options = {
     components,
     security: [{ bearerAuth: [] }],
   },
-  apis: [
-    './src/modules/auth/auth.routes.js',
-    './src/modules/tickets/tickets.routes.js',
-    './src/modules/users/users.routes.js',
-    './src/modules/tenants/tenants.routes.js',
-    './src/modules/customers/customers.routes.js',
-    './src/modules/applications/applications.routes.js',
-    './src/modules/comments/comments.routes.js',
-    './src/modules/notifications/notifications.routes.js',
-    './src/modules/labels/labels.routes.js',
-    './src/modules/tasks/tasks.routes.js',
-    './src/modules/kanban/kanban.routes.js',
-    './src/modules/reminders/reminders.routes.js',
-  ],
+  // Glob picks up every routes file automatically — no manual list to maintain.
+  apis: ['./src/modules/**/*.routes.js'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

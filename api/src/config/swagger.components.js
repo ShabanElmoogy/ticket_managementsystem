@@ -142,7 +142,7 @@ export const components = {
       type: 'object',
       properties: {
         title:        { type: 'string' },
-        status:       { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] },
+        status:       { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING', 'RESOLVED', 'CLOSED'] },
         priority:     { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
         assignedToId: { type: 'string', format: 'uuid', nullable: true },
         dueDate:      { type: 'string', format: 'date-time', nullable: true },
@@ -310,7 +310,7 @@ export const components = {
         tenantId:              { type: 'string', format: 'uuid', nullable: true },
         email:                 { type: 'string', format: 'email' },
         name:                  { type: 'string' },
-        role:                  { type: 'string', enum: ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE'] },
+        role:                  { type: 'string', enum: ['SUPER_ADMIN', 'TENANT_ADMIN', 'EMPLOYEE', 'PROGRAMMER'] },
         phone:                 { type: 'string', nullable: true },
         whatsappNotifications: { type: 'boolean' },
         reminderEnabled:       { type: 'boolean' },
@@ -338,7 +338,7 @@ export const components = {
         id:             { type: 'string', format: 'uuid' },
         title:          { type: 'string' },
         description:    { type: 'string', nullable: true },
-        status:         { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] },
+        status:         { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING', 'RESOLVED', 'CLOSED'] },
         priority:       { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
         assignedToId:   { type: 'string', format: 'uuid', nullable: true },
         customerId:     { type: 'string', format: 'uuid', nullable: true },
@@ -446,7 +446,7 @@ export const components = {
     },
     NotificationCount: {
       type: 'object',
-      properties: { count: { type: 'integer' } },
+      properties: { unreadCount: { type: 'integer' } },
     },
   },
 };

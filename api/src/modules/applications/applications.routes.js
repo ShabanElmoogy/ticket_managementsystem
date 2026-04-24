@@ -1,6 +1,7 @@
 import express from 'express';
 import * as applicationsController from './applications.controller.js';
 import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js';
+import { enforceTenantScope, requireTenantScopeMiddleware } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
 import { createApplicationSchema, updateApplicationSchema, assignCustomerSchema } from './applications.validation.js';
 
@@ -39,8 +40,8 @@ const router = express.Router();
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/', authenticateToken, applicationsController.getAllApplications);
-router.post('/', authenticateToken, requireTenantAdmin, validate(createApplicationSchema), applicationsController.createApplication);
+router.get('/', authenticateToken, enforceTenantScope, applicationsController.getAllApplications);
+router.post('/', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(createApplicationSchema), applicationsController.createApplication);
 
 /**
  * @swagger
@@ -58,7 +59,7 @@ router.post('/', authenticateToken, requireTenantAdmin, validate(createApplicati
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.post('/assign-customer', authenticateToken, requireTenantAdmin, validate(assignCustomerSchema), applicationsController.assignCustomer);
+router.post('/assign-customer', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(assignCustomerSchema), applicationsController.assignCustomer);
 
 /**
  * @swagger
@@ -93,15 +94,21 @@ router.post('/assign-customer', authenticateToken, requireTenantAdmin, validate(
  *     parameters:
  *       - $ref: '#/components/parameters/XTenantSlug'
  *       - $ref: '#/components/parameters/PathId'
+ *       - in: query
+ *         name: force
+ *         schema: { type: boolean }
+ *         description: Force-delete and cascade all linked tickets
  *     responses:
  *       200:
  *         $ref: '#/components/responses/NoContent'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/:id', authenticateToken, applicationsController.getApplicationById);
-router.put('/:id', authenticateToken, requireTenantAdmin, validate(updateApplicationSchema), applicationsController.updateApplication);
-router.delete('/:id', authenticateToken, requireTenantAdmin, applicationsController.deleteApplication);
+router.get('/:id', authenticateToken, enforceTenantScope, applicationsController.getApplicationById);
+router.put('/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(updateApplicationSchema), applicationsController.updateApplication);
+router.delete('/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, applicationsController.deleteApplication);
 
 /**
  * @swagger
@@ -119,6 +126,6 @@ router.delete('/:id', authenticateToken, requireTenantAdmin, applicationsControl
  *       403:
  *         $ref: '#/components/responses/Forbidden'
  */
-router.delete('/:applicationId/customers/:customerId', authenticateToken, requireTenantAdmin, applicationsController.removeCustomer);
+router.delete('/:applicationId/customers/:customerId', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, applicationsController.removeCustomer);
 
 export default router;

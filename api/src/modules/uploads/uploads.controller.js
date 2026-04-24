@@ -1,60 +1,31 @@
-import path from 'path';
-import fs from 'fs';
-import { UPLOADS_DIR } from '../attachments/attachments.upload.js';
+/**
+ * uploads.controller.js
+ * HTTP handlers — extract request data, call service, send response.
+ * No business logic or direct file system access here.
+ */
+
+import { handleError } from '../../errors/index.js';
+import * as uploadsService from './uploads.service.js';
+
+// ── Handlers ──────────────────────────────────────────────────────────────────
 
 /**
- * POST /uploads/media
- * Generic file upload — no ticket scope required.
- * Returns the hosted URL for the uploaded file.
+ * POST /uploads/media | /uploads/image | /uploads/pdf | /uploads/excel
+ * Multer has already written the file to disk before this handler runs.
  */
-export const uploadMedia = async (req, res) => {
+export const uploadMedia = (req, res) => {
   try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const url = `/uploads/${file.filename}`;
-
-    res.status(201).json({
-      url,
-      filename: file.filename,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-    });
-  } catch (error) {
-    console.error('Upload media error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    const result = uploadsService.processUpload(req.file);
+    res.status(201).json(result);
+  } catch (e) { handleError(res, e, 'Upload media'); }
 };
 
 /**
  * DELETE /uploads/media
  * Body: { url: "/uploads/<filename>" }
- * Deletes the file from disk. Silent success if file not found.
  */
-export const deleteMedia = async (req, res) => {
+export const deleteMedia = (req, res) => {
   try {
-    const { url } = req.body;
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'url is required' });
-    }
-
-    // Only allow deleting files inside /uploads/ — prevent path traversal
-    const filename = path.basename(url);
-    if (!filename || filename.includes('..') || filename.includes('/')) {
-      return res.status(400).json({ error: 'Invalid filename' });
-    }
-
-    const filePath = path.join(UPLOADS_DIR, filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    res.json({ message: 'Deleted' });
-  } catch (error) {
-    console.error('Delete media error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    res.json(uploadsService.deleteUpload(req.body.url));
+  } catch (e) { handleError(res, e, 'Delete media'); }
 };

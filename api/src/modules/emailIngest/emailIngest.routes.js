@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, requireAdmin } from '../../middleware/auth.js';
 import { runEmailIngest } from '../../utils/emailIngest.js';
+import { handleError } from '../../errors/index.js';
 
 const router = express.Router();
 
@@ -21,9 +22,7 @@ router.post('/run-now', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await runEmailIngest(req.emitNotification);
     res.json({ message: 'Email ingestion completed. Check server logs for details.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { handleError(res, err, 'Run email ingest'); }
 });
 
 export default router;
