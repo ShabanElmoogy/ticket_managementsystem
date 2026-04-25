@@ -5,6 +5,7 @@
  */
 
 import * as repo from './customers.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -53,18 +54,74 @@ function withSubscription(customer) {
 
 // ── Read operations ───────────────────────────────────────────────────────────
 
-export async function listCustomers(tenantId) {
-  const list = await repo.findAllCustomers(tenantId ?? null);
-  if (!list.length) return [];
+/**
+ * List customers with optional pagination and search.
+ * Maintains backward compatibility while adding comprehensive validation.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} query - Query parameters from request
+ * @returns {Promise<Array|Object>} Array of customers or paginated response
+ */
+export async function listCustomers(tenantId, query = {}) {
+  // Input validation
+  if (tenantId && typeof tenantId !== 'string') {
+    throw fail('Invalid tenant ID', 400);
+  }
 
-  const ids     = list.map((c) => c.id);
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all customers as array
+    const list = await repo.findAllCustomers(tenantId, { search });
+    if (!list.length) return [];
+
+    // Enrich with related data using batch query (avoid N+1)
+    const ids = list.map((c) => c.id);
+    const details = await repo.getBatchCustomerDetails(ids);
+
+    return list.map((c) => ({
+      ...withSubscription(c),
+      applications: details[c.id]?.applications ?? [],
+      _count: { tickets: details[c.id]?.ticketCount ?? 0 },
+    }));
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [list, total] = await Promise.all([
+    repo.findAllCustomers(tenantId, { limit, offset, search }),
+    repo.countAllCustomers(tenantId, { search }),
+  ]);
+
+  if (!list.length) {
+    return buildPaginatedResponse([], total, page, limit);
+  }
+
+  // Enrich with related data using efficient batch query
+  const ids = list.map((c) => c.id);
   const details = await repo.getBatchCustomerDetails(ids);
 
-  return list.map((c) => ({
+  const enrichedData = list.map((c) => ({
     ...withSubscription(c),
     applications: details[c.id]?.applications ?? [],
-    _count:       { tickets: details[c.id]?.ticketCount ?? 0 },
+    _count: { tickets: details[c.id]?.ticketCount ?? 0 },
   }));
+
+  // Return structured paginated response
+  return buildPaginatedResponse(enrichedData, total, page, limit);
 }
 
 export async function getCustomerById(id, tenantId) {

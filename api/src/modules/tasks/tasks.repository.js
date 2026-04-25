@@ -8,7 +8,7 @@ import { db } from '../../config/database.js';
 import { tasks } from './tasks.schema.js';
 import { users } from '../users/users.schema.js';
 import { kanbanBoards, kanbanColumns } from '../kanban/kanban.schema.js';
-import { eq, desc, asc, and } from 'drizzle-orm';
+import { eq, desc, asc, and, count, or, sql } from 'drizzle-orm';
 
 // ── Shared column selection ───────────────────────────────────────────────────
 
@@ -46,15 +46,69 @@ function baseQuery() {
  * List tasks, optionally filtered by boardId and/or tenant.
  * Tenant scoping is via kanbanBoards.tenantId (tasks have no tenantId column).
  */
-export async function findAllTasks({ boardId, tenantId } = {}) {
+export async function findAllTasks({ boardId, tenantId, limit, offset, search } = {}) {
   const conditions = [];
   if (boardId)  conditions.push(eq(tasks.boardId, boardId));
   if (tenantId) conditions.push(eq(kanbanBoards.tenantId, tenantId));
 
-  const query = baseQuery();
-  return conditions.length
-    ? query.where(and(...conditions)).orderBy(asc(tasks.position), desc(tasks.createdAt))
-    : query.orderBy(asc(tasks.position), desc(tasks.createdAt));
+  // Add search functionality
+  if (search) {
+    conditions.push(
+      or(
+        sql`${tasks.title} ILIKE ${`%${search}%`}`,
+        sql`${tasks.description} ILIKE ${`%${search}%`}`
+      )
+    );
+  }
+
+  let query = baseQuery();
+  
+  if (conditions.length) {
+    query = query.where(and(...conditions));
+  }
+  
+  query = query.orderBy(asc(tasks.position), desc(tasks.createdAt));
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/**
+ * Count tasks for pagination.
+ */
+export async function countAllTasks({ boardId, tenantId, search } = {}) {
+  const conditions = [];
+  if (boardId)  conditions.push(eq(tasks.boardId, boardId));
+  if (tenantId) conditions.push(eq(kanbanBoards.tenantId, tenantId));
+
+  // Add search functionality
+  if (search) {
+    conditions.push(
+      or(
+        sql`${tasks.title} ILIKE ${`%${search}%`}`,
+        sql`${tasks.description} ILIKE ${`%${search}%`}`
+      )
+    );
+  }
+
+  let query = db
+    .select({ count: count() })
+    .from(tasks)
+    .leftJoin(kanbanBoards, eq(tasks.boardId, kanbanBoards.id));
+
+  if (conditions.length) {
+    query = query.where(and(...conditions));
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Find a single task by ID, optionally tenant-scoped. */

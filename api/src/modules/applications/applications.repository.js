@@ -9,7 +9,7 @@ import { applications } from './applications.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
 import { customers, customerApplications } from '../customers/customers.schema.js';
-import { eq, desc, count, countDistinct, and, inArray } from 'drizzle-orm';
+import { eq, desc, count, countDistinct, and, inArray, sql } from 'drizzle-orm';
 
 // ── Shared column selection ───────────────────────────────────────────────────
 
@@ -27,10 +27,15 @@ const APP_COLUMNS = {
 
 /**
  * List all applications, optionally scoped to a tenant.
- * Includes ticket + customer counts via JOIN — no N+1.
+ * Supports pagination and search.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} options - Query options { limit?, offset?, search? }
+ * @returns {Array} Array of applications with counts
  */
-export async function findAllApplications(tenantId) {
-  return db
+export async function findAllApplications(tenantId, options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db
     .select({
       ...APP_COLUMNS,
       ticketCount:   countDistinct(tickets.id),
@@ -42,6 +47,53 @@ export async function findAllApplications(tenantId) {
     .where(tenantId ? eq(applications.tenantId, tenantId) : undefined)
     .groupBy(applications.id)
     .orderBy(desc(applications.createdAt));
+
+  // Add search functionality
+  if (search) {
+    const searchCondition = sql`${applications.name} ILIKE ${`%${search}%`} OR ${applications.version} ILIKE ${`%${search}%`} OR ${applications.description} ILIKE ${`%${search}%`}`;
+    query = query.having(tenantId 
+      ? and(eq(applications.tenantId, tenantId), searchCondition)
+      : searchCondition
+    );
+  }
+
+  // Add pagination
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/**
+ * Count all applications, optionally scoped to a tenant.
+ * Supports search filtering.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} options - Query options { search? }
+ * @returns {Promise<number>} Total count
+ */
+export async function countAllApplications(tenantId, options = {}) {
+  const { search } = options;
+  
+  let query = db
+    .select({ count: count() })
+    .from(applications)
+    .where(tenantId ? eq(applications.tenantId, tenantId) : undefined);
+
+  // Add search functionality
+  if (search) {
+    const searchCondition = sql`${applications.name} ILIKE ${`%${search}%`} OR ${applications.version} ILIKE ${`%${search}%`} OR ${applications.description} ILIKE ${`%${search}%`}`;
+    query = query.where(tenantId 
+      ? and(eq(applications.tenantId, tenantId), searchCondition)
+      : searchCondition
+    );
+  }
+
+  const result = await query;
+  return Number(result[0]?.count ?? 0);
 }
 
 /** Find a single application by ID, optionally scoped to a tenant. */

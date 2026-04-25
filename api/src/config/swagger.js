@@ -10,9 +10,13 @@ const options = {
       description:
         'Multi-tenant SaaS ticketing platform. ' +
         'Most endpoints require a Bearer JWT (`Authorization: Bearer <token>`). ' +
-        'Tenant-scoped endpoints also require `X-Tenant-Slug` or `X-Tenant-Id`.',
+        'Tenant-scoped endpoints also require `X-Tenant-Slug` or `X-Tenant-Id`. ' +
+        'All endpoints are versioned under `/api/v1/`.',
     },
-    servers: [{ url: '/api', description: 'Current server' }],
+    servers: [
+      { url: '/api/v1', description: 'API v1 (current)' },
+      { url: '/api', description: 'Legacy (deprecated - redirects to v1)' }
+    ],
     components,
     security: [{ bearerAuth: [] }],
   },

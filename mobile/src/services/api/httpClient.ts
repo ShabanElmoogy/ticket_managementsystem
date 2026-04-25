@@ -26,7 +26,7 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 
 export const REQUEST_TIMEOUT = 30_000; // 30s — mobile networks are slower
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api/v1';
 
 /**
  * `http`  — the main client used everywhere in the app.

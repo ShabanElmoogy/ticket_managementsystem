@@ -5,6 +5,7 @@
  */
 
 import * as repo from './kanban.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -52,30 +53,64 @@ const DEFAULT_COLUMNS = [
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
-export async function listBoards(tenantId) {
-  const boards   = await repo.findAllBoards(tenantId ?? null);
-  const boardIds = boards.map((b) => b.id);
+/**
+ * List boards with optional pagination and search.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} query - Query parameters from request
+ * @returns {Array|Object} Array of boards or paginated response
+ */
+export async function listBoards(tenantId, query = {}) {
+  const search = parseSearchParam(query);
+  
+  // Check if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all boards with full data
+    const boards   = await repo.findAllBoards(tenantId ?? null, { search });
+    const boardIds = boards.map((b) => b.id);
 
-  const [columns, permissions] = await Promise.all([
-    repo.findColumnsByBoardIds(boardIds, tenantId ?? null),
-    repo.findPermissionsByBoardIds(boardIds, tenantId ?? null),
+    const [columns, permissions] = await Promise.all([
+      repo.findColumnsByBoardIds(boardIds, tenantId ?? null),
+      repo.findPermissionsByBoardIds(boardIds, tenantId ?? null),
+    ]);
+
+    const nestedPermissions = shapePermissions(permissions);
+
+    // Fetch tickets/tasks per board — N boards but unavoidable (different board types)
+    return Promise.all(boards.map(async (board) => {
+      const boardColumns = columns.filter((c) => c.boardId === board.id);
+      const boardPerms   = nestedPermissions.filter((p) => p.boardId === board.id);
+
+      if (board.type === 'TASKS') {
+        const boardTasks = await repo.findTasksByBoardId(board.id);
+        return { ...board, columns: boardColumns, permissions: boardPerms, tasks: boardTasks, tickets: [] };
+      }
+
+      const boardTickets = await repo.findTicketsByBoardId(board.id);
+      return { ...board, columns: boardColumns, permissions: boardPerms, tickets: boardTickets, tasks: [] };
+    }));
+  }
+
+  // Paginated response with validation - simplified without full nested data
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [boards, total] = await Promise.all([
+    repo.findAllBoards(tenantId ?? null, { limit, offset, search }),
+    repo.countAllBoards(tenantId ?? null, { search }),
   ]);
 
-  const nestedPermissions = shapePermissions(permissions);
-
-  // Fetch tickets/tasks per board — N boards but unavoidable (different board types)
-  return Promise.all(boards.map(async (board) => {
-    const boardColumns = columns.filter((c) => c.boardId === board.id);
-    const boardPerms   = nestedPermissions.filter((p) => p.boardId === board.id);
-
-    if (board.type === 'TASKS') {
-      const boardTasks = await repo.findTasksByBoardId(board.id);
-      return { ...board, columns: boardColumns, permissions: boardPerms, tasks: boardTasks, tickets: [] };
-    }
-
-    const boardTickets = await repo.findTicketsByBoardId(board.id);
-    return { ...board, columns: boardColumns, permissions: boardPerms, tickets: boardTickets, tasks: [] };
-  }));
+  // For paginated response, return boards without nested data for performance
+  return buildPaginatedResponse(boards, total, page, limit);
 }
 
 export async function getBoardById(id, tenantId) {

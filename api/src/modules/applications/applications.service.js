@@ -5,6 +5,7 @@
  */
 
 import * as repo from './applications.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -14,8 +15,48 @@ function fail(message, status = 400) {
 
 // ── Read operations ───────────────────────────────────────────────────────────
 
-export async function listApplications(tenantId) {
-  return repo.findAllApplications(tenantId ?? null);
+/**
+ * List applications with optional pagination and search.
+ * Maintains backward compatibility while adding comprehensive validation.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} query - Query parameters from request
+ * @returns {Promise<Array|Object>} Array of applications or paginated response
+ */
+export async function listApplications(tenantId, query = {}) {
+  // Input validation
+  if (tenantId && typeof tenantId !== 'string') {
+    throw fail('Invalid tenant ID', 400);
+  }
+
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all applications as array
+    return repo.findAllApplications(tenantId ?? null, { search });
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [data, total] = await Promise.all([
+    repo.findAllApplications(tenantId ?? null, { limit, offset, search }),
+    repo.countAllApplications(tenantId ?? null, { search }),
+  ]);
+
+  return buildPaginatedResponse(data, total, page, limit);
 }
 
 export async function getApplicationById(id, tenantId) {

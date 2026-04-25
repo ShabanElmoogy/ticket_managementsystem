@@ -6,7 +6,7 @@ export function registerRoutes(app) {
   registerSwagger(app);
 
   // Health check — registered before module routes so it is never shadowed
-  app.get('/api/health', (req, res) => {
+  app.get('/api/v1/health', (req, res) => {
     res.json({
       status:    'OK',
       timestamp: new Date().toISOString(),
@@ -15,11 +15,25 @@ export function registerRoutes(app) {
     });
   });
 
+  // Legacy health check redirect for backward compatibility
+  app.get('/api/health', (req, res) => res.redirect('/api/v1/health'));
+
   // Redirect root to Swagger docs
   app.get('/', (req, res) => res.redirect('/api/docs'));
 
-  // All API routes under /api
-  app.use('/api', moduleRoutes);
+  // All API routes under /api/v1
+  app.use('/api/v1', moduleRoutes);
+
+  // Legacy API redirect for backward compatibility (temporary)
+  app.use('/api', (req, res, next) => {
+    // Skip if it's already a v1 path or a docs/health path
+    if (req.path.startsWith('/v1') || req.path.startsWith('/docs') || req.path === '/health') {
+      return next();
+    }
+    // Redirect to v1 with a deprecation warning
+    const newUrl = `/api/v1${req.originalUrl.replace('/api', '')}`;
+    res.status(301).header('X-API-Deprecation', 'This endpoint is deprecated. Use /api/v1/ instead.').redirect(newUrl);
+  });
 
   // Non-API paths redirect to docs — API 404s are handled by the global
   // error handler in errors/index.js (registerErrorHandlers)

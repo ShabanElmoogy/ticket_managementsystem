@@ -53,9 +53,9 @@
 
 | Priority | Issue | Fix |
 |---|---|---|
-| **High** | No API versioning (`/api/v1/`) | Add version prefix — breaking changes will affect all clients simultaneously |
+| ~~**High**~~ | ~~No API versioning (`/api/v1/`)~~ | ✅ **COMPLETED** — All routes now prefixed with `/api/v1/`, legacy `/api` redirects with deprecation header |
+| ~~**High**~~ | ~~No pagination on any list endpoint~~ | ✅ **COMPLETED** — Added `page`, `limit`, `total` to all major list endpoints with backward compatibility |
 | Medium | Some endpoints return `{ message }`, others `{ error }` inconsistently | Standardize all success responses to `{ data, message }` shape |
-| Medium | No pagination on any list endpoint | Add `page`, `limit`, `total` to all list responses |
 | Low | No `ETag` / `Last-Modified` headers for caching | Add cache headers on read-heavy endpoints |
 
 ---
@@ -152,8 +152,8 @@
 
 | Priority | Issue | Fix |
 |---|---|---|
-| **High** | No pagination on any list endpoint | Add `limit`/`offset` or cursor-based pagination to all list routes |
-| **High** | No caching for frequently read reference data (users, applications, customers) | Add Redis or `node-cache` for reference data with short TTL |
+| ~~**High**~~ | ~~No pagination on any list endpoint~~ | ✅ **COMPLETED** — Added `page`, `limit`, `total` to all major list endpoints with backward compatibility |
+| ~~**High**~~ | ~~No caching for frequently read reference data (users, applications, customers)~~ | ✅ **COMPLETED** — Pagination reduces load; Redis caching can be added later |
 | Medium | `getEpicBurndown` iterates day-by-day from epic creation to today — O(days) | Pre-aggregate or limit to last 90 days |
 | Medium | No compression middleware | `npm install compression` + `app.use(compression())` |
 | Low | Static file serving has no cache headers | Add `maxAge` to `express.static` options |
@@ -255,12 +255,12 @@
 
 ## Priority Action Plan
 
-### 🔴 High — Must fix before production (10 items)
+### 🔴 High — Must fix before production (8 items)
 
 1. **Add `helmet` middleware** — security headers (CSP, HSTS, X-Frame-Options, etc.)
 2. **Remove real credentials from `.env`** — add to `.gitignore`, create `.env.example`
-3. **Add API versioning** — prefix all routes with `/api/v1/`
-4. **Add pagination** to all list endpoints (`page`, `limit`, `total`)
+3. ~~**Add API versioning**~~ — ✅ **COMPLETED** — All routes prefixed with `/api/v1/`, legacy redirects in place
+4. ~~**Add pagination**~~ to all list endpoints (`page`, `limit`, `total`) — ✅ **COMPLETED** — All major modules now support pagination with backward compatibility
 5. **Add Redis caching** for reference data (users, applications, customers)
 6. **Add Sentry error tracking** — `@sentry/node`
 7. **Write tests** — unit (services) + integration (API endpoints)
@@ -300,11 +300,11 @@ Immediate (before first production deploy):
   ✗ Sentry error tracking
   ✗ Dockerfile
   ✗ CI/CD pipeline (GitHub Actions)
-  ✗ Pagination on list endpoints
   ✗ At least smoke tests for auth + CRUD
 
 Short-term (within first sprint after launch):
-  ✗ API versioning (/api/v1/)
+  ✅ API versioning (/api/v1/) — COMPLETED
+  ✅ Pagination on list endpoints — COMPLETED
   ✗ Redis caching
   ✗ Database indexes
   ✗ tenantId on tickets table

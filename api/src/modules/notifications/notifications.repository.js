@@ -8,7 +8,7 @@ import { db } from '../../config/database.js';
 import { notifications } from './notifications.schema.js';
 import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
@@ -16,12 +16,12 @@ import { eq, and, desc, count } from 'drizzle-orm';
  * List notifications for a user, optionally filtered by unread status
  * and scoped to a tenant (via user join).
  */
-export async function findNotificationsByUserId(userId, { limit = 50, unreadOnly = false, tenantId = null } = {}) {
+export async function findNotificationsByUserId(userId, { limit = 50, offset, unreadOnly = false, tenantId = null } = {}) {
   const conditions = [eq(notifications.userId, userId)];
   if (unreadOnly) conditions.push(eq(notifications.isRead, false));
   if (tenantId)   conditions.push(eq(users.tenantId, tenantId));
 
-  const query = db
+  let query = db
     .select({
       id:        notifications.id,
       title:     notifications.title,
@@ -38,10 +38,38 @@ export async function findNotificationsByUserId(userId, { limit = 50, unreadOnly
     .leftJoin(users,   eq(notifications.userId,   users.id))
     .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
     .where(and(...conditions))
-    .orderBy(desc(notifications.createdAt))
-    .limit(limit);
+    .orderBy(desc(notifications.createdAt));
+
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
 
   return query;
+}
+
+/**
+ * Count notifications for a user for pagination.
+ */
+export async function countNotificationsByUserId(userId, { unreadOnly = false, tenantId = null } = {}) {
+  const conditions = [eq(notifications.userId, userId)];
+  if (unreadOnly) conditions.push(eq(notifications.isRead, false));
+  if (tenantId)   conditions.push(eq(users.tenantId, tenantId));
+
+  const [result] = tenantId
+    ? await db
+        .select({ count: count() })
+        .from(notifications)
+        .leftJoin(users, eq(notifications.userId, users.id))
+        .where(and(...conditions))
+    : await db
+        .select({ count: count() })
+        .from(notifications)
+        .where(and(...conditions));
+
+  return Number(result.count);
 }
 
 /** Count unread notifications for a user, optionally tenant-scoped. */

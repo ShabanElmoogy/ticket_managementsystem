@@ -6,13 +6,16 @@
 
 import bcrypt from 'bcryptjs';
 import { Role } from '../../constants/roles.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 import {
   findAllUsers,
+  countAllUsers,
   findUserById,
   findTenantUserById,
   findUserByEmail,
   findUserByEmailInTenant,
   findUsersByTenant,
+  countUsersByTenant,
   countUsersInTenant,
   findTenantSeats,
   insertUser,
@@ -42,11 +45,54 @@ function attachCounts(user, counts) {
 
 // ── Super-admin operations ────────────────────────────────────────────────────
 
-export async function listAllUsers() {
-  const usersData = await findAllUsers();
-  const ids       = usersData.map((u) => u.id);
-  const counts    = await getBatchUserCounts(ids);
-  return usersData.map((u) => attachCounts(u, counts[u.id]));
+/**
+ * List all users with optional pagination and search.
+ * Maintains backward compatibility while adding comprehensive validation.
+ * @param {Object} query - Query parameters from request
+ * @returns {Promise<Array|Object>} Array of users or paginated response
+ */
+export async function listAllUsers(query = {}) {
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all users as array
+    const usersData = await findAllUsers({ search });
+    const ids = usersData.map((u) => u.id);
+    const counts = await getBatchUserCounts(ids);
+    return usersData.map((u) => attachCounts(u, counts[u.id]));
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [usersData, total] = await Promise.all([
+    findAllUsers({ limit, offset, search }),
+    countAllUsers({ search }),
+  ]);
+
+  if (!usersData.length) {
+    return buildPaginatedResponse([], total, page, limit);
+  }
+
+  // Enrich with counts
+  const ids = usersData.map((u) => u.id);
+  const counts = await getBatchUserCounts(ids);
+  const enrichedData = usersData.map((u) => attachCounts(u, counts[u.id]));
+
+  return buildPaginatedResponse(enrichedData, total, page, limit);
 }
 
 export async function getUserById(id) {
@@ -136,8 +182,47 @@ export async function resetUserPassword(id, password) {
 
 // ── Tenant-admin operations ───────────────────────────────────────────────────
 
-export async function listTenantUsers(tenantId) {
-  return findUsersByTenant(tenantId);
+/**
+ * List tenant users with optional pagination and search.
+ * @param {string} tenantId - Tenant ID for scoping
+ * @param {Object} query - Query parameters from request
+ * @returns {Array|Object} Array of users or paginated response
+ */
+export async function listTenantUsers(tenantId, query = {}) {
+  // Input validation
+  if (!tenantId || typeof tenantId !== 'string') {
+    throw fail('Invalid tenant ID', 400);
+  }
+
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all users as array
+    return findUsersByTenant(tenantId, { search });
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [data, total] = await Promise.all([
+    findUsersByTenant(tenantId, { limit, offset, search }),
+    countUsersByTenant(tenantId, { search }),
+  ]);
+
+  return buildPaginatedResponse(data, total, page, limit);
 }
 
 export async function createTenantUser(tenantId, { email, name, password, role = Role.EMPLOYEE, phone, whatsappNotifications = false }) {

@@ -5,6 +5,7 @@
  */
 
 import * as repo from './tickets.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 import { logActivity } from '../../utils/activityUtils.js';
 import { createNotification } from '../../utils/notificationUtils.js';
 import { getSlaHours, computeSlaDeadline } from '../../utils/slaUtils.js';
@@ -109,8 +110,17 @@ async function enrichTicketDetail(ticket) {
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
+/**
+ * List tickets with optional pagination and search.
+ * @param {Object} query - Query parameters from request
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {string} actorRole - User role for access control
+ * @param {string} actorId - User ID for access control
+ * @returns {Array|Object} Array of tickets or paginated response
+ */
 export async function listTickets(query, tenantId, actorRole, actorId) {
-  const { status, assignedTo, priority, deleted, search, customerId, applicationId, userId } = query;
+  const { status, assignedTo, priority, deleted, customerId, applicationId, userId } = query;
+  const search = parseSearchParam(query);
 
   const conditions = [];
 
@@ -142,8 +152,40 @@ export async function listTickets(query, tenantId, actorRole, actorId) {
     }
   }
 
-  const rows = await repo.findTickets({ conditions });
-  return enrichTicketList(rows);
+  // Check if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all tickets
+    const rows = await repo.findTickets({ conditions });
+    return enrichTicketList(rows);
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [rows, total] = await Promise.all([
+    repo.findTickets({ conditions, limit, offset }),
+    repo.countTickets({ conditions }),
+  ]);
+
+  if (!rows.length) {
+    return buildPaginatedResponse([], total, page, limit);
+  }
+
+  // Enrich with related data using efficient batch queries
+  const enrichedData = await enrichTicketList(rows);
+
+  return buildPaginatedResponse(enrichedData, total, page, limit);
 }
 
 export async function getTicketById(ticketId, tenantId, actorRole, actorId) {

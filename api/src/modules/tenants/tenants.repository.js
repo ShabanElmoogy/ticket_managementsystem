@@ -4,7 +4,7 @@
  * No business logic — only data access.
  */
 
-import { eq, and, count, inArray } from 'drizzle-orm';
+import { eq, and, count, inArray, or, sql } from 'drizzle-orm';
 import { db } from '../../config/database.js';
 import { tenants } from './tenants.schema.js';
 import { users } from '../users/users.schema.js';
@@ -14,8 +14,52 @@ import { Role } from '../../constants/roles.js';
 // ── Tenant queries ────────────────────────────────────────────────────────────
 
 /** List all tenants ordered by creation date. */
-export async function findAllTenants() {
-  return db.select().from(tenants).orderBy(tenants.createdAt);
+export async function findAllTenants(options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db.select().from(tenants);
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      or(
+        sql`${tenants.name} ILIKE ${`%${search}%`}`,
+        sql`${tenants.slug} ILIKE ${`%${search}%`}`
+      )
+    );
+  }
+
+  query = query.orderBy(tenants.createdAt);
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/** Count all tenants for pagination. */
+export async function countAllTenants(options = {}) {
+  const { search } = options;
+  
+  let query = db.select({ count: count() }).from(tenants);
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      or(
+        sql`${tenants.name} ILIKE ${`%${search}%`}`,
+        sql`${tenants.slug} ILIKE ${`%${search}%`}`
+      )
+    );
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** List minimal tenant fields for the public login dropdown. */

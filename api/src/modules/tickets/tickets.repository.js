@@ -12,7 +12,7 @@ import { applications } from '../applications/applications.schema.js';
 import { ticketLabels, labels } from '../labels/labels.schema.js';
 import { comments } from '../comments/comments.schema.js';
 import {
-  eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt, ilike,
+  eq, and, or, desc, asc, count, inArray, isNull, isNotNull, lt, ilike, sql,
 } from 'drizzle-orm';
 
 // ── Shared ticket column selection ────────────────────────────────────────────
@@ -48,15 +48,25 @@ const TICKET_COLUMNS = {
  * Joins createdBy user for tenant scoping (tickets have no tenantId column).
  * Returns raw ticket rows — relations are fetched separately.
  */
-export async function findTickets({ conditions = [] } = {}) {
+export async function findTickets({ conditions = [], limit, offset } = {}) {
   const whereClause = conditions.length ? and(...conditions) : undefined;
 
-  const rows = await db
+  let query = db
     .select(TICKET_COLUMNS)
     .from(tickets)
     .innerJoin(users, eq(tickets.createdById, users.id))
     .where(whereClause)
     .orderBy(desc(tickets.createdAt));
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  const rows = await query;
 
   // Drizzle returns joined rows — normalize to ticket projection only
   return rows.map((r) => ({
@@ -82,6 +92,22 @@ export async function findTickets({ conditions = [] } = {}) {
     emailMessageId: r.emailMessageId,
     epicId:         r.epicId,
   }));
+}
+
+/**
+ * Count tickets with filters and tenant scoping.
+ * Used for pagination total count.
+ */
+export async function countTickets({ conditions = [] } = {}) {
+  const whereClause = conditions.length ? and(...conditions) : undefined;
+
+  const [{ count: total }] = await db
+    .select({ count: count() })
+    .from(tickets)
+    .innerJoin(users, eq(tickets.createdById, users.id))
+    .where(whereClause);
+
+  return Number(total);
 }
 
 /** Find a ticket by ID scoped to a tenant (via createdBy user join). */

@@ -9,7 +9,7 @@ import { users } from './users.schema.js';
 import { tenants } from '../tenants/tenants.schema.js';
 import { tickets, ticketActivities } from '../tickets/tickets.schema.js';
 import { comments } from '../comments/comments.schema.js';
-import { eq, count, desc, inArray, or, and } from 'drizzle-orm';
+import { eq, count, desc, inArray, or, and, sql } from 'drizzle-orm';
 import { Role } from '../../constants/roles.js';
 
 // ── Shared column selection ───────────────────────────────────────────────────
@@ -83,13 +83,65 @@ export async function getBatchUserCounts(userIds) {
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /** List all TENANT_ADMIN users with tenant name (super-admin). */
-export async function findAllUsers() {
-  return db
+export async function findAllUsers(options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db
     .select(USER_COLUMNS_WITH_TENANT)
     .from(users)
     .leftJoin(tenants, eq(users.tenantId, tenants.id))
-    .where(eq(users.role, Role.TENANT_ADMIN))
-    .orderBy(desc(users.createdAt));
+    .where(eq(users.role, Role.TENANT_ADMIN));
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        eq(users.role, Role.TENANT_ADMIN),
+        or(
+          sql`${users.name} ILIKE ${`%${search}%`}`,
+          sql`${users.email} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  }
+
+  query = query.orderBy(desc(users.createdAt));
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/** Count all TENANT_ADMIN users for pagination. */
+export async function countAllUsers(options = {}) {
+  const { search } = options;
+  
+  let query = db
+    .select({ count: count() })
+    .from(users)
+    .where(eq(users.role, Role.TENANT_ADMIN));
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        eq(users.role, Role.TENANT_ADMIN),
+        or(
+          sql`${users.name} ILIKE ${`%${search}%`}`,
+          sql`${users.email} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Find a single user by ID (no password). */
@@ -133,12 +185,64 @@ export async function findUserByEmailInTenant(email, tenantId) {
 }
 
 /** List all users in a tenant. */
-export async function findUsersByTenant(tenantId) {
-  return db
+export async function findUsersByTenant(tenantId, options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db
     .select(USER_COLUMNS)
     .from(users)
-    .where(eq(users.tenantId, tenantId))
-    .orderBy(desc(users.createdAt));
+    .where(eq(users.tenantId, tenantId));
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        eq(users.tenantId, tenantId),
+        or(
+          sql`${users.name} ILIKE ${`%${search}%`}`,
+          sql`${users.email} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  }
+
+  query = query.orderBy(desc(users.createdAt));
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/** Count users in a tenant for pagination. */
+export async function countUsersByTenant(tenantId, options = {}) {
+  const { search } = options;
+  
+  let query = db
+    .select({ count: count() })
+    .from(users)
+    .where(eq(users.tenantId, tenantId));
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        eq(users.tenantId, tenantId),
+        or(
+          sql`${users.name} ILIKE ${`%${search}%`}`,
+          sql`${users.email} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Count users in a tenant. */

@@ -6,13 +6,15 @@
 
 import { db } from '../../config/database.js';
 import { labels, ticketLabels } from './labels.schema.js';
-import { eq, asc, and, count } from 'drizzle-orm';
+import { eq, asc, and, count, or, sql } from 'drizzle-orm';
 
 // ── Label queries ─────────────────────────────────────────────────────────────
 
 /** List all labels with ticket count, ordered by name. */
-export async function findAllLabels() {
-  return db
+export async function findAllLabels(options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db
     .select({
       id:          labels.id,
       name:        labels.name,
@@ -23,9 +25,39 @@ export async function findAllLabels() {
       _count:      { tickets: count(ticketLabels.ticketId) },
     })
     .from(labels)
-    .leftJoin(ticketLabels, eq(labels.id, ticketLabels.labelId))
-    .groupBy(labels.id)
-    .orderBy(asc(labels.name));
+    .leftJoin(ticketLabels, eq(labels.id, ticketLabels.labelId));
+
+  // Add search functionality
+  if (search) {
+    query = query.where(sql`${labels.name} ILIKE ${`%${search}%`}`);
+  }
+
+  query = query.groupBy(labels.id).orderBy(asc(labels.name));
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/** Count all labels for pagination. */
+export async function countAllLabels(options = {}) {
+  const { search } = options;
+  
+  let query = db.select({ count: count() }).from(labels);
+
+  // Add search functionality
+  if (search) {
+    query = query.where(sql`${labels.name} ILIKE ${`%${search}%`}`);
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Find a label by ID. */

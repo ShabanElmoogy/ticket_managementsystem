@@ -5,6 +5,7 @@
  */
 
 import * as repo from './tasks.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -14,8 +15,46 @@ function fail(message, status = 400) {
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
-export async function listTasks({ boardId, tenantId }) {
-  return repo.findAllTasks({ boardId, tenantId: tenantId ?? null });
+/**
+ * List tasks with optional pagination and search.
+ * @param {Object} params - Parameters including boardId, tenantId, and query
+ * @returns {Array|Object} Array of tasks or paginated response
+ */
+export async function listTasks({ boardId, tenantId, query = {} }) {
+  // Input validation
+  if (tenantId && typeof tenantId !== 'string') {
+    throw fail('Invalid tenant ID', 400);
+  }
+
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all tasks as array
+    return repo.findAllTasks({ boardId, tenantId: tenantId ?? null, search });
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [data, total] = await Promise.all([
+    repo.findAllTasks({ boardId, tenantId: tenantId ?? null, limit, offset, search }),
+    repo.countAllTasks({ boardId, tenantId: tenantId ?? null, search }),
+  ]);
+
+  return buildPaginatedResponse(data, total, page, limit);
 }
 
 export async function getTask(id, tenantId) {

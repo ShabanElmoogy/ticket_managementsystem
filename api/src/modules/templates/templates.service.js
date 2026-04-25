@@ -5,6 +5,7 @@
  */
 
 import * as repo from './templates.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -14,8 +15,42 @@ function fail(message, status = 400) {
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
-export async function listTemplates(tenantId) {
-  return repo.findAllTemplates(tenantId ?? null);
+/**
+ * List templates with optional pagination and search.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} query - Query parameters from request
+ * @returns {Array|Object} Array of templates or paginated response
+ */
+export async function listTemplates(tenantId, query = {}) {
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all templates as array
+    return repo.findAllTemplates(tenantId ?? null, { search });
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [data, total] = await Promise.all([
+    repo.findAllTemplates(tenantId ?? null, { limit, offset, search }),
+    repo.countAllTemplates(tenantId ?? null, { search }),
+  ]);
+
+  return buildPaginatedResponse(data, total, page, limit);
 }
 
 export async function createTemplate(tenantId, body, createdById) {

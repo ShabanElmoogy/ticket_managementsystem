@@ -5,6 +5,7 @@
  */
 
 import * as repo from './tenants.repository.js';
+import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
 import { invalidateTenantCache } from '../../middleware/index.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
@@ -34,8 +35,42 @@ function parseOptionalDate(value) {
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
-export async function listTenants() {
-  return repo.findAllTenants();
+/**
+ * List tenants with optional pagination and search.
+ * Maintains backward compatibility while adding comprehensive validation.
+ * @param {Object} query - Query parameters from request
+ * @returns {Promise<Array|Object>} Array of tenants or paginated response
+ */
+export async function listTenants(query = {}) {
+  // Parse and validate search parameter
+  const search = parseSearchParam(query);
+  
+  // Determine if pagination is requested
+  const hasPagination = 'page' in query || 'limit' in query;
+  
+  if (!hasPagination) {
+    // Legacy behavior - return all tenants as array
+    return repo.findAllTenants({ search });
+  }
+
+  // Paginated response with validation
+  const { page, limit, offset } = parsePaginationParams(query);
+  
+  // Additional validation for pagination parameters
+  if (page < 1) {
+    throw fail('Page must be >= 1', 400);
+  }
+  if (limit < 1 || limit > 100) {
+    throw fail('Limit must be between 1 and 100', 400);
+  }
+
+  // Execute count and data queries in parallel for optimal performance
+  const [data, total] = await Promise.all([
+    repo.findAllTenants({ limit, offset, search }),
+    repo.countAllTenants({ search }),
+  ]);
+
+  return buildPaginatedResponse(data, total, page, limit);
 }
 
 export async function listTenantsPublic() {

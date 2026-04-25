@@ -11,7 +11,7 @@ import { users } from '../users/users.schema.js';
 import { customers } from '../customers/customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { tasks } from '../tasks/tasks.schema.js';
-import { eq, and, asc, count, inArray } from 'drizzle-orm';
+import { eq, and, asc, count, inArray, or, sql } from 'drizzle-orm';
 
 // ── Shared column selections ──────────────────────────────────────────────────
 
@@ -49,10 +49,78 @@ const TASK_SELECT = {
 // ── Board queries ─────────────────────────────────────────────────────────────
 
 /** List all active boards, optionally scoped to a tenant. */
-export async function findAllBoards(tenantId) {
-  return tenantId
-    ? db.select().from(kanbanBoards).where(and(eq(kanbanBoards.isActive, true), eq(kanbanBoards.tenantId, tenantId)))
-    : db.select().from(kanbanBoards).where(eq(kanbanBoards.isActive, true));
+export async function findAllBoards(tenantId, options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db.select().from(kanbanBoards);
+
+  // Base filter for active boards
+  const baseFilter = eq(kanbanBoards.isActive, true);
+  const tenantFilter = tenantId ? eq(kanbanBoards.tenantId, tenantId) : undefined;
+
+  // Add search functionality
+  if (search) {
+    const searchFilter = or(
+      sql`${kanbanBoards.name} ILIKE ${`%${search}%`}`,
+      sql`${kanbanBoards.description} ILIKE ${`%${search}%`}`
+    );
+    
+    query = query.where(
+      tenantFilter 
+        ? and(baseFilter, tenantFilter, searchFilter)
+        : and(baseFilter, searchFilter)
+    );
+  } else {
+    query = query.where(
+      tenantFilter 
+        ? and(baseFilter, tenantFilter)
+        : baseFilter
+    );
+  }
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/** Count all active boards for pagination. */
+export async function countAllBoards(tenantId, options = {}) {
+  const { search } = options;
+  
+  let query = db.select({ count: count() }).from(kanbanBoards);
+
+  // Base filter for active boards
+  const baseFilter = eq(kanbanBoards.isActive, true);
+  const tenantFilter = tenantId ? eq(kanbanBoards.tenantId, tenantId) : undefined;
+
+  // Add search functionality
+  if (search) {
+    const searchFilter = or(
+      sql`${kanbanBoards.name} ILIKE ${`%${search}%`}`,
+      sql`${kanbanBoards.description} ILIKE ${`%${search}%`}`
+    );
+    
+    query = query.where(
+      tenantFilter 
+        ? and(baseFilter, tenantFilter, searchFilter)
+        : and(baseFilter, searchFilter)
+    );
+  } else {
+    query = query.where(
+      tenantFilter 
+        ? and(baseFilter, tenantFilter)
+        : baseFilter
+    );
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Find a single board by ID, optionally scoped to a tenant. */

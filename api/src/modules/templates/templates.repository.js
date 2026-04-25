@@ -7,7 +7,7 @@
 import { db } from '../../config/database.js';
 import { ticketTemplates } from './templates.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, and, or, isNull } from 'drizzle-orm';
+import { eq, and, or, isNull, count, sql } from 'drizzle-orm';
 
 // ── Shared column selection ───────────────────────────────────────────────────
 
@@ -29,17 +29,80 @@ const TEMPLATE_SELECT = {
  * Tenant users see global templates (tenantId IS NULL) + their own.
  * Super-admin sees only global templates (no tenantId).
  */
-export async function findAllTemplates(tenantId) {
-  return db
+export async function findAllTemplates(tenantId, options = {}) {
+  const { limit, offset, search } = options;
+  
+  let query = db
     .select(TEMPLATE_SELECT)
     .from(ticketTemplates)
-    .innerJoin(users, eq(ticketTemplates.createdById, users.id))
-    .where(
-      tenantId
-        ? or(eq(ticketTemplates.tenantId, tenantId), isNull(ticketTemplates.tenantId))
-        : isNull(ticketTemplates.tenantId),
-    )
-    .orderBy(ticketTemplates.name);
+    .innerJoin(users, eq(ticketTemplates.createdById, users.id));
+
+  // Base visibility filter
+  const visibilityFilter = tenantId
+    ? or(eq(ticketTemplates.tenantId, tenantId), isNull(ticketTemplates.tenantId))
+    : isNull(ticketTemplates.tenantId);
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        visibilityFilter,
+        or(
+          sql`${ticketTemplates.name} ILIKE ${`%${search}%`}`,
+          sql`${ticketTemplates.description} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  } else {
+    query = query.where(visibilityFilter);
+  }
+
+  query = query.orderBy(ticketTemplates.name);
+
+  // Add pagination if requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/**
+ * Count templates visible to the caller for pagination.
+ */
+export async function countAllTemplates(tenantId, options = {}) {
+  const { search } = options;
+  
+  let query = db
+    .select({ count: count() })
+    .from(ticketTemplates)
+    .innerJoin(users, eq(ticketTemplates.createdById, users.id));
+
+  // Base visibility filter
+  const visibilityFilter = tenantId
+    ? or(eq(ticketTemplates.tenantId, tenantId), isNull(ticketTemplates.tenantId))
+    : isNull(ticketTemplates.tenantId);
+
+  // Add search functionality
+  if (search) {
+    query = query.where(
+      and(
+        visibilityFilter,
+        or(
+          sql`${ticketTemplates.name} ILIKE ${`%${search}%`}`,
+          sql`${ticketTemplates.description} ILIKE ${`%${search}%`}`
+        )
+      )
+    );
+  } else {
+    query = query.where(visibilityFilter);
+  }
+
+  const [{ count: total }] = await query;
+  return Number(total);
 }
 
 /** Insert a new template, returns the created row. */

@@ -9,7 +9,7 @@ import { customers, customerApplications } from './customers.schema.js';
 import { applications } from '../applications/applications.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
 import { users } from '../users/users.schema.js';
-import { eq, and, desc, count, inArray } from 'drizzle-orm';
+import { eq, and, desc, count, inArray, sql } from 'drizzle-orm';
 
 // ── Shared column selection ───────────────────────────────────────────────────
 
@@ -32,14 +32,102 @@ const CUSTOMER_COLUMNS = {
 
 /**
  * List all customers, optionally scoped to a tenant.
- * Returns customers only — applications and ticket counts are fetched separately.
+ * Supports pagination and search with comprehensive validation.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} options - Query options { limit?, offset?, search? }
+ * @returns {Promise<Array>} Array of customers
  */
-export async function findAllCustomers(tenantId) {
-  return db
+export async function findAllCustomers(tenantId, options = {}) {
+  // Input validation - ensure positive numbers
+  const { limit, offset, search } = options;
+  
+  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+    throw new Error('Limit must be a positive integer');
+  }
+  
+  if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+    throw new Error('Offset must be a non-negative integer');
+  }
+
+  // Build base query with proper column selection
+  let query = db
     .select(CUSTOMER_COLUMNS)
-    .from(customers)
-    .where(tenantId ? eq(customers.tenantId, tenantId) : undefined)
-    .orderBy(desc(customers.createdAt));
+    .from(customers);
+
+  // Add tenant scoping and search conditions
+  let whereConditions = [];
+  if (tenantId) {
+    whereConditions.push(eq(customers.tenantId, tenantId));
+  }
+
+  // Add search functionality with ILIKE for case-insensitive search
+  if (search && typeof search === 'string' && search.trim().length > 0) {
+    const searchTerm = search.trim();
+    const searchCondition = sql`${customers.name} ILIKE ${`%${searchTerm}%`} OR ${customers.email} ILIKE ${`%${searchTerm}%`} OR ${customers.company} ILIKE ${`%${searchTerm}%`}`;
+    whereConditions.push(searchCondition);
+  }
+
+  // Apply all where conditions
+  if (whereConditions.length > 0) {
+    query = query.where(
+      whereConditions.length === 1 
+        ? whereConditions[0] 
+        : and(...whereConditions)
+    );
+  }
+
+  // Add consistent ordering for predictable pagination
+  query = query.orderBy(desc(customers.createdAt));
+
+  // Add pagination - only when explicitly requested
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+  if (offset !== undefined) {
+    query = query.offset(offset);
+  }
+
+  return query;
+}
+
+/**
+ * Count all customers, optionally scoped to a tenant.
+ * Supports search filtering with same conditions as findAllCustomers.
+ * @param {string|null} tenantId - Tenant ID for scoping
+ * @param {Object} options - Query options { search? }
+ * @returns {Promise<number>} Total count
+ */
+export async function countAllCustomers(tenantId, options = {}) {
+  const { search } = options;
+  
+  let query = db
+    .select({ count: count() })
+    .from(customers);
+
+  // Apply same filters as main query for consistency
+  let whereConditions = [];
+  if (tenantId) {
+    whereConditions.push(eq(customers.tenantId, tenantId));
+  }
+
+  // Add search functionality with same logic as findAllCustomers
+  if (search && typeof search === 'string' && search.trim().length > 0) {
+    const searchTerm = search.trim();
+    const searchCondition = sql`${customers.name} ILIKE ${`%${searchTerm}%`} OR ${customers.email} ILIKE ${`%${searchTerm}%`} OR ${customers.company} ILIKE ${`%${searchTerm}%`}`;
+    whereConditions.push(searchCondition);
+  }
+
+  // Apply all where conditions
+  if (whereConditions.length > 0) {
+    query = query.where(
+      whereConditions.length === 1 
+        ? whereConditions[0] 
+        : and(...whereConditions)
+    );
+  }
+
+  const result = await query;
+  return Number(result[0]?.count ?? 0);
 }
 
 /** Find a single customer by ID, optionally scoped to a tenant. */
