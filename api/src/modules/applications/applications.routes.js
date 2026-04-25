@@ -7,125 +7,15 @@ import { createApplicationSchema, updateApplicationSchema, assignCustomerSchema 
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Applications
- *   description: Application management (tenant-scoped)
- */
-
-/**
- * @swagger
- * /applications:
- *   get:
- *     tags: [Applications]
- *     summary: List applications
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *     responses:
- *       200:
- *         $ref: '#/components/responses/ApplicationList'
- *   post:
- *     tags: [Applications]
- *     summary: Create an application (TENANT_ADMIN)
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *     requestBody:
- *       $ref: '#/components/requestBodies/CreateApplication'
- *     responses:
- *       201:
- *         $ref: '#/components/responses/Application'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
 router.get('/', authenticateToken, enforceTenantScope, applicationsController.getAllApplications);
 router.post('/', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(createApplicationSchema), applicationsController.createApplication);
 
-/**
- * @swagger
- * /applications/assign-customer:
- *   post:
- *     tags: [Applications]
- *     summary: Assign a customer to an application (TENANT_ADMIN)
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *     requestBody:
- *       $ref: '#/components/requestBodies/AssignCustomerToApp'
- *     responses:
- *       200:
- *         $ref: '#/components/responses/NoContent'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
 router.post('/assign-customer', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(assignCustomerSchema), applicationsController.assignCustomer);
 
-/**
- * @swagger
- * /applications/{id}:
- *   get:
- *     tags: [Applications]
- *     summary: Get application by ID
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *       - $ref: '#/components/parameters/PathId'
- *     responses:
- *       200:
- *         $ref: '#/components/responses/Application'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *   put:
- *     tags: [Applications]
- *     summary: Update application (TENANT_ADMIN)
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *       - $ref: '#/components/parameters/PathId'
- *     requestBody:
- *       $ref: '#/components/requestBodies/UpdateApplication'
- *     responses:
- *       200:
- *         $ref: '#/components/responses/Application'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- *   delete:
- *     tags: [Applications]
- *     summary: Delete application (TENANT_ADMIN)
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *       - $ref: '#/components/parameters/PathId'
- *       - in: query
- *         name: force
- *         schema: { type: boolean }
- *         description: Force-delete and cascade all linked tickets
- *     responses:
- *       200:
- *         $ref: '#/components/responses/NoContent'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
 router.get('/:id', authenticateToken, enforceTenantScope, applicationsController.getApplicationById);
 router.put('/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, validate(updateApplicationSchema), applicationsController.updateApplication);
 router.delete('/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, applicationsController.deleteApplication);
 
-/**
- * @swagger
- * /applications/{applicationId}/customers/{customerId}:
- *   delete:
- *     tags: [Applications]
- *     summary: Remove customer from application (TENANT_ADMIN)
- *     parameters:
- *       - $ref: '#/components/parameters/XTenantSlug'
- *       - $ref: '#/components/parameters/PathApplicationId'
- *       - $ref: '#/components/parameters/PathCustomerId'
- *     responses:
- *       200:
- *         $ref: '#/components/responses/NoContent'
- *       403:
- *         $ref: '#/components/responses/Forbidden'
- */
 router.delete('/:applicationId/customers/:customerId', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, applicationsController.removeCustomer);
 
 export default router;

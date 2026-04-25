@@ -290,20 +290,13 @@ export async function deleteUser(id, force = false) {
 - No business logic, no DB calls — only call service functions
 - Extract `tenantId` using `getTenantScope` / `requireTenantScope` helpers
 - Extract `userId` from `req.user?.userId ?? req.user?.id`
-- One shared `handleError` function — forwards `error.status` or defaults to 500
+- Import `handleError` from `../../utils/controllerHelpers.js` — never define it locally
 - Respond immediately — no side effects in the controller
 
 ```js
 import { getTenantScope, requireTenantScope } from '../../utils/tenantUtils.js';
+import { handleError } from '../../utils/controllerHelpers.js';
 import * as usersService from './users.service.js';
-
-// ── Error helper ──────────────────────────────────────────────────────────────
-
-function handleError(res, error, context) {
-  const status = error.status ?? 500;
-  if (status === 500) console.error(`${context} error:`, error);
-  res.status(status).json({ error: error.message ?? 'Internal server error' });
-}
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
@@ -487,7 +480,7 @@ export async function deleteUser(id, force = false) {
 - [ ] Separate functions per role tier (super-admin vs tenant-admin vs own)
 
 ### Controller rules
-- [ ] `handleError(res, error, context)` used in every catch block
+- [ ] `handleError` imported from `../../utils/controllerHelpers.js` — never defined locally
 - [ ] `userId` extracted as `req.user?.userId ?? req.user?.id`
 - [ ] `tenantId` extracted via `getTenantScope` or `requireTenantScope`
 - [ ] No `db` imports — only service imports

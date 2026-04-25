@@ -22,13 +22,6 @@ import contributorsRouter from './epicContributors/epicContributors.routes.js';
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Epics
- *   description: Epic management — hierarchy, features, dependencies, relations
- */
-
 // Auth applies to every epic route
 router.use(authenticateToken);
 

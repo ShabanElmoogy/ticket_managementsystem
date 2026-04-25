@@ -80,7 +80,11 @@ export async function startServer() {
 
   server.listen(PORT, HOST, () => {
     const protocol = detectProtocol();
-    console.log(`Server running on ${protocol}://${HOST}:${PORT}`);
+    const base = `${protocol}://${HOST}:${PORT}`;
+    console.log(`Server running on ${base}`);
+    if (process.env.SWAGGER_ENABLED !== 'false') {
+      console.log(`Swagger UI:  ${base}/api/docs`);
+    }
   });
 
   // Handle both SIGINT (Ctrl+C) and SIGTERM (Docker/Kubernetes stop)

@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import rateLimit from 'express-rate-limit';
 import socketMiddleware from './socketMiddleware.js';
@@ -34,6 +35,34 @@ export const authRateLimit = rateLimit({
 // ── Core middleware registration ──────────────────────────────────────────────
 
 export function registerCoreMiddleware(app, notificationEmitter) {
+  // ── Security headers ────────────────────────────────────────────────────────
+  // helmet sets: X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy,
+  // X-XSS-Protection, Permissions-Policy, and more.
+  // CSP is configured to allow Swagger UI assets and the API's own origin.
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc:     ["'self'"],
+        scriptSrc:      ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],  // Swagger UI
+        styleSrc:       ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],  // Swagger UI
+        imgSrc:         ["'self'", 'data:', 'cdn.jsdelivr.net'],
+        connectSrc:     ["'self'"],
+        fontSrc:        ["'self'", 'cdn.jsdelivr.net'],
+        objectSrc:      ["'none'"],
+        upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+      },
+    },
+    // HSTS: enforce HTTPS for 1 year in production
+    strictTransportSecurity: process.env.NODE_ENV === 'production'
+      ? { maxAge: 31_536_000, includeSubDomains: true }
+      : false,
+    // Allow Swagger UI to be embedded in iframes on the same origin
+    frameguard: { action: 'sameorigin' },
+    // Disable X-Powered-By (already done by helmet by default)
+    hidePoweredBy: true,
+  }));
+
+  // ── CORS ────────────────────────────────────────────────────────────────────
   app.use(cors({
     origin:       CORS_ORIGINS,
     credentials:  true,
@@ -50,6 +79,7 @@ export function registerCoreMiddleware(app, notificationEmitter) {
     maxAge: 86400,
   }));
 
+  // ── Body parsing + logging + socket ────────────────────────────────────────
   // Explicit body size limit — prevents oversized JSON payloads
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? '1mb' }));
   app.use(logger);
