@@ -91,20 +91,29 @@ export function startTokenRefreshCycle(token: string): void {
   const exp = getTokenExp(token);
   if (!exp) return;
 
-  // If the token is already expired (or expires within 10s), don't schedule —
+  // If the token is already expired (or expires within 70s), don't schedule —
   // the reactive 401 interceptor will handle it on the next request.
+  // 70s = 60s refresh-before-expiry window + 10s safety margin.
+  // Tokens with < 70s left would schedule at Math.max(x - 60_000, 5_000) = 5s,
+  // causing a tight loop if the server keeps issuing short-lived tokens.
   const msUntilExpiry = exp * 1000 - Date.now();
-  if (msUntilExpiry <= 10_000) {
-    if (__DEV__) console.warn('⚠️ [REFRESH] Token already expired or expiring imminently — skipping proactive cycle');
+  if (msUntilExpiry <= 70_000) {
+    if (__DEV__) console.warn(
+      `⚠️ [REFRESH] Token expiring too soon for proactive cycle — skipping` +
+      ` (expires in ${Math.round(msUntilExpiry / 1000)}s, need >70s)`
+    );
     return;
   }
 
-  // Schedule refresh 60s before expiry (min 5s, but only reachable if token
-  // has more than 70s left — guarded above)
-  const msUntilRefresh = Math.max(msUntilExpiry - 60_000, 5_000);
+  // Schedule refresh 60s before expiry — always at least 10s from now
+  const msUntilRefresh = msUntilExpiry - 60_000;
 
   if (__DEV__) {
-    console.log(`⏱ Proactive refresh in ${Math.round(msUntilRefresh / 1000)}s`);
+    const expiresAt = new Date(exp * 1000).toISOString();
+    console.log(
+      `⏱ Proactive refresh in ${Math.round(msUntilRefresh / 1000)}s` +
+      ` (token expires at ${expiresAt}, ${Math.round(msUntilExpiry / 60_000)}m from now)`
+    );
   }
 
   refreshTimer = setTimeout(async () => {
@@ -120,8 +129,13 @@ export function startTokenRefreshCycle(token: string): void {
 
       if (__DEV__) {
         const newExp = getTokenExp(newToken);
-        const expiresIn = newExp ? Math.round((newExp * 1000 - Date.now()) / 60_000) : 0;
-        console.log(`✅ [REFRESH] Token proactively refreshed. New token expires in ${expiresIn}m`);
+        const msLeft = newExp ? newExp * 1000 - Date.now() : 0;
+        const expiresAt = newExp ? new Date(newExp * 1000).toISOString() : 'unknown';
+        console.log(
+          `✅ [REFRESH] Token proactively refreshed.\n` +
+          `   Expires at: ${expiresAt}\n` +
+          `   Expires in: ${Math.round(msLeft / 60_000)}m (${Math.round(msLeft / 1000)}s)`
+        );
       }
 
       // Only reschedule if the new token is actually valid

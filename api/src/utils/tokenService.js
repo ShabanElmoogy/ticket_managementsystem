@@ -10,11 +10,12 @@ import { randomBytes, timingSafeEqual } from 'crypto';
  * - Separation of concerns
  */
 
-// Configuration
+// Configuration — read lazily so dotenv is guaranteed to have loaded first.
+// TOKEN_CONFIG is a getter so process.env is read at call time, not module init.
 const TOKEN_CONFIG = {
   algorithm: 'HS256',
-  accessTokenExpiry: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m',
-  refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+  get accessTokenExpiry()  { return process.env.ACCESS_TOKEN_EXPIRES_IN  || '15m'; },
+  get refreshTokenExpiry() { return process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';  },
 };
 
 // Secrets - will be validated when first used
@@ -39,6 +40,8 @@ const initializeSecrets = () => {
     if (a.length === b.length && timingSafeEqual(a, b)) {
       throw new Error('FATAL: JWT_SECRET and REFRESH_TOKEN_SECRET must be different values');
     }
+
+    console.log(`[tokenService] Initialized — accessTokenExpiry: ${TOKEN_CONFIG.accessTokenExpiry}, refreshTokenExpiry: ${TOKEN_CONFIG.refreshTokenExpiry}`);
   }
 };
 
@@ -54,10 +57,16 @@ export const generateAccessToken = (payload) => {
     throw new Error('Payload must be a non-empty object');
   }
 
+  const expiry = TOKEN_CONFIG.accessTokenExpiry;
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[tokenService] Issuing access token with expiry: ${expiry}`);
+  }
+
   try {
     return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
       algorithm: TOKEN_CONFIG.algorithm,
-      expiresIn: TOKEN_CONFIG.accessTokenExpiry,
+      expiresIn: expiry,
       issuer: 'ticket-management-system',
       subject: String(payload.userId),
     });

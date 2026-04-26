@@ -196,10 +196,12 @@ export const useAuthStore = create<AuthState>()(
 
           const expiresIn = getTokenExpiresIn(token);
 
-          if (expiresIn <= 0 && refreshToken) {
-            // Token already expired — use the bare refreshClient (no interceptors)
-            // to avoid the 401 handler firing and causing a loop
-            if (__DEV__) console.log('⏰ Token expired on cold start, refreshing...');
+          // Refresh on cold start if token is expired OR expiring within 70s.
+          // 70s matches the proactive cycle threshold — tokens with less than
+          // 70s left can't schedule a proactive refresh, so we do it eagerly
+          // here before any screens render.
+          if (expiresIn <= 70 && refreshToken) {
+            if (__DEV__) console.log(`⏰ Token expiring soon on cold start (${Math.round(expiresIn)}s left) — refreshing...`);
             try {
               const { refreshClient } = await import('../services/api/httpClient');
               const response = await refreshClient.post<{ token: string; refreshToken: string }>(
@@ -220,8 +222,9 @@ export const useAuthStore = create<AuthState>()(
               });
               if (__DEV__) {
                 const logPayload = decodeToken(newToken);
-                const mins = logPayload ? Math.round((logPayload.exp - Date.now() / 1000) / 60) : 0;
-                console.log(`✅ [REFRESH] Cold start token refreshed. Expires in ${mins}m`);
+                const secs = logPayload ? Math.round(logPayload.exp - Date.now() / 1000) : 0;
+                const mins = Math.round(secs / 60);
+                console.log(`✅ [REFRESH] Cold start token refreshed. Expires in ${mins}m (${secs}s)`);
               }
               return;
             } catch (refreshErr: any) {
