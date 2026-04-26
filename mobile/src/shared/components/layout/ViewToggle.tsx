@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useThemeColors, FontSize, Radius } from '../../../constants/theme';
-import type { AdminView } from '../../../stores/uiStore';
+import { useThemeColors, FontSize, Radius } from '@/src/constants/theme';
+import type { AdminView } from '@/src/stores/uiStore';
 
 const VIEW_OPTIONS: { view: AdminView; icon: string; label: string }[] = [
   { view: 'table',   icon: '⊞', label: 'Table'   },
@@ -12,6 +12,7 @@ const VIEW_OPTIONS: { view: AdminView; icon: string; label: string }[] = [
 interface Props {
   current:  AdminView;
   onChange: (v: AdminView) => void;
+  /** @deprecated — component reads theme internally via useThemeColors() */
   isDark?:  boolean;
 }
 

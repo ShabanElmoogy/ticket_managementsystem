@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface CodeBlockProps {
   label?:        string;
   content:       string;
-  isDark?:       boolean;
   maxLines?:     number;
   marginBottom?: number;
 }

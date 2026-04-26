@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { tenantsApi, tenantsKeys, type Tenant } from '@/src/features/admin/tenants/api/tenants';
 import { AppTextInput, AppBadge } from '@/src/shared/components';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
+import { useErrorHandler } from '@/src/shared/hooks/useErrorHandler';
 import type { ColDef } from '@/src/shared/components';
 
-import { Palette } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE:    Palette.green500,
@@ -69,6 +71,7 @@ const TenantForm: React.FC<{
 
 const TenantsScreen: React.FC = () => {
   const { t } = useTranslation();
+  const { handleError } = useErrorHandler();
 
   const columns: ColDef<Tenant>[] = [
     { field: 'name', headerName: t('tenants.columns.name'), flex: 1,   sortable: true },
@@ -107,38 +110,56 @@ const TenantsScreen: React.FC = () => {
     },
   });
 
+  // ── Error handler for feature-level errors ─────────────────────────────────
+  const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
+    handleError(error, { 
+      feature: 'tenants', 
+      operation: 'feature-boundary',
+      metadata: { errorId, componentStack: errorInfo.componentStack }
+    });
+  };
+
   return (
-    <AdminCrudScreen<Tenant>
-      title={t('tenants.title')}
-      icon="🏢"
-      itemType={t('tenants.itemType')}
-      entities={f.entities}
-      loading={f.loading}
-      columns={columns}
-      searchFields={['name', 'slug']}
-      getItemName={(ten) => ten.name}
-      onDelete={(id) => f.remove(id)}
-      onRefresh={f.refetch}
-      searchPlaceholder={t('tenants.searchPlaceholder')}
-      emptyMessage={t('tenants.emptyMessage')}
-      emptyFilteredMessage={t('tenants.emptyFilteredMessage')}
-      addLabel={t('tenants.addTitle')}
-      refreshLabel={t('common.refresh')}
-      refreshingLabel={t('common.refreshing')}
-      deleteSuccessMessage={t('tenants.messages.deleted')}
-      renderForm={(item, onClose) => (
-        <TenantForm
-          item={item}
-          onClose={onClose}
-          submitting={f.ui.submitting}
-          onSave={async (data) => {
-            if (item) await f.update(item.id, data);
-            else      await f.create(data);
-            onClose();
-          }}
-        />
-      )}
-    />
+    <FeatureErrorBoundary featureName="Tenants" onError={handleFeatureError}>
+      <AdminCrudScreen<Tenant>
+        title={t('tenants.title')}
+        icon="🏢"
+        itemType={t('tenants.itemType')}
+        entities={f.entities}
+        loading={f.loading}
+        columns={columns}
+        searchFields={['name', 'slug']}
+        getItemName={(ten) => ten.name}
+        onDelete={(id) => f.remove(id)}
+        onRefresh={f.refetch}
+        searchPlaceholder={t('tenants.searchPlaceholder')}
+        emptyMessage={t('tenants.emptyMessage')}
+        emptyFilteredMessage={t('tenants.emptyFilteredMessage')}
+        addLabel={t('tenants.addTitle')}
+        refreshLabel={t('common.refresh')}
+        refreshingLabel={t('common.refreshing')}
+        deleteSuccessMessage={t('tenants.messages.deleted')}
+        renderForm={(item, onClose) => (
+          <TenantForm
+            item={item}
+            onClose={onClose}
+            submitting={f.ui.submitting}
+            onSave={async (data) => {
+              try {
+                if (item) await f.update(item.id, data);
+                else      await f.create(data);
+                onClose();
+              } catch (error) {
+                handleError(error, { 
+                  feature: 'tenants', 
+                  operation: item ? 'update' : 'create' 
+                });
+              }
+            }}
+          />
+        )}
+      />
+    </FeatureErrorBoundary>
   );
 };
 

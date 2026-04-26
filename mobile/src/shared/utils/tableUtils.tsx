@@ -5,7 +5,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Badge, W } from '../components/data/AppTable';
-import { Colors, Palette, FontSize, FontWeight } from '../../constants/theme';
+import { Colors, Palette, FontSize, FontWeight } from '@/src/constants/tokens';
 import type { ColDef } from '../components/data/AppDataTable';
 
 // ── Badge column ──────────────────────────────────────────────────────────────

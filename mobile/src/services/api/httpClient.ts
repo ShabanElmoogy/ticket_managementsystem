@@ -4,7 +4,7 @@ import { networkEvents } from './networkEvents';
 import { authEvents } from './authEvents';
 import { circuitBreaker } from './circuitBreaker';
 import { requestDeduplicator } from './requestDeduplicator';
-import { HTTP_STATUS } from '../../constants/api';
+import { HTTP_STATUS } from '@/src/constants/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

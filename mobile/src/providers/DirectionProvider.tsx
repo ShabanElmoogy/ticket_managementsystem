@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import { useUiStore } from '../stores/uiStore';
 
 interface DirectionContextValue {

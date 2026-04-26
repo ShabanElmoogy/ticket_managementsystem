@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
-import { useThemeColors, FontSize } from '../../../constants/theme';
+import { useThemeColors, FontSize } from '@/src/constants/theme';
 
 export interface AppLoadingSpinnerProps {
   size?:       'small' | 'large';

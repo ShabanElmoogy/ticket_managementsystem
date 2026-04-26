@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface SegmentedOption {
   value: string;
@@ -12,7 +12,6 @@ export interface SegmentedControlProps {
   value:        string;
   onChange:     (value: string) => void;
   loading?:     boolean;
-  isDark?:      boolean;
   activeColor?: string;
 }
 

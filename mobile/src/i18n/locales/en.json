@@ -331,6 +331,46 @@
     "open": "Open",
     "resolutionRate": "Resolution Rate"
   },
+  "errors": {
+    "app": {
+      "title": "Application Error",
+      "message": "Something went wrong with the app. Please restart and try again."
+    },
+    "feature": {
+      "title": "{{feature}} Error",
+      "message": "There was a problem with this feature. Please try again."
+    },
+    "component": {
+      "title": "Component Error",
+      "message": "This component encountered an error. Please refresh or try again."
+    },
+    "generic": {
+      "title": "Unexpected Error",
+      "message": "An unexpected error occurred. Please try again."
+    },
+    "network": {
+      "message": "Network error. Please check your connection and try again."
+    },
+    "auth": {
+      "message": "Authentication error. Please log in again."
+    },
+    "server": {
+      "message": "Server error. Please try again later."
+    },
+    "unexpected": {
+      "message": "An unexpected error occurred. Please try again."
+    },
+    "unknown": {
+      "message": "An unknown error occurred. Please try again."
+    },
+    "errorId": "Error ID",
+    "actions": {
+      "retry": "Try Again",
+      "showDetails": "Show Details",
+      "reportIssue": "Report Issue",
+      "goBack": "Go Back"
+    }
+  },
   "deviceInfo": {
     "title": "Device Info",
     "sections": {

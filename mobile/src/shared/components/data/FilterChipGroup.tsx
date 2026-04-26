@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface FilterChipOption<T> {
   value: T;
@@ -11,7 +11,6 @@ interface Props<T> {
   options:        FilterChipOption<T>[];
   value:          T;
   onChange:       (v: T) => void;
-  isDark?:        boolean;
   title?:         string;
   activeColor?:   string;
   keyExtractor?:  (v: T) => string;

@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 
 export interface AdminDetailScreenProps {
   title:         string;
@@ -13,7 +14,7 @@ export interface AdminDetailScreenProps {
   onClose:       () => void;
   onEdit:        () => void;
   onDelete:      () => void;
-  children:      React.ReactNode;
+  children:      any;
 }
 
 const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({

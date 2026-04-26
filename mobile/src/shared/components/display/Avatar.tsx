@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useThemeColors, FontWeight } from '../../../constants/theme';
+import { useThemeColors, FontWeight } from '@/src/constants/theme';
 
 export interface AvatarProps {
   text:             string;

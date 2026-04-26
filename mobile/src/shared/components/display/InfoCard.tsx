@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface InfoCardSection {
   label?:    string;
@@ -17,7 +17,6 @@ export interface InfoCardProps {
   message?:    string;
   sections?:   InfoCardSection[];
   caption?:    string;
-  isDark?:     boolean;
 }
 
 const InfoCard: React.FC<InfoCardProps> = ({

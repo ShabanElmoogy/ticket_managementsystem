@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
-import { useThemeColors, FontSize } from '../../../constants/theme';
-import AppEmptyState   from '../feedback/AppEmptyState';
-import AppDeleteDialog from '../dialogs/AppDeleteDialog';
-import SectionHeader   from '../display/SectionHeader';
-import CountBadge      from '../display/CountBadge';
+import { useThemeColors, FontSize } from '@/src/constants/theme';
+import AppEmptyState   from '@/src/shared/components/feedback/AppEmptyState';
+import AppDeleteDialog from '@/src/shared/components/dialogs/AppDeleteDialog';
+import SectionHeader   from '@/src/shared/components/display/SectionHeader';
+import CountBadge      from '@/src/shared/components/display/CountBadge';
 import PaginatedView   from './PaginatedView';
 import AppPagination   from './AppPagination';
-import type { AdminView } from '../../../stores/uiStore';
+import type { AdminView } from '@/src/stores/uiStore';
 
 // ── Pagination state shape ────────────────────────────────────────────────────
 
@@ -108,7 +108,6 @@ function DataCard<T extends { id: string }>({
       {/* ── Header ── */}
       <SectionHeader
         title={title}
-        isDark={false}
         right={<CountBadge count={rows.length} total={totalCount} isFiltered={isFiltered} />}
       />
 
@@ -127,7 +126,6 @@ function DataCard<T extends { id: string }>({
             pagination={pagination}
             loading={loading}
             onRefresh={onRefresh ?? (() => {})}
-            isDark={false}
           />
         ) : (
           <FlatList

@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ticketsApi, ticketsKeys } from '@/src/features/admin/tickets/api/tickets';
 import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '@/src/shared/components';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useAuxData } from '@/src/shared/hooks/useAuxData';
 import type { Ticket } from '@/src/services/api/types';
 import { useThemeColors, useIsDark } from '@/src/constants/theme';
@@ -33,30 +34,32 @@ const TicketsScreen: React.FC = () => {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
-      <AppScreenHeader
-        title={t('tickets.title')}
-        badge={tickets.length}
-        isDark={isDark}
-        onRefresh={refetch}
-        refreshLabel={t('common.refresh')}
-        refreshingLabel={t('common.refreshing')}
-      />
-      {isLoading && tickets.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={c.interactive.primary} />
-        </View>
-      ) : (
-        <View style={{ flex: 1, margin: 12 }}>
-          <AppDataTable<Ticket>
-            rows={tickets}
-            columns={columns}
-            loading={isLoading}
-            emptyMessage={t('tickets.emptyMessage')}
-          />
-        </View>
-      )}
-    </View>
+    <FeatureErrorBoundary featureName="Tickets">
+      <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
+        <AppScreenHeader
+          title={t('tickets.title')}
+          badge={tickets.length}
+          isDark={isDark}
+          onRefresh={refetch}
+          refreshLabel={t('common.refresh')}
+          refreshingLabel={t('common.refreshing')}
+        />
+        {isLoading && tickets.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color={c.interactive.primary} />
+          </View>
+        ) : (
+          <View style={{ flex: 1, margin: 12 }}>
+            <AppDataTable<Ticket>
+              rows={tickets}
+              columns={columns}
+              loading={isLoading}
+              emptyMessage={t('tickets.emptyMessage')}
+            />
+          </View>
+        )}
+      </View>
+    </FeatureErrorBoundary>
   );
 };
 

@@ -28,7 +28,7 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
   const isRtl       = direction === 'rtl';
   const insets      = useSafeAreaInsets();
   const { height }  = useWindowDimensions();
-  const scrollRef   = useRef<ScrollView>(null);
+  const scrollRef   = useRef<any>(null);
 
   const maxSheetHeight = height * 0.85;
   const resolvedLabel  = submitLabel ?? t('common.save');
@@ -60,11 +60,9 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
             </View>
 
             <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}>
-              <FormScrollProvider scrollRef={scrollRef} mode="modal">
-                {children}
+              <FormScrollProvider {...{ scrollRef, mode: "modal", children }}>
               </FormScrollProvider>
-              <AppButton variant="contained" color="primary" fullWidth loading={submitting} loadingText={t('common.saving')} onPress={onSubmit} disabled={isDisabled} style={{ marginTop: 16 }}>
-                {resolvedLabel}
+              <AppButton {...{ variant: "contained", color: "primary", fullWidth: true, loading: submitting, loadingText: t('common.saving'), onPress: onSubmit, disabled: isDisabled, style: { marginTop: 16 }, children: resolvedLabel }}>
               </AppButton>
             </ScrollView>
           </View>

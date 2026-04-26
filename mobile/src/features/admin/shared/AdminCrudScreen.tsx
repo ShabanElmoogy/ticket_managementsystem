@@ -13,10 +13,10 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   loading:              boolean;
   columns:              ColDef<T>[];
   searchFields:         (keyof T)[];
-  renderForm:           (item: T | null, onClose: () => void) => React.ReactNode;
+  renderForm:           (item: T | null, onClose: () => void) => any;
   onDelete:             (id: string) => Promise<void>;
   getItemName?:         (item: T) => string;
-  renderCard?:          (item: T, onEdit: () => void, onDelete: () => void) => React.ReactElement | null;
+  renderCard?:          (item: T, onEdit: () => void, onDelete: () => void) => any;
   itemType?:            string;
   canAdd?:              boolean;
   onRowPress?:          (item: T) => void;
@@ -52,7 +52,7 @@ function AutoCard<T extends { id: string }>({
   return (
     <Pressable
       onPress={onView}
-      style={({ pressed }) => ({
+      style={({ pressed }: { pressed: boolean }) => ({
         width: '100%', marginBottom: 10,
         borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden',
         backgroundColor: pressed ? c.surface.elevated : c.surface.primary,
@@ -216,8 +216,8 @@ function AdminCrudScreen<T extends { id: string }>({
   const pagination = useMemo(() => ({
     page: safePage, totalPages, totalItems, pageSize: PAGINATION.ADMIN_PAGE_SIZE,
     hasNext: safePage < totalPages, hasPrev: safePage > 1,
-    next: () => setPage((p) => Math.min(p + 1, totalPages)),
-    prev: () => setPage((p) => Math.max(p - 1, 1)),
+    next: () => setPage((p: number) => Math.min(p + 1, totalPages)),
+    prev: () => setPage((p: number) => Math.max(p - 1, 1)),
   }), [safePage, totalPages, totalItems]);
 
   const actionCol: ColDef<T> = {

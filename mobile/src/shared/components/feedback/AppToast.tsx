@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Clipboard } from 'react-native';
 import Toast, { BaseToast, ErrorToast, type BaseToastProps } from 'react-native-toast-message';
-import { Palette, Colors } from '../../../constants/theme';
+import { Palette, Colors } from '@/src/constants/tokens';
 
 // ── Toast item component ──────────────────────────────────────────────────────
 

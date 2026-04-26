@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import AppCard from '../layout/AppCard';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface OverviewCardProps {
   title: string;
@@ -17,23 +17,75 @@ const OverviewCard: React.FC<OverviewCardProps> = ({
   activeLabel = 'active',
   metricLabel = 'Active Rate',
 }) => {
+  const c = useThemeColors();
   const rate = total > 0 ? Math.round((active / total) * 100) : 0;
 
   return (
-    <AppCard>
-      <Text className="text-base font-bold text-gray-900 mb-1.5">{title}</Text>
-      <Text className="text-sm text-gray-500 mb-2">
+    <View style={{
+      backgroundColor: c.surface.primary,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: c.border.primary,
+      padding: 16,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 2,
+    }}>
+      <Text style={{
+        fontSize: FontSize.base,
+        fontWeight: FontWeight.bold,
+        color: c.text.primary,
+        marginBottom: 6,
+      }}>
+        {title}
+      </Text>
+      
+      <Text style={{
+        fontSize: FontSize.sm,
+        color: c.text.secondary,
+        marginBottom: 8,
+      }}>
         {total} total, {active} currently {activeLabel}.
       </Text>
-      <View className="flex-row items-center gap-1.5 mb-1.5">
-        <Text className="text-sm text-gray-500">{metricLabel}:</Text>
-        <Text className="text-base font-bold text-blue-600">{rate}%</Text>
+      
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 6,
+      }}>
+        <Text style={{
+          fontSize: FontSize.sm,
+          color: c.text.secondary,
+        }}>
+          {metricLabel}:
+        </Text>
+        <Text style={{
+          fontSize: FontSize.base,
+          fontWeight: FontWeight.bold,
+          color: c.interactive.primary,
+        }}>
+          {rate}%
+        </Text>
       </View>
+      
       {/* Progress bar */}
-      <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <View className="h-full bg-blue-600 rounded-full" style={{ width: `${rate}%` }} />
+      <View style={{
+        height: 6,
+        backgroundColor: c.surface.secondary,
+        borderRadius: 3,
+        overflow: 'hidden',
+      }}>
+        <View style={{
+          height: '100%',
+          backgroundColor: c.interactive.primary,
+          borderRadius: 3,
+          width: `${rate}%`,
+        }} />
       </View>
-    </AppCard>
+    </View>
   );
 };
 

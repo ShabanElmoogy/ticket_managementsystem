@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { useDirection } from '../../../providers/DirectionProvider';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useDirection } from '@/src/providers/DirectionProvider';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 interface Props {
   label?:       string;
@@ -10,7 +10,6 @@ interface Props {
   onChange:     (iso: string) => void;
   placeholder?: string;
   error?:       string;
-  isDark?:      boolean;
   minDate?:     Date;
   maxDate?:     Date;
 }

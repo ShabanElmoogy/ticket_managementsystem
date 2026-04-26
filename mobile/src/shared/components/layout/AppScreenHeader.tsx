@@ -3,13 +3,14 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import ViewToggle from './ViewToggle';
 import HeaderTitle from './HeaderTitle';
 import HeaderActionGroup from './HeaderActionGroup';
-import type { AdminView } from '../../../stores/uiStore';
+import type { AdminView } from '@/src/stores/uiStore';
 
 export interface AppScreenHeaderProps {
   // ── Identity ──────────────────────────────────────────────────────────────
   title: string;
   subtitle?: string;
   badge?: number | string;
+  /** @deprecated — child components read theme internally via useThemeColors() */
   isDark?: boolean;
 
   // ── View toggle (left side) ───────────────────────────────────────────────
@@ -49,7 +50,7 @@ export interface AppScreenHeaderProps {
  * Each section only renders when the relevant props are provided.
  */
 const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
-  isDark = false,
+  title, subtitle, badge,
   view, onViewChange, leftActions,
   onAdd, addLabel = 'Add', loading = false,
   onExport, exporting = false, exportDisabled = false, exportLabel, exportingLabel,
@@ -65,14 +66,16 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
     {/* Left — ViewToggle or custom left actions */}
     <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 80 }}>
       {view && onViewChange
-        ? <ViewToggle current={view} onChange={onViewChange} isDark={isDark} />
+        ? <ViewToggle current={view} onChange={onViewChange} />
         : leftActions
       }
     </View>
 
+    {/* Center — Title */}
+    <HeaderTitle title={title} subtitle={subtitle} badge={badge} />
+
     {/* Right — Refresh | Export PDF | | Add */}
     <HeaderActionGroup
-      isDark={isDark}
       loading={loading}
       onAdd={onAdd}
       addLabel={addLabel}

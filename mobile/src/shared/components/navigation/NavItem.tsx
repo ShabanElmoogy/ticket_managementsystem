@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { FontSize, FontWeight } from '../../../constants/theme';
+import { FontSize, FontWeight } from '@/src/constants/theme';
 
 export interface NavItemProps {
   icon:           string;

@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
-import { useDirection } from '../../../providers/DirectionProvider';
-import { useThemeColors, FontSize } from '../../../constants/theme';
+import { useDirection } from '@/src/providers/DirectionProvider';
+import { useThemeColors, FontSize } from '@/src/constants/theme';
 
 interface Props {
   value:        string;
   onChange:     (v: string) => void;
-  isDark?:      boolean;
   placeholder?: string;
   style?:       object;
 }

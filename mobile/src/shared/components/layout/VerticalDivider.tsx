@@ -1,8 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useThemeColors } from '../../../constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 
 interface Props {
+  /** @deprecated — component reads theme internally via useThemeColors() */
   isDark?:           boolean;
   height?:           number;
   marginHorizontal?: number;

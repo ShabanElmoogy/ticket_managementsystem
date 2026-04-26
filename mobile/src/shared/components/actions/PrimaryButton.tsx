@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, Pressable, Text } from 'react-native';
-import { useThemeColors, Palette, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { useThemeColors, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 
 // Darken map — Palette is a plain object, safe at module level (no circular deps)
 const DARKEN: Record<string, string> = {

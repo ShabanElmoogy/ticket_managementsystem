@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, ScrollView, FlatList, useWindowDimensions,
   type StyleProp, type ViewStyle,
 } from 'react-native';
-import { useThemeColors,FontSize, FontWeight, Radius, type ThemeColors } from '../../../constants/theme';
+import { useThemeColors,FontSize, FontWeight, Radius, type ThemeColors } from '@/src/constants/theme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

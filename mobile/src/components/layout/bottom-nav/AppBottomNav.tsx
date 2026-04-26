@@ -25,8 +25,8 @@ const AppBottomNav: React.FC = () => {
     }}>
       {TABS.map((tab) => {
         const isActive =
-          tab.match === '/(app)'
-            ? pathname === '/' || pathname === '/(app)'
+          tab.match === '/'
+            ? pathname === '/' || pathname === '/index'
             : pathname.startsWith(tab.match);
 
         return (

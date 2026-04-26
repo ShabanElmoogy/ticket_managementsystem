@@ -1,3 +1,10 @@
 import AdminPanel from '@/src/features/admin/AdminPanel';
+import { AppErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 
-export default AdminPanel;
+export default function AdminRoute() {
+  return (
+    <AppErrorBoundary>
+      <AdminPanel />
+    </AppErrorBoundary>
+  );
+}

@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen      from '@/src/features/admin/shared/AdminCrudScreen';
 import { AppDeleteDialog, AppConfirmDialog } from '@/src/shared/components';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useToast }         from '@/src/shared/hooks/useToast';
+import { useErrorHandler }  from '@/src/shared/hooks/useErrorHandler';
 import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
 import UserDetailScreen from '@/src/features/admin/users/components/UserDetailScreen';
 import UserForm from '@/src/features/admin/users/components/UserForm';
@@ -27,6 +29,7 @@ const UsersScreen: React.FC = () => {
   const { t }       = useTranslation();
   const toast       = useToast();
   const queryClient = useQueryClient();
+  const { handleError } = useErrorHandler();
   const { f, columns, exporting, handleExport, selectedId, setSelectedId, isSuperAdmin } = useUsers();
 
   // ── Detail → Edit state ────────────────────────────────────────────────────
@@ -39,6 +42,15 @@ const UsersScreen: React.FC = () => {
   // ── Force-delete state (both list and detail paths) ────────────────────────
   const [forceTarget,  setForceTarget]  = useState<User | null>(null);
   const [forceDeleting, setForceDeleting] = useState(false);
+
+  // ── Error handler for feature-level errors ─────────────────────────────────
+  const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
+    handleError(error, { 
+      feature: 'users', 
+      operation: 'feature-boundary',
+      metadata: { errorId, componentStack: errorInfo.componentStack }
+    });
+  };
 
   // ── Normal delete from detail view ────────────────────────────────────────
   const handleDeleteFromDetail = async () => {
@@ -56,7 +68,7 @@ const UsersScreen: React.FC = () => {
         // Escalate to force-delete dialog
         setForceTarget(deletingFromDetail);
       } else {
-        toast.error(t('users.messages.errorDelete'));
+        handleError(error, { feature: 'users', operation: 'delete' });
       }
     } finally {
       setDeleting(false);
@@ -80,8 +92,8 @@ const UsersScreen: React.FC = () => {
       toast.success(t('users.messages.forceDeleted'));
       setForceTarget(null);
       if (selectedId === forceTarget.id) setSelectedId(null);
-    } catch {
-      toast.error(t('users.messages.errorDelete'));
+    } catch (error) {
+      handleError(error, { feature: 'users', operation: 'force-delete' });
     } finally {
       setForceDeleting(false);
     }
@@ -99,7 +111,7 @@ const UsersScreen: React.FC = () => {
   if (selectedId && !editingFromDetail) {
     const selectedUser = f.entities.find((u) => u.id === selectedId);
     return (
-      <>
+      <FeatureErrorBoundary featureName="Users" onError={handleFeatureError}>
         <UserDetailScreen
           userId={selectedId}
           isSuperAdmin={isSuperAdmin}
@@ -132,33 +144,39 @@ const UsersScreen: React.FC = () => {
           confirmLabel={t('users.forceDelete.confirmLabel')}
           confirmColor="error"
         />
-      </>
+      </FeatureErrorBoundary>
     );
   }
 
   // ── Edit from detail ────────────────────────────────────────────────────────
   if (editingFromDetail) {
     return (
-      <UserForm
-        item={editingFromDetail}
-        onClose={() => {
-          setEditingFromDetail(null);
-          setSelectedId(editingFromDetail.id);
-        }}
-        submitting={false}
-        mode="page"
-        onSave={async (data: CreateUserData) => {
-          await f.update(editingFromDetail.id, data);
-          setEditingFromDetail(null);
-          setSelectedId(editingFromDetail.id);
-        }}
-      />
+      <FeatureErrorBoundary featureName="Users" onError={handleFeatureError}>
+        <UserForm
+          item={editingFromDetail}
+          onClose={() => {
+            setEditingFromDetail(null);
+            setSelectedId(editingFromDetail.id);
+          }}
+          submitting={false}
+          mode="page"
+          onSave={async (data: CreateUserData) => {
+            try {
+              await f.update(editingFromDetail.id, data);
+              setEditingFromDetail(null);
+              setSelectedId(editingFromDetail.id);
+            } catch (error) {
+              handleError(error, { feature: 'users', operation: 'update' });
+            }
+          }}
+        />
+      </FeatureErrorBoundary>
     );
   }
 
   // ── List view ───────────────────────────────────────────────────────────────
   return (
-    <>
+    <FeatureErrorBoundary featureName="Users" onError={handleFeatureError}>
       <AdminCrudScreen<User>
         title={t('users.title')}
         icon="👤"
@@ -190,9 +208,16 @@ const UsersScreen: React.FC = () => {
             submitting={f.ui.submitting}
             mode="page"
             onSave={async (data: CreateUserData) => {
-              if (item) await f.update(item.id, data);
-              else      await f.create(data);
-              onClose();
+              try {
+                if (item) await f.update(item.id, data);
+                else      await f.create(data);
+                onClose();
+              } catch (error) {
+                handleError(error, { 
+                  feature: 'users', 
+                  operation: item ? 'update' : 'create' 
+                });
+              }
             }}
           />
         )}
@@ -210,7 +235,7 @@ const UsersScreen: React.FC = () => {
         confirmLabel={t('users.forceDelete.confirmLabel')}
         confirmColor="error"
       />
-    </>
+    </FeatureErrorBoundary>
   );
 };
 

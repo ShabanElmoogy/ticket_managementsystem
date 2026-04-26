@@ -22,13 +22,13 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
   title, onBack, onSubmit,
   submitting = false, submitDisabled = false, submitLabel,
   isDirty = true, children,
-}) => {
+}: AdminFormPageProps) => {
   const { t }     = useTranslation();
   const c         = useThemeColors();
   const direction = useUiStore((s) => s.direction);
   const isRtl     = direction === 'rtl';
   const insets    = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
 
   const resolvedLabel = submitLabel ?? t('common.save');
   const isDisabled    = submitDisabled || submitting;
@@ -48,11 +48,9 @@ const AdminFormPage: React.FC<AdminFormPageProps> = memo(({
 
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
           <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}>
-            <FormScrollProvider scrollRef={scrollRef} mode="page">
-              {children}
+            <FormScrollProvider {...{ scrollRef, mode: "page", children }}>
             </FormScrollProvider>
-            <AppButton variant="contained" color={btnColor} fullWidth loading={submitting} loadingText={t('common.saving')} onPress={onSubmit} disabled={isDisabled} style={styles.submitBtn}>
-              {btnLabel}
+            <AppButton {...{ variant: "contained", color: btnColor, fullWidth: true, loading: submitting, loadingText: t('common.saving'), onPress: onSubmit, disabled: isDisabled, style: styles.submitBtn, children: btnLabel }}>
             </AppButton>
           </ScrollView>
         </KeyboardAvoidingView>

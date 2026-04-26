@@ -16,7 +16,7 @@ interface FormFieldProps {
  * In 'page'  mode: renders children as-is — OS handles keyboard avoidance,
  *                  no scroll injection needed.
  */
-const FormField: React.FC<FormFieldProps> = React.memo(({ children, fieldId }) => {
+const FormField: React.FC<FormFieldProps> = React.memo(({ children, fieldId }: FormFieldProps) => {
   const id = useRef(fieldId ?? `field_${++fieldCounter}`).current;
   const { mode, registerFieldY, scrollToField } = useFormScroll();
 
@@ -27,15 +27,15 @@ const FormField: React.FC<FormFieldProps> = React.memo(({ children, fieldId }) =
 
   // Modal mode — register Y + inject onFocus scroll
   return (
-    <View onLayout={(e) => registerFieldY(id, e.nativeEvent.layout.y)}>
-      {React.Children.map(children, (child) => {
+    <View onLayout={(e: any) => registerFieldY(id, e.nativeEvent.layout.y)}>
+      {React.Children.map(children, (child: any) => {
         if (!React.isValidElement(child)) return child;
 
         const childProps      = child.props as Record<string, unknown>;
         const originalOnFocus = childProps.onFocus as ((...args: unknown[]) => void) | undefined;
 
         return React.cloneElement(
-          child as React.ReactElement<Record<string, unknown>>,
+          child as any,
           {
             onFocus: (...args: unknown[]) => {
               scrollToField(id);

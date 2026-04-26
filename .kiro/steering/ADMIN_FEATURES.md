@@ -838,7 +838,104 @@ Custom config in `AppToast.tsx`: left accent bar + icon badge + copy button.
 
 ---
 
+## Error Handling Pattern
+
+All admin feature screens should implement comprehensive error handling using `FeatureErrorBoundary` and `useErrorHandler`.
+
+### Required imports
+
+```ts
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
+import { useErrorHandler }      from '@/src/shared/hooks/useErrorHandler';
+```
+
+### Feature-level error boundary
+
+Wrap all three view states (list, detail, edit) with `FeatureErrorBoundary`:
+
+```ts
+const { handleError } = useErrorHandler();
+
+// Feature-level error handler
+const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
+  handleError(error, { 
+    feature: '<feature-name>', 
+    operation: 'feature-boundary',
+    metadata: { errorId, componentStack: errorInfo.componentStack }
+  });
+};
+
+// Wrap each view state
+return (
+  <FeatureErrorBoundary featureName="<FeatureName>" onError={handleFeatureError}>
+    {/* view content */}
+  </FeatureErrorBoundary>
+);
+```
+
+### Structured error handling in async operations
+
+Replace generic `toast.error()` calls with structured error handling:
+
+```ts
+// ❌ Old pattern — generic error toast
+try {
+  await f.remove(id);
+} catch {
+  toast.error(t('feature.messages.errorDelete'));
+}
+
+// ✅ New pattern — structured error handling
+try {
+  await f.remove(id);
+} catch (error) {
+  handleError(error, { feature: 'customers', operation: 'delete' });
+}
+```
+
+### Error context metadata
+
+Use descriptive `operation` values for different actions:
+
+| Operation | When to use |
+|---|---|
+| `'create'` | Creating new entities |
+| `'update'` | Updating existing entities |
+| `'delete'` | Deleting entities |
+| `'feature-boundary'` | React error boundary catches |
+| `'export'` | PDF export operations |
+| `'fetch'` | Data loading errors |
+
+### Form save operations
+
+Wrap form save logic with try/catch and structured error handling:
+
+```ts
+onSave={async (data: CreateEntityData) => {
+  try {
+    if (item) await f.update(item.id, data);
+    else      await f.create(data);
+    onClose();
+  } catch (error) {
+    handleError(error, { 
+      feature: 'customers', 
+      operation: item ? 'update' : 'create' 
+    });
+  }
+}}
+```
+
+---
+
 ## Checklist — New Admin Feature
+
+### Error Handling
+- [ ] Import `FeatureErrorBoundary` and `useErrorHandler`
+- [ ] Wrap all view states with `FeatureErrorBoundary`
+- [ ] Implement `handleFeatureError` for boundary errors
+- [ ] Use structured `handleError(error, { feature, operation })` in async operations
+- [ ] Replace generic `toast.error()` with structured error handling
+- [ ] Wrap form save operations with try/catch and structured error handling
 
 ### Files
 - [ ] `api/<feature>.ts` — service + singleton + query keys + `getOne`

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { StatusColors, PriorityColors, useThemeColors, FontWeight } from '../../../constants/theme';
+import { StatusColors, PriorityColors, useThemeColors, FontWeight, Radius, FontSize } from '@/src/constants/theme';
 
 export const STATUS_COLORS: Record<string, string> = { ...StatusColors };
 export const PRIORITY_COLORS: Record<string, string> = { ...PriorityColors };
@@ -25,15 +25,28 @@ const AppBadge: React.FC<AppBadgeProps> = ({
      variant === 'priority' ? (PriorityColors[label] ?? c.text.muted) :
      c.text.muted);
 
-  const paddingClass = size === 'small' ? 'px-2 py-0.5' : 'px-3 py-1';
-  const textClass    = size === 'small' ? 'text-xs'     : 'text-sm';
+  const padding = size === 'small' ? { paddingHorizontal: 8, paddingVertical: 2 } : { paddingHorizontal: 12, paddingVertical: 4 };
+  const fontSize = size === 'small' ? FontSize.xs : FontSize.sm;
 
   return (
     <View
-      className={`rounded-full self-start border ${paddingClass}`}
-      style={[{ backgroundColor: `${resolvedColor}22`, borderColor: `${resolvedColor}66` }, style]}
+      style={[
+        {
+          borderRadius: Radius.full,
+          alignSelf: 'flex-start',
+          borderWidth: 1,
+          backgroundColor: `${resolvedColor}22`,
+          borderColor: `${resolvedColor}66`,
+          ...padding,
+        },
+        style,
+      ]}
     >
-      <Text className={`font-bold ${textClass}`} style={{ color: resolvedColor }}>
+      <Text style={{
+        fontWeight: FontWeight.bold,
+        fontSize,
+        color: resolvedColor,
+      }}>
         {label.replace(/_/g, ' ')}
       </Text>
     </View>

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { TextInput, InteractionManager, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 interface Options {
   /**
@@ -51,9 +51,9 @@ export function useFocusInput(options: Options = {}) {
     enabled = true,
   } = options;
 
-  const ref       = useRef<TextInput | null>(null);
-  const mounted   = useRef(true);   // guards against focus after unmount
-  const attempted = useRef(false);  // focus only once per mount
+  const ref       = useRef<any>(null);  // Generic ref for any focusable component
+  const mounted   = useRef(true);       // guards against focus after unmount
+  const attempted = useRef(false);      // focus only once per mount
 
   // Compute delay: modal needs extra time for slide animation
   const resolvedDelay = delay ?? (
@@ -67,7 +67,7 @@ export function useFocusInput(options: Options = {}) {
     attempted.current = true;
 
     const timer = setTimeout(() => {
-      if (mounted.current && ref.current) {
+      if (mounted.current && ref.current && typeof ref.current.focus === 'function') {
         ref.current.focus();
       }
     }, resolvedDelay);
@@ -79,19 +79,14 @@ export function useFocusInput(options: Options = {}) {
     mounted.current   = true;
     attempted.current = false;
 
-    // InteractionManager.runAfterInteractions waits for:
-    //   - Navigation transitions to complete
-    //   - Modal animations to finish
-    //   - Any pending JS interactions to settle
-    // This is the correct hook — NOT setTimeout alone
-    const interaction = InteractionManager.runAfterInteractions(() => {
-      const timer = focus();
-      return () => { if (timer) clearTimeout(timer); };
-    });
+    // Use setTimeout as fallback when InteractionManager is not available
+    const timer = setTimeout(() => {
+      focus();
+    }, 50); // Small delay to ensure component is mounted
 
     return () => {
       mounted.current = false;
-      interaction.cancel();
+      clearTimeout(timer);
     };
   }, [focus]);
 

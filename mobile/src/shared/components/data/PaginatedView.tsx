@@ -21,7 +21,6 @@ interface Props {
   pagination: PaginationState;
   loading: boolean;
   onRefresh: () => void;
-  isDark: boolean;
 }
 
 const SENTINEL = [{ key: 'content' }];
@@ -34,7 +33,7 @@ const SENTINEL = [{ key: 'content' }];
  * footer all scroll together as one unit.
  */
 const PaginatedView: React.FC<Props> = ({
-  renderContent, ListHeader, pagination, loading, onRefresh, isDark,
+  renderContent, ListHeader, pagination, loading, onRefresh,
 }) => (
   <View style={{ flex: 1 }}>
     <FlatList
@@ -52,7 +51,6 @@ const PaginatedView: React.FC<Props> = ({
           hasPrev={pagination.hasPrev}
           onNext={pagination.next}
           onPrev={pagination.prev}
-          isDark={isDark}
         />
       }
       refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}

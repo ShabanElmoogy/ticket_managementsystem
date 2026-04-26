@@ -1,7 +1,8 @@
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
-import AppButton from '../forms/AppButton';
-import { useThemeColors, Radius, FontSize, FontWeight, Palette } from '../../../constants/theme';
+import AppButton from '@/src/shared/components/forms/AppButton';
+import { useThemeColors, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 
 export interface AppDeleteDialogProps {
   open:             boolean;

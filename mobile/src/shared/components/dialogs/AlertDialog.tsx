@@ -3,8 +3,9 @@ import {
   Modal, View, Text, Pressable, StyleSheet,
   Clipboard,
 } from 'react-native';
-import { useThemeColors, useIsDark, Palette, Radius, FontSize, FontWeight } from '../../../constants/theme';
-import { useDirection } from '../../../providers/DirectionProvider';
+import { useThemeColors, useIsDark, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
+import { useDirection } from '@/src/providers/DirectionProvider';
 
 export interface AlertDialogAction {
   label:    string;
@@ -28,8 +29,6 @@ export interface AlertDialogProps {
   actions?:     AlertDialogAction[];
   /** Replaces the entire actions row with custom content */
   actionsOverride?: React.ReactNode;
-  /** @deprecated — component reads theme internally via useThemeColors() */
-  isDark?:      boolean;
 }
 
 const AlertDialog: React.FC<AlertDialogProps> = ({

@@ -87,31 +87,31 @@ export function useAdminFeature<T extends object, CreateT>(
   });
 
   const openDialog = useCallback((item?: T) => {
-    setUI((prev) => ({ ...prev, dialogOpen: true, editingItem: item ?? null }));
+    setUI((prev: UIState<T>) => ({ ...prev, dialogOpen: true, editingItem: item ?? null }));
   }, []);
 
   const closeDialog = useCallback(() => {
-    setUI((prev) => ({ ...prev, dialogOpen: false, editingItem: null }));
+    setUI((prev: UIState<T>) => ({ ...prev, dialogOpen: false, editingItem: null }));
   }, []);
 
   const openDeleteDialog = useCallback((item: T) => {
-    setUI((prev) => ({ ...prev, deleteDialog: { open: true, item } }));
+    setUI((prev: UIState<T>) => ({ ...prev, deleteDialog: { open: true, item } }));
   }, []);
 
   const closeDeleteDialog = useCallback(() => {
-    setUI((prev) => ({ ...prev, deleteDialog: { open: false, item: null } }));
+    setUI((prev: UIState<T>) => ({ ...prev, deleteDialog: { open: false, item: null } }));
   }, []);
 
   const setSubmitting = useCallback((submitting: boolean) => {
-    setUI((prev) => ({ ...prev, submitting }));
+    setUI((prev: UIState<T>) => ({ ...prev, submitting }));
   }, []);
 
   const showSnackbar = useCallback((message: string, severity: 'success' | 'error') => {
-    setUI((prev) => ({ ...prev, snackbar: { open: true, message, severity } }));
+    setUI((prev: UIState<T>) => ({ ...prev, snackbar: { open: true, message, severity } }));
   }, []);
 
   const closeSnackbar = useCallback(() => {
-    setUI((prev) => ({ ...prev, snackbar: { ...prev.snackbar, open: false } }));
+    setUI((prev: UIState<T>) => ({ ...prev, snackbar: { ...prev.snackbar, open: false } }));
   }, []);
 
   const handleError = useCallback(

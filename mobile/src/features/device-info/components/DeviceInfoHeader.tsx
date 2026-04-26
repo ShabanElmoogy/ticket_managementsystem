@@ -1,22 +1,25 @@
 import React from 'react';
 import { View, Text, Platform, I18nManager } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../../../components/LanguageSwitcher';
+import { useThemeColors } from '@/src/constants/theme';
+import LanguageSwitcher from '@/src/components/LanguageSwitcher';
 
 interface Props {
-  isDark: boolean;
   osVersion: string | number;
 }
 
-const DeviceInfoHeader: React.FC<Props> = ({ isDark, osVersion }) => {
+const DeviceInfoHeader: React.FC<Props> = ({ osVersion }) => {
   const { t } = useTranslation();
+  const c = useThemeColors();
   const isRTL = I18nManager.isRTL;
 
   return (
     <View style={{
-      paddingHorizontal: 16, paddingVertical: 14,
-      borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
-      backgroundColor: isDark ? '#1e293b' : '#fff',
+      paddingHorizontal: 16, 
+      paddingVertical: 14,
+      borderBottomWidth: 1, 
+      borderBottomColor: c.border.primary,
+      backgroundColor: c.surface.primary,
     }}>
       {/* Top row — title + language switcher */}
       <View style={{
@@ -31,17 +34,21 @@ const DeviceInfoHeader: React.FC<Props> = ({ isDark, osVersion }) => {
           gap: 10,
         }}>
           <Text style={{ fontSize: 22 }}>📱</Text>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: isDark ? '#f1f5f9' : '#0f172a' }}>
+          <Text style={{ 
+            fontSize: 17, 
+            fontWeight: '800', 
+            color: c.text.primary 
+          }}>
             {t('deviceInfo.title')}
           </Text>
         </View>
-        <LanguageSwitcher isDark={isDark} />
+        <LanguageSwitcher />
       </View>
 
       {/* Bottom row — OS version */}
       <Text style={{
         fontSize: 12,
-        color: isDark ? '#64748b' : '#94a3b8',
+        color: c.text.muted,
         textAlign: isRTL ? 'right' : 'left',
         marginStart: 32,
       }}>

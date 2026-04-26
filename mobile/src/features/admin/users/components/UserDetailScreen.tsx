@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '@/src/shared/utils/dateUtils';
-import { useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
 import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
 import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
@@ -29,7 +29,7 @@ const UserDetailScreen: React.FC<Props> = ({
   isSuperAdmin = false, initialData,
 }) => {
   const { t }       = useTranslation();
-  const isDark      = useIsDark();
+  const c           = useThemeColors();
   const queryClient = useQueryClient();
 
   // Seed the cache with list data so the detail screen shows instantly
@@ -48,12 +48,7 @@ const UserDetailScreen: React.FC<Props> = ({
     enabled:  queryEnabled,
   });
 
-  const border     = isDark ? '#334155' : '#e2e8f0';
-  const cardBg     = isDark ? '#1e293b' : '#ffffff';
-  const textPri    = isDark ? '#f1f5f9' : '#0f172a';
-  const textSec    = isDark ? '#94a3b8' : '#64748b';
-
-  const roleCfg = user ? (ROLE_CONFIG[user.role] ?? { color: '#6b7280', bg: '#f9fafb', label: user.role }) : null;
+  const roleCfg = user ? (ROLE_CONFIG[user.role] ?? { color: Palette.gray500, bg: '#f9fafb', label: user.role }) : null;
 
   // Initials avatar
   const initials = user?.name
@@ -73,7 +68,7 @@ const UserDetailScreen: React.FC<Props> = ({
       {user && roleCfg && (
         <>
           {/* ── Hero card ── */}
-          <View style={[styles.heroCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={[styles.heroCard, { backgroundColor: c.surface.primary, borderColor: c.border.primary }]}>
             {/* Role-colored accent bar */}
             <View style={[styles.accentBar, { backgroundColor: roleCfg.color }]} />
 
@@ -86,10 +81,10 @@ const UserDetailScreen: React.FC<Props> = ({
 
                 {/* Name + email */}
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[styles.heroName, { color: textPri }]} numberOfLines={2}>
+                  <Text style={[styles.heroName, { color: c.text.primary }]} numberOfLines={2}>
                     {user.name}
                   </Text>
-                  <Text style={[styles.heroEmail, { color: textSec }]} numberOfLines={1}>
+                  <Text style={[styles.heroEmail, { color: c.text.secondary }]} numberOfLines={1}>
                     ✉️  {user.email}
                   </Text>
                 </View>
@@ -100,11 +95,11 @@ const UserDetailScreen: React.FC<Props> = ({
 
               {/* Quick info row */}
               {(user.phone || user.tenantName) && (
-                <View style={[styles.infoRow, { borderTopColor: border }]}>
+                <View style={[styles.infoRow, { borderTopColor: c.border.primary }]}>
                   {user.phone && (
                     <View style={styles.infoItem}>
                       <Text style={styles.infoIcon}>📞</Text>
-                      <Text style={[styles.infoText, { color: textSec }]} numberOfLines={1}>
+                      <Text style={[styles.infoText, { color: c.text.secondary }]} numberOfLines={1}>
                         {user.phone}
                       </Text>
                     </View>
@@ -112,7 +107,7 @@ const UserDetailScreen: React.FC<Props> = ({
                   {user.tenantName && (
                     <View style={styles.infoItem}>
                       <Text style={styles.infoIcon}>🏢</Text>
-                      <Text style={[styles.infoText, { color: textSec }]} numberOfLines={1}>
+                      <Text style={[styles.infoText, { color: c.text.secondary }]} numberOfLines={1}>
                         {user.tenantName}
                       </Text>
                     </View>
@@ -125,9 +120,9 @@ const UserDetailScreen: React.FC<Props> = ({
           {/* ── Stats row ── */}
           <DetailStatRow
             stats={[
-              { value: user._count?.assignedTickets ?? 0, label: t('users.detail.assignedTickets'), color: '#1d4ed8', bgColor: '#eff6ff' },
-              { value: user._count?.createdTickets  ?? 0, label: t('users.detail.createdTickets'),  color: '#065f46', bgColor: '#f0fdf4' },
-              { value: user._count?.comments        ?? 0, label: t('users.detail.comments'),        color: '#7c3aed', bgColor: '#f5f3ff' },
+              { value: user._count?.assignedTickets ?? 0, label: t('users.detail.assignedTickets'), color: Palette.blue700, bgColor: '#eff6ff' },
+              { value: user._count?.createdTickets  ?? 0, label: t('users.detail.createdTickets'),  color: Palette.green600, bgColor: '#f0fdf4' },
+              { value: user._count?.comments        ?? 0, label: t('users.detail.comments'),        color: Palette.violet600, bgColor: '#f5f3ff' },
             ]}
           />
 
@@ -156,7 +151,7 @@ const UserDetailScreen: React.FC<Props> = ({
                   icon: '🔔',
                   label: t('users.detail.reminders'),
                   value: user.reminderEnabled ? t('common.active') : t('common.inactive'),
-                  valueColor: user.reminderEnabled ? '#16a34a' : '#6b7280',
+                  valueColor: user.reminderEnabled ? c.intent.success : c.text.muted,
                 },
                 user.reminderEnabled && user.reminderInterval
                   ? { icon: '⏱️', label: t('users.detail.reminderInterval'), value: `${user.reminderInterval} min` }
@@ -165,7 +160,7 @@ const UserDetailScreen: React.FC<Props> = ({
                   icon: '💬',
                   label: t('users.detail.whatsapp'),
                   value: user.whatsappNotifications ? t('common.active') : t('common.inactive'),
-                  valueColor: user.whatsappNotifications ? '#16a34a' : '#6b7280',
+                  valueColor: user.whatsappNotifications ? c.intent.success : c.text.muted,
                 },
               ].filter(Boolean) as any}
             />
@@ -181,7 +176,7 @@ const UserDetailScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 14, borderWidth: 1, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowColor: Palette.black, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
   accentBar: { height: 4 },

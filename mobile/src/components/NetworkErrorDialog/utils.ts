@@ -1,5 +1,5 @@
 import { Linking } from 'react-native';
-import { Palette } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 import { HTTP_STATUS } from '@/src/constants/api';
 import type { ErrorState } from './types';
 

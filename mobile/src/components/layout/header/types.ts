@@ -1,5 +1,5 @@
-import type { UserRole } from './roles';
-import type { NotificationType } from '../services/api/types/notification';
+import type { UserRole } from '../../../constants/roles';
+import type { NotificationType } from '../../../services/api/types/notification';
 
 export interface Notification {
   id: string;

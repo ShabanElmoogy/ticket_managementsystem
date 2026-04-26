@@ -39,7 +39,7 @@ export const useFormScroll = (): FormScrollContextValue =>
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 interface Props {
-  scrollRef: React.RefObject<ScrollView | null>;
+  scrollRef: React.RefObject<any>;
   mode:      FormMode;
   children:  React.ReactNode;
 }

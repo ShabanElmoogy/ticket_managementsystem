@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 interface Props {
   page:       number;
@@ -11,7 +11,6 @@ interface Props {
   hasPrev:    boolean;
   onNext:     () => void;
   onPrev:     () => void;
-  isDark?:    boolean;
 }
 
 /**

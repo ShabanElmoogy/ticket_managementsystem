@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useThemeColors, FontSize, FontWeight } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 
 interface Props {
   title:     string;
   subtitle?: string;
-  isDark?:   boolean;
   left?:     React.ReactNode;
   right?:    React.ReactNode;
   onPress?:  () => void;

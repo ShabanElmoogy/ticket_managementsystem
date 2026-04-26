@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Pressable, Text, View, Animated, Easing } from 'react-native';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 interface Props {
   onPress:       () => void;
   loading?:      boolean;
-  isDark?:       boolean;
   label?:        string;
   loadingLabel?: string;
 }

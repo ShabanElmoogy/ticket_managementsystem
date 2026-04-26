@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, Dimensions, PixelRatio } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Palette } from '@/src/constants/tokens';
 import Constants from 'expo-constants';
 import * as Battery from 'expo-battery';
 import * as Device from 'expo-device';
@@ -259,7 +260,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('device'),
       emoji: '📱',
-      color: '#6366f1',
+      color: Palette.indigo500,
       rows: [
         { label: l('deviceName'),    value: Device.deviceName ?? (Constants as any).deviceName ?? '—' },
         { label: l('type'),          value: deviceTypeLabel(Device.deviceType) },
@@ -277,7 +278,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('os'),
       emoji: '🖥️',
-      color: '#0ea5e9',
+      color: Palette.blue500,
       rows: [
         { label: l('osName'),        value: Device.osName ?? (isIos ? 'iOS' : 'Android') },
         { label: l('osVersion'),     value: Device.osVersion ?? String(osVersion) },
@@ -295,7 +296,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: `${batteryEmoji} ${s('battery')}`,
       emoji: batteryEmoji,
-      color: '#22c55e',
+      color: Palette.green500,
       rows: [
         { label: l('level'),         value: batteryPercent },
         { label: l('state'),         value: batteryStateLabel(batteryState) },
@@ -305,7 +306,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('network'),
       emoji: '🌐',
-      color: '#06b6d4',
+      color: Palette.cyan500,
       rows: [
         { label: l('networkType'),   value: networkTypeLabel(networkState?.type ?? null) },
         { label: l('connected'),     value: networkState?.isConnected ?? null },
@@ -319,7 +320,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('storage'),
       emoji: '💾',
-      color: '#f97316',
+      color: Palette.amber500,
       rows: [
         { label: l('total'),         value: formatBytes(totalDisk) },
         { label: l('free'),          value: formatBytes(freeDisk) },
@@ -329,7 +330,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('app'),
       emoji: '📦',
-      color: '#8b5cf6',
+      color: Palette.violet500,
       rows: [
         { label: l('appName'),       value: manifest.name },
         { label: l('version'),       value: manifest.version },
@@ -344,7 +345,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('updates'),
       emoji: '🔄',
-      color: '#14b8a6',
+      color: Palette.cyan600,
       rows: [
         { label: l('updateId'),        value: Updates.updateId ?? '—' },
         { label: l('channel'),         value: Updates.channel ?? '—' },
@@ -356,7 +357,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('display'),
       emoji: '🖼️',
-      color: '#ec4899',
+      color: Palette.red500,
       rows: [
         { label: l('windowWidth'),    value: `${Math.round(windowDims.width)} dp` },
         { label: l('windowHeight'),   value: `${Math.round(windowDims.height)} dp` },
@@ -371,7 +372,7 @@ export function useDeviceInfoSections(): InfoSection[] {
     {
       title: s('runtime'),
       emoji: '⚙️',
-      color: '#f59e0b',
+      color: Palette.amber600,
       rows: [
         { label: l('jsEngine'),       value: (global as any).HermesInternal ? 'Hermes' : 'JSC' },
         { label: l('architecture'),   value: (global as any).__turboModuleProxy ? 'New (Fabric)' : 'Old (Paper)' },

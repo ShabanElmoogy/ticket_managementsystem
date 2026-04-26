@@ -14,6 +14,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import DateFormatPanel        from '@/src/features/admin/settings/DateFormatPanel';
 import SchedulerSettingsPanel from '@/src/features/admin/settings/SchedulerSettingsPanel';
 import SlaSettingsPanel       from '@/src/features/admin/settings/SlaSettingsPanel';
@@ -137,47 +138,49 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
-      {/* Main tab bar */}
-      <View style={{
-        borderBottomWidth: 1,
-        borderBottomColor: c.border.primary,
-        backgroundColor: c.surface.primary,
-      }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 6 }}>
-          {tabs.map((tab) => {
-            const isActive = active === tab.id;
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => setActive(tab.id)}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 6,
-                  paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-                  backgroundColor: isActive ? '#3b82f6' : c.surface.tertiary,
-                  borderWidth: 1,
-                  borderColor: isActive ? '#3b82f6' : c.border.primary,
-                }}
-              >
-                <Text style={{ fontSize: 14 }}>{tab.icon}</Text>
-                <Text style={{
-                  fontSize: 12, fontWeight: '600',
-                  color: isActive ? '#fff' : c.text.secondary,
-                }}>
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+    <FeatureErrorBoundary featureName="Settings">
+      <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
+        {/* Main tab bar */}
+        <View style={{
+          borderBottomWidth: 1,
+          borderBottomColor: c.border.primary,
+          backgroundColor: c.surface.primary,
+        }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 6 }}>
+            {tabs.map((tab) => {
+              const isActive = active === tab.id;
+              return (
+                <Pressable
+                  key={tab.id}
+                  onPress={() => setActive(tab.id)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 6,
+                    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                    backgroundColor: isActive ? '#3b82f6' : c.surface.tertiary,
+                    borderWidth: 1,
+                    borderColor: isActive ? '#3b82f6' : c.border.primary,
+                  }}
+                >
+                  <Text style={{ fontSize: 14 }}>{tab.icon}</Text>
+                  <Text style={{
+                    fontSize: 12, fontWeight: '600',
+                    color: isActive ? '#fff' : c.text.secondary,
+                  }}>
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-      {/* Content — flex:1 so sub-tabs + scrollview fill remaining space */}
-      <View style={{ flex: 1 }}>
-        {renderContent()}
+        {/* Content — flex:1 so sub-tabs + scrollview fill remaining space */}
+        <View style={{ flex: 1 }}>
+          {renderContent()}
+        </View>
       </View>
-    </View>
+    </FeatureErrorBoundary>
   );
 };
 

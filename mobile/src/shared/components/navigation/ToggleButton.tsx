@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
-import { Radius, FontSize, FontWeight } from '../../../constants/theme';
+import { Radius, FontSize, FontWeight } from '@/src/constants/theme';
 
 export interface ToggleButtonProps {
   icon?:            string;

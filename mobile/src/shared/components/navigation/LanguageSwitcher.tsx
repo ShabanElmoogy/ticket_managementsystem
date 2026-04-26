@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { changeLanguage, getCurrentLanguage } from '../../../i18n';
+import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
 import SegmentedControl from '../forms/SegmentedControl';
 
 const LANGUAGE_OPTIONS = [
@@ -8,6 +8,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 interface Props {
+  /** @deprecated — SegmentedControl reads theme internally via useThemeColors() */
   isDark?: boolean;
 }
 
@@ -15,7 +16,7 @@ interface Props {
  * LanguageSwitcher — EN / عربي segmented control.
  * Thin wrapper around SegmentedControl that wires i18n logic.
  */
-const LanguageSwitcher: React.FC<Props> = ({ isDark = false }) => {
+const LanguageSwitcher: React.FC<Props> = () => {
   const [switching, setSwitching] = useState(false);
   const current = getCurrentLanguage();
 
@@ -35,7 +36,6 @@ const LanguageSwitcher: React.FC<Props> = ({ isDark = false }) => {
       value={current}
       onChange={handleChange}
       loading={switching}
-      isDark={isDark}
     />
   );
 };

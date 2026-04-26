@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import ApplicationsScreen from '@/src/features/admin/applications/ApplicationsScreen';
 import CustomersScreen from '@/src/features/admin/customers/CustomersScreen';
 import AdminDashboardScreen from '@/src/features/admin/dashboard/AdminDashboardScreen';
@@ -10,8 +11,8 @@ import TemplatesScreen from '@/src/features/admin/templates/TemplatesScreen';
 import TenantsScreen from '@/src/features/admin/tenants/TenantsScreen';
 import TicketsScreen from '@/src/features/admin/tickets/TicketsScreen';
 import UsersScreen from '@/src/features/admin/users/UsersScreen';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useAuthStore } from '@/src/stores/authStore';
-import { useUiStore } from '@/src/stores/uiStore';
 
 // ── Menu config ───────────────────────────────────────────────────────────────
 
@@ -32,11 +33,10 @@ const MENU_ITEMS: MenuItem[] = [
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 
-const AdminPanel: React.FC = () => {
-  const { user }      = useAuthStore();
-  const { colorMode } = useUiStore();
-  const isDark        = colorMode === 'dark';
-  const [selected, setSelected] = useState('dashboard');
+function AdminPanel() {
+  const { user } = useAuthStore();
+  const c = useThemeColors();
+  const [selected, setSelected] = React.useState('dashboard');
 
   const visibleItems = MENU_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(user?.role ?? '')
@@ -58,28 +58,48 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const containerStyle = { flex: 1, backgroundColor: c.surface.secondary };
+  const tabBarStyle = { 
+    borderBottomWidth: 1, 
+    borderBottomColor: c.border.primary,
+    backgroundColor: c.surface.primary 
+  };
+
   return (
-    <View className={`flex-1 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+    <View style={containerStyle}>
       {/* Horizontal scrollable tab bar */}
-      <View className={`border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+      <View style={tabBarStyle}>
         <ScrollView
-          horizontal showsHorizontalScrollIndicator={false}
+          horizontal 
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 8, gap: 4 }}
         >
           {visibleItems.map((item) => {
             const isActive = selected === item.id;
+            const tabButtonStyle = {
+              flexDirection: 'row' as const,
+              alignItems: 'center' as const,
+              gap: 6,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 8,
+              backgroundColor: isActive ? c.interactive.primary : c.surface.elevated,
+            };
+            const iconStyle = { fontSize: 14 };
+            const labelStyle = {
+              fontSize: 12,
+              fontWeight: '600' as const,
+              color: isActive ? c.text.inverse : c.text.secondary,
+            };
+            
             return (
               <Pressable
                 key={item.id}
                 onPress={() => setSelected(item.id)}
-                className={`flex-row items-center gap-1.5 px-3 py-2 rounded-lg ${
-                  isActive ? 'bg-blue-600' : isDark ? 'bg-slate-700' : 'bg-gray-100'
-                }`}
+                style={tabButtonStyle}
               >
-                <Text style={{ fontSize: 14 }}>{item.icon}</Text>
-                <Text className={`text-xs font-semibold ${
-                  isActive ? 'text-white' : isDark ? 'text-gray-300' : 'text-gray-600'
-                }`}>
+                <Text style={iconStyle}>{item.icon}</Text>
+                <Text style={labelStyle}>
                   {item.label}
                 </Text>
               </Pressable>
@@ -89,9 +109,9 @@ const AdminPanel: React.FC = () => {
       </View>
 
       {/* Active screen */}
-      <View className="flex-1">{renderContent()}</View>
+      <View style={{ flex: 1 }}>{renderContent()}</View>
     </View>
   );
-};
+}
 
 export default AdminPanel;

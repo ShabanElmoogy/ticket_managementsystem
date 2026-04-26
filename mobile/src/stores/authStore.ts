@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { UserRole } from '../types/roles';
+import type { UserRole } from '../constants/roles';
 import { tokenManager } from '../services/api/tokenManager';
 import { authEvents } from '../services/api/authEvents';
 import { circuitBreaker } from '../services/api/circuitBreaker';

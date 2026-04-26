@@ -13,6 +13,7 @@ import UndoRedoButtons from '@/src/features/admin/docs/components/UndoRedoButton
 import { useBlockTemplates } from '@/src/features/admin/docs/hooks/useBlockTemplates';
 import { useDocsStore, useCurrentDoc } from '@/src/features/admin/docs/hooks/useDocsStore';
 import { exportDocToPdf } from '@/src/features/admin/docs/utils/exportDocPdf';
+import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useDirection } from '@/src/providers/DirectionProvider';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
@@ -160,7 +161,8 @@ const DocsScreen: React.FC = () => {
   const borderColor = c.border.primary;
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <FeatureErrorBoundary featureName="Docs">
+      <View style={{ flex: 1, backgroundColor: bg }}>
 
       {/* ── Header ── */}
       <View style={{
@@ -378,6 +380,7 @@ const DocsScreen: React.FC = () => {
         }}
       />
     </View>
+    </FeatureErrorBoundary>
   );
 };
 

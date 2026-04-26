@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 
 export interface BottomNavItemProps {
   /** Icon to show when inactive */
@@ -10,9 +11,9 @@ export interface BottomNavItemProps {
   label: string;
   /** Whether this item is currently active */
   isActive: boolean;
-  /** Dark mode flag */
+  /** @deprecated — component reads theme internally via useThemeColors() */
   isDark?: boolean;
-  /** Active accent color (default: #2563eb — blue-600) */
+  /** Active accent color (default: interactive.primary from theme) */
   activeColor?: string;
   /** On press handler */
   onPress?: () => void;
@@ -27,35 +28,59 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({
   activeIcon,
   label,
   isActive,
-  isDark = false,
-  activeColor = '#2563eb',
+  activeColor,
   onPress,
-}) => (
-  <Pressable
-    className="flex-1 items-center justify-center gap-0.5"
-    onPress={onPress}
-  >
-    {/* Active indicator bar */}
-    {isActive && (
-      <View
-        className="absolute top-0 w-6 h-0.5 rounded-full"
-        style={{ backgroundColor: activeColor, marginLeft: -12, left: '50%' }}
-      />
-    )}
+}) => {
+  const c = useThemeColors();
+  const finalActiveColor = activeColor || c.interactive.primary;
 
-    <Text className={`text-2xl ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-      {isActive ? (activeIcon ?? icon) : icon}
-    </Text>
-
-    <Text
-      className={`text-xs font-medium ${
-        isDark ? 'text-gray-500' : 'text-gray-400'
-      }`}
-      style={isActive ? { color: activeColor } : undefined}
+  return (
+    <Pressable
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+        paddingVertical: 8,
+      }}
+      onPress={onPress}
     >
-      {label}
-    </Text>
-  </Pressable>
-);
+      {/* Active indicator bar */}
+      {isActive && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            width: 24,
+            height: 2,
+            borderRadius: 999,
+            backgroundColor: finalActiveColor,
+            left: '50%',
+            marginLeft: -12,
+          }}
+        />
+      )}
+
+      <Text
+        style={{
+          fontSize: 24,
+          opacity: isActive ? 1 : 0.4,
+        }}
+      >
+        {isActive ? (activeIcon ?? icon) : icon}
+      </Text>
+
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: '500',
+          color: isActive ? finalActiveColor : c.text.secondary,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+};
 
 export default BottomNavItem;

@@ -6,7 +6,6 @@ interface Props {
   onPress:       () => void;
   loading?:      boolean;
   disabled?:     boolean;
-  isDark?:       boolean;
   label?:        string;
   loadingLabel?: string;
 }

@@ -39,7 +39,7 @@ import {
   View, Text, Pressable, FlatList,
   type StyleProp, type ViewStyle,
 } from 'react-native';
-import { Colors, StatusColors, PriorityColors } from '../../../constants/tokens';
+import { Colors, StatusColors, PriorityColors } from '@/src/constants/tokens';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Color maps — re-exported from tokens for backward compat

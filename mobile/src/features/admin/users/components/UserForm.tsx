@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField      from '@/src/features/admin/shared/FormField';
@@ -26,7 +26,7 @@ const UserForm: React.FC<Props> = ({
 }) => {
   const { t }                  = useTranslation();
   const { scrollToFirstError } = useFormScroll();
-  const isDark                 = useIsDark();
+  const c                      = useThemeColors();
 
   const {
     fields, errors, isDirty, firstErrorFieldId,
@@ -132,7 +132,6 @@ const UserForm: React.FC<Props> = ({
         <RoleSelector
           value={fields.role}
           onChange={(v) => handleChange('role', v)}
-          isDark={isDark}
           t={t}
         />
       </FormField>
@@ -140,17 +139,17 @@ const UserForm: React.FC<Props> = ({
       {/* ── Linked stats (edit mode only) ── */}
       {item && (
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1d4ed8' }}>{assignedTickets}</Text>
-            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('users.detail.assignedTickets')}</Text>
+          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.infoSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.info }}>{assignedTickets}</Text>
+            <Text style={{ fontSize: 11, color: c.intent.info, marginTop: 2 }}>{t('users.detail.assignedTickets')}</Text>
           </View>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#065f46' }}>{createdTickets}</Text>
-            <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>{t('users.detail.createdTickets')}</Text>
+          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.successSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.success }}>{createdTickets}</Text>
+            <Text style={{ fontSize: 11, color: c.intent.success, marginTop: 2 }}>{t('users.detail.createdTickets')}</Text>
           </View>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#f5f3ff', borderWidth: 1, borderColor: '#ddd6fe', alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#7c3aed' }}>{comments}</Text>
-            <Text style={{ fontSize: 11, color: '#8b5cf6', marginTop: 2 }}>{t('users.detail.comments')}</Text>
+          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.warningSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.warning }}>{comments}</Text>
+            <Text style={{ fontSize: 11, color: c.intent.warning, marginTop: 2 }}>{t('users.detail.comments')}</Text>
           </View>
         </View>
       )}
@@ -193,14 +192,11 @@ const UserForm: React.FC<Props> = ({
 interface SelectorProps {
   value:    UserRoleOption;
   onChange: (v: UserRoleOption) => void;
-  isDark:   boolean;
   t:        (key: string) => string;
 }
 
-const RoleSelector: React.FC<SelectorProps> = ({ value, onChange, isDark, t }) => {
-  const labelColor = isDark ? '#94a3b8' : '#374151';
-  const border     = isDark ? '#334155' : '#d1d5db';
-  const bg         = isDark ? '#1e293b' : '#ffffff';
+const RoleSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
+  const c = useThemeColors();
 
   const ROLE_LABELS: Record<UserRoleOption, string> = {
     SUPER_ADMIN:  t('users.roles.superAdmin'),
@@ -211,7 +207,7 @@ const RoleSelector: React.FC<SelectorProps> = ({ value, onChange, isDark, t }) =
 
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 8, color: labelColor }}>
+      <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 8, color: c.text.secondary }}>
         {t('users.columns.role')}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -225,11 +221,11 @@ const RoleSelector: React.FC<SelectorProps> = ({ value, onChange, isDark, t }) =
               style={{
                 paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
                 borderWidth: 1.5,
-                borderColor: isActive ? cfg.color : border,
-                backgroundColor: isActive ? (isDark ? cfg.bg + '33' : cfg.bg) : bg,
+                borderColor: isActive ? cfg.color : c.border.primary,
+                backgroundColor: isActive ? cfg.bg : c.surface.primary,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: isActive ? cfg.color : (isDark ? '#94a3b8' : '#6b7280') }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: isActive ? cfg.color : c.text.secondary }}>
                 {ROLE_LABELS[role]}
               </Text>
             </Pressable>

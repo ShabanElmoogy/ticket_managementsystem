@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
-import { useThemeColors, FontSize, FontWeight } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 
 export interface ActionRowProps {
   badgeContent:  React.ReactNode;
@@ -14,7 +14,6 @@ export interface ActionRowProps {
   disabled?:     boolean;
   loading?:      boolean;
   busyOpacity?:  number;
-  isDark?:       boolean;
 }
 
 const ActionRow: React.FC<ActionRowProps> = ({
@@ -29,7 +28,7 @@ const ActionRow: React.FC<ActionRowProps> = ({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      style={({ pressed }) => ({
+      style={({ pressed }: { pressed: boolean }) => ({
         flexDirection: 'row', alignItems: 'center', gap: 12,
         paddingHorizontal: 14, paddingVertical: 13,
         backgroundColor: pressed ? defaultPressedBg : 'transparent',

@@ -3,8 +3,8 @@ import {
   View, Text, TextInput, Pressable,
   type TextInputProps, type StyleProp, type ViewStyle,
 } from 'react-native';
-import { useDirection } from '../../../providers/DirectionProvider';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useDirection } from '@/src/providers/DirectionProvider';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export type AppTextInputFieldType = 'text' | 'search' | 'password' | 'number' | 'email';
 

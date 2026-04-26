@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
-import { FontSize } from '../../../constants/theme';
+import { FontSize } from '@/src/constants/theme';
 
 export interface IconButtonProps {
   icon:              string;

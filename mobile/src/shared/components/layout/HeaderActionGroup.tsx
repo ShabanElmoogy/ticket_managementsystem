@@ -6,6 +6,7 @@ import RefreshButton   from '../actions/RefreshButton';
 import VerticalDivider from './VerticalDivider';
 
 export interface HeaderActionGroupProps {
+  /** @deprecated — child components read theme internally via useThemeColors() */
   isDark?: boolean;
   loading?: boolean;
 
@@ -36,7 +37,7 @@ export interface HeaderActionGroupProps {
  * The vertical divider appears automatically between the action buttons and Add.
  */
 const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
-  isDark = false, loading = false,
+  loading = false,
   onAdd, addLabel,
   onExport, exporting = false, exportDisabled = false, exportLabel, exportingLabel,
   onRefresh, refreshLabel, refreshingLabel,
@@ -52,7 +53,6 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
         <RefreshButton
           onPress={onRefresh}
           loading={loading}
-          isDark={isDark}
           label={refreshLabel}
           loadingLabel={refreshingLabel}
         />
@@ -63,14 +63,13 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
           onPress={onExport}
           loading={exporting}
           disabled={exportDisabled}
-          isDark={isDark}
           label={exportLabel}
           loadingLabel={exportingLabel}
         />
       )}
 
       {onAdd && hasActions && (
-        <VerticalDivider isDark={isDark} height={36} marginHorizontal={2} />
+        <VerticalDivider height={36} marginHorizontal={2} />
       )}
 
       {onAdd && (
@@ -78,7 +77,6 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
           onPress={onAdd}
           label={addLabel}
           loading={loading}
-          isDark={isDark}
         />
       )}
     </View>

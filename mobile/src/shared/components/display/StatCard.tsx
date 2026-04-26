@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import StatBadge from './StatBadge';
-import { useThemeColors, FontSize, FontWeight, Radius } from '../../../constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface StatItem {
   label: string;
@@ -14,7 +14,6 @@ interface Props {
   subtitle?: string;
   stats?:    StatItem[];
   footer?:   React.ReactNode;
-  isDark?:   boolean;
 }
 
 const StatCard: React.FC<Props> = ({ title, subtitle, stats, footer }) => {
