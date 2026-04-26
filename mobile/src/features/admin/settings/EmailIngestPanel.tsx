@@ -68,7 +68,7 @@ const EmailIngestPanel: React.FC = () => {
       description="Automatically create tickets from incoming emails via IMAP. Configure credentials in the server .env file."
       loading={loading}
     >
-      {alert && <AlertBanner {...alert} isDark={false} />}
+      {alert && <AlertBanner {...alert} />}
 
       {/* Status row */}
       <View style={{

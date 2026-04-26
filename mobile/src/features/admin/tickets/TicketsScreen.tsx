@@ -5,12 +5,12 @@ import { ticketsApi, ticketsKeys } from '@/src/features/admin/tickets/api/ticket
 import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '@/src/shared/components';
 import { useAuxData } from '@/src/shared/hooks/useAuxData';
 import type { Ticket } from '@/src/services/api/types';
-import { useUiStore } from '@/src/stores/uiStore';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 
 const TicketsScreen: React.FC = () => {
-  const { t }      = useTranslation();
-  const { colorMode } = useUiStore();
-  const isDark     = colorMode === 'dark';
+  const { t }  = useTranslation();
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   const columns: ColDef<Ticket>[] = [
     { field: 'title',    headerName: t('tickets.title'),    flex: 1,    sortable: true },
@@ -33,7 +33,7 @@ const TicketsScreen: React.FC = () => {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
+    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
         title={t('tickets.title')}
         badge={tickets.length}
@@ -44,7 +44,7 @@ const TicketsScreen: React.FC = () => {
       />
       {isLoading && tickets.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={c.interactive.primary} />
         </View>
       ) : (
         <View style={{ flex: 1, margin: 12 }}>

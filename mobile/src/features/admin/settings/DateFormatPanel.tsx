@@ -6,7 +6,6 @@ import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/compone
 import { AppButton } from '@/src/shared/components';
 import { useThemeColors } from '@/src/constants/theme';
 import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '@/src/stores/tenantStore';
-import { useUiStore } from '@/src/stores/uiStore';
 
 type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
 
@@ -67,7 +66,7 @@ const DateFormatPanel: React.FC = () => {
       description="Choose how dates are displayed across the entire application for all users in your organisation."
       loading={loading}
     >
-      {alert && <AlertBanner {...alert} isDark={false} />}
+      {alert && <AlertBanner {...alert} />}
 
       {/* Format options */}
       <View style={{ gap: 8, marginBottom: 16 }}>

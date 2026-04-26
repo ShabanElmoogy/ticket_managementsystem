@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useThemeColors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface AdminOverviewCardProps {
   title:        string;
@@ -9,7 +9,6 @@ export interface AdminOverviewCardProps {
   active:       number;
   activeLabel?: string;
   metricLabel?: string;
-  isDark?:      boolean;
 }
 
 const AdminOverviewCard: React.FC<AdminOverviewCardProps> = ({

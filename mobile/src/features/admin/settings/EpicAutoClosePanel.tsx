@@ -92,7 +92,7 @@ const EpicAutoClosePanel: React.FC = () => {
       description="When all features in an epic are SHIPPED and all linked tickets are RESOLVED or CLOSED, automatically transition the epic to COMPLETED."
       loading={loading}
     >
-      {alert && <AlertBanner type={alert.type} msg={alert.msg} isDark={false} />}
+      {alert && <AlertBanner type={alert.type} msg={alert.msg} />}
 
       <View style={{
         flexDirection: 'row',

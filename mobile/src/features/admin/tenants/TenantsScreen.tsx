@@ -7,12 +7,14 @@ import { AppTextInput, AppBadge } from '@/src/shared/components';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import type { ColDef } from '@/src/shared/components';
 
+import { Palette } from '@/src/constants/theme';
+
 const STATUS_COLOR: Record<string, string> = {
-  ACTIVE:    '#10b981',
-  TRIAL:     '#3b82f6',
-  PAST_DUE:  '#f59e0b',
-  SUSPENDED: '#ef4444',
-  EXPIRED:   '#6b7280',
+  ACTIVE:    Palette.green500,
+  TRIAL:     Palette.blue500,
+  PAST_DUE:  Palette.amber500,
+  SUSPENDED: Palette.red500,
+  EXPIRED:   Palette.slate500,
 };
 
 interface TenantFormData { name: string; slug: string; supportEmail: string; }

@@ -5,6 +5,7 @@ import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/compone
 import { AppTextInput, AppButton } from '@/src/shared/components';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 
 const PRESETS = [1, 15, 30, 60, 360, 1440];
 const PRESET_LABELS: Record<number, string> = {
@@ -16,7 +17,8 @@ type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
 
 const SchedulerSettingsPanel: React.FC = () => {
   const { user } = useAuthStore();
-  const c = useThemeColors();
+  const c      = useThemeColors();
+  const isDark = useUiStore((s) => s.colorMode) === 'dark';
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const [interval, setInterval] = useState('60');

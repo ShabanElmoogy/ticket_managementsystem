@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useThemeColors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface AdminStatCardProps {
   title:     string;
   value:     number;
   icon:      string;
   color:     string;
-  isDark?:   boolean;
   cardWidth: number;
 }
 

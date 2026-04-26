@@ -7,11 +7,16 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
 
-interface AlertBannerProps { type: 'success' | 'error' | 'info'; msg: string; isDark: boolean }
+interface AlertBannerProps { type: 'success' | 'error' | 'info'; msg: string }
 
-export const AlertBanner: React.FC<AlertBannerProps> = ({ type, msg, isDark }) => {
-  const bg    = type === 'success' ? '#dcfce7' : type === 'error' ? '#fee2e2' : '#dbeafe';
-  const color = type === 'success' ? '#166534' : type === 'error' ? '#991b1b' : '#1e40af';
+export const AlertBanner: React.FC<AlertBannerProps> = ({ type, msg }) => {
+  const c     = useThemeColors();
+  const bg    = type === 'success' ? c.intent.successSurface
+              : type === 'error'   ? c.intent.errorSurface
+              :                      c.intent.infoSurface;
+  const color = type === 'success' ? c.intent.success
+              : type === 'error'   ? c.intent.error
+              :                      c.intent.info;
   const icon  = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
   return (
     <View style={{ backgroundColor: bg, borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', gap: 8 }}>
