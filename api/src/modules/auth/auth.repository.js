@@ -103,10 +103,21 @@ export async function findTenantBySlug(slug) {
 
 // ── Refresh token queries ─────────────────────────────────────────────────────
 
-/** Store a new refresh token with a 7-day expiry. */
+/** Store a new refresh token, expiry driven by REFRESH_TOKEN_EXPIRES_IN env var. */
 export async function insertRefreshToken(token, userId) {
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  const raw       = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d';
+  const match     = raw.match(/^(\d+)([smhd])$/);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    const unit = match[2];
+    if      (unit === 's') expiresAt.setSeconds(expiresAt.getSeconds() + n);
+    else if (unit === 'm') expiresAt.setMinutes(expiresAt.getMinutes() + n);
+    else if (unit === 'h') expiresAt.setHours(expiresAt.getHours() + n);
+    else if (unit === 'd') expiresAt.setDate(expiresAt.getDate() + n);
+  } else {
+    expiresAt.setDate(expiresAt.getDate() + 7); // safe fallback
+  }
   await db.insert(refreshTokens).values({ token, userId, expiresAt });
 }
 
@@ -120,7 +131,32 @@ export async function findRefreshToken(token) {
   return rows[0] ?? null;
 }
 
-/** Mark a refresh token as revoked. */
+/** Revoke old token and insert new one atomically — prevents logout on server crash mid-rotation. */
+export async function rotateRefreshToken(oldToken, newToken, userId) {
+  await db.transaction(async (tx) => {
+    await tx.update(refreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(eq(refreshTokens.token, oldToken));
+
+    const expiresAt = new Date();
+    const raw       = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d';
+    const match     = raw.match(/^(\d+)([smhd])$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      const unit = match[2];
+      if      (unit === 's') expiresAt.setSeconds(expiresAt.getSeconds() + n);
+      else if (unit === 'm') expiresAt.setMinutes(expiresAt.getMinutes() + n);
+      else if (unit === 'h') expiresAt.setHours(expiresAt.getHours() + n);
+      else if (unit === 'd') expiresAt.setDate(expiresAt.getDate() + n);
+    } else {
+      expiresAt.setDate(expiresAt.getDate() + 7);
+    }
+
+    await tx.insert(refreshTokens).values({ token: newToken, userId, expiresAt });
+  });
+}
+
+/** Mark a single refresh token as revoked (used on logout). */
 export async function revokeRefreshToken(token) {
   await db
     .update(refreshTokens)

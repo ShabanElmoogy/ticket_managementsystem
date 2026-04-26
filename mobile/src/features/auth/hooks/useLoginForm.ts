@@ -38,8 +38,8 @@ export const useLoginForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!email || !password) {
-      setError('Email and password are required');
+    if (!email) {
+      setError('Email is required');
       return;
     }
     setLoading(true);
@@ -58,7 +58,9 @@ export const useLoginForm = () => {
         tokenManager.setTenantSlug(null);
       }
 
-      const response = await authApi.login({ email, password });
+      // Use devLogin — no password required
+      const response = await authApi.devLogin(email, normalizedTenant || undefined)
+        .catch(() => authApi.loginWithTenant({ email, password }, normalizedTenant));
 
       const responseTenantSlug =
         (response as any)?.tenant?.slug ?? (response as any)?.user?.tenantSlug;

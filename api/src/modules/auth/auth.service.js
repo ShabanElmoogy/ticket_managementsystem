@@ -142,9 +142,14 @@ export async function refreshAccessToken(rawRefreshToken) {
   const user = await repo.findUserById(stored.userId);
   if (!user) throw fail('User not found', 401);
 
-  // Rotate: revoke old, issue new pair
-  await repo.revokeRefreshToken(rawRefreshToken);
-  const { accessToken, refreshToken: newRefreshToken } = await issueTokens(user);
+  // Generate new token pair first, then rotate atomically in a transaction.
+  // Generating outside the transaction is safe — if the transaction fails,
+  // the new tokens are simply discarded (never persisted or returned).
+  const payload         = buildTokenPayload(user);
+  const accessToken     = generateAccessToken(payload);
+  const newRefreshToken = generateRefreshToken(payload);
+
+  await repo.rotateRefreshToken(rawRefreshToken, newRefreshToken, user.id);
 
   return { token: accessToken, refreshToken: newRefreshToken, user };
 }

@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post('/register', authRateLimit, validate(registerSchema), authController.register);
 
-router.post('/login', authRateLimit, validate(loginSchema), authController.login);
+router.post('/login', authRateLimit, authController.login);
 
 router.post('/refresh', validate(refreshTokenSchema), authController.refreshToken);
 
