@@ -14,10 +14,21 @@ import { TenantScopeError } from '../utils/tenantUtils.js';
 export function handleError(res, error, context) {
   const status = error.status ?? error.statusCode ?? 500;
 
-  if (status >= 500)      console.error(`${context} error:`, error);
-  else if (status >= 400) console.warn(`${context} [${status}]:`, error.message);
+  if (status >= 500) {
+    // Log the full error including the underlying cause (e.g. DrizzleQueryError wraps a PostgresError)
+    console.error(`${context} error:`, error.message);
+    if (error.cause) console.error(`${context} cause:`, error.cause?.message ?? error.cause);
+  } else if (status >= 400) {
+    console.warn(`${context} [${status}]:`, error.message);
+  }
 
-  res.status(status).json({ error: error.message ?? 'Internal server error' });
+  const message = error.message ?? 'Internal server error';
+  const cause   = error.cause?.message ?? null;
+
+  res.status(status).json({
+    error: message,
+    ...(cause ? { cause } : {}),
+  });
 }
 
 export function registerErrorHandlers(app) {
