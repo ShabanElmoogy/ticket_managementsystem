@@ -187,14 +187,14 @@ export const TEMPLATES = {
 // ── Documents ─────────────────────────────────────────────────────────────────
 
 export const DOCS = {
-  LIST:        '/docs',
-  TREE:        '/docs/tree',
-  TREE_FOLDER: '/docs/tree/folder',
-  TREE_DOC:    '/docs/tree/doc',
-  BY_ID:       (id: string) => `/docs/${id}`,
-  TREE_BY_ID:  (id: string) => `/docs/tree/${id}`,
-  TREE_RENAME: (id: string) => `/docs/tree/${id}/rename`,
-  TREE_MOVE:   (id: string) => `/docs/tree/${id}/move`,
+  LIST:        '/documents',
+  TREE:        '/documents/tree',
+  TREE_FOLDER: '/documents/tree/folder',
+  TREE_DOC:    '/documents/tree/doc',
+  BY_ID:       (id: string) => `/documents/${id}`,
+  TREE_BY_ID:  (id: string) => `/documents/tree/${id}`,
+  TREE_RENAME: (id: string) => `/documents/tree/${id}/rename`,
+  TREE_MOVE:   (id: string) => `/documents/tree/${id}/move`,
 } as const;
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────

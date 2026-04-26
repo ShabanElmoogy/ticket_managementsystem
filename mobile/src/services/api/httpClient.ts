@@ -1,7 +1,9 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenManager } from './tokenManager';
 import { networkEvents } from './networkEvents';
-import { useAuthStore } from '../../stores/authStore';
+import { authEvents } from './authEvents';
+import { circuitBreaker } from './circuitBreaker';
+import { requestDeduplicator } from './requestDeduplicator';
 import { HTTP_STATUS } from '../../constants/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,9 +18,10 @@ export type ApiError = {
   isRetryable?: boolean;
 };
 
-// Extend config type to carry our retry flag
+// Extend config type to carry our retry flags
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
-  _retried?: boolean;
+  _retried?:          boolean; // prevents infinite 401 retry loop
+  _preValidated?:     boolean; // marks requests that already went through pre-validation
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,9 +56,21 @@ export const refreshClient = axios.create({
 // Token helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Decode a JWT exp claim safely.
+ * JWT uses base64url (RFC 4648 §5) which replaces + with - and / with _.
+ * Standard atob() only handles base64 — must normalize before decoding.
+ */
 function getTokenExp(token: string): number | null {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const base64url = token.split('.')[1];
+    if (!base64url) return null;
+    // Normalize base64url → base64, pad to multiple of 4
+    const base64 = base64url
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
+    const payload = JSON.parse(atob(base64));
     return typeof payload.exp === 'number' ? payload.exp : null;
   } catch {
     return null;
@@ -116,13 +131,13 @@ export function startTokenRefreshCycle(token: string): void {
       } else {
         if (__DEV__) console.warn('⚠️ [REFRESH] Server returned an already-expired token — stopping refresh cycle');
         stopTokenRefreshCycle();
-        try { useAuthStore.getState().logout(); } catch { }
+        try { authEvents.logout(); } catch { }
       }
     } catch (err: any) {
       const status = err?.response?.status ?? err?.status;
       if (status === HTTP_STATUS.UNAUTHORIZED) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
-        try { useAuthStore.getState().logout(); } catch { }
+        try { authEvents.logout(); } catch { }
       } else {
         if (__DEV__) {
           console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
@@ -142,12 +157,22 @@ export function stopTokenRefreshCycle(): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Core refresh call — uses refreshClient (no interceptors!) to avoid loops
+// Integrates circuit breaker: blocks refresh when OPEN, records outcomes.
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function callRefreshEndpoint(): Promise<{
   newToken: string;
   newRefreshToken: string;
 }> {
+  // Circuit open — don't even attempt the network call
+  if (circuitBreaker.isOpen()) {
+    const err = Object.assign(
+      new Error('Session expired. Too many failed refresh attempts.'),
+      { status: HTTP_STATUS.UNAUTHORIZED },
+    );
+    throw err;
+  }
+
   const refreshToken = tokenManager.getRefreshToken();
   if (!refreshToken) throw new Error('No refresh token available');
 
@@ -155,23 +180,34 @@ async function callRefreshEndpoint(): Promise<{
     console.log('🔄 [REFRESH] Calling /auth/refresh with token:', refreshToken.slice(0, 20) + '...');
   }
 
-  const response = await refreshClient.post<{
-    token: string;
-    refreshToken?: string;
-  }>('/auth/refresh', { refreshToken });
+  try {
+    const response = await refreshClient.post<{
+      token: string;
+      refreshToken?: string;
+    }>('/auth/refresh', { refreshToken });
 
-  const newToken        = response.data.token;
-  const newRefreshToken = response.data.refreshToken ?? refreshToken;
+    const newToken        = response.data.token;
+    const newRefreshToken = response.data.refreshToken ?? refreshToken;
 
-  if (!newToken) throw new Error('Refresh response missing token');
-  if (!newRefreshToken) throw new Error('Refresh response missing refreshToken');
+    if (!newToken) throw new Error('Refresh response missing token');
+    if (!newRefreshToken) throw new Error('Refresh response missing refreshToken');
 
-  if (__DEV__) {
-    const rotated = response.data.refreshToken && response.data.refreshToken !== refreshToken;
-    console.log(`🔑 [REFRESH] Token refreshed. Refresh token ${rotated ? 'rotated ✅' : 'unchanged'}`);
+    if (__DEV__) {
+      const rotated = response.data.refreshToken && response.data.refreshToken !== refreshToken;
+      console.log(`🔑 [REFRESH] Token refreshed. Refresh token ${rotated ? 'rotated ✅' : 'unchanged'}`);
+    }
+
+    // Success — reset circuit breaker failure counter
+    circuitBreaker.recordSuccess();
+
+    return { newToken, newRefreshToken };
+
+  } catch (err: any) {
+    const isNetworkErr = !err?.response;
+    // Only count non-network errors as circuit breaker failures
+    circuitBreaker.recordFailure(isNetworkErr);
+    throw err;
   }
-
-  return { newToken, newRefreshToken };
 }
 
 /**
@@ -184,57 +220,104 @@ function applyNewTokens(newToken: string, newRefreshToken: string): void {
   tokenManager.setToken(newToken);
   if (newRefreshToken) tokenManager.setRefreshToken(newRefreshToken);
 
-  // ⚠️ SYNCHRONOUS — update Zustand store immediately so the new refresh
-  // token is persisted to AsyncStorage before the app can be killed.
-  // Using dynamic import here caused a race condition where the old
-  // refresh token was persisted if the app restarted before the async
-  // import resolved.
+  // Persist to Zustand via authEvents — avoids circular import with authStore.
   try {
-    const store = useAuthStore.getState();
-    store.setToken(newToken);
-    if (newRefreshToken) store.setRefreshToken(newRefreshToken);
+    authEvents.setTokens(newToken, newRefreshToken);
   } catch {
-    // Store not yet initialized (very early in boot) — tokenManager is enough
+    // Handler not yet registered (very early in boot) — tokenManager is enough
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Request interceptor — attach token + request ID
+// Request interceptor
+// 1. Token pre-validation — refresh inline if expired before sending
+// 2. Attach Authorization + X-Tenant-Slug + X-Request-ID headers
+// 3. Deduplication — identical in-flight GETs share one Promise
 // ─────────────────────────────────────────────────────────────────────────────
 
-http.interceptors.request.use((config) => {
+http.interceptors.request.use(async (config) => {
+  const cfg = config as RetryableRequestConfig;
+
+  // ── 1. Token pre-validation ───────────────────────────────────────────────
+  // Check expiry BEFORE sending. If the token is expired (or within 10s of
+  // expiry) and no refresh is in flight, trigger one now. This eliminates
+  // the 401 round-trip on the first request after a long background period.
+  //
+  // Guards:
+  //  - Skip if already refreshing (reactive handler owns it)
+  //  - Skip if circuit is open (session expired, don't hammer the server)
+  //  - Skip if this config was already pre-validated (prevents re-entry)
+  //  - Skip for the refresh endpoint itself
+  if (
+    !cfg._preValidated &&
+    !isRefreshing &&
+    !circuitBreaker.isOpen() &&
+    !cfg.url?.includes('/auth/refresh')
+  ) {
+    const token = tokenManager.getToken();
+    if (token) {
+      const exp         = getTokenExp(token);
+      const msRemaining = exp ? exp * 1000 - Date.now() : 0;
+
+      if (msRemaining <= 10_000) {
+        if (__DEV__) console.log('🔍 [PRE-VALIDATE] Token expired — refreshing before request...');
+
+        isRefreshing    = true;
+        cfg._preValidated = true; // mark so the retry doesn't re-enter this block
+
+        try {
+          const { newToken, newRefreshToken } = await callRefreshEndpoint();
+          applyNewTokens(newToken, newRefreshToken);
+          startTokenRefreshCycle(newToken);
+          if (__DEV__) console.log('✅ [PRE-VALIDATE] Token refreshed inline');
+        } catch (err: any) {
+          const isNetworkErr = !err?.response;
+          if (!isNetworkErr) {
+            // Auth failure — clear session, let the request proceed to get a 401
+            // which will be handled by the response interceptor's logout path
+            if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Inline refresh failed — proceeding to 401');
+          }
+          // Network error — proceed anyway; the response interceptor will queue it
+        } finally {
+          isRefreshing = false;
+        }
+      }
+    }
+  }
+
+  // ── 2. Attach headers ─────────────────────────────────────────────────────
   // Always delete first — ensures AxiosHeaders (Axios 1.x) picks up the new
   // value cleanly. Without this, a stale Authorization from a cloned config
   // can survive into the retry even after tokenManager is updated.
-  config.headers.delete('Authorization');
+  cfg.headers.delete('Authorization');
   const token = tokenManager.getToken();
   if (token) {
-    config.headers.set('Authorization', `Bearer ${token}`);
+    cfg.headers.set('Authorization', `Bearer ${token}`);
   }
 
   const tenantSlug = tokenManager.getTenantSlug();
   if (tenantSlug) {
-    config.headers.set('X-Tenant-Slug', tenantSlug);
+    cfg.headers.set('X-Tenant-Slug', tenantSlug);
   }
 
-  config.headers.set(
+  cfg.headers.set(
     'X-Request-ID',
     `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
   );
 
   if (__DEV__) {
-    const auth    = config.headers.get('Authorization') as string | null;
-    const slug    = config.headers.get('X-Tenant-Slug') as string | null;
-    const reqId   = config.headers.get('X-Request-ID') as string | null;
-    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
-    const method  = (config.method ?? 'GET').toUpperCase().padEnd(6);
+    const auth    = cfg.headers.get('Authorization') as string | null;
+    const slug    = cfg.headers.get('X-Tenant-Slug') as string | null;
+    const reqId   = cfg.headers.get('X-Request-ID') as string | null;
+    const fullUrl = `${cfg.baseURL ?? ''}${cfg.url ?? ''}`;
+    const method  = (cfg.method ?? 'GET').toUpperCase().padEnd(6);
     console.log(
       `📤 [${reqId?.slice(-6)}] ${method} ${fullUrl}\n` +
       `   Auth: ${auth ? '✅' : '❌ MISSING'} | Slug: ${slug ?? '❌ MISSING'}`
     );
   }
 
-  return config;
+  return cfg;
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,14 +328,69 @@ http.interceptors.request.use((config) => {
 
 let isRefreshing = false;
 
+// When the refresh fails due to network error, we stay in "refreshing" state
+// so subsequent 401s join the queue instead of triggering new refresh attempts.
+let isWaitingForConnectivity = false;
+
+// resolve: () => void — the token is NOT passed to consumers.
+// The request interceptor always re-reads from tokenManager, so passing the
+// token here would be redundant and could carry a stale value.
 let failedQueue: Array<{
-  resolve: (token: string) => void;
+  resolve: () => void;
   reject:  (error: ApiError) => void;
 }> = [];
 
-function drainQueue(error: ApiError | null, token: string | null = null): void {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
+// Max queue size — prevents unbounded growth during long offline periods.
+const MAX_QUEUE_SIZE = 20;
+
+function drainQueue(error: ApiError | null): void {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
   failedQueue = [];
+}
+
+/**
+ * Called by networkEvents when connectivity is restored.
+ * Attempts a single token refresh then drains all queued 401 requests.
+ */
+export async function retryQueuedAuthRequests(): Promise<void> {
+  if (!isWaitingForConnectivity || failedQueue.length === 0) return;
+
+  if (__DEV__) {
+    console.log(`🔄 [REFRESH] Connectivity restored — retrying refresh for ${failedQueue.length} queued request(s)`);
+  }
+
+  isWaitingForConnectivity = false;
+  // isRefreshing stays true — we own the refresh
+
+  try {
+    const { newToken, newRefreshToken } = await callRefreshEndpoint();
+    applyNewTokens(newToken, newRefreshToken);
+    startTokenRefreshCycle(newToken);
+    if (__DEV__) console.log('✅ [REFRESH] Token refreshed after connectivity restored');
+    drainQueue(null);
+  } catch (err: any) {
+    const isNetworkErr = !err?.response;
+    if (isNetworkErr) {
+      // Still offline — go back to waiting
+      isWaitingForConnectivity = true;
+      if (__DEV__) console.warn('⚠️ [REFRESH] Still offline after connectivity event — staying queued');
+      return;
+    }
+    // Auth error — session truly expired
+    const sessionExpiredError: ApiError = {
+      status:      HTTP_STATUS.UNAUTHORIZED,
+      message:     'Session expired. Please log in again.',
+      isRetryable: false,
+    };
+    drainQueue(sessionExpiredError);
+    tokenManager.clear();
+    stopTokenRefreshCycle();
+    try { authEvents.logout(); } catch { }
+  } finally {
+    if (!isWaitingForConnectivity) {
+      isRefreshing = false;
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,12 +450,17 @@ http.interceptors.response.use(
     ) {
       // ── Case A: a refresh is already in flight — join the queue ────────────
       if (isRefreshing) {
-        return new Promise<string>((resolve, reject) => {
+        // Drop oldest entry if queue is full — prevents unbounded growth
+        if (failedQueue.length >= MAX_QUEUE_SIZE) {
+          const dropped = failedQueue.shift();
+          dropped?.reject({ status: 0, message: 'Request dropped — queue full', isRetryable: false });
+          if (__DEV__) console.warn('⚠️ [Queue] Max queue size reached — dropped oldest request');
+        }
+        return new Promise<void>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((_newToken) => {
-            // Don't touch headers here — the request interceptor will set
-            // the correct Authorization from tokenManager on the retry.
+          .then(() => {
+            // Request interceptor re-reads token from tokenManager on retry
             originalConfig._retried = true;
             return http.request(originalConfig);
           })
@@ -348,7 +491,7 @@ http.interceptors.response.use(
           console.log(`✅ [REFRESH] Token reactively refreshed. Expires in ${expiresIn}m`);
         }
 
-        drainQueue(null, newToken);
+        drainQueue(null);
         return http.request(originalConfig);
 
       } catch (refreshError: any) {
@@ -363,13 +506,18 @@ http.interceptors.response.use(
         }
 
         if (isNetworkErr) {
+          // Stay in "refreshing" state — subsequent 401s join the queue.
+          // retryQueuedAuthRequests() will drain when connectivity returns.
+          // Do NOT reset isRefreshing here — the finally block is skipped
+          // by returning early, so we manually control the flag.
+          isWaitingForConnectivity = true;
           const networkError: ApiError = {
             status:      0,
             message:     'Network error. Please check your connection.',
-            isRetryable: true,
+            isRetryable: false,
           };
-          drainQueue(networkError, null);
-          isRefreshing = false;
+          drainQueue(networkError);
+          // isRefreshing intentionally stays true — see isWaitingForConnectivity
           return Promise.reject(networkError);
         }
 
@@ -379,17 +527,22 @@ http.interceptors.response.use(
           isRetryable: false,
         };
 
-        drainQueue(sessionExpiredError, null);
+        drainQueue(sessionExpiredError);
         tokenManager.clear();
         stopTokenRefreshCycle();
-        try { useAuthStore.getState().logout(); } catch { }
+        requestDeduplicator.clear(); // stale in-flight entries belong to expired session
+        try { authEvents.logout(); } catch { }
 
         if (__DEV__) console.warn('🚪 Refresh failed — logging out');
         return Promise.reject(sessionExpiredError);
 
       } finally {
-        // ALWAYS reset — even if retry throws, future requests can refresh again
-        isRefreshing = false;
+        // Only reset if we're NOT waiting for connectivity.
+        // The network-error path returns early before finally runs — but
+        // if it ever reaches here, guard against clearing the waiting state.
+        if (!isWaitingForConnectivity) {
+          isRefreshing = false;
+        }
       }
     }
 
@@ -428,6 +581,8 @@ http.interceptors.response.use(
       !isNetworkError &&
       status !== HTTP_STATUS.UNAUTHORIZED &&
       status !== HTTP_STATUS.NOT_FOUND &&
+      // 429 is retryable — don't show an error dialog, the retry will handle it
+      status !== HTTP_STATUS.TOO_MANY_REQUESTS &&
       status !== undefined;
 
     if (shouldShowDialog) {
@@ -449,3 +604,17 @@ export default http;
 // Register retry callback — httpClient re-executes queued requests when
 // connectivity is restored. Done after all interceptors are set up.
 networkEvents.setRetryCallback((config) => http.request(config));
+
+// Register connectivity callback — when network is restored, retry any
+// requests that were blocked waiting for a token refresh.
+networkEvents.setConnectivityCallback(() => retryQueuedAuthRequests());
+
+// Wire circuit breaker → authEvents so the UI can respond when the circuit opens.
+// authStore registers the actual handler (navigate to login / show modal).
+circuitBreaker.onSessionExpired(() => {
+  // Clear in-flight deduplication entries — they belong to the expired session
+  requestDeduplicator.clear();
+  tokenManager.clear();
+  stopTokenRefreshCycle();
+  try { authEvents.sessionExpired(); } catch { }
+});

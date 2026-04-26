@@ -6,7 +6,7 @@
 
 import { db } from '../../config/database.js';
 import { docs, docNodes } from './docs.schema.js';
-import { eq, and, asc, desc, gt, gte, isNull, inArray, max } from 'drizzle-orm';
+import { eq, and, asc, desc, gt, gte, isNull, inArray, max, sql } from 'drizzle-orm';
 
 // ── Docs ──────────────────────────────────────────────────────────────────────
 
@@ -154,26 +154,27 @@ export async function moveNodeTransaction(node, newParentId, newPosition) {
 
 /**
  * Recursively collect all docIds in a subtree rooted at nodeId.
- * Used before deleting a folder so we can clean up orphaned docs.
+ * Uses a single recursive CTE — avoids N+1 queries for deep trees.
  */
 export async function collectSubtreeDocIds(nodeId, tenantId) {
-  const where = tenantId
-    ? and(eq(docNodes.id, nodeId), eq(docNodes.tenantId, tenantId))
-    : eq(docNodes.id, nodeId);
+  const tenantFilter = tenantId
+    ? sql`AND tenant_id = ${tenantId}`
+    : sql``;
 
-  const rows = await db.select().from(docNodes).where(where).limit(1);
-  const node = rows[0] ?? null;
-  if (!node) return [];
+  const result = await db.execute(sql`
+    WITH RECURSIVE subtree AS (
+      SELECT id, type, doc_id, parent_id
+      FROM doc_nodes
+      WHERE id = ${nodeId} ${tenantFilter}
+      UNION ALL
+      SELECT n.id, n.type, n.doc_id, n.parent_id
+      FROM doc_nodes n
+      INNER JOIN subtree s ON n.parent_id = s.id
+    )
+    SELECT doc_id FROM subtree WHERE type = 'DOC' AND doc_id IS NOT NULL
+  `);
 
-  const ids = node.type === 'DOC' && node.docId ? [node.docId] : [];
-
-  const children = await findChildNodes(nodeId, tenantId);
-  for (const child of children) {
-    const childIds = await collectSubtreeDocIds(child.id, tenantId);
-    ids.push(...childIds);
-  }
-
-  return ids;
+  return result.rows.map((r) => r.doc_id).filter(Boolean);
 }
 
 /**

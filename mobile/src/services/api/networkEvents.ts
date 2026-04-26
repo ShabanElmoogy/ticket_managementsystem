@@ -19,6 +19,7 @@ type NetworkErrorListener   = (message: string) => void;
 type ApiErrorListener       = (status: number, message: string, details?: unknown) => void;
 type RetrySuccessListener   = (count: number) => void;
 type RetryCallback          = (config: AxiosRequestConfig) => Promise<unknown>;
+type ConnectivityCallback   = () => void;
 
 interface QueuedRequest {
   config:   AxiosRequestConfig;
@@ -33,7 +34,8 @@ const apiErrorListeners:     Set<ApiErrorListener>     = new Set();
 const retrySuccessListeners: Set<RetrySuccessListener> = new Set();
 const queue:                 QueuedRequest[]           = [];
 
-let retryCallback:    RetryCallback | null = null;
+let retryCallback:        RetryCallback        | null = null;
+let connectivityCallback: ConnectivityCallback | null = null;
 let isWatching:       boolean              = false;
 let isOnline:         boolean              = true;
 let networkSub:       { remove: () => void } | null = null;
@@ -75,6 +77,11 @@ export const networkEvents = {
    */
   setRetryCallback: (cb: RetryCallback) => {
     retryCallback = cb;
+  },
+
+  /** Register a callback fired when connectivity is restored (used by httpClient for 401 queue). */
+  setConnectivityCallback: (cb: ConnectivityCallback) => {
+    connectivityCallback = cb;
   },
 
   /**
@@ -125,9 +132,10 @@ export const networkEvents = {
         console.log(`🌐 Network: ${isOnline ? 'online' : 'offline'}`);
       }
 
-      // Came back online — drain the queue
-      if (wasOffline && isOnline && queue.length > 0) {
-        drainQueue();
+      // Came back online — notify auth handler first (token refresh), then drain request queue
+      if (wasOffline && isOnline) {
+        connectivityCallback?.();
+        if (queue.length > 0) drainQueue();
       }
     });
   },

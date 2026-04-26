@@ -17,8 +17,7 @@ router.use(authenticateToken);
 
 // ── Static tree routes — must be before /:id ──────────────────────────────────
 
-router.get('/tree',      enforceTenantScope, listTree);
-router.get('/tree/list', enforceTenantScope, listTree);
+router.get('/tree', enforceTenantScope, listTree);
 
 router.post('/tree/folder', requireTenantScopeMiddleware, requireTenantAdmin, validate(createFolderSchema), createFolder);
 

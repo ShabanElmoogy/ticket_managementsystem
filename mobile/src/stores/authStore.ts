@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserRole } from '../types/roles';
 import { tokenManager } from '../services/api/tokenManager';
+import { authEvents } from '../services/api/authEvents';
+import { circuitBreaker } from '../services/api/circuitBreaker';
 import { startTokenRefreshCycle, stopTokenRefreshCycle } from '../services/api/httpClient';
 import { HTTP_STATUS } from '../constants/api';
 
@@ -322,3 +324,26 @@ export const useIsLoading       = () => useAuthStore((s) => s.isLoading);
 export const useIsAdmin         = () => useAuthStore((s) => s.user?.role === 'SUPER_ADMIN' || s.user?.role === 'TENANT_ADMIN');
 export const useTenantSuspended = () => useAuthStore((s) => s.tenantSuspended);
 export const useTenantStatus    = () => useAuthStore((s) => s.tenantStatus);
+
+// ============================================================================
+// Wire authEvents + circuitBreaker → store actions
+// Breaks the circular dep: httpClient no longer imports useAuthStore directly.
+// ============================================================================
+
+authEvents.setLogoutHandler(() => {
+  useAuthStore.getState().logout();
+});
+
+authEvents.setTokensHandler((token, refreshToken) => {
+  const store = useAuthStore.getState();
+  store.setToken(token);
+  store.setRefreshToken(refreshToken);
+});
+
+// Circuit breaker opened — too many consecutive refresh failures.
+// Logout the user and reset the breaker so the next login starts clean.
+authEvents.setSessionExpiredHandler(() => {
+  if (__DEV__) console.warn('🔴 [CircuitBreaker] Session expired — logging out');
+  circuitBreaker.reset();
+  useAuthStore.getState().logout();
+});
