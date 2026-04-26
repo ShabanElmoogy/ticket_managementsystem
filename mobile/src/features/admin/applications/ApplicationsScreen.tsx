@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen         from '@/src/features/admin/shared/AdminCrudScreen';
-import ApplicationForm         from './components/ApplicationForm';
-import ApplicationDetailScreen from './components/ApplicationDetailScreen';
 import { AppDeleteDialog }     from '@/src/shared/components';
-import { useApplications }     from './hooks/useApplications';
-import { applicationsKeys }    from './api/applications';
 import { useToast }            from '@/src/shared/hooks/useToast';
+import { applicationsKeys } from '@/src/features/admin/applications/api/applications';
+import ApplicationDetailScreen from '@/src/features/admin/applications/components/ApplicationDetailScreen';
+import ApplicationForm from '@/src/features/admin/applications/components/ApplicationForm';
+import { useApplications } from '@/src/features/admin/applications/hooks/useApplications';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 const ApplicationsScreen: React.FC = () => {

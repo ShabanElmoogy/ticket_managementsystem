@@ -1,4 +1,5 @@
-import { BaseApiService } from '../../../services/api/base';
+import { API } from '@/src/constants/api';
+import { BaseApiService } from '@/src/services/api/base';
 
 export interface PublicTenant {
   id: string;
@@ -10,7 +11,7 @@ export interface PublicTenant {
 }
 
 export class TenantsPublicApiService extends BaseApiService {
-  listPublic = () => this.get<PublicTenant[]>('/tenants/public');
+  listPublic = () => this.get<PublicTenant[]>(API.TENANTS.PUBLIC);
 }
 
 export const tenantsPublicApi = new TenantsPublicApiService();

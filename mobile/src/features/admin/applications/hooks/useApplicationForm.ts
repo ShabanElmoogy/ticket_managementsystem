@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createApplicationFormSchema } from '../schemas/applicationSchema';
+import { createApplicationFormSchema } from '@/src/features/admin/applications/schemas/applicationSchema';
 import { useToast } from '@/src/shared/hooks/useToast';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 

@@ -2,11 +2,11 @@ import { useMemo, useEffect, useRef } from 'react';
 import type {
   CustomerTicketsSummaryRow, CustomerStatusRow,
   CustomerActivityRow, SlaMetricsRow,
-} from '../../types';
-import type { Ticket } from '../../../../../services/api/types';
-import type { ReportType } from '../../types';
-import { filterByQuery, customerFields, ticketFields } from './reportFilters';
-import { usePagination, useSorting } from '../../../../../shared/components';
+} from '@/src/features/admin/reports/types';
+import { filterByQuery, customerFields, ticketFields } from '@/src/features/admin/reports/components/ReportCard/reportFilters';
+import { usePagination, useSorting } from '@/src/shared/components';
+import type { Ticket } from '@/src/services/api/types';
+import type { ReportType } from '@/src/features/admin/reports/types';
 
 interface Input {
   reportType:   ReportType;

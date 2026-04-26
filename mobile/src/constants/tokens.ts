@@ -80,7 +80,7 @@ export const Palette = {
 
 const light = {
   surface: {
-    primary:   Palette.black,
+    primary:   Palette.white,
     secondary: Palette.slate50,
     tertiary:  Palette.slate100,
     elevated:  Palette.gray100,

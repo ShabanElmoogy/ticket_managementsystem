@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ExcelBlock } from '../../types/types';
 import ExcelViewer from '../shared/ExcelViewer';
 

@@ -5,7 +5,7 @@ import type { TreeSidebarProps } from './types';
 import { INDENT_PX } from './types';
 import IconPickerModal from './IconPickerModal';
 import IconBtn from './IconBtn';
-import { useDirection } from '../../../../../providers/DirectionProvider';
+import { useDirection } from '@/src/providers/DirectionProvider';
 
 interface Props {
   node: TreeNode;

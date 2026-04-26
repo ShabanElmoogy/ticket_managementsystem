@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import type { BlockType } from '../../types/types';
+import type { BlockType } from '@/src/features/admin/docs/types/types';
 import { BLOCK_TYPES } from './blockTypes';
 import PaletteButton from './PaletteButton';
 

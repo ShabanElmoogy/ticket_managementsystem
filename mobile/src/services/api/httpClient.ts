@@ -2,6 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { tokenManager } from './tokenManager';
 import { networkEvents } from './networkEvents';
 import { useAuthStore } from '../../stores/authStore';
+import { HTTP_STATUS } from '../../constants/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -75,8 +76,17 @@ export function startTokenRefreshCycle(token: string): void {
   const exp = getTokenExp(token);
   if (!exp) return;
 
-  // How many ms until we should refresh (60 s before expiry, min 5 s)
-  const msUntilRefresh = Math.max((exp * 1000 - Date.now()) - 60_000, 5_000);
+  // If the token is already expired (or expires within 10s), don't schedule —
+  // the reactive 401 interceptor will handle it on the next request.
+  const msUntilExpiry = exp * 1000 - Date.now();
+  if (msUntilExpiry <= 10_000) {
+    if (__DEV__) console.warn('⚠️ [REFRESH] Token already expired or expiring imminently — skipping proactive cycle');
+    return;
+  }
+
+  // Schedule refresh 60s before expiry (min 5s, but only reachable if token
+  // has more than 70s left — guarded above)
+  const msUntilRefresh = Math.max(msUntilExpiry - 60_000, 5_000);
 
   if (__DEV__) {
     console.log(`⏱ Proactive refresh in ${Math.round(msUntilRefresh / 1000)}s`);
@@ -92,20 +102,28 @@ export function startTokenRefreshCycle(token: string): void {
       if (__DEV__) console.log('🔄 [REFRESH] Starting proactive token refresh...');
       const { newToken, newRefreshToken } = await callRefreshEndpoint();
       applyNewTokens(newToken, newRefreshToken);
-      startTokenRefreshCycle(newToken); // reschedule for the new token
+
       if (__DEV__) {
-        const exp = getTokenExp(newToken);
-        const expiresIn = exp ? Math.round((exp - Date.now() / 1000) / 60) : 0;
+        const newExp = getTokenExp(newToken);
+        const expiresIn = newExp ? Math.round((newExp * 1000 - Date.now()) / 60_000) : 0;
         console.log(`✅ [REFRESH] Token proactively refreshed. New token expires in ${expiresIn}m`);
+      }
+
+      // Only reschedule if the new token is actually valid
+      const newExp = getTokenExp(newToken);
+      if (newExp && (newExp * 1000 - Date.now()) > 10_000) {
+        startTokenRefreshCycle(newToken);
+      } else {
+        if (__DEV__) console.warn('⚠️ [REFRESH] Server returned an already-expired token — stopping refresh cycle');
+        stopTokenRefreshCycle();
+        try { useAuthStore.getState().logout(); } catch { }
       }
     } catch (err: any) {
       const status = err?.response?.status ?? err?.status;
-      // If refresh token is expired/revoked (401), logout silently — this is expected
-      if (status === 401) {
+      if (status === HTTP_STATUS.UNAUTHORIZED) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
         try { useAuthStore.getState().logout(); } catch { }
       } else {
-        // Unexpected failure (network error etc.) — log as warning
         if (__DEV__) {
           console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
         }
@@ -261,7 +279,7 @@ http.interceptors.response.use(
       // 401 on non-refresh endpoints = expected token expiry, will be retried silently
       // Only log as error for non-401 or for the refresh endpoint itself
       const isHandled401 =
-        status === 401 &&
+        status === HTTP_STATUS.UNAUTHORIZED &&
         !originalConfig?.url?.includes('/auth/refresh') &&
         !originalConfig?._retried;
 
@@ -287,7 +305,7 @@ http.interceptors.response.use(
     //  3. Must NOT already be a retried request (prevents infinite loop)
     //  4. Must NOT be the refresh endpoint itself
     if (
-      status === 401 &&
+      status === HTTP_STATUS.UNAUTHORIZED &&
       originalConfig &&
       !originalConfig._retried &&
       !originalConfig.url?.includes('/auth/refresh')
@@ -325,8 +343,8 @@ http.interceptors.response.use(
         startTokenRefreshCycle(newToken);
 
         if (__DEV__) {
-          const exp = getTokenExp(newToken);
-          const expiresIn = exp ? Math.round((exp - Date.now() / 1000) / 60) : 0;
+          const newExp = getTokenExp(newToken);
+          const expiresIn = newExp ? Math.round((newExp * 1000 - Date.now()) / 60_000) : 0;
           console.log(`✅ [REFRESH] Token reactively refreshed. Expires in ${expiresIn}m`);
         }
 
@@ -345,7 +363,6 @@ http.interceptors.response.use(
         }
 
         if (isNetworkErr) {
-          // Network error — don't logout, let the user retry manually
           const networkError: ApiError = {
             status:      0,
             message:     'Network error. Please check your connection.',
@@ -356,9 +373,8 @@ http.interceptors.response.use(
           return Promise.reject(networkError);
         }
 
-        // 401 or other server error — session is dead, logout
         const sessionExpiredError: ApiError = {
-          status:      401,
+          status:      HTTP_STATUS.UNAUTHORIZED,
           message:     'Session expired. Please log in again.',
           isRetryable: false,
         };
@@ -404,17 +420,14 @@ http.interceptors.response.use(
 
     const isRetryable =
       !error.response ||
-      status === 408 ||
-      status === 429 ||
+      status === HTTP_STATUS.REQUEST_TIMEOUT ||
+      status === HTTP_STATUS.TOO_MANY_REQUESTS ||
       (status !== undefined && status >= 500 && status !== 501);
 
-    // Fire global API error event for non-network, non-401 errors
-    // 401 is handled by the refresh flow above — don't double-show it
-    // 404 on detail fetches is expected (deleted resource) — skip silently
     const shouldShowDialog =
       !isNetworkError &&
-      status !== 401 &&
-      status !== 404 &&
+      status !== HTTP_STATUS.UNAUTHORIZED &&
+      status !== HTTP_STATUS.NOT_FOUND &&
       status !== undefined;
 
     if (shouldShowDialog) {
@@ -426,7 +439,7 @@ http.interceptors.response.use(
       message,
       details:     data,
       code:        error.code,
-      isRetryable: status === 401 ? false : isRetryable,
+      isRetryable: status === HTTP_STATUS.UNAUTHORIZED ? false : isRetryable,
     } as ApiError);
   },
 );

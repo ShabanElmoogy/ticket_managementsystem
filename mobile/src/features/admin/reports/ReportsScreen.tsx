@@ -1,15 +1,17 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useUiStore } from '../../../stores/uiStore';
-import { useReports } from './hooks/useReports';
-import ReportsHeader      from './components/ReportsHeader';
-import ReportErrorBanner  from './components/ReportErrorBanner';
-import ReportTypeSelector from './components/ReportTypeSelector';
-import ReportCard         from './components/ReportCard';
+import ReportCard from '@/src/features/admin/reports/components/ReportCard';
+import ReportErrorBanner from '@/src/features/admin/reports/components/ReportErrorBanner';
+import ReportsHeader from '@/src/features/admin/reports/components/ReportsHeader';
+import ReportTypeSelector from '@/src/features/admin/reports/components/ReportTypeSelector';
+import { useReports } from '@/src/features/admin/reports/hooks/useReports';
+import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 
 const ReportsScreen: React.FC = () => {
   const { colorMode } = useUiStore();
   const isDark = colorMode === 'dark';
+  const c = useThemeColors();
 
   const {
     reportType, setReportType,
@@ -22,10 +24,8 @@ const ReportsScreen: React.FC = () => {
   const view    = useUiStore((s) => s.getAdminView('Reports'));
   const setView = useUiStore((s) => s.setAdminView);
 
-  const bg = isDark ? '#0f172a' : '#f8fafc';
-
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
 
       {/* Header */}
       <View style={{ paddingHorizontal: 4, paddingTop: 16, paddingBottom: 12 }}>

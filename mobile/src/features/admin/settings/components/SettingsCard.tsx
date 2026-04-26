@@ -4,7 +4,8 @@
  */
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { useUiStore } from '../../../../stores/uiStore';
+import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 
 interface AlertBannerProps { type: 'success' | 'error' | 'info'; msg: string; isDark: boolean }
 
@@ -29,24 +30,23 @@ interface SettingsCardProps {
 }
 
 const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, loading, children }) => {
-  const { colorMode, direction } = useUiStore();
-  const isDark = colorMode === 'dark';
-  const isRtl  = direction === 'rtl';
+  const c     = useThemeColors();
+  const isRtl = useUiStore((s) => s.direction) === 'rtl';
 
   return (
     <View style={{
-      backgroundColor: isDark ? '#1e293b' : '#ffffff',
+      backgroundColor: c.surface.primary,
       borderRadius: 12, padding: 16, marginBottom: 16,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+      shadowColor: c.shadow, shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
     }}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <Text style={{ fontSize: 20 }}>{icon}</Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', textAlign: isRtl ? 'right' : 'left' }}>{title}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text.primary, textAlign: isRtl ? 'right' : 'left' }}>{title}</Text>
       </View>
       {description && (
-        <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#94a3b8', marginBottom: 16, lineHeight: 18, textAlign: isRtl ? 'right' : 'left' }}>
+        <Text style={{ fontSize: 12, color: c.text.muted, marginBottom: 16, lineHeight: 18, textAlign: isRtl ? 'right' : 'left' }}>
           {description}
         </Text>
       )}

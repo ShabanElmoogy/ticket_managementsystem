@@ -11,13 +11,14 @@
  */
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useAuthStore } from '../../../stores/authStore';
-import { useUiStore } from '../../../stores/uiStore';
-import DateFormatPanel      from './DateFormatPanel';
-import SchedulerSettingsPanel from './SchedulerSettingsPanel';
-import SlaSettingsPanel     from './SlaSettingsPanel';
-import EpicAutoClosePanel   from './EpicAutoClosePanel';
-import EmailIngestPanel     from './EmailIngestPanel';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
+import DateFormatPanel        from '@/src/features/admin/settings/DateFormatPanel';
+import SchedulerSettingsPanel from '@/src/features/admin/settings/SchedulerSettingsPanel';
+import SlaSettingsPanel       from '@/src/features/admin/settings/SlaSettingsPanel';
+import EpicAutoClosePanel     from '@/src/features/admin/settings/EpicAutoClosePanel';
+import EmailIngestPanel       from '@/src/features/admin/settings/EmailIngestPanel';
 
 // ── Sub-tab bar ───────────────────────────────────────────────────────────────
 
@@ -25,46 +26,48 @@ const SubTabBar: React.FC<{
   tabs: { id: string; label: string }[];
   active: string;
   onSelect: (id: string) => void;
-  isDark: boolean;
-}> = ({ tabs, active, onSelect, isDark }) => (
-  <View style={{
-    flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
-  }}>
-    {tabs.map((tab) => {
-      const isActive = active === tab.id;
-      return (
-        <Pressable
-          key={tab.id}
-          onPress={() => onSelect(tab.id)}
-          style={{
-            paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
-            backgroundColor: isActive ? '#3b82f618' : 'transparent',
-            borderWidth: 1,
-            borderColor: isActive ? '#3b82f6' : isDark ? '#334155' : '#e2e8f0',
-          }}
-        >
-          <Text style={{
-            fontSize: 12, fontWeight: '600',
-            color: isActive ? '#3b82f6' : isDark ? '#94a3b8' : '#64748b',
-          }}>
-            {tab.label}
-          </Text>
-        </Pressable>
-      );
-    })}
-  </View>
-);
+}> = ({ tabs, active, onSelect }) => {
+  const c = useThemeColors();
+  return (
+    <View style={{
+      flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingVertical: 10,
+      borderBottomWidth: 1, borderBottomColor: c.surface.tertiary,
+    }}>
+      {tabs.map((tab) => {
+        const isActive = active === tab.id;
+        return (
+          <Pressable
+            key={tab.id}
+            onPress={() => onSelect(tab.id)}
+            style={{
+              paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
+              backgroundColor: isActive ? '#3b82f618' : 'transparent',
+              borderWidth: 1,
+              borderColor: isActive ? '#3b82f6' : c.border.primary,
+            }}
+          >
+            <Text style={{
+              fontSize: 12, fontWeight: '600',
+              color: isActive ? '#3b82f6' : c.text.secondary,
+            }}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
 
 // ── General section (Date Format sub-tab) ─────────────────────────────────────
 
-const GeneralSection: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+const GeneralSection: React.FC = () => {
   const [sub, setSub] = useState('dateFormat');
   return (
     <>
       <SubTabBar
         tabs={[{ id: 'dateFormat', label: '📅 Date Format' }]}
-        active={sub} onSelect={setSub} isDark={isDark}
+        active={sub} onSelect={setSub}
       />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <DateFormatPanel />
@@ -75,7 +78,7 @@ const GeneralSection: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
 // ── Tickets section (Scheduler + SLA sub-tabs) ────────────────────────────────
 
-const TicketsSection: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+const TicketsSection: React.FC = () => {
   const [sub, setSub] = useState('scheduler');
   return (
     <>
@@ -84,7 +87,7 @@ const TicketsSection: React.FC<{ isDark: boolean }> = ({ isDark }) => {
           { id: 'scheduler', label: '⏰ Scheduler' },
           { id: 'sla',       label: '⏱️ SLA Timers' },
         ]}
-        active={sub} onSelect={setSub} isDark={isDark}
+        active={sub} onSelect={setSub}
       />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         {sub === 'scheduler' ? <SchedulerSettingsPanel /> : <SlaSettingsPanel />}
@@ -108,18 +111,17 @@ const TENANT_ADMIN_TABS: MainTab[] = [
 ];
 
 const SettingsScreen: React.FC = () => {
-  const { user }      = useAuthStore();
-  const { colorMode } = useUiStore();
-  const isDark        = colorMode === 'dark';
-  const isSuperAdmin  = user?.role === 'SUPER_ADMIN';
+  const { user } = useAuthStore();
+  const c = useThemeColors();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const tabs = isSuperAdmin ? SUPER_ADMIN_TABS : TENANT_ADMIN_TABS;
   const [active, setActive] = useState(tabs[0].id);
 
   const renderContent = () => {
     switch (active) {
-      case 'general':   return <GeneralSection isDark={isDark} />;
-      case 'tickets':   return <TicketsSection isDark={isDark} />;
+      case 'general':   return <GeneralSection />;
+      case 'tickets':   return <TicketsSection />;
       case 'epicClose': return (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
           <EpicAutoClosePanel />
@@ -135,12 +137,12 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
+    <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       {/* Main tab bar */}
       <View style={{
         borderBottomWidth: 1,
-        borderBottomColor: isDark ? '#334155' : '#e2e8f0',
-        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+        borderBottomColor: c.border.primary,
+        backgroundColor: c.surface.primary,
       }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 6 }}>
@@ -153,15 +155,15 @@ const SettingsScreen: React.FC = () => {
                 style={{
                   flexDirection: 'row', alignItems: 'center', gap: 6,
                   paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-                  backgroundColor: isActive ? '#3b82f6' : isDark ? '#334155' : '#f1f5f9',
+                  backgroundColor: isActive ? '#3b82f6' : c.surface.tertiary,
                   borderWidth: 1,
-                  borderColor: isActive ? '#3b82f6' : isDark ? '#475569' : '#e2e8f0',
+                  borderColor: isActive ? '#3b82f6' : c.border.primary,
                 }}
               >
                 <Text style={{ fontSize: 14 }}>{tab.icon}</Text>
                 <Text style={{
                   fontSize: 12, fontWeight: '600',
-                  color: isActive ? '#fff' : isDark ? '#cbd5e1' : '#475569',
+                  color: isActive ? '#fff' : c.text.secondary,
                 }}>
                   {tab.label}
                 </Text>

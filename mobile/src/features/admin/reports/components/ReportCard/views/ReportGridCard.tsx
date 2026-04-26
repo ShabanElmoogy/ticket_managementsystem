@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import type { ReportType } from '../../../types';
-import { StatCard, type StatItem } from '../../../../../../shared/components';
+import type { ReportType } from '@/src/features/admin/reports/types';
+import { StatCard, type StatItem } from '@/src/shared/components';
 
 interface Props { row: any; isDark: boolean; }
 

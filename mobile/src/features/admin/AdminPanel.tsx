@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useAuthStore } from '../../stores/authStore';
-import { useUiStore } from '../../stores/uiStore';
-import AdminDashboardScreen from './dashboard/AdminDashboardScreen';
-import CustomersScreen     from './customers/CustomersScreen';
-import ApplicationsScreen  from './applications/ApplicationsScreen';
-import UsersScreen         from './users/UsersScreen';
-import TicketsScreen       from './tickets/TicketsScreen';
-import TemplatesScreen     from './templates/TemplatesScreen';
-import TenantsScreen       from './tenants/TenantsScreen';
-import SettingsScreen      from './settings/SettingsScreen';
-import DocsScreen          from './docs/DocsScreen';
-import ReportsScreen       from './reports/ReportsScreen';
+import ApplicationsScreen from '@/src/features/admin/applications/ApplicationsScreen';
+import CustomersScreen from '@/src/features/admin/customers/CustomersScreen';
+import AdminDashboardScreen from '@/src/features/admin/dashboard/AdminDashboardScreen';
+import DocsScreen from '@/src/features/admin/docs/DocsScreen';
+import ReportsScreen from '@/src/features/admin/reports/ReportsScreen';
+import SettingsScreen from '@/src/features/admin/settings/SettingsScreen';
+import TemplatesScreen from '@/src/features/admin/templates/TemplatesScreen';
+import TenantsScreen from '@/src/features/admin/tenants/TenantsScreen';
+import TicketsScreen from '@/src/features/admin/tickets/TicketsScreen';
+import UsersScreen from '@/src/features/admin/users/UsersScreen';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useUiStore } from '@/src/stores/uiStore';
 
 // ── Menu config ───────────────────────────────────────────────────────────────
 

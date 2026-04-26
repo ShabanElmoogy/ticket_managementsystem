@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen        from '@/src/features/admin/shared/AdminCrudScreen';
-import CustomerForm           from './components/CustomerForm';
-import CustomerDetailScreen   from './components/CustomerDetailScreen';
 import { AppDeleteDialog }    from '@/src/shared/components';
-import { useCustomers }       from './hooks/useCustomers';
-import { customersKeys }      from './api/customers';
 import { useToast }           from '@/src/shared/hooks/useToast';
+import { customersKeys } from '@/src/features/admin/customers/api/customers';
+import CustomerDetailScreen from '@/src/features/admin/customers/components/CustomerDetailScreen';
+import CustomerForm from '@/src/features/admin/customers/components/CustomerForm';
+import { useCustomers } from '@/src/features/admin/customers/hooks/useCustomers';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 const CustomersScreen: React.FC = () => {

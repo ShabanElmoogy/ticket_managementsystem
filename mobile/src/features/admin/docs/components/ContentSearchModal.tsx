@@ -4,9 +4,9 @@ import {
   FlatList, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { Doc } from '../types/types';
-import { useContentSearch, type SearchMatch } from '../hooks/useContentSearch';
-import { BLOCK_META } from './editor/blockMeta';
+import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import { useContentSearch, type SearchMatch } from '@/src/features/admin/docs/hooks/useContentSearch';
+import type { Doc } from '@/src/features/admin/docs/types/types';
 
 interface Props {
   visible: boolean;

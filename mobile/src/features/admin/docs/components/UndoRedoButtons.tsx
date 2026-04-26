@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useDocsStore } from '../hooks/useDocsStore';
+import { useDocsStore } from '@/src/features/admin/docs/hooks/useDocsStore';
 
 interface Props {
   isDark: boolean;

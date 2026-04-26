@@ -2,10 +2,10 @@ import React, { useRef } from 'react';
 import { View, Text, Pressable, Modal, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { AppButton } from '../../../shared/components';
-import { FormScrollProvider } from './FormScrollContext';
-import { useThemeColors, Palette, FontSize, FontWeight, Radius } from '../../../constants/theme';
-import { useUiStore } from '../../../stores/uiStore';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { AppButton } from '@/src/shared/components';
+import { useUiStore } from '@/src/stores/uiStore';
+import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
 
 export interface AdminFormModalProps {
   open:             boolean;

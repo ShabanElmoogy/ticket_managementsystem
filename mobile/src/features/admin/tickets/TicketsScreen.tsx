@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuxData } from '../../../shared/hooks/useAuxData';
-import { ticketsApi, ticketsKeys } from './api/tickets';
-import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '../../../shared/components';
-import type { Ticket } from '../../../services/api/types';
-import { useUiStore } from '../../../stores/uiStore';
+import { ticketsApi, ticketsKeys } from '@/src/features/admin/tickets/api/tickets';
+import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '@/src/shared/components';
+import { useAuxData } from '@/src/shared/hooks/useAuxData';
+import type { Ticket } from '@/src/services/api/types';
+import { useUiStore } from '@/src/stores/uiStore';
 
 const TicketsScreen: React.FC = () => {
   const { t }      = useTranslation();

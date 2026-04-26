@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput, Modal, Alert } from 'react-native';
-import { BLOCK_META } from './blockMeta';
-import type { DocBlock } from '../../types/types';
-import { AppDeleteDialog } from '../../../../../shared/components';
+import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import type { DocBlock } from '@/src/features/admin/docs/types/types';
+import { AppDeleteDialog } from '@/src/shared/components';
 
 interface Props {
   block: DocBlock;

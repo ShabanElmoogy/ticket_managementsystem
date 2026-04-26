@@ -1,14 +1,13 @@
 import React, { useMemo } from 'react';
 import { Text } from 'react-native';
-import { AppDataTable, type ColDef } from '../../../../../../shared/components';
-import { W } from '../../../../../../shared/components';
-import type { SortState } from '../../../../../../shared/components';
-import type { SlaMetricsRow } from '../../../types';
+import type { SlaMetricsRow } from '@/src/features/admin/reports/types';
+import { AppDataTable, W, type ColDef, type SortState } from '@/src/shared/components';
+import { useThemeColors } from '@/src/constants/theme';
 import {
   createBadgeColumn,
   createTotalColumn,
   createThresholdColumn,
-} from '../../../../../../shared/utils/tableUtils';
+} from '@/src/shared/utils/tableUtils';
 
 interface Props {
   rows: SlaMetricsRow[];
@@ -18,6 +17,7 @@ interface Props {
 }
 
 const SlaTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
+  const c = useThemeColors();
   const columns = useMemo<ColDef<SlaMetricsRow>[]>(() => [
     { field: 'customerName', headerName: 'Customer', width: W.customer, align: 'left' },
     createTotalColumn<SlaMetricsRow>(isDark),
@@ -37,8 +37,8 @@ const SlaTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
       width: 90,
       align: 'center',
       renderCell: (r) => r.avgResolutionHours !== null
-        ? <Text style={{ fontSize: 12, fontWeight: '600', color: isDark ? '#e2e8f0' : '#1e293b' }}>{r.avgResolutionHours}h</Text>
-        : <Text style={{ fontSize: 12, color: isDark ? '#475569' : '#94a3b8' }}>—</Text>,
+        ? <Text style={{ fontSize: 12, fontWeight: '600', color: c.text.primary }}>{r.avgResolutionHours}h</Text>
+        : <Text style={{ fontSize: 12, color: c.text.muted }}>—</Text>,
     },
   ], [isDark]);
 

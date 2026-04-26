@@ -1,25 +1,18 @@
 import { BaseApiService } from '@/src/services/api/base';
+import { API, QUERY_KEYS } from '@/src/constants/api';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 export class ApplicationsApiService extends BaseApiService {
-  getApplications   = ()                                                   => this.get<Application[]>('/applications');
-  getApplication    = (id: string)                                         => this.get<Application>(`/applications/${id}`);
-  createApplication = (data: CreateApplicationData)                        => this.post<Application>('/applications', data);
-  updateApplication = (id: string, data: Partial<CreateApplicationData>)   => this.put<Application>(`/applications/${id}`, data);
-  deleteApplication = (id: string)                                         => this.delete<{ message: string }>(`/applications/${id}`);
-
-  /** Assign a customer to an application (TENANT_ADMIN) */
+  getApplications   = ()                                                   => this.get<Application[]>(API.APPLICATIONS.LIST);
+  getApplication    = (id: string)                                         => this.get<Application>(API.APPLICATIONS.BY_ID(id));
+  createApplication = (data: CreateApplicationData)                        => this.post<Application>(API.APPLICATIONS.LIST, data);
+  updateApplication = (id: string, data: Partial<CreateApplicationData>)   => this.put<Application>(API.APPLICATIONS.BY_ID(id), data);
+  deleteApplication = (id: string)                                         => this.delete<{ message: string }>(API.APPLICATIONS.BY_ID(id));
   assignCustomer    = (applicationId: string, customerId: string)          =>
-    this.post<{ message: string }>('/applications/assign-customer', { applicationId, customerId });
-
-  /** Remove a customer from an application (TENANT_ADMIN) */
+    this.post<{ message: string }>(API.APPLICATIONS.ASSIGN_CUSTOMER, { applicationId, customerId });
   removeCustomer    = (applicationId: string, customerId: string)          =>
-    this.delete<{ message: string }>(`/applications/${applicationId}/customers/${customerId}`);
+    this.delete<{ message: string }>(API.APPLICATIONS.REMOVE_CUSTOMER(applicationId, customerId));
 }
 
-export const applicationsApi = new ApplicationsApiService();
-
-export const applicationsKeys = {
-  all:    ['applications']                      as const,
-  detail: (id: string) => ['applications', id]  as const,
-};
+export const applicationsApi  = new ApplicationsApiService();
+export const applicationsKeys = QUERY_KEYS.APPLICATIONS;

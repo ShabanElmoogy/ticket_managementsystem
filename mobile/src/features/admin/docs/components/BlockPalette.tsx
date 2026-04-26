@@ -1,6 +1,6 @@
 import React from 'react';
-import type { BlockType } from '../types/types';
-import { HorizontalPalette, VerticalPalette } from './palette';
+import { HorizontalPalette, VerticalPalette } from '@/src/features/admin/docs/components/palette';
+import type { BlockType } from '@/src/features/admin/docs/types/types';
 
 interface Props {
   onAdd: (type: BlockType) => void;

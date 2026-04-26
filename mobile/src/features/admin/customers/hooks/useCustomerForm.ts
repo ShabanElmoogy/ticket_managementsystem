@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
+import { createCustomerFormSchema, type MaintenanceType } from '@/src/features/admin/customers/schemas/customerSchema';
 import { useToast } from '@/src/shared/hooks/useToast';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 

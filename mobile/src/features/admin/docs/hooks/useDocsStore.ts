@@ -5,10 +5,10 @@ import type {
   BlockType, BlockSettings, DocBlock, Doc, TreeNode, FolderNode, DocRefNode,
   HeadingBlock, TextBlock, DividerBlock, ImageBlock, VideoBlock,
   BulletedListBlock, CodeBlock,
-} from '../types/types';
-import { newId } from '../utils/idUtils';
-import { docsApi } from '../api/docs';
-import { buildTree, findNode, insertChild, mapTree, removeNode, collectDocIds } from '../utils/treeUtils';
+} from '@/src/features/admin/docs/types/types';
+import { docsApi } from '@/src/features/admin/docs/api/docs';
+import { newId } from '@/src/features/admin/docs/utils/idUtils';
+import { buildTree, findNode, insertChild, mapTree, removeNode, collectDocIds } from '@/src/features/admin/docs/utils/treeUtils';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

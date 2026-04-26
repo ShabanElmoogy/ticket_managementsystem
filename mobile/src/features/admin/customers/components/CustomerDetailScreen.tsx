@@ -3,12 +3,13 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '@/src/shared/utils/dateUtils';
-import { useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
 import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
 import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
 import { customersApi, customersKeys } from '../api/customers';
 import { getCustomerStatus, type SubscriptionStatus } from '../components/customerColumns';
+import { PAGINATION } from '@/src/constants/api';
 
 interface Props {
   customerId:    string;
@@ -40,20 +41,20 @@ const CustomerDetailScreen: React.FC<Props> = ({
   customerId, onClose, onEdit, onDelete, queryEnabled = true,
 }) => {
   const { t }  = useTranslation();
-  const isDark = useIsDark();
+  const c      = useThemeColors();
 
   const { data: customer, isLoading } = useQuery({
     queryKey: customersKeys.detail(customerId),
     queryFn:  () => customersApi.getCustomer(customerId),
-    staleTime: 2 * 60_000,
+    staleTime: PAGINATION.DETAIL_STALE_TIME,
     enabled:  queryEnabled,
   });
 
-  const border     = isDark ? '#334155' : '#e2e8f0';
-  const cardBg     = isDark ? '#1e293b' : '#ffffff';
-  const textPri    = isDark ? '#f1f5f9' : '#0f172a';
-  const textSec    = isDark ? '#94a3b8' : '#64748b';
-  const labelColor = isDark ? '#64748b' : '#94a3b8';
+  const border     = c.border.primary;
+  const cardBg     = c.surface.primary;
+  const textPri    = c.text.primary;
+  const textSec    = c.text.secondary;
+  const labelColor = c.text.muted;
 
   const status = customer
     ? ((customer.subscriptionStatus as SubscriptionStatus | undefined) ?? getCustomerStatus(customer))

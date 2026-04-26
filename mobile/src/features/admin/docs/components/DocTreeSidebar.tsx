@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import type { TreeSidebarProps } from './tree/types';
-import type { DocRefNode, TreeNode } from '../types/types';
-import TreeHeader from './tree/TreeHeader';
-import TreeRow from './tree/TreeRow';
-import TreeEmpty from './tree/TreeEmpty';
-import TreeSearchInput from './tree/TreeSearchInput';
-import TreeSearchResults from './tree/TreeSearchResults';
-import { useDirection } from '../../../../providers/DirectionProvider';
+import TreeEmpty from '@/src/features/admin/docs/components/tree/TreeEmpty';
+import TreeHeader from '@/src/features/admin/docs/components/tree/TreeHeader';
+import TreeRow from '@/src/features/admin/docs/components/tree/TreeRow';
+import TreeSearchInput from '@/src/features/admin/docs/components/tree/TreeSearchInput';
+import TreeSearchResults from '@/src/features/admin/docs/components/tree/TreeSearchResults';
+import type { TreeSidebarProps } from '@/src/features/admin/docs/components/tree/types';
+import type { DocRefNode, TreeNode } from '@/src/features/admin/docs/types/types';
+import { useDirection } from '@/src/providers/DirectionProvider';
 
 export type { TreeSidebarProps };
 

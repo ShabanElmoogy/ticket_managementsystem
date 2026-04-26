@@ -7,7 +7,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { WebView } from 'react-native-webview';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { VideoCarouselBlock, VideoItem } from '../../types/types';
 import { newId } from '../../utils/idUtils';
 

@@ -1,4 +1,4 @@
-import type { Customer, Application, Ticket } from '../../../../services/api/types';
+import type { Customer, Application, Ticket } from '@/src/services/api/types';
 
 export interface AdminDashboardStats {
   totalCustomers:     number;

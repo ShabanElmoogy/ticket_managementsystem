@@ -10,6 +10,7 @@ import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
 import { usersApi, usersKeys } from '../api/users';
 import { ROLE_CONFIG, RoleBadge } from './userColumns';
 import type { User } from '@/src/services/api/types';
+import { PAGINATION } from '@/src/constants/api';
 
 interface Props {
   userId:        string;
@@ -43,7 +44,7 @@ const UserDetailScreen: React.FC<Props> = ({
     queryKey: usersKeys.detail(userId),
     // Super admins fetch full detail; tenant admins use the seeded list data only
     queryFn:  isSuperAdmin ? () => usersApi.getUser(userId) : () => Promise.resolve(initialData ?? null),
-    staleTime: 2 * 60_000,
+    staleTime: PAGINATION.DETAIL_STALE_TIME,
     enabled:  queryEnabled,
   });
 

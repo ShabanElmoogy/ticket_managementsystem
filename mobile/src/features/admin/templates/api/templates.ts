@@ -1,5 +1,6 @@
-import { BaseApiService } from '../../../../services/api/base';
-import type { TicketTemplate } from '../../../../services/api/types';
+import { API, QUERY_KEYS } from '@/src/constants/api';
+import { BaseApiService } from '@/src/services/api/base';
+import type { TicketTemplate } from '@/src/services/api/types';
 
 export interface TicketTemplatePayload {
   name: string;
@@ -9,14 +10,11 @@ export interface TicketTemplatePayload {
 }
 
 export class TicketTemplatesApiService extends BaseApiService {
-  list   = ()                                                  => this.get<TicketTemplate[]>('/templates');
-  create = (data: TicketTemplatePayload)                       => this.post<TicketTemplate>('/templates', data);
-  update = (id: string, data: Partial<TicketTemplatePayload>) => this.put<TicketTemplate>(`/templates/${id}`, data);
-  remove = (id: string)                                        => this.delete<{ message: string }>(`/templates/${id}`);
+  list   = ()                                                  => this.get<TicketTemplate[]>(API.TEMPLATES.LIST);
+  create = (data: TicketTemplatePayload)                       => this.post<TicketTemplate>(API.TEMPLATES.LIST, data);
+  update = (id: string, data: Partial<TicketTemplatePayload>) => this.put<TicketTemplate>(API.TEMPLATES.BY_ID(id), data);
+  remove = (id: string)                                        => this.delete<{ message: string }>(API.TEMPLATES.BY_ID(id));
 }
 
-export const ticketTemplatesApi = new TicketTemplatesApiService();
-
-export const ticketTemplatesKeys = {
-  all: ['ticket-templates'] as const,
-};
+export const ticketTemplatesApi  = new TicketTemplatesApiService();
+export const ticketTemplatesKeys = QUERY_KEYS.TEMPLATES;

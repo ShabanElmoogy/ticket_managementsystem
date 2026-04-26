@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { DocBlock } from '../types/types';
-import { newId } from '../utils/idUtils';
+import type { DocBlock } from '@/src/features/admin/docs/types/types';
+import { newId } from '@/src/features/admin/docs/utils/idUtils';
 
 const STORAGE_KEY = 'docs_block_templates';
 

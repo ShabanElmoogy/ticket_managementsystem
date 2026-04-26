@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createUserFormSchema, USER_ROLES, type UserRoleOption } from '../schemas/userSchema';
+import { createUserFormSchema, USER_ROLES, type UserRoleOption } from '@/src/features/admin/users/schemas/userSchema';
 import { useToast } from '@/src/shared/hooks/useToast';
 import type { User, CreateUserData } from '@/src/services/api/types';
 

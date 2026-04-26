@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { View, Pressable } from 'react-native';
-import BlockToolbar from './BlockToolbar';
-import { BLOCK_META } from './blockMeta';
-import type { DocBlock } from '../../types/types';
+import BlockToolbar from '@/src/features/admin/docs/components/editor/BlockToolbar';
+import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import type { DocBlock } from '@/src/features/admin/docs/types/types';
 
 interface Props {
   block: DocBlock;

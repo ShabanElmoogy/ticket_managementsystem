@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, Pressable, ActivityIndicator, Alert, useWindowDimensions,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { PdfBlock } from '../../types/types';
 import PdfViewer from '../shared/PdfViewer';
 import PdfFullscreenModal from '../shared/PdfFullscreenModal';

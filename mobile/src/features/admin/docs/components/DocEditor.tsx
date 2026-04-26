@@ -3,11 +3,11 @@ import {
   ScrollView, View, Text, Pressable,
   PanResponder, Animated, LayoutAnimation, UIManager, Platform,
 } from 'react-native';
-import type { DocBlock, BlockType } from '../types/types';
 import {
   BlockContainer, EditorEmptyState, renderBlockEditor,
   InsertDivider, MiniBlockPicker,
-} from './editor';
+} from '@/src/features/admin/docs/components/editor';
+import type { DocBlock, BlockType } from '@/src/features/admin/docs/types/types';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/authStore';
+import { SOCKET } from '../constants/api';
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') ?? 'https://localhost:3000';
 
@@ -10,16 +11,15 @@ export function getSocket(): Socket {
     const token = useAuthStore.getState().token;
     socket = io(SOCKET_URL, {
       auth: { token },
-      // React Native requires explicit websocket transport
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });
 
-    socket.on('connect', () => console.log('[Socket] Connected:', socket?.id));
-    socket.on('disconnect', (reason) => console.log('[Socket] Disconnected:', reason));
-    socket.on('connect_error', (err) => console.log('[Socket] Error:', err.message));
+    socket.on('connect',       () => console.log('[Socket] Connected:', socket?.id));
+    socket.on('disconnect',    (reason) => console.log('[Socket] Disconnected:', reason));
+    socket.on('connect_error', (err)    => console.log('[Socket] Error:', err.message));
   }
   return socket;
 }
@@ -32,5 +32,9 @@ export function disconnectSocket() {
 }
 
 export function joinUserRoom(userId: string) {
-  getSocket().emit('join', `user_${userId}`);
+  getSocket().emit(SOCKET.EMIT.JOIN, `user_${userId}`);
+}
+
+export function joinTenantRoom(tenantId: string) {
+  getSocket().emit(SOCKET.EMIT.JOIN_TENANT, `tenant_${tenantId}`);
 }

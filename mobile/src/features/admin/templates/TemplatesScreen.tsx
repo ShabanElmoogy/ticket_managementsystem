@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
-import { ticketTemplatesApi, ticketTemplatesKeys, type TicketTemplatePayload } from './api/templates';
-import AdminCrudScreen  from '../shared/AdminCrudScreen';
-import AdminFormModal   from '../shared/AdminFormModal';
-import { AppTextInput, AppBadge } from '../../../shared/components';
-import type { TicketTemplate } from '../../../services/api/types';
-import type { ColDef } from '../../../shared/components';
+import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
+import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
+import { ticketTemplatesApi, ticketTemplatesKeys, type TicketTemplatePayload } from '@/src/features/admin/templates/api/templates';
+import { AppTextInput, AppBadge } from '@/src/shared/components';
+import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
+import type { TicketTemplate } from '@/src/services/api/types';
+import type { ColDef } from '@/src/shared/components';
 
 // ── Inline form ───────────────────────────────────────────────────────────────
 

@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react';
-import { AppDataTable, type ColDef } from '../../../../../../shared/components';
-import { Badge as TableBadge, W } from '../../../../../../shared/components';
-import type { SortState } from '../../../../../../shared/components';
-import type { CustomerTicketsSummaryRow } from '../../../types';
-import { createBadgeColumn, createTotalColumn } from '../../../../../../shared/utils/tableUtils';
+import type { CustomerTicketsSummaryRow } from '@/src/features/admin/reports/types';
+import { AppDataTable, type ColDef, type SortState, W } from '@/src/shared/components';
+import { createBadgeColumn, createTotalColumn } from '@/src/shared/utils/tableUtils';
 
 interface Props {
   rows: CustomerTicketsSummaryRow[];

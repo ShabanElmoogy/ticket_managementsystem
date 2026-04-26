@@ -1,23 +1,23 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ticketsApi }   from '../../tickets/api/tickets';
-import { customersApi } from '../../customers/api/customers';
+import { customersApi } from '@/src/features/admin/customers/api/customers';
+import { ticketsApi } from '@/src/features/admin/tickets/api/tickets';
 import {
   buildSummaryRows,
   buildCustomerStatusRows,
   buildCustomerActivityRows,
   buildSlaMetricsRows,
-} from '../utils/rowBuilders';
-import { exportReportPdf } from '../utils/exportReportPdf';
-import { networkEvents }   from '../../../../services/api/networkEvents';
-import type { ReportType, ActivityPeriod, SlaMetricsRow } from '../types';
-import { DEFAULT_PERIOD } from '../types';
+} from '@/src/features/admin/reports/utils/rowBuilders';
+import { exportReportPdf } from '@/src/features/admin/reports/utils/exportReportPdf';
+import { DEFAULT_PERIOD } from '@/src/features/admin/reports/types';
+import type { ReportType, ActivityPeriod, SlaMetricsRow } from '@/src/features/admin/reports/types';
+import { networkEvents } from '@/src/services/api/networkEvents';
 import type {
   CustomerTicketsSummaryRow,
   CustomerStatusRow,
   CustomerActivityRow,
-} from '../types';
-import type { Ticket } from '../../../../services/api/types';
+} from '@/src/features/admin/reports/types';
+import type { Ticket } from '@/src/services/api/types';
 
 export interface FilteredData {
   summaryRows:  CustomerTicketsSummaryRow[];

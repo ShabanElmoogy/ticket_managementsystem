@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAdminFeature } from '../../../shared/hooks/useAdminFeature';
-import { tenantsApi, tenantsKeys, type Tenant } from './api/tenants';
-import AdminCrudScreen  from '../shared/AdminCrudScreen';
-import AdminFormModal   from '../shared/AdminFormModal';
-import { AppTextInput, AppBadge } from '../../../shared/components';
-import type { ColDef } from '../../../shared/components';
+import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
+import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
+import { tenantsApi, tenantsKeys, type Tenant } from '@/src/features/admin/tenants/api/tenants';
+import { AppTextInput, AppBadge } from '@/src/shared/components';
+import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
+import type { ColDef } from '@/src/shared/components';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE:    '#10b981',

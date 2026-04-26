@@ -1,4 +1,4 @@
-import type { TreeNode, Doc } from '../../types/types';
+import type { TreeNode, Doc } from '@/src/features/admin/docs/types/types';
 
 export interface TreeSidebarProps {
   tree: TreeNode[];

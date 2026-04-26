@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen      from '@/src/features/admin/shared/AdminCrudScreen';
-import UserForm             from './components/UserForm';
-import UserDetailScreen     from './components/UserDetailScreen';
 import { AppDeleteDialog, AppConfirmDialog } from '@/src/shared/components';
-import { useUsers }         from './hooks/useUsers';
-import { usersApi, usersKeys } from './api/users';
 import { useToast }         from '@/src/shared/hooks/useToast';
+import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
+import UserDetailScreen from '@/src/features/admin/users/components/UserDetailScreen';
+import UserForm from '@/src/features/admin/users/components/UserForm';
+import { useUsers } from '@/src/features/admin/users/hooks/useUsers';
 import type { User, CreateUserData } from '@/src/services/api/types';
 
 // ── Helper — extract error message from API response ──────────────────────────

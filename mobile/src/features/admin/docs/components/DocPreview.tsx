@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
-import type { DocBlock } from '../types/types';
+import type { DocBlock } from '@/src/features/admin/docs/types/types';
 import {
   PreviewHeading, PreviewText, PreviewDivider, PreviewImage, PreviewVideo,
   PreviewBulletedList, PreviewNumberedList, PreviewCode, PreviewQuote,
   PreviewCallout, PreviewTable, PreviewToggle, PreviewTabs,
   PreviewVideoCarousel, PreviewImageCarousel, PreviewPdf, PreviewExcel, getPreviewColors,
-} from './preview';
+} from '@/src/features/admin/docs/components/preview';
 
 interface Props { blocks: DocBlock[]; isDark: boolean; }
 

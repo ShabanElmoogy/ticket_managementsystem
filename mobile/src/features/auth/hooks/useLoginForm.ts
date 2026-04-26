@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from '../../../stores/authStore';
-import { useTenantStore, type DateFormatValue } from '../../../stores/tenantStore';
-import { useUiStore } from '../../../stores/uiStore';
-import { authApi } from '../api/auth';
-import { tenantsPublicApi, type PublicTenant } from '../api/tenants';
-import { tokenManager } from '../../../services/api/tokenManager';
+import { authApi } from '@/src/features/auth/api/auth';
+import { tenantsPublicApi, type PublicTenant } from '@/src/features/auth/api/tenants';
+import { tokenManager } from '@/src/services/api/tokenManager';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useTenantStore, type DateFormatValue } from '@/src/stores/tenantStore';
+import { useUiStore } from '@/src/stores/uiStore';
 
 export const useLoginForm = () => {
   const [tenantSlug, setTenantSlug]       = useState('');

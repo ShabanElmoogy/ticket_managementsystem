@@ -1,11 +1,11 @@
 import React from 'react';
-import type { DocBlock } from '../../types/types';
-import {
+import { 
   HeadingBlockEditor, TextBlockEditor, CodeBlockEditor, ImageBlockEditor,
   VideoBlockEditor, BulletedListEditor, NumberedListEditor, QuoteEditor,
   CalloutEditor, TableEditor, ToggleEditor, TabsEditor,
   VideoCarouselEditor, ImageCarouselEditor, PdfBlockEditor, ExcelBlockEditor, DividerBlockView,
-} from '../blockEditors';
+} from '@/src/features/admin/docs/components/blockEditors';
+import type { DocBlock } from '@/src/features/admin/docs/types/types';
 
 export function renderBlockEditor(
   block: DocBlock,

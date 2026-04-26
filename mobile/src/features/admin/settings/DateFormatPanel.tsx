@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import dayjs from 'dayjs';
-import { adminSettingsApi } from './api/adminSettingsApi';
-import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import { AppButton } from '../../../shared/components';
-import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '../../../stores/tenantStore';
-import { useUiStore } from '../../../stores/uiStore';
+import { adminSettingsApi } from '@/src/features/admin/settings/api/adminSettingsApi';
+import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/components/SettingsCard';
+import { AppButton } from '@/src/shared/components';
+import { useThemeColors } from '@/src/constants/theme';
+import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '@/src/stores/tenantStore';
+import { useUiStore } from '@/src/stores/uiStore';
 
 type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
 
@@ -24,8 +25,7 @@ const PREVIEW_DATE = dayjs('2025-12-31');
 
 const DateFormatPanel: React.FC = () => {
   const { dateFormat, setDateFormat } = useTenantStore();
-  const { colorMode } = useUiStore();
-  const isDark = colorMode === 'dark';
+  const c = useThemeColors();
 
   const [selected, setSelected] = useState<DateFormatValue>(dateFormat);
   const [loading,  setLoading]  = useState(true);
@@ -67,7 +67,7 @@ const DateFormatPanel: React.FC = () => {
       description="Choose how dates are displayed across the entire application for all users in your organisation."
       loading={loading}
     >
-      {alert && <AlertBanner {...alert} isDark={isDark} />}
+      {alert && <AlertBanner {...alert} isDark={false} />}
 
       {/* Format options */}
       <View style={{ gap: 8, marginBottom: 16 }}>
@@ -80,28 +80,27 @@ const DateFormatPanel: React.FC = () => {
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                 padding: 12, borderRadius: 10,
-                backgroundColor: isActive ? '#3b82f618' : isDark ? '#0f172a' : '#f8fafc',
+                backgroundColor: isActive ? '#3b82f618' : c.surface.secondary,
                 borderWidth: 2,
-                borderColor: isActive ? '#3b82f6' : isDark ? '#334155' : '#e2e8f0',
+                borderColor: isActive ? '#3b82f6' : c.border.primary,
               }}
             >
               <View>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#f1f5f9' : '#0f172a' }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text.primary }}>
                   {fmt.value}
                 </Text>
-                <Text style={{ fontSize: 11, color: isDark ? '#64748b' : '#94a3b8', marginTop: 2 }}>
+                <Text style={{ fontSize: 11, color: c.text.muted, marginTop: 2 }}>
                   {fmt.preview}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {/* Live preview */}
                 <View style={{
-                  backgroundColor: isActive ? '#3b82f6' : isDark ? '#334155' : '#e2e8f0',
+                  backgroundColor: isActive ? '#3b82f6' : c.surface.tertiary,
                   borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
                 }}>
                   <Text style={{
                     fontSize: 11, fontWeight: '700', fontFamily: 'monospace',
-                    color: isActive ? '#fff' : isDark ? '#94a3b8' : '#475569',
+                    color: isActive ? '#fff' : c.text.secondary,
                   }}>
                     {PREVIEW_DATE.format(TO_DAYJS[fmt.value] ?? fmt.value)}
                   </Text>

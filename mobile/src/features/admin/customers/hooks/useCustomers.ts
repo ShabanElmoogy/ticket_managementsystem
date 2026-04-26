@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
-import { customersApi, customersKeys } from '../api/customers';
-import { exportCustomerPdf } from '../utils/exportCustomerPdf';
-import { getCustomerColumns } from '../components/customerColumns';
+import { customersApi, customersKeys } from '@/src/features/admin/customers/api/customers';
+import { exportCustomerPdf } from '@/src/features/admin/customers/utils/exportCustomerPdf';
+import { getCustomerColumns } from '@/src/features/admin/customers/components/customerColumns';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 export function useCustomers() {

@@ -1,6 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import type { Doc, DocBlock, CalloutType } from '../types/types';
+import type { Doc, DocBlock, CalloutType } from '@/src/features/admin/docs/types/types';
 
 // ── Color maps ────────────────────────────────────────────────────────────────
 

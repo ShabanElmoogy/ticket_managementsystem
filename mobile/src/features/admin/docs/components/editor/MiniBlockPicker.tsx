@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Modal } from 'react-native';
-import type { BlockType } from '../../types/types';
-import { BLOCK_META } from './blockMeta';
+import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import type { BlockType } from '@/src/features/admin/docs/types/types';
 
 export const QUICK_BLOCKS: BlockType[] = [
   'text', 'heading', 'image', 'video', 'bulletedList',

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Switch } from 'react-native';
-import { adminSettingsApi, type EscalationConfig } from './api/adminSettingsApi';
-import SettingsCard, { AlertBanner } from './components/SettingsCard';
-import { AppTextInput, AppButton } from '../../../shared/components';
-import { useAuthStore } from '../../../stores/authStore';
-import { useUiStore } from '../../../stores/uiStore';
+import { adminSettingsApi, type EscalationConfig } from '@/src/features/admin/settings/api/adminSettingsApi';
+import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/components/SettingsCard';
+import { AppTextInput, AppButton } from '@/src/shared/components';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useThemeColors } from '@/src/constants/theme';
 
 const PRESETS = [1, 15, 30, 60, 360, 1440];
 const PRESET_LABELS: Record<number, string> = {
@@ -15,9 +15,8 @@ const PRESET_LABELS: Record<number, string> = {
 type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
 
 const SchedulerSettingsPanel: React.FC = () => {
-  const { user }     = useAuthStore();
-  const { colorMode } = useUiStore();
-  const isDark       = colorMode === 'dark';
+  const { user } = useAuthStore();
+  const c = useThemeColors();
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const [interval, setInterval] = useState('60');

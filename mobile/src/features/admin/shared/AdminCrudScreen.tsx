@@ -1,12 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, type ColDef } from '../../../shared/components';
-import { AppSearchInput } from '../../../shared/components';
-import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '../../../constants/theme';
-import { useUiStore } from '../../../stores/uiStore';
-import { useToast } from '../../../shared/hooks/useToast';
-
-const PAGE_SIZE = 5;
+import { PAGINATION } from '@/src/constants/api';
+import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, AppSearchInput, type ColDef } from '@/src/shared/components';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { useUiStore } from '@/src/stores/uiStore';
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
   title:                string;
@@ -211,12 +209,12 @@ function AdminCrudScreen<T extends { id: string }>({
   const handleSearchChange = useCallback((q: string) => { setSearch(q); setPage(1); }, []);
 
   const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGINATION.ADMIN_PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
-  const pageRows   = useMemo(() => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE), [filtered, safePage]);
+  const pageRows   = useMemo(() => filtered.slice((safePage - 1) * PAGINATION.ADMIN_PAGE_SIZE, safePage * PAGINATION.ADMIN_PAGE_SIZE), [filtered, safePage]);
 
   const pagination = useMemo(() => ({
-    page: safePage, totalPages, totalItems, pageSize: PAGE_SIZE,
+    page: safePage, totalPages, totalItems, pageSize: PAGINATION.ADMIN_PAGE_SIZE,
     hasNext: safePage < totalPages, hasPrev: safePage > 1,
     next: () => setPage((p) => Math.min(p + 1, totalPages)),
     prev: () => setPage((p) => Math.max(p - 1, 1)),

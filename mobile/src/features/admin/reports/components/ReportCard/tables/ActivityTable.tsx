@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
-import { AppDataTable, type ColDef } from '../../../../../../shared/components';
-import { W } from '../../../../../../shared/components';
-import type { SortState } from '../../../../../../shared/components';
-import type { CustomerActivityRow, ActivityPeriod } from '../../../types';
-import { DEFAULT_PERIOD } from '../../../types';
-import { createBadgeColumn } from '../../../../../../shared/utils/tableUtils';
+import { DEFAULT_PERIOD } from '@/src/features/admin/reports/types';
+import type { CustomerActivityRow, ActivityPeriod } from '@/src/features/admin/reports/types';
+import { AppDataTable, W, type ColDef, type SortState } from '@/src/shared/components';
+import { createBadgeColumn } from '@/src/shared/utils/tableUtils';
 
 interface Props {
   rows: CustomerActivityRow[];

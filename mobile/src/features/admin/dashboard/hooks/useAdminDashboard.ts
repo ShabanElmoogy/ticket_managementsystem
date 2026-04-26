@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useAuxData } from '@/src/shared/hooks/useAuxData';
-import { customersApi } from '../../customers/api/customers';
-import { applicationsApi } from '../../applications/api/applications';
-import { ticketsApi } from '../../tickets/api/tickets';
-import { computeDashboardStats, type AdminDashboardStats } from '../utils/computeStats';
+import { applicationsApi } from '@/src/features/admin/applications/api/applications';
+import { customersApi } from '@/src/features/admin/customers/api/customers';
+import { ticketsApi } from '@/src/features/admin/tickets/api/tickets';
+import { computeDashboardStats, type AdminDashboardStats } from '@/src/features/admin/dashboard/utils/computeStats';
 
 export function useAdminDashboard() {
   const { data: customers = [],    isLoading: customersLoading } =

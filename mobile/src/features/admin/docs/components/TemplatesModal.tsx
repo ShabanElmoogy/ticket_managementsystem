@@ -4,8 +4,8 @@ import {
   TextInput, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { BlockTemplate } from '../hooks/useBlockTemplates';
-import { BLOCK_META } from './editor/blockMeta';
+import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import type { BlockTemplate } from '@/src/features/admin/docs/hooks/useBlockTemplates';
 
 interface Props {
   visible: boolean;

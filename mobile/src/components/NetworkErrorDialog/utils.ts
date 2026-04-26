@@ -1,32 +1,33 @@
 import { Linking } from 'react-native';
 import { Palette } from '@/src/constants/theme';
+import { HTTP_STATUS } from '@/src/constants/api';
 import type { ErrorState } from './types';
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
 export function statusLabel(status: number): string {
-  if (status >= 500) return 'Server Error';
-  if (status === 403) return 'Access Denied';
-  if (status === 422) return 'Validation Error';
-  if (status === 429) return 'Too Many Requests';
-  if (status === 408) return 'Request Timeout';
+  if (status >= 500)                              return 'Server Error';
+  if (status === HTTP_STATUS.FORBIDDEN)           return 'Access Denied';
+  if (status === HTTP_STATUS.UNPROCESSABLE_ENTITY)return 'Validation Error';
+  if (status === HTTP_STATUS.TOO_MANY_REQUESTS)   return 'Too Many Requests';
+  if (status === HTTP_STATUS.REQUEST_TIMEOUT)     return 'Request Timeout';
   return `Error ${status}`;
 }
 
 export function statusColor(status?: number): string {
-  if (!status)        return Palette.red500;
-  if (status >= 500)  return Palette.red600;
-  if (status === 403) return Palette.amber500;
-  if (status === 429) return Palette.violet500;
+  if (!status)                                  return Palette.red500;
+  if (status >= 500)                            return Palette.red600;
+  if (status === HTTP_STATUS.FORBIDDEN)         return Palette.amber500;
+  if (status === HTTP_STATUS.TOO_MANY_REQUESTS) return Palette.violet500;
   return Palette.red500;
 }
 
 export function statusIcon(status?: number): string {
-  if (!status)        return '📡';
-  if (status >= 500)  return '🔥';
-  if (status === 403) return '🔒';
-  if (status === 429) return '⏱️';
-  if (status === 408) return '⏰';
+  if (!status)                                  return '📡';
+  if (status >= 500)                            return '🔥';
+  if (status === HTTP_STATUS.FORBIDDEN)         return '🔒';
+  if (status === HTTP_STATUS.TOO_MANY_REQUESTS) return '⏱️';
+  if (status === HTTP_STATUS.REQUEST_TIMEOUT)   return '⏰';
   return '⚠️';
 }
 

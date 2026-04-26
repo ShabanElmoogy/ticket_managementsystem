@@ -1,23 +1,22 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View } from 'react-native';
-import { REPORT_TYPES, type ReportType, DEFAULT_PERIOD } from '../../types';
+import { REPORT_TYPES, type ReportType, DEFAULT_PERIOD } from '@/src/features/admin/reports/types';
 import type {
   CustomerTicketsSummaryRow, CustomerStatusRow,
   CustomerActivityRow, ActivityPeriod, SlaMetricsRow,
-} from '../../types';
-import type { Ticket } from '../../../../../services/api/types';
-import type { AdminView } from '../../../../../stores/uiStore';
-import SummaryTable           from './tables/SummaryTable';
-import StatusTable            from './tables/StatusTable';
-import ActivityTable          from './tables/ActivityTable';
-import TicketsTable           from './tables/TicketsTable';
-import SlaTable               from './tables/SlaTable';
-import ActivityPeriodSelector from './ActivityPeriodSelector';
-import { AppEmptyState }          from '../../../../../shared/components';
-import ReportGridCard         from './views/ReportGridCard';
-import ReportCompactRow       from './views/ReportCompactRow';
-import { DataCard }               from '../../../../../shared/components';
-import { useReportData }      from './useReportData';
+} from '@/src/features/admin/reports/types';
+import ActivityPeriodSelector from '@/src/features/admin/reports/components/ReportCard/ActivityPeriodSelector';
+import SlaTable from '@/src/features/admin/reports/components/ReportCard/tables/SlaTable';
+import StatusTable from '@/src/features/admin/reports/components/ReportCard/tables/StatusTable';
+import SummaryTable from '@/src/features/admin/reports/components/ReportCard/tables/SummaryTable';
+import TicketsTable from '@/src/features/admin/reports/components/ReportCard/tables/TicketsTable';
+import ActivityTable from '@/src/features/admin/reports/components/ReportCard/tables/ActivityTable';
+import ReportCompactRow from '@/src/features/admin/reports/components/ReportCard/views/ReportCompactRow';
+import ReportGridCard from '@/src/features/admin/reports/components/ReportCard/views/ReportGridCard';
+import { useReportData } from '@/src/features/admin/reports/components/ReportCard/useReportData';
+import { AppEmptyState, DataCard } from '@/src/shared/components';
+import type { Ticket } from '@/src/services/api/types';
+import type { AdminView } from '@/src/stores/uiStore';
 
 interface Props {
   reportType:   ReportType;

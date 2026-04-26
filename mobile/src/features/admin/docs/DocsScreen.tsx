@@ -3,18 +3,19 @@ import {
   View, Text, Pressable, TextInput,
   useWindowDimensions, Animated,
 } from 'react-native';
-import { useUiStore } from '../../../stores/uiStore';
-import { useDirection } from '../../../providers/DirectionProvider';
-import { useDocsStore, useCurrentDoc } from './hooks/useDocsStore';
-import DocTreeSidebar from './components/DocTreeSidebar';
-import DocEditor from './components/DocEditor';
-import DocPreview from './components/DocPreview';
-import BlockPalette from './components/BlockPalette';
-import UndoRedoButtons from './components/UndoRedoButtons';
-import ContentSearchModal from './components/ContentSearchModal';
-import TemplatesModal from './components/TemplatesModal';
-import { useBlockTemplates } from './hooks/useBlockTemplates';
-import { exportDocToPdf } from './utils/exportDocPdf';
+import BlockPalette from '@/src/features/admin/docs/components/BlockPalette';
+import ContentSearchModal from '@/src/features/admin/docs/components/ContentSearchModal';
+import DocEditor from '@/src/features/admin/docs/components/DocEditor';
+import DocPreview from '@/src/features/admin/docs/components/DocPreview';
+import DocTreeSidebar from '@/src/features/admin/docs/components/DocTreeSidebar';
+import TemplatesModal from '@/src/features/admin/docs/components/TemplatesModal';
+import UndoRedoButtons from '@/src/features/admin/docs/components/UndoRedoButtons';
+import { useBlockTemplates } from '@/src/features/admin/docs/hooks/useBlockTemplates';
+import { useDocsStore, useCurrentDoc } from '@/src/features/admin/docs/hooks/useDocsStore';
+import { exportDocToPdf } from '@/src/features/admin/docs/utils/exportDocPdf';
+import { useDirection } from '@/src/providers/DirectionProvider';
+import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ const TitleEditor: React.FC<{
 const DocsScreen: React.FC = () => {
   const { colorMode } = useUiStore();
   const isDark = colorMode === 'dark';
+  const c = useThemeColors();
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
   const { isRtl: isRTL } = useDirection();
@@ -153,9 +155,9 @@ const DocsScreen: React.FC = () => {
     }
   };
 
-  const bg          = isDark ? '#0f172a' : '#f8fafc';
-  const headerBg    = isDark ? '#1e293b' : '#fff';
-  const borderColor = isDark ? '#334155' : '#e2e8f0';
+  const bg          = c.surface.secondary;
+  const headerBg    = c.surface.primary;
+  const borderColor = c.border.primary;
 
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>

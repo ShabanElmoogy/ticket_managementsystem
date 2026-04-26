@@ -4,6 +4,97 @@ Complete documentation of all implemented admin features in `mobile/src/features
 
 ---
 
+## Constants — Use `@/src/constants/api`
+
+All API endpoint paths, query keys, socket events, HTTP status codes, and pagination defaults are centralized in `mobile/src/constants/api.ts`. **Never hardcode these values.**
+
+### API endpoint paths
+
+```ts
+import { API } from '@/src/constants/api';
+
+// ✅ Correct
+this.get<Customer[]>(API.CUSTOMERS.LIST)
+this.get<Customer>(API.CUSTOMERS.BY_ID(id))
+this.post(API.CUSTOMERS.ASSIGN_APPLICATION, { customerId, applicationId })
+this.delete(API.TICKETS.COMMENT_BY_ID(ticketId, commentId))
+
+// ❌ Wrong — hardcoded strings
+this.get<Customer[]>('/customers')
+this.get<Customer>(`/customers/${id}`)
+```
+
+### React Query cache keys
+
+```ts
+import { QUERY_KEYS } from '@/src/constants/api';
+
+// ✅ Correct
+queryKey: QUERY_KEYS.CUSTOMERS.all
+queryKey: QUERY_KEYS.CUSTOMERS.detail(id)
+queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS.all })
+
+// ❌ Wrong — duplicated per file
+export const customersKeys = { all: ['customers'] as const, ... }
+```
+
+### Socket event names
+
+```ts
+import { SOCKET } from '@/src/constants/api';
+
+// ✅ Correct
+socket.on(SOCKET.EVENTS.NOTIFICATION, handler)
+socket.emit(SOCKET.EMIT.JOIN, `user_${userId}`)
+if (type === SOCKET.NOTIFICATION_TYPES.TICKET_ASSIGNED) { ... }
+
+// ❌ Wrong
+socket.on('notification', handler)
+socket.emit('join', ...)
+```
+
+### HTTP status codes
+
+```ts
+import { HTTP_STATUS } from '@/src/constants/api';
+
+// ✅ Correct
+if (error.status === HTTP_STATUS.UNAUTHORIZED) { ... }
+if (error.status === HTTP_STATUS.NOT_FOUND) { ... }
+
+// ❌ Wrong
+if (error.status === 401) { ... }
+if (error.status === 404) { ... }
+```
+
+### Pagination & stale time
+
+```ts
+import { PAGINATION } from '@/src/constants/api';
+
+// ✅ Correct
+const PAGE_SIZE = PAGINATION.ADMIN_PAGE_SIZE;   // 5
+staleTime: PAGINATION.DETAIL_STALE_TIME         // 2 * 60 * 1000
+staleTime: PAGINATION.LIST_STALE_TIME           // 30 * 1000
+
+// ❌ Wrong
+const PAGE_SIZE = 5;
+staleTime: 2 * 60_000
+```
+
+### Ticket query builder
+
+```ts
+import { buildTicketQuery, type TicketFilters } from '@/src/constants/api';
+
+const url = buildTicketQuery({ status: 'OPEN', priority: 'HIGH', assignedTo: userId });
+// → '/tickets?status=OPEN&priority=HIGH&assignedTo=uuid'
+```
+
+---
+
+---
+
 ## Import Alias
 
 All imports use the `@/src/` alias (configured in `tsconfig.json`). Never use relative `../../../` paths from feature files.
@@ -306,6 +397,41 @@ removeCustomer(applicationId, customerId)         // DELETE /applications/:id/cu
 3. **Details card** — name, version, created
 4. **Description card** — shown when present
 5. **Linked customers card** — customer name + email
+
+---
+
+## Tickets Feature
+
+### API Service
+
+All endpoint paths use constants from `@/src/constants/api` (`API.TICKETS.*`). `TicketFilters` is re-exported from that same module — never redefine it locally.
+
+```ts
+import { API, QUERY_KEYS, buildTicketQuery } from '@/src/constants/api';
+export type { TicketFilters } from '@/src/constants/api';
+```
+
+```ts
+getTickets(filters?)                              // GET /tickets (limit: 50, timeout: 30s)
+getTicket(id)                                     // GET /tickets/:id
+createTicket(data)                                // POST /tickets
+updateTicket(id, data)                            // PUT /tickets/:id
+deleteTicket(id)                                  // DELETE /tickets/:id
+restoreTicket(id)                                 // PATCH /tickets/:id/restore
+takeTicket(id)                                    // POST /tickets/:id/take
+reassignTicket(id, assignedToId)                  // PATCH /tickets/:id/reassign
+bulkUpdateStatus(ids, status)                     // PATCH /tickets/bulk
+addComment(ticketId, content)                     // POST /tickets/:id/comments
+deleteComment(ticketId, commentId)                // DELETE /tickets/:id/comments/:commentId
+watchTicket(id)                                   // POST /tickets/:id/watch
+unwatchTicket(id)                                 // DELETE /tickets/:id/watch
+getWatchers(id)                                   // GET /tickets/:id/watchers
+getAttachments(id)                                // GET /tickets/:id/attachments
+deleteAttachment(id, attachmentId)                // DELETE /tickets/:id/attachments/:attachmentId
+getProgramming(id)                                // GET /tickets/:id/programming
+saveProgramming(id, data)                         // PUT /tickets/:id/programming
+assignProgrammer(id, programmerId)                // POST /tickets/:id/assign-programmer
+```
 
 ---
 
@@ -716,6 +842,8 @@ Custom config in `AppToast.tsx`: left accent bar + icon badge + copy button.
 
 ### Files
 - [ ] `api/<feature>.ts` — service + singleton + query keys + `getOne`
+- [ ] All endpoint paths use `API.*` from `@/src/constants/api` — no hardcoded strings
+- [ ] Query keys use `QUERY_KEYS.*` — no local key definitions
 - [ ] `components/<feature>Columns.tsx` — `get<Feature>Columns(t)` function
 - [ ] `components/<Entity>Form.tsx` — dual-mode, `isDirty` to `AdminFormPage`
 - [ ] `components/<Entity>DetailScreen.tsx` — `AdminDetailScreen` + `DetailInfoCard` + `DetailStatRow`

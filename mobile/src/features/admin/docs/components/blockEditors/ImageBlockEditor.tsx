@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, Image, Pressable, ActivityIndicator, Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ImageBlock } from '../../types/types';
 
 interface Props {

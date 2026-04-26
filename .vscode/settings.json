@@ -1,5 +1,6 @@
 {
     "Codegeex.GenerationPreference": "automatic",
     "Codegeex.SidebarUI.LanguagePreference": "English",
-    "codium.codeCompletion.enable": false
+    "codium.codeCompletion.enable": false,
+    "typescript.autoClosingTags": false
 }

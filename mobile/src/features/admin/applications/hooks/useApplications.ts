@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
-import { applicationsApi, applicationsKeys } from '../api/applications';
-import { exportApplicationPdf } from '../utils/exportApplicationPdf';
-import { getApplicationColumns } from '../components/applicationColumns';
+import { applicationsApi, applicationsKeys } from '@/src/features/admin/applications/api/applications';
+import { exportApplicationPdf } from '@/src/features/admin/applications/utils/exportApplicationPdf';
+import { getApplicationColumns } from '@/src/features/admin/applications/components/applicationColumns';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
 export function useApplications() {

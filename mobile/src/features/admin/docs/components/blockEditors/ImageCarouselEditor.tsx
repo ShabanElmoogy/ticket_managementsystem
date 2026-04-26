@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, ScrollView, useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ImageCarouselBlock, ImageItem } from '../../types/types';
 import { newId } from '../../utils/idUtils';
 

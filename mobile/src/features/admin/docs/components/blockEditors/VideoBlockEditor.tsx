@@ -7,7 +7,7 @@ import { WebView } from 'react-native-webview';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { tokenManager } from '../../../../../services/api/tokenManager';
+import { tokenManager } from '@/src/services/api/tokenManager';
 import type { VideoBlock } from '../../types/types';
 
 interface Props {

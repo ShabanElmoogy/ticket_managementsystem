@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Doc, DocBlock } from '../types/types';
+import type { Doc, DocBlock } from '@/src/features/admin/docs/types/types';
 
 export interface SearchMatch {
   docId: string;

@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
-import { AppDataTable, type ColDef } from '../../../../../../shared/components';
-import { W } from '../../../../../../shared/components';
-import type { SortState } from '../../../../../../shared/components';
-import type { CustomerStatusRow } from '../../../types';
-import { createTotalColumn } from '../../../../../../shared/utils/tableUtils';
+import type { CustomerStatusRow } from '@/src/features/admin/reports/types';
+import { AppDataTable, W, type ColDef, type SortState } from '@/src/shared/components';
+import { createTotalColumn } from '@/src/shared/utils/tableUtils';
 
 interface Props {
   rows: CustomerStatusRow[];

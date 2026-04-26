@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
-import { useThemeColors, useIsDark, FontWeight } from '@/src/constants/theme';
+import { useThemeColors, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
 import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { Avatar, IconButton } from '@/src/shared/components';

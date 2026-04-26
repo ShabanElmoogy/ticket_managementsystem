@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField      from '@/src/features/admin/shared/FormField';
@@ -26,7 +26,7 @@ const CustomerForm: React.FC<Props> = ({
 }) => {
   const { t }                  = useTranslation();
   const { scrollToFirstError } = useFormScroll();
-  const isDark                 = useIsDark();
+  const c                      = useThemeColors();
 
   const {
     fields, errors, isDirty, firstErrorFieldId,
@@ -157,7 +157,6 @@ const CustomerForm: React.FC<Props> = ({
         <MaintenanceTypeSelector
           value={fields.maintenanceType}
           onChange={(v) => handleChange('maintenanceType', v)}
-          isDark={isDark}
           t={t}
         />
       </FormField>
@@ -240,14 +239,14 @@ const CustomerForm: React.FC<Props> = ({
 interface SelectorProps {
   value:    MaintenanceType | null;
   onChange: (v: MaintenanceType | null) => void;
-  isDark:   boolean;
   t:        (key: string) => string;
 }
 
-const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, isDark, t }) => {
-  const labelColor = isDark ? '#94a3b8' : '#374151';
-  const border     = isDark ? '#334155' : '#d1d5db';
-  const bg         = isDark ? '#1e293b' : '#ffffff';
+const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
+  const c      = useThemeColors();
+  const labelColor = c.text.primary;
+  const border     = c.border.primary;
+  const bg         = c.surface.primary;
 
   // Labels via t() — RTL-safe
   const MAINTENANCE_LABELS: Record<MaintenanceType, string> = {
@@ -270,10 +269,10 @@ const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, isD
               paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
               borderWidth: 1.5,
               borderColor: value === type ? '#3b82f6' : border,
-              backgroundColor: value === type ? (isDark ? '#1e3a5f' : '#eff6ff') : bg,
+              backgroundColor: value === type ? c.surface.secondary : bg,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: value === type ? '#2563eb' : (isDark ? '#94a3b8' : '#6b7280') }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: value === type ? '#2563eb' : c.text.secondary }}>
               {MAINTENANCE_LABELS[type]}
             </Text>
           </Pressable>

@@ -1,16 +1,16 @@
 import * as Print   from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import type { Ticket } from '../../../../services/api/types';
+import { REPORT_TYPES } from '@/src/features/admin/reports/types';
+import { esc, fmtDate } from '@/src/shared/utils/htmlUtils';
+import { buildPdfPage } from '@/src/shared/utils/pdfTemplate';
+import type { Ticket } from '@/src/services/api/types';
 import type {
   CustomerTicketsSummaryRow,
   CustomerStatusRow,
   CustomerActivityRow,
   SlaMetricsRow,
   ReportType,
-} from '../types';
-import { REPORT_TYPES } from '../types';
-import { esc, fmtDate }    from '../../../../shared/utils/htmlUtils';
-import { buildPdfPage }    from '../../../../shared/utils/pdfTemplate';
+} from '@/src/features/admin/reports/types';
 
 // ── Per-report HTML builders ──────────────────────────────────────────────────
 

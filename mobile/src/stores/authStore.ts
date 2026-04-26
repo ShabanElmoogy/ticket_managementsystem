@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserRole } from '../types/roles';
 import { tokenManager } from '../services/api/tokenManager';
 import { startTokenRefreshCycle, stopTokenRefreshCycle } from '../services/api/httpClient';
+import { HTTP_STATUS } from '../constants/api';
 
 // ============================================================================
 // Types  — identical to web/src/stores/authStore.ts
@@ -242,7 +243,7 @@ export const useAuthStore = create<AuthState>()(
                   isAuthenticated: true,
                   isLoading: false,
                 });
-              } else if (status === 401) {
+              } else if (status === HTTP_STATUS.UNAUTHORIZED) {
                 // Refresh token is genuinely revoked/expired — logout
                 if (__DEV__) console.warn('❌ Cold start refresh failed: refresh token revoked — logging out');
                 tokenManager.clear();

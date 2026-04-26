@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import type { ReportType } from '../../../types';
-import { CompactListRow, InitialAvatar } from '../../../../../../shared/components';
+import type { ReportType } from '@/src/features/admin/reports/types';
+import { CompactListRow, InitialAvatar } from '@/src/shared/components';
 
 interface Props { row: any; isDark: boolean; }
 

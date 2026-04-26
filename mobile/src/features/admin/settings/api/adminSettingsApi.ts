@@ -1,4 +1,5 @@
-import { BaseApiService } from '../../../../services/api/base';
+import { API } from '@/src/constants/api';
+import { BaseApiService } from '@/src/services/api/base';
 
 export interface EmailConfig {
   enabled: boolean;
@@ -26,21 +27,21 @@ export interface EpicAutoCloseConfig {
 }
 
 export class AdminSettingsApiService extends BaseApiService {
-  getEscalationSettings  = ()                          => this.get<EscalationConfig>('/reminders/escalation-settings');
-  saveEscalationSettings = (intervalMinutes: number)   => this.put<EscalationConfig>('/reminders/escalation-settings', { intervalMinutes });
-  runEscalationNow       = ()                          => this.post('/reminders/escalate-now', {});
+  getEscalationSettings  = ()                         => this.get<EscalationConfig>(API.SETTINGS.ESCALATION);
+  saveEscalationSettings = (intervalMinutes: number)  => this.put<EscalationConfig>(API.SETTINGS.ESCALATION, { intervalMinutes });
+  runEscalationNow       = ()                         => this.post(API.SETTINGS.TRIGGER_ESC, {});
 
-  getSlaSettings  = ()                   => this.get<SlaConfig>('/reminders/sla-settings');
-  saveSlaSettings = (config: SlaConfig)  => this.put<SlaConfig>('/reminders/sla-settings', config);
+  getSlaSettings  = ()                  => this.get<SlaConfig>(API.SETTINGS.SLA);
+  saveSlaSettings = (config: SlaConfig) => this.put<SlaConfig>(API.SETTINGS.SLA, config);
 
-  getEmailIngest   = ()  => this.get<EmailConfig>('/email-ingest/settings');
-  runEmailIngestNow = () => this.post<{ message: string }>('/email-ingest/run-now', {});
+  getEmailIngest    = ()  => this.get<EmailConfig>(API.SETTINGS.EMAIL_INGEST);
+  runEmailIngestNow = ()  => this.post<{ message: string }>(API.SETTINGS.EMAIL_INGEST, {});
 
-  getEpicAutoClose  = ()                    => this.get<EpicAutoCloseConfig>('/reminders/epic-auto-close-settings');
-  saveEpicAutoClose = (enabled: boolean)    => this.put<EpicAutoCloseConfig>('/reminders/epic-auto-close-settings', { epicAutoClose: enabled });
+  getEpicAutoClose  = ()                 => this.get<EpicAutoCloseConfig>(API.SETTINGS.EPIC_CLOSE);
+  saveEpicAutoClose = (enabled: boolean) => this.put<EpicAutoCloseConfig>(API.SETTINGS.EPIC_CLOSE, { epicAutoClose: enabled });
 
-  getDateFormat  = ()                  => this.get<{ dateFormat: string }>('/reminders/date-format-settings');
-  saveDateFormat = (dateFormat: string) => this.put<{ dateFormat: string }>('/reminders/date-format-settings', { dateFormat });
+  getDateFormat  = ()                   => this.get<{ dateFormat: string }>(API.SETTINGS.DATE_FORMAT);
+  saveDateFormat = (dateFormat: string) => this.put<{ dateFormat: string }>(API.SETTINGS.DATE_FORMAT, { dateFormat });
 }
 
 export const adminSettingsApi = new AdminSettingsApiService();

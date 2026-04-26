@@ -1,5 +1,5 @@
 import React from 'react';
-import { SectionHeader, CountBadge } from '../../../../../shared/components';
+import { SectionHeader, CountBadge } from '@/src/shared/components';
 
 interface Props {
   label: string;

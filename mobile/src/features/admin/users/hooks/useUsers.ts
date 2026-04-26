@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
-import { usersApi, usersKeys } from '../api/users';
-import { getUserColumns } from '../components/userColumns';
-import { exportUserPdf } from '../utils/exportUserPdf';
+import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
+import { getUserColumns } from '@/src/features/admin/users/components/userColumns';
+import { exportUserPdf } from '@/src/features/admin/users/utils/exportUserPdf';
 import { useAuthStore } from '@/src/stores/authStore';
 import type { User, CreateUserData } from '@/src/services/api/types';
 

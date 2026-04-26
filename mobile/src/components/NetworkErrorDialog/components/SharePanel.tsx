@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import Toast from 'react-native-toast-message';
 import * as Sharing from 'expo-sharing';
 import ViewShot, { captureRef } from 'react-native-view-shot';
-import { useThemeColors, useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 import { PanelCard, ActionRow } from '@/src/shared/components';
 import { WA_GREEN, WA_GREEN_DARK, SUPPORT_WHATSAPP_NUMBER } from '../constants';
 import { buildShareText, shareToWhatsApp } from '../utils';
@@ -24,7 +24,6 @@ const SharePanel: React.FC<Props> = ({ error, accentColor, icon, onClose }) => {
   const [sharingWA,  setSharingWA]  = useState(false);
   const [sharingImg, setSharingImg] = useState(false);
   const c      = useThemeColors();
-  const isDark = useIsDark();
 
   const busy = sharingWA || sharingImg;
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { AppScreenHeader } from '../../../../shared/components';
-import type { AdminView } from '../../../../stores/uiStore';
+import { AppScreenHeader } from '@/src/shared/components';
+import type { AdminView } from '@/src/stores/uiStore';
 
 interface Props {
   isDark: boolean;

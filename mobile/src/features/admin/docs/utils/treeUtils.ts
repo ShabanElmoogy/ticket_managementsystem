@@ -1,4 +1,4 @@
-import type { TreeNode, FolderNode, DocRefNode, ServerDocNode } from '../types/types';
+import type { TreeNode, FolderNode, DocRefNode, ServerDocNode } from '@/src/features/admin/docs/types/types';
 
 export function buildTree(nodes: ServerDocNode[]): TreeNode[] {
   const byId: Record<string, FolderNode | DocRefNode> = {};
