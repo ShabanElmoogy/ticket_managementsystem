@@ -14,7 +14,6 @@ const ReportCardHeader: React.FC<Props> = ({
 }) => (
   <SectionHeader
     title={label}
-    isDark={isDark}
     right={
       <CountBadge
         count={totalItems}

@@ -18,7 +18,6 @@ const ReportTypeSelector: React.FC<Props> = ({ value, onChange, isDark }) => (
     options={TYPE_OPTIONS}
     value={value}
     onChange={onChange}
-    isDark={isDark}
     activeColor="#3b82f6"
   />
 );

@@ -5,7 +5,7 @@ import type { Ticket, TicketWithComments, CreateTicketData, Comment } from '@/sr
 export type { TicketFilters } from '@/src/constants/api';
 
 export class TicketsApiService extends BaseApiService {
-  getTickets = (filters?: Parameters<typeof buildTicketQuery>[0]) => {
+  getTickets = async (filters?: Parameters<typeof buildTicketQuery>[0]): Promise<Ticket[]> => {
     const params: Record<string, string> = {};
     if (filters?.status)        params.status        = filters.status;
     if (filters?.priority)      params.priority      = filters.priority;
@@ -16,7 +16,9 @@ export class TicketsApiService extends BaseApiService {
     if (filters?.userId)        params.userId        = filters.userId;
     params.deleted = filters?.deleted === true ? 'true' : 'false';
     params.limit   = '50';
-    return this.get<Ticket[]>(API.TICKETS.LIST, { params, timeout: 30_000 });
+    const result = await this.get<Ticket[] | { data: Ticket[]; total: number }>(API.TICKETS.LIST, { params, timeout: 30_000 });
+    // Normalize — backend returns array (no pagination) or { data, total } (paginated)
+    return Array.isArray(result) ? result : ((result as any)?.data ?? []);
   };
 
   getTicket        = (id: string)                              => this.get<TicketWithComments>(API.TICKETS.BY_ID(id));

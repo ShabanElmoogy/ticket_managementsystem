@@ -12,8 +12,10 @@ export function useAdminDashboard() {
   const { data: applications = [], isLoading: appsLoading } =
     useAuxData(['dashboard-applications'], applicationsApi.getApplications.bind(applicationsApi));
 
-  const { data: tickets = [],      isLoading: ticketsLoading } =
+  const { data: ticketsRaw = [],      isLoading: ticketsLoading } =
     useAuxData(['dashboard-tickets'],      () => ticketsApi.getTickets({}));
+
+  const tickets = Array.isArray(ticketsRaw) ? ticketsRaw : ((ticketsRaw as any)?.data ?? []);
 
   const stats: AdminDashboardStats = useMemo(
     () => computeDashboardStats(customers, applications, tickets),

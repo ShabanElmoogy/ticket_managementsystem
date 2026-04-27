@@ -4,9 +4,32 @@
  */
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Badge, W } from '../components/data/AppTable';
-import { Colors, Palette, FontSize, FontWeight } from '@/src/constants/tokens';
+import { Colors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/tokens';
 import type { ColDef } from '../components/data/AppDataTable';
+
+// ── Column width constants ────────────────────────────────────────────────────
+
+export const W = {
+  customer: 180,
+  num:       72,
+  pct:       72,
+  status:    90,
+  priority:  80,
+  title:    200,
+  name:     140,
+} as const;
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
+
+export const Badge: React.FC<{ label: string | number; color: string }> = ({ label, color }) => (
+  <View style={{
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full,
+    backgroundColor: color + '22', borderWidth: 1, borderColor: color + '55',
+    alignSelf: 'center',
+  }}>
+    <Text style={{ fontSize: 11, fontWeight: '700', color }}>{label}</Text>
+  </View>
+);
 
 // ── Badge column ──────────────────────────────────────────────────────────────
 

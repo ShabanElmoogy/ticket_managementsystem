@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { FlatList, RefreshControl } = require('react-native') as { FlatList: any; RefreshControl: any };
 import { useThemeColors, FontSize } from '@/src/constants/theme';
 import AppEmptyState   from '@/src/shared/components/feedback/AppEmptyState';
 import ConfirmDeleteDialog from '@/src/shared/components/dialogs/ConfirmDeleteDialog';
@@ -130,7 +132,7 @@ function DataCard<T extends { id: string }>({
         ) : (
           <FlatList
             data={[{ key: 'table' }]}
-            keyExtractor={(i) => i.key}
+            keyExtractor={(i: any) => i.key}
             renderItem={() => renderTable()}
             ListHeaderComponent={ListHeader}
             refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
@@ -144,14 +146,14 @@ function DataCard<T extends { id: string }>({
           <FlatList
             style={{ flex: 1 }}
             data={rows}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
             contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
             ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
             ListFooterComponent={paginationBar}
             refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => renderGridItem ? (renderGridItem(item) ?? null) : null}
+            renderItem={({ item }: { item: any }) => renderGridItem ? (renderGridItem(item) ?? null) : null}
           />
         </View>
 
@@ -160,14 +162,14 @@ function DataCard<T extends { id: string }>({
           <FlatList
             style={{ flex: 1 }}
             data={rows}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
             contentContainerStyle={{ paddingBottom: 24 }}
             ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
             ListFooterComponent={paginationBar}
             refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => renderCompactItem ? (renderCompactItem(item) ?? null) : null}
+            renderItem={({ item }: { item: any }) => renderCompactItem ? (renderCompactItem(item) ?? null) : null}
           />
         </View>
       )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import ViewToggle from './ViewToggle';
 import HeaderTitle from './HeaderTitle';
 import HeaderActionGroup from './HeaderActionGroup';
@@ -39,7 +39,7 @@ export interface AppScreenHeaderProps {
   // ── Legacy / escape hatch ─────────────────────────────────────────────────
   /** Extra buttons rendered before Refresh in the action group */
   rightActions?: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
+  style?: ViewStyle;
 }
 
 /**
@@ -72,7 +72,7 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
     </View>
 
     {/* Center — Title */}
-    <HeaderTitle title={title} subtitle={subtitle} badge={badge} />
+    <HeaderTitle title='' subtitle={subtitle} badge={badge} />
 
     {/* Right — Refresh | Export PDF | | Add */}
     <HeaderActionGroup

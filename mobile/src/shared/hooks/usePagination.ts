@@ -88,21 +88,20 @@ export function usePagination<T>(
 
   // ── CLIENT mode ─────────────────────────────────────────────────────────────
   if (mode === 'CLIENT') {
-    const total      = data.length;
+    const safeData   = Array.isArray(data) ? data : [];
+    const total      = safeData.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const safePage   = Math.min(page, totalPages);
-    const rows       = data.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const rows       = safeData.slice((safePage - 1) * pageSize, safePage * pageSize);
 
     return {
       mode:       'CLIENT',
-      rows,
-      page:       safePage,
+      rows,      page:       safePage,
       pageSize,
       totalPages,
       total,
       hasNext:    safePage < totalPages,
-      hasPrev:    safePage > 1,
-      next:       () => setPage((p) => Math.min(p + 1, totalPages)),
+      hasPrev:    safePage > 1,      next:       () => setPage((p) => Math.min(p + 1, totalPages)),
       prev:       () => setPage((p) => Math.max(p - 1, 1)),
       goTo:       (p) => setPage(Math.max(1, Math.min(p, totalPages))),
       setPageSize,

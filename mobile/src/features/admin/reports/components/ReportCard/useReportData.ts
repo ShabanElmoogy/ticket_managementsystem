@@ -4,7 +4,8 @@ import type {
   CustomerActivityRow, SlaMetricsRow,
 } from '@/src/features/admin/reports/types';
 import { filterByQuery, customerFields, ticketFields } from '@/src/features/admin/reports/components/ReportCard/reportFilters';
-import { usePagination, useSorting } from '@/src/shared/components';
+import { usePagination } from '@/src/shared/hooks/usePagination';
+import { useSorting } from '@/src/shared/components';
 import type { Ticket } from '@/src/services/api/types';
 import type { ReportType } from '@/src/features/admin/reports/types';
 
@@ -64,11 +65,11 @@ export function useReportData({
   const slaSorting      = useSorting(filteredSla);
 
   // ── Paginate ─────────────────────────────────────────────────────────────
-  const summaryPag  = usePagination(summarySorting.sorted);
-  const statusPag   = usePagination(statusSorting.sorted);
-  const activityPag = usePagination(activitySorting.sorted);
-  const ticketsPag  = usePagination(ticketsSorting.sorted);
-  const slaPag      = usePagination(slaSorting.sorted);
+  const summaryPag  = usePagination(summarySorting.sorted  ?? [], false);
+  const statusPag   = usePagination(statusSorting.sorted   ?? [], false);
+  const activityPag = usePagination(activitySorting.sorted ?? [], false);
+  const ticketsPag  = usePagination(ticketsSorting.sorted  ?? [], false);
+  const slaPag      = usePagination(slaSorting.sorted      ?? [], false);
 
   const activePag =
     reportType === 'summary'            ? summaryPag
@@ -92,7 +93,13 @@ export function useReportData({
       : reportType === 'customers-activity' ? activitySorting.sorted
       : reportType === 'sla'                ? slaSorting.sorted
       : ticketsSorting.sorted;
-    return raw.map((r: any) => ({ ...r, _reportType: reportType }));
+
+    if (__DEV__) {
+      const bad = (raw ?? []).findIndex((r: any) => !r);
+      if (bad >= 0) console.warn('⚠️ activeRows: undefined item at index', bad, 'reportType:', reportType);
+    }
+
+    return (raw ?? []).filter(Boolean).map((r: any) => ({ ...r, _reportType: reportType }));
   }, [reportType, summarySorting.sorted, statusSorting.sorted, activitySorting.sorted, slaSorting.sorted, ticketsSorting.sorted]);
 
   return {

@@ -18,7 +18,6 @@ const ActivityPeriodSelector: React.FC<Props> = ({ value, onChange, isDark }) =>
     options={PERIOD_OPTIONS}
     value={value}
     onChange={onChange}
-    isDark={isDark}
     title="Activity Period"
     activeColor="#8b5cf6"
     keyExtractor={(p) => `${p.daysA}-${p.daysB}`}

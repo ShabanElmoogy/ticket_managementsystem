@@ -42,7 +42,7 @@ const AppPagination: React.FC<Props> = ({
           onPress={onPrev}
           disabled={!hasPrev}
           hitSlop={6}
-          style={({ pressed }) => ({
+          style={({ pressed }: { pressed: boolean }) => ({
             width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',
             backgroundColor: pressed ? c.surface.elevated : c.surface.primary,
@@ -66,7 +66,7 @@ const AppPagination: React.FC<Props> = ({
           onPress={onNext}
           disabled={!hasNext}
           hitSlop={6}
-          style={({ pressed }) => ({
+          style={({ pressed }: { pressed: boolean }) => ({
             width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',
             backgroundColor: pressed ? c.surface.elevated : c.surface.primary,

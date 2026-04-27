@@ -3,5 +3,3 @@ export type { HeaderIconButtonProps, HeaderIconButtonVariant } from './HeaderIco
 
 export { default as DialogButton } from './DialogButton';
 export type { DialogButtonProps } from './DialogButton';
-
-export { default as RefreshButton } from './RefreshButton';

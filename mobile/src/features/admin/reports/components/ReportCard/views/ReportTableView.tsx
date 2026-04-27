@@ -33,7 +33,6 @@ const ReportTableView: React.FC<Props> = ({
     pagination={activePag}
     loading={loading}
     onRefresh={onRefresh}
-    isDark={isDark}
   />
 );
 

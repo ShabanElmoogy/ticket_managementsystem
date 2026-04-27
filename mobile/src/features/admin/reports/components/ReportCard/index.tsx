@@ -67,7 +67,19 @@ const ReportCard: React.FC<Props> = ({
     search, onFilteredData,
   });
 
-  const totalItems = activePag.totalItems;
+  const totalItems = activePag.total;
+
+  // Map PaginationResult → PaginationState shape expected by DataCard
+  const paginationForCard = {
+    page:       activePag.page,
+    totalPages: activePag.totalPages,
+    totalItems: activePag.total,
+    pageSize:   activePag.pageSize,
+    hasNext:    activePag.hasNext,
+    hasPrev:    activePag.hasPrev,
+    next:       activePag.next,
+    prev:       activePag.prev,
+  };
 
   // ── Table renderer ────────────────────────────────────────────────────────
   const renderTable = useCallback(() => {
@@ -80,25 +92,25 @@ const ReportCard: React.FC<Props> = ({
     }
     switch (reportType) {
       case 'summary':
-        return <SummaryTable rows={summaryPag.paged} isDark={isDark}
+        return <SummaryTable rows={summaryPag.rows} isDark={isDark}
           sort={summarySorting.sort} onSort={summarySorting.toggle} />;
       case 'customers-status':
-        return <StatusTable rows={statusPag.paged} isDark={isDark}
+        return <StatusTable rows={statusPag.rows} isDark={isDark}
           sort={statusSorting.sort} onSort={statusSorting.toggle} />;
       case 'customers-activity':
-        return <ActivityTable rows={activityPag.paged} isDark={isDark}
+        return <ActivityTable rows={activityPag.rows} isDark={isDark}
           sort={activitySorting.sort} onSort={activitySorting.toggle}
           period={activityPeriod} />;
       case 'tickets':
-        return <TicketsTable rows={ticketsPag.paged as Ticket[]} isDark={isDark}
+        return <TicketsTable rows={ticketsPag.rows as Ticket[]} isDark={isDark}
           sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />;
       case 'sla':
-        return <SlaTable rows={slaPag.paged as SlaMetricsRow[]} isDark={isDark}
+        return <SlaTable rows={slaPag.rows as SlaMetricsRow[]} isDark={isDark}
           sort={slaSorting.sort} onSort={slaSorting.toggle} />;
     }
   }, [
     reportType, totalItems, isFiltered, search, isDark, activityPeriod,
-    summaryPag.paged, statusPag.paged, activityPag.paged, ticketsPag.paged, slaPag.paged,
+    summaryPag.rows, statusPag.rows, activityPag.rows, ticketsPag.rows, slaPag.rows,
     summarySorting, statusSorting, activitySorting, ticketsSorting, slaSorting,
   ]);
 
@@ -124,7 +136,7 @@ const ReportCard: React.FC<Props> = ({
       searchPlaceholder={searchPlaceholder}
       view={view}
       renderTable={renderTable}
-      pagination={activePag}
+      pagination={paginationForCard}
       renderGridItem={(item) => <ReportGridCard row={item} isDark={isDark} />}
       renderCompactItem={(item) => <ReportCompactRow row={item} isDark={isDark} />}
       headerExtras={headerExtras}

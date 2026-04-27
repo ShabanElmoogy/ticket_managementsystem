@@ -1,7 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
 import HeaderIconButton from '../actions/HeaderIconButton';
-import RefreshButton    from '../actions/RefreshButton';
 import VerticalDivider  from './VerticalDivider';
 
 export interface HeaderActionGroupProps {
@@ -48,7 +47,8 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
       {extraActions}
 
       {onRefresh && (
-        <RefreshButton
+        <HeaderIconButton
+          variant="refresh"
           onPress={onRefresh}
           loading={loading}
           label={refreshLabel}

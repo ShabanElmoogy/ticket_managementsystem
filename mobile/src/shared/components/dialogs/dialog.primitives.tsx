@@ -6,7 +6,9 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { Modal, View, Text, Pressable, ActivityIndicator, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
-import { Animated } from 'react-native/Libraries/Animated/Animated';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated } = require('react-native') as { Animated: any };
+const AnimatedView = Animated.View as any;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const RN = require('react-native');
 const TextInput = RN.TextInput as any;
@@ -60,14 +62,14 @@ export const DialogSheet: React.FC<DialogSheetProps> = ({
         style={sheet.backdrop}
         onPress={lockBackdrop ? undefined : onClose}
       >
-        <Animated.View style={[sheet.card, { transform: [{ translateX: shakeX }, { scale: scaleIn }], opacity: opacityIn }]}>
+        <AnimatedView style={[sheet.card, { transform: [{ translateX: shakeX }, { scale: scaleIn }], opacity: opacityIn }]}>
           <Pressable
             style={[{ backgroundColor: bg, shadowColor, borderRadius: Radius['2xl'], padding: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 }, style]}
             onPress={() => {}}
           >
             {children}
           </Pressable>
-        </Animated.View>
+        </AnimatedView>
       </Pressable>
     </Modal>
   );
@@ -110,12 +112,12 @@ export const DialogHeader: React.FC<DialogHeaderProps> = ({
 
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }, style]}>
-      <Animated.View style={{ width: 44, height: 44, borderRadius: Radius.full, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', transform: [{ scale: iconScale }] }}>
+      <AnimatedView style={{ width: 44, height: 44, borderRadius: Radius.full, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', transform: [{ scale: iconScale }] }}>
         {loading
           ? <ActivityIndicator size="small" color={iconColor} />
           : <Text style={{ fontSize: FontSize['2xl'] }}>{icon}</Text>
         }
-      </Animated.View>
+      </AnimatedView>
       <Text style={{ fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: titleColor, flex: 1 }}>
         {title}
       </Text>
@@ -168,7 +170,7 @@ export const DialogProgressBar: React.FC<DialogProgressBarProps> = ({ color, sty
 
   return (
     <View style={[{ height: 3, borderRadius: 2, backgroundColor: color + '30', overflow: 'hidden', marginBottom: 16 }, style]}>
-      <Animated.View style={{ height: '100%', width: '40%', borderRadius: 2, backgroundColor: color, transform: [{ translateX }] }} />
+      <AnimatedView style={{ height: '100%', width: '40%', borderRadius: 2, backgroundColor: color, transform: [{ translateX }] }} />
     </View>
   );
 };
@@ -210,3 +212,4 @@ export const DialogTextInput: React.FC<DialogTextInputProps> = ({
     }, style]}
   />
 );
+

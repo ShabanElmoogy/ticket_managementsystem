@@ -8,7 +8,7 @@ interface Props {
 }
 
 const ReportErrorBanner: React.FC<Props> = ({ message, onRetry, isDark }) => (
-  <ErrorBanner message={message} onRetry={onRetry} isDark={isDark} />
+  <ErrorBanner message={message} onRetry={onRetry}/>
 );
 
 export default ReportErrorBanner;

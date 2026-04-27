@@ -28,10 +28,11 @@ const TicketsScreen: React.FC = () => {
     { field: 'createdAt',  headerName: t('common.created'),    width: 110, valueGetter: (r) => new Date(r.createdAt).toLocaleDateString() },
   ];
 
-  const { data: tickets = [], isLoading, refetch } = useAuxData<Ticket[]>(
+  const { data: ticketsRaw = [], isLoading, refetch } = useAuxData<Ticket[]>(
     ticketsKeys.all,
     () => ticketsApi.getTickets({ deleted: false }),
   );
+  const tickets: Ticket[] = Array.isArray(ticketsRaw) ? ticketsRaw : ((ticketsRaw as any)?.data ?? []);
 
   return (
     <FeatureErrorBoundary featureName="Tickets">

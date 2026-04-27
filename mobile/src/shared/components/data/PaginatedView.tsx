@@ -1,17 +1,7 @@
 import React from 'react';
 import { View, FlatList, RefreshControl } from 'react-native';
 import AppPagination from './AppPagination';
-
-interface PaginationState {
-  page: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-  next: () => void;
-  prev: () => void;
-}
+import type { PaginationState } from './DataCard';
 
 interface Props {
   /** Renders the main content (table, list, etc.) */

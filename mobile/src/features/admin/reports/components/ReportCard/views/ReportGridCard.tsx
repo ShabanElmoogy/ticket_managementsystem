@@ -6,6 +6,7 @@ import { StatCard, type StatItem } from '@/src/shared/components';
 interface Props { row: any; isDark: boolean; }
 
 const ReportGridCard: React.FC<Props> = ({ row, isDark }) => {
+  if (!row) return null;
   const name: string     = row.customerName ?? row.title ?? '—';
   const type: ReportType = row._reportType;
   const muted            = isDark ? '#64748b' : '#94a3b8';
@@ -70,7 +71,6 @@ const ReportGridCard: React.FC<Props> = ({ row, isDark }) => {
       subtitle={subtitle}
       stats={stats}
       footer={footer}
-      isDark={isDark}
     />
   );
 };

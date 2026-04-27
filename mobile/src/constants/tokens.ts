@@ -73,6 +73,7 @@ export const Palette = {
   // Green / Emerald
   green500: '#10b981',
   green600: '#059669',
+  green700: '#047857',
 
   // Amber / Yellow
   amber500: '#f59e0b',

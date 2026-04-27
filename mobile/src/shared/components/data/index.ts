@@ -1,8 +1,10 @@
-export { default as AppTable } from './AppTable';
-export { useSorting, usePagination, STATUS_COLORS, PRIORITY_COLORS, W } from './AppTable';
-export type { SortState, SortDir, ColDef as AppTableColDef } from './AppTable';
 export { default as AppDataTable } from './AppDataTable';
-export type { ColDef } from './AppDataTable';
+export type { ColDef, SortDir, SortState } from './AppDataTable';
+export { useSorting, usePaginationSimple } from './AppDataTable';
+
+// ── tableUtils re-exports — W, Badge, STATUS_COLORS, PRIORITY_COLORS ─────────
+export { W, STATUS_COLORS, PRIORITY_COLORS } from '../../utils/tableUtils';
+
 export { default as DataCard } from './DataCard';
 export type { DataCardProps, PaginationState } from './DataCard';
 

@@ -8,8 +8,8 @@
  *   dialogs/    — ConfirmDeleteDialog, ConfirmTextDialog, AlertDialog
  *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
  *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, HeaderActionGroup
- *   data/       — AppTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup
- *   actions/    — HeaderIconButton, DialogButton, RefreshButton
+ *   data/       — AppDataTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup
+ *   actions/    — HeaderIconButton (add/export/refresh/neutral), DialogButton
  *   platform/   — HapticTab, IconSymbol
  *
  * All symbols are re-exported here so existing imports keep working:

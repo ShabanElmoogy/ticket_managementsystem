@@ -175,6 +175,7 @@ export function buildSlaMetricsRows(
   }
 
   return Array.from(map.values())
+    .filter(Boolean)
     .map(({ _resolutionHoursSum, ...row }) => ({
       ...row,
       avgResolutionHours: row.resolved > 0

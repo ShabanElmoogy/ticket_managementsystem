@@ -36,7 +36,7 @@ const CompactListRow: React.FC<Props> = ({ title, subtitle, left, right, onPress
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: pressed ? c.interactive.pressed : 'transparent' })}>
+      <Pressable onPress={onPress} style={({ pressed }: { pressed: boolean }) => ({ backgroundColor: pressed ? c.interactive.pressed : 'transparent' })}>
         {content}
       </Pressable>
     );

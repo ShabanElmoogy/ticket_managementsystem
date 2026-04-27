@@ -36,7 +36,7 @@ export function useReports() {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const {
-    data: tickets = [],
+    data: ticketsRaw = [],
     isLoading: tLoading,
     error: tError,
     refetch: refetchT,
@@ -46,8 +46,13 @@ export function useReports() {
     staleTime: 5 * 60_000,
   });
 
+  // Normalize — API may return Ticket[] or { data: Ticket[], total, page }
+  const tickets: Ticket[] = Array.isArray(ticketsRaw)
+    ? (ticketsRaw as Ticket[]).filter(Boolean)
+    : (((ticketsRaw as any)?.data ?? []) as Ticket[]).filter(Boolean);
+
   const {
-    data: customers = [],
+    data: customersRaw = [],
     isLoading: cLoading,
     error: cError,
     refetch: refetchC,
@@ -56,6 +61,12 @@ export function useReports() {
     queryFn:  () => customersApi.getCustomers(),
     staleTime: 5 * 60_000,
   });
+
+  // Normalize — API may return Customer[] or { data: Customer[], total, page }
+  const customers = (Array.isArray(customersRaw)
+    ? (customersRaw as any[])
+    : (((customersRaw as any)?.data ?? []) as any[])
+  ).filter(Boolean);
 
   const loading = tLoading || cLoading;
   const error   = tError ?? cError;

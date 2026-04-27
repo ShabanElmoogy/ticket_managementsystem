@@ -6,6 +6,7 @@ import { CompactListRow, InitialAvatar } from '@/src/shared/components';
 interface Props { row: any; isDark: boolean; }
 
 const ReportCompactRow: React.FC<Props> = ({ row, isDark }) => {
+  if (!row) return null;
   const type: ReportType = row._reportType;
   const name: string     = row.customerName ?? row.title ?? '—';
 
@@ -32,7 +33,6 @@ const ReportCompactRow: React.FC<Props> = ({ row, isDark }) => {
     <CompactListRow
       title={name}
       subtitle={summary}
-      isDark={isDark}
       left={<InitialAvatar name={name} />}
       right={totalBadge}
     />

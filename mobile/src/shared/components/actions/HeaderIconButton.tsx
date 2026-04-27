@@ -1,32 +1,30 @@
-import React from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { Pressable, Text, View } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated, Easing } = require('react-native') as { Animated: any; Easing: any };
 import { Radius, FontSize, FontWeight, Spacing, LineHeight } from '@/src/constants/tokens';
 import { useThemeColors } from '@/src/constants/theme';
 
-export type HeaderIconButtonVariant = 'add' | 'export' | 'neutral';
+export type HeaderIconButtonVariant = 'add' | 'export' | 'refresh' | 'neutral';
 
 export interface HeaderIconButtonProps {
   onPress:       () => void;
+  variant?:      HeaderIconButtonVariant;
   label?:        string;
   icon?:         string;
   loading?:      boolean;
   disabled?:     boolean;
   loadingIcon?:  string;
   loadingLabel?: string;
-  variant?:      HeaderIconButtonVariant;
 }
 
-const VARIANT_DEFAULTS: Record<HeaderIconButtonVariant, { icon: string; label: string }> = {
-  add:     { icon: '➕', label: 'Add'        },
-  export:  { icon: '📄', label: 'Export PDF' },
-  neutral: { icon: '🔧', label: 'Action'     },
+const DEFAULTS: Record<HeaderIconButtonVariant, { icon: string; label: string }> = {
+  add:     { icon: '➕',  label: 'Add'        },
+  export:  { icon: '📄',  label: 'Export PDF' },
+  refresh: { icon: '🔄',  label: 'Refresh'    },
+  neutral: { icon: '🔧',  label: 'Action'     },
 };
 
-/**
- * HeaderIconButton — compact square button with icon above label.
- * Used in admin screen headers for Add / Export / custom actions.
- * Replaces the separate AddButton and ExportPdfButton components.
- */
 const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
   onPress,
   variant      = 'neutral',
@@ -39,27 +37,70 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
 }) => {
   const c          = useThemeColors();
   const isDisabled = loading || disabled;
+  const isRefresh  = variant === 'refresh';
 
-  const defaults   = VARIANT_DEFAULTS[variant];
-  const displayIcon  = loading ? loadingIcon : disabled ? '🚫' : (icon  ?? defaults.icon);
+  // ── Spin animation (refresh variant only) ─────────────────────────────────
+  const rotation = useRef<any>(new Animated.Value(0)).current;
+  const loopRef  = useRef<any>(null);
+
+  const stopSpin = useCallback(() => {
+    loopRef.current?.stop();
+    loopRef.current = null;
+    Animated.timing(rotation, { toValue: 0, duration: 150, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
+  }, [rotation]);
+
+  const startLoop = useCallback(() => {
+    loopRef.current?.stop();
+    rotation.setValue(0);
+    loopRef.current = Animated.loop(
+      Animated.timing(rotation, { toValue: 1, duration: 600, easing: Easing.linear, useNativeDriver: true }),
+    );
+    loopRef.current.start();
+  }, [rotation]);
+
+  useEffect(() => {
+    if (!isRefresh) return;
+    if (loading) startLoop(); else stopSpin();
+    return () => { loopRef.current?.stop(); };
+  }, [loading, isRefresh]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePress = useCallback(() => {
+    if (isRefresh) {
+      loopRef.current?.stop();
+      rotation.setValue(0);
+      Animated.timing(rotation, { toValue: 1, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
+    }
+    onPress();
+  }, [rotation, onPress, isRefresh]);
+
+  const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  // ── Colors ────────────────────────────────────────────────────────────────
+  const bg        = isDisabled          ? c.surface.elevated
+                  : c.surface.tertiary;
+
+  const bgPressed = isDisabled          ? c.surface.elevated
+                  : c.surface.elevated;
+
+  const textColor = isDisabled          ? c.text.muted
+                  : c.text.secondary;
+
+  // ── Display values ─────────────────────────────────────────────────────────
+  const defaults     = DEFAULTS[variant];
+  const displayIcon  = loading ? loadingIcon : disabled ? '🚫' : (icon ?? defaults.icon);
   const displayLabel = loading ? (loadingLabel ?? defaults.label) : (label ?? defaults.label);
 
-  const getBg = (pressed: boolean): string => {
-    if (isDisabled) return c.buttons.neutral.bg;
-    switch (variant) {
-      case 'add':    return pressed ? c.buttons.success.pressed : c.buttons.success.bg;
-      case 'export': return pressed ? c.buttons.danger.pressed  : c.buttons.danger.bg;
-      default:       return pressed ? c.buttons.neutral.pressed : c.buttons.neutral.bg;
-    }
-  };
-
-  const shadowColor = variant === 'add'    ? c.buttons.success.bg
-                    : variant === 'export' ? c.buttons.danger.bg
-                    : c.buttons.neutral.bg;
+  const iconNode = isRefresh ? (
+    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+      <Text style={{ fontSize: FontSize.xl, lineHeight: LineHeight.xl }}>{displayIcon}</Text>
+    </Animated.View>
+  ) : (
+    <Text style={{ fontSize: FontSize.xl, lineHeight: LineHeight.xl }}>{displayIcon}</Text>
+  );
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={isDisabled}
       accessible
       accessibilityRole="button"
@@ -71,30 +112,13 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
         minHeight:         44,
         paddingHorizontal: Spacing.md,
         borderRadius:      Radius.lg,
-        backgroundColor:   getBg(pressed),
+        backgroundColor:   pressed ? bgPressed : bg,
         opacity:           isDisabled ? 0.4 : 1,
-        ...Platform.select({
-          ios: {
-            shadowColor,
-            shadowOffset:  { width: 0, height: pressed || isDisabled ? 1 : 2 },
-            shadowOpacity: isDisabled ? 0 : pressed ? 0.2 : 0.35,
-            shadowRadius:  pressed ? 3 : 5,
-          },
-          android: { elevation: isDisabled ? 0 : 3 },
-        }),
       })}
     >
       <View style={{ flexDirection: 'column', alignItems: 'center', gap: Spacing.xs }}>
-        <Text style={{ fontSize: FontSize.xl, lineHeight: LineHeight.xl }}>{displayIcon}</Text>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize:   FontSize.xs,
-            fontWeight: FontWeight.extrabold,
-            lineHeight: LineHeight.xs,
-            color:      variant === 'neutral' ? c.buttons.neutral.text : c.buttons.primary.text,
-          }}
-        >
+        {iconNode}
+        <Text numberOfLines={1} style={{ fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, lineHeight: LineHeight.xs, color: textColor }}>
           {displayLabel}
         </Text>
       </View>

@@ -438,6 +438,8 @@ import { API, QUERY_KEYS, buildTicketQuery } from '@/src/constants/api';
 export type { TicketFilters } from '@/src/constants/api';
 ```
 
+**Note:** `getTickets()` always returns `Promise<Ticket[]>`. Normalization is handled internally — the method accepts both a plain `Ticket[]` and a paginated `{ data: Ticket[], total: number }` response from the server and always resolves to a flat array. Callers do not need to normalize the result.
+
 ```ts
 getTickets(filters?)                              // GET /tickets (limit: 50, timeout: 30s)
 getTicket(id)                                     // GET /tickets/:id
