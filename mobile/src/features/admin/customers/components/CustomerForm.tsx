@@ -6,6 +6,7 @@ import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField      from '@/src/features/admin/shared/FormField';
 import FormSection    from '@/src/shared/components/forms/FormSection';
+import ChipSelector   from '@/src/shared/components/forms/ChipSelector';
 import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
 import { AppTextInput } from '@/src/shared/components';
 import AppDatePicker from '@/src/shared/components/forms/AppDatePicker';
@@ -159,10 +160,15 @@ const CustomerForm: React.FC<Props> = ({
       {/* ── Subscription ── */}
       <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item}>
         <FormField fieldId="maintenanceType">
-          <MaintenanceTypeSelector
+          <ChipSelector
+            label={t('customers.detail.maintenanceType')}
+            options={[
+              { value: 'MONTHLY_SUBSCRIPTION', label: t('customers.maintenance.monthly'),    icon: '📅', description: t('customers.maintenance.monthlyDesc') },
+              { value: 'FREE_TRIAL',           label: t('customers.maintenance.trial'),       icon: '🎁', description: t('customers.maintenance.trialDesc') },
+              { value: 'PAY_AS_YOU_GO',        label: t('customers.maintenance.payAsYouGo'), icon: '💳', description: t('customers.maintenance.payAsYouGoDesc') },
+            ]}
             value={fields.maintenanceType}
-            onChange={(v) => handleChange('maintenanceType', v)}
-            t={t}
+            onChange={(v) => handleChange('maintenanceType', v as MaintenanceType)}
           />
         </FormField>
 
@@ -252,14 +258,34 @@ interface SelectorProps {
 }
 
 const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
-  const c      = useThemeColors();
-  const isDark = useIsDark();
+  const c = useThemeColors();
 
-  const MAINTENANCE_LABELS: Record<MaintenanceType, string> = {
-    MONTHLY_SUBSCRIPTION: t('customers.maintenance.monthly'),
-    FREE_TRIAL:           t('customers.maintenance.trial'),
-    PAY_AS_YOU_GO:        t('customers.maintenance.payAsYouGo'),
-  };
+  const TYPES: { type: MaintenanceType; label: string; color: string; bg: string; border: string; icon: string }[] = [
+    {
+      type:   'MONTHLY_SUBSCRIPTION',
+      label:  t('customers.maintenance.monthly'),
+      icon:   '📅',
+      color:  '#2563eb',
+      bg:     '#eff6ff',
+      border: '#bfdbfe',
+    },
+    {
+      type:   'FREE_TRIAL',
+      label:  t('customers.maintenance.trial'),
+      icon:   '🎁',
+      color:  '#7c3aed',
+      bg:     '#f5f3ff',
+      border: '#ddd6fe',
+    },
+    {
+      type:   'PAY_AS_YOU_GO',
+      label:  t('customers.maintenance.payAsYouGo'),
+      icon:   '💳',
+      color:  '#059669',
+      bg:     '#f0fdf4',
+      border: '#bbf7d0',
+    },
+  ];
 
   return (
     <View style={styles.selectorContainer}>
@@ -267,31 +293,49 @@ const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }
         {t('customers.detail.maintenanceType')}
       </Text>
       <View style={styles.chipRow}>
-        {MAINTENANCE_TYPES.map((type) => {
+        {TYPES.map(({ type, label, icon, color, bg, border }) => {
           const active = value === type;
           return (
             <Pressable
               key={type}
               onPress={() => onChange(type)}
-              style={({ pressed }) => [
+              style={({ pressed }: { pressed: boolean }) => [
                 styles.chip,
                 {
-                  borderColor:     active ? c.interactive.primary : c.border.primary,
-                  backgroundColor: active
-                    ? (isDark ? '#1a2e4a' : '#eff6ff')
-                    : pressed
-                    ? c.surface.tertiary
-                    : c.surface.secondary,
+                  backgroundColor: active ? bg : pressed ? c.surface.tertiary : c.surface.secondary,
+                  borderColor:     active ? color : c.border.primary,
+                  borderWidth:     active ? 2 : 1,
+                  shadowColor:     active ? color : 'transparent',
+                  shadowOffset:    { width: 0, height: active ? 3 : 0 },
+                  shadowOpacity:   active ? 0.22 : 0,
+                  shadowRadius:    active ? 8 : 0,
+                  elevation:       active ? 4 : 0,
                 },
               ]}
             >
-              {active && <Text style={styles.chipCheck}>✓ </Text>}
+              {/* Left: colored icon badge */}
+              <View style={[styles.chipIconBadge, { backgroundColor: color + '22' }]}>
+                <Text style={{ fontSize: 18 }}>{icon}</Text>
+              </View>
+
+              {/* Label */}
               <Text style={[
                 styles.chipText,
-                { color: active ? c.interactive.primary : c.text.secondary },
+                { color: active ? color : c.text.primary },
               ]}>
-                {MAINTENANCE_LABELS[type]}
+                {label}
               </Text>
+
+              {/* Right: radio indicator */}
+              <View style={[
+                styles.chipRadio,
+                {
+                  borderColor:     active ? color : c.border.secondary,
+                  backgroundColor: active ? color : 'transparent',
+                },
+              ]}>
+                {active && <View style={styles.chipRadioInner} />}
+              </View>
             </Pressable>
           );
         })}
@@ -334,8 +378,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   chipRow: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
+    flexDirection: 'column',
     gap:           8,
     marginBottom:  4,
   },
@@ -343,18 +386,47 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     paddingHorizontal: 14,
-    paddingVertical:   9,
-    borderRadius:      Radius.full,
-    borderWidth:       1.5,
+    paddingVertical:   12,
+    borderRadius:      Radius.xl,
+    borderWidth:       1,
+    gap:               12,
   },
-  chipCheck: {
-    fontSize:   FontSize.sm,
-    color:      '#2563eb',
-    fontWeight: FontWeight.bold,
+  chipIconBadge: {
+    width:          40,
+    height:         40,
+    borderRadius:   Radius.lg,
+    alignItems:     'center',
+    justifyContent: 'center',
+    flexShrink:     0,
+  },
+  chipIcon: {
+    fontSize: 15,
   },
   chipText: {
-    fontSize:   FontSize.sm,
+    flex:       1,
+    fontSize:   FontSize.base,
     fontWeight: FontWeight.semibold,
+  },
+  chipDot: {
+    width:        6,
+    height:       6,
+    borderRadius: 3,
+    marginStart:  2,
+  },
+  chipRadio: {
+    width:          20,
+    height:         20,
+    borderRadius:   10,
+    borderWidth:    2,
+    alignItems:     'center',
+    justifyContent: 'center',
+    flexShrink:     0,
+  },
+  chipRadioInner: {
+    width:           8,
+    height:          8,
+    borderRadius:    4,
+    backgroundColor: '#fff',
   },
 });
 

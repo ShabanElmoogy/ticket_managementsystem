@@ -266,11 +266,24 @@ features/admin/<feature>/
 
 ### Improvements applied
 
-1. **`isDark` wired** — `MaintenanceTypeSelector` now reads `useIsDark()` instead of hardcoded `false`
-2. **Translated maintenance labels** — `MAINTENANCE_LABELS` uses `t('customers.maintenance.*')` — RTL-safe
-3. **Safe date normalization** — `useCustomerForm.getInitial()` converts API `Date` objects or ISO strings to `YYYY-MM-DD` via `toISOString().split('T')[0]`
-4. **No "Inactive" option** — removed from selector; inactive is computed automatically from dates
-5. **PAY_AS_YOU_GO hides dates** — date pickers only shown for `MONTHLY_SUBSCRIPTION` and `FREE_TRIAL`
+1. **Typed `TYPES` array** — `MaintenanceTypeSelector` uses a `TYPES` array (not `MAINTENANCE_LABELS`) with per-option `{ type, label, icon, color, bg, border }` — no `isDark` needed; active state uses the option's own color tokens
+2. **Safe date normalization** — `useCustomerForm.getInitial()` converts API `Date` objects or ISO strings to `YYYY-MM-DD` via `toISOString().split('T')[0]`
+3. **No "Inactive" option** — removed from selector; inactive is computed automatically from dates
+4. **PAY_AS_YOU_GO hides dates** — date pickers only shown for `MONTHLY_SUBSCRIPTION` and `FREE_TRIAL`
+
+### `MaintenanceTypeSelector` chip pattern
+
+Each option in the selector carries its own color tokens. Active state applies the option color directly — no `isDark` or `useIsDark()` needed:
+
+```ts
+const TYPES = [
+  { type: 'MONTHLY_SUBSCRIPTION', label: t('...'), icon: '📅', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  { type: 'FREE_TRIAL',           label: t('...'), icon: '🎁', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  { type: 'PAY_AS_YOU_GO',        label: t('...'), icon: '💳', color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },
+];
+// Active chip: bg from option, borderColor from option (width 2), colored shadow, bold label
+// Inactive chip: c.surface.secondary bg, c.border.primary border (width 1)
+```
 
 ### API Service
 

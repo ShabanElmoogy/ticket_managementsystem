@@ -131,10 +131,17 @@ const light = {
     pressed:        Palette.slate100,
     success:        Palette.green500,
     successPressed: Palette.green600,
-    warning:        Palette.amber500,  // added — was missing, caused AppButton warning fallback to hardcoded hex
-    warningPressed: Palette.amber600,  // added
+    warning:        Palette.amber500,
+    warningPressed: Palette.amber600,
     error:          Palette.red500,
     errorPressed:   Palette.red600,
+    // ── Chip tokens ──────────────────────────────────────────────────────────
+    chipBg:         Palette.slate100,   // inactive chip background
+    chipBorder:     Palette.slate300,   // inactive chip border
+    chipActiveBg:   Palette.blue500,    // active chip background
+    chipActiveBorder: Palette.blue600,  // active chip border
+    chipActiveText: Palette.white,      // active chip label
+    chipText:       Palette.slate600,   // inactive chip label
   },
   tint:           '#0a7ea4',
   icon:           Palette.slate500,
@@ -181,10 +188,17 @@ const dark = {
     pressed:        Palette.slate700,
     success:        Palette.green500,
     successPressed: Palette.green600,
-    warning:        Palette.amber500,  // added
-    warningPressed: Palette.amber600,  // added
+    warning:        Palette.amber500,
+    warningPressed: Palette.amber600,
     error:          Palette.red500,
     errorPressed:   Palette.red600,
+    // ── Chip tokens ──────────────────────────────────────────────────────────
+    chipBg:           '#1e3a5f',   // dark blue tint — visible on dark bg
+    chipBorder:       '#3b82f6',   // blue border — always visible
+    chipActiveBg:     Palette.blue500,
+    chipActiveBorder: Palette.blue400,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.slate300,   // readable on dark
   },
   tint:           Palette.white,
   icon:           '#9BA1A6',
@@ -205,8 +219,11 @@ export type ThemeColors = {
     secondary: string;
     disabled: string; pressed: string;
     success: string; successPressed: string;
-    warning: string; warningPressed: string;  // added
+    warning: string; warningPressed: string;
     error: string; errorPressed: string;
+    chipBg: string; chipBorder: string;
+    chipActiveBg: string; chipActiveBorder: string;
+    chipActiveText: string; chipText: string;
   };
   tint:            string;
   icon:            string;

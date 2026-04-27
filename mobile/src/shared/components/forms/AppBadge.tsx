@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { View, Text, type ViewStyle } from 'react-native';
 import { StatusColors, PriorityColors, useThemeColors, FontWeight, Radius, FontSize } from '@/src/constants/theme';
 
 export const STATUS_COLORS: Record<string, string> = { ...StatusColors };
@@ -11,7 +11,7 @@ export interface AppBadgeProps {
   label:    string;
   variant?: AppBadgeVariant;
   color?:   string;
-  style?:   StyleProp<ViewStyle>;
+  style?:   ViewStyle;
   size?:    'small' | 'medium';
 }
 

@@ -153,9 +153,12 @@
       "applications": "Applications"
     },
     "maintenance": {
-      "monthly": "Monthly Subscription",
-      "trial": "Free Trial",
-      "payAsYouGo": "Pay As You Go"
+      "monthly":           "Monthly Subscription",
+      "monthlyDesc":       "Recurring monthly billing",
+      "trial":             "Free Trial",
+      "trialDesc":         "Limited time free access",
+      "payAsYouGo":        "Pay As You Go",
+      "payAsYouGoDesc":    "Pay only for what you use"
     },
     "messages": {
       "created": "Customer created successfully",
