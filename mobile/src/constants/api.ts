@@ -34,13 +34,15 @@ export const AUTH = {
 // ── Tenants ───────────────────────────────────────────────────────────────────
 
 export const TENANTS = {
-  LIST:       '/tenants',
-  PUBLIC:     '/tenants/public',
-  BY_SLUG:    (slug: string) => `/tenants/by-slug/${slug}`,
-  BY_ID:      (id: string)   => `/tenants/${id}`,
-  STATS:      (id: string)   => `/tenants/${id}/stats`,
-  ACTIVATE:   (id: string)   => `/tenants/${id}/activate`,
-  DEACTIVATE: (id: string)   => `/tenants/${id}/deactivate`,
+  LIST:                '/tenants',
+  PUBLIC:              '/tenants/public',
+  BY_SLUG:             (slug: string) => `/tenants/by-slug/${slug}`,
+  BY_ID:               (id: string)   => `/tenants/${id}`,
+  STATS:               (id: string)   => `/tenants/${id}/stats`,
+  ACTIVATE:            (id: string)   => `/tenants/${id}/activate`,
+  DEACTIVATE:          (id: string)   => `/tenants/${id}/deactivate`,
+  PAGINATION_SETTINGS:               '/tenants/pagination-settings',
+  PAGINATION_SETTINGS_BY_ID: (id: string) => `/tenants/${id}/pagination-settings`,
 } as const;
 
 // ── Users ─────────────────────────────────────────────────────────────────────

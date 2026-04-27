@@ -26,6 +26,14 @@ export interface EpicAutoCloseConfig {
   epicAutoClose: boolean;
 }
 
+export interface PaginationConfig {
+  paginationMode:    'SERVER' | 'CLIENT';
+  defaultPageSize:   number;
+  maxPageSize:       number;
+  allowUserOverride: boolean;
+  maxClientRecords:  number;
+}
+
 export class AdminSettingsApiService extends BaseApiService {
   getEscalationSettings  = ()                         => this.get<EscalationConfig>(API.SETTINGS.ESCALATION);
   saveEscalationSettings = (intervalMinutes: number)  => this.put<EscalationConfig>(API.SETTINGS.ESCALATION, { intervalMinutes });
@@ -42,6 +50,9 @@ export class AdminSettingsApiService extends BaseApiService {
 
   getDateFormat  = ()                   => this.get<{ dateFormat: string }>(API.SETTINGS.DATE_FORMAT);
   saveDateFormat = (dateFormat: string) => this.put<{ dateFormat: string }>(API.SETTINGS.DATE_FORMAT, { dateFormat });
+
+  getPaginationSettings  = ()                        => this.get<PaginationConfig>(API.TENANTS.PAGINATION_SETTINGS);
+  savePaginationSettings = (config: PaginationConfig) => this.patch<PaginationConfig>(API.TENANTS.PAGINATION_SETTINGS, config);
 }
 
 export const adminSettingsApi = new AdminSettingsApiService();

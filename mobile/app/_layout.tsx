@@ -22,6 +22,9 @@ import Toast from 'react-native-toast-message';
 import { toastConfig } from '@/src/shared/components/feedback/AppToast';
 import { networkEvents } from '@/src/services/api/networkEvents';
 import { useTenantStore } from '@/src/stores/tenantStore';
+import { usePaginationStore } from '@/src/stores/paginationStore';
+import { API } from '@/src/constants/api';
+import { http } from '@/src/services/api/httpClient';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +33,16 @@ const queryClient = new QueryClient({
 });
 
 export const unstable_settings = { anchor: '(tabs)' };
+
+async function syncPaginationSettings() {
+  try {
+    const res = await http.get(API.TENANTS.PAGINATION_SETTINGS);
+    usePaginationStore.getState().setSettings(res.data);
+    if (__DEV__) console.log('📄 Pagination settings synced:', res.data.paginationMode);
+  } catch {
+    // Keep stored/default settings on failure
+  }
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -76,6 +89,8 @@ export default function RootLayout() {
       // 5. Sync tenant dateFormat from API (non-blocking — uses stored value if fails)
       if (useAuthStore.getState().isAuthenticated) {
         useTenantStore.getState().syncDateFormat();
+        // 6. Sync pagination settings (non-blocking)
+        syncPaginationSettings().catch(() => {});
       }
 
       // 4. Routes render now with correct auth state

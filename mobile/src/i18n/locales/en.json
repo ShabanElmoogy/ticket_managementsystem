@@ -459,5 +459,32 @@
       "used": "used",
       "free": "free"
     }
+  },
+  "settings": {
+    "pagination": {
+      "title": "Pagination Settings",
+      "description": "Control how data is loaded and displayed across the app. Server mode fetches pages on demand; Client mode loads all data once for fast local navigation.",
+      "mode": "Pagination Mode",
+      "modeServer": "Server-Side",
+      "modeServerDesc": "API paginates. Slower page switching but handles large datasets efficiently.",
+      "modeClient": "Client-Side",
+      "modeClientDesc": "Fetch all data once, paginate locally. Fast page switching but limited to maxClientRecords.",
+      "pageSizes": "Page Size Settings",
+      "defaultPageSize": "Default Page Size",
+      "defaultPageSizeHint": "Used when user doesn't specify a custom size",
+      "maxPageSize": "Maximum Page Size",
+      "maxPageSizeHint": "Hard cap on user-selected page size (SERVER mode)",
+      "allowOverride": "Allow User Override",
+      "allowOverrideHint": "Let users choose their own page size. If disabled, always use default.",
+      "clientMode": "Client Mode Settings",
+      "maxClientRecords": "Max Records (Client Mode)",
+      "maxClientRecordsHint": "Maximum records fetched in CLIENT mode. Prevents memory issues.",
+      "clientModeWarning": "CLIENT mode loads all data at once. Set a reasonable limit to avoid performance issues on large datasets.",
+      "save": "Save Pagination Settings",
+      "loadError": "Failed to load pagination settings",
+      "saveSuccess": "Pagination settings saved successfully",
+      "saveError": "Failed to save pagination settings",
+      "errorDefaultExceedsMax": "Default page size cannot exceed maximum page size"
+    }
   }
 }

@@ -6,6 +6,7 @@ import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/th
 import { AppButton } from '@/src/shared/components';
 import { useUiStore } from '@/src/stores/uiStore';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
+import AppButton from '@/src/shared/components/forms/AppButton';
 
 export interface AdminFormModalProps {
   open:             boolean;
@@ -59,12 +60,36 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               </Pressable>
             </View>
 
-            <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}>
-              <FormScrollProvider {...{ scrollRef, mode: "modal", children }}>
+            <ScrollView
+              ref={scrollRef}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              contentContainerStyle={[styles.scrollContent, { paddingBottom: 8 }]}
+            >
+              <FormScrollProvider scrollRef={scrollRef} mode="modal">
+                {children}
               </FormScrollProvider>
-              <AppButton {...{ variant: "contained", color: "primary", fullWidth: true, loading: submitting, loadingText: t('common.saving'), onPress: onSubmit, disabled: isDisabled, style: { marginTop: 16 }, children: resolvedLabel }}>
-              </AppButton>
             </ScrollView>
+
+            {/* ── Sticky footer ── */}
+            <View style={[
+              styles.footer,
+              { paddingBottom: insets.bottom || 10, backgroundColor: c.surface.primary, borderTopColor: c.border.primary },
+            ]}>
+              <AppButton
+                variant="primary"
+                size="large"
+                fullWidth
+                loading={submitting}
+                loadingText={t('common.saving')}
+                onPress={onSubmit}
+                disabled={isDisabled}
+                leftIcon={<Text style={{ fontSize: 17 }}>💾</Text>}
+              >
+                {resolvedLabel}
+              </AppButton>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -81,7 +106,31 @@ const styles = StyleSheet.create({
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
   headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, flex: 1 },
   closeBtn:    { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 16 },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  saveBtn: {
+    minHeight: 54,
+    borderRadius: Radius.full,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  saveIcon: {
+    fontSize: 18,
+    color: '#fff',
+    marginTop: -1,
+  },
 });
 
 export default AdminFormModal;

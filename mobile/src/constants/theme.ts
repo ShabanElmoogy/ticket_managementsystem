@@ -9,7 +9,7 @@
  *   const isDark = useIsDark();   // boolean shorthand
  */
 
-import { Appearance, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { useUiStore } from '@/src/stores/uiStore';
 import { Colors, type ThemeColors } from './tokens';
 
@@ -41,6 +41,6 @@ export function useIsDark(): boolean {
          systemScheme === 'dark';
 }
 
-export function syncAppearance(colorMode: 'light' | 'dark' | 'system'): void {
-  Appearance.setColorScheme(colorMode === 'system' ? null : colorMode);
+export function syncAppearance(_colorMode: 'light' | 'dark' | 'system'): void {
+  // Appearance.setColorScheme not available in this RN version — no-op
 }

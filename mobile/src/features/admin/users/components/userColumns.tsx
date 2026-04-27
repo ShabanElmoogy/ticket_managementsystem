@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Palette } from '@/src/constants/tokens';
 import type { User } from '@/src/services/api/types';
 import type { ColDef } from '@/src/shared/components/data/AppDataTable';
 import type { TFunction } from 'i18next';
@@ -8,14 +7,14 @@ import type { TFunction } from 'i18next';
 // ── Role badge config ─────────────────────────────────────────────────────────
 
 export const ROLE_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  SUPER_ADMIN:  { color: Palette.red600,    bg: '#fef2f2', label: 'Super Admin'  },
-  TENANT_ADMIN: { color: Palette.amber600,  bg: '#fffbeb', label: 'Admin'        },
-  EMPLOYEE:     { color: Palette.green600,  bg: '#f0fdf4', label: 'Employee'     },
-  PROGRAMMER:   { color: Palette.violet600, bg: '#f5f3ff', label: 'Programmer'   },
+  SUPER_ADMIN:  { color: '#dc2626', bg: '#fef2f2', label: 'Super Admin'  },
+  TENANT_ADMIN: { color: '#d97706', bg: '#fffbeb', label: 'Admin'        },
+  EMPLOYEE:     { color: '#16a34a', bg: '#f0fdf4', label: 'Employee'     },
+  PROGRAMMER:   { color: '#7c3aed', bg: '#f5f3ff', label: 'Programmer'   },
 };
 
 export const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
-  const cfg = ROLE_CONFIG[role] ?? { color: Palette.gray500, bg: '#f9fafb', label: role };
+  const cfg = ROLE_CONFIG[role] ?? { color: '#6b7280', bg: '#f9fafb', label: role };
   return (
     <View style={{
       paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6,
@@ -39,7 +38,7 @@ export function getUserColumns(t: TFunction): ColDef<User>[] {
     {
       field: 'email', headerName: t('users.columns.email'), width: 170, sortable: true,
       renderCell: (row) => (
-        <Text style={{ fontSize: 11, color: Palette.slate600 }} numberOfLines={1}>
+        <Text style={{ fontSize: 11, color: '#475569' }} numberOfLines={1}>
           {row.email}
         </Text>
       ),
@@ -51,7 +50,7 @@ export function getUserColumns(t: TFunction): ColDef<User>[] {
     {
       field: 'phone', headerName: t('users.columns.phone'), width: 120, sortable: false,
       renderCell: (row) => (
-        <Text style={{ fontSize: 11, color: Palette.gray500 }} numberOfLines={1}>
+        <Text style={{ fontSize: 11, color: '#6b7280' }} numberOfLines={1}>
           {row.phone || '—'}
         </Text>
       ),
@@ -63,7 +62,7 @@ export function getUserColumns(t: TFunction): ColDef<User>[] {
         const count = row._count?.assignedTickets ?? 0;
         return (
           <View style={{ backgroundColor: '#dbeafe', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, minWidth: 28, alignItems: 'center' }}>
-            <Text style={{ color: Palette.blue700, fontSize: 11, fontWeight: '700' }}>{count}</Text>
+            <Text style={{ color: '#1d4ed8', fontSize: 11, fontWeight: '700' }}>{count}</Text>
           </View>
         );
       },

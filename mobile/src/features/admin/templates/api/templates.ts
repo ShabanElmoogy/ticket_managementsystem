@@ -10,7 +10,7 @@ export interface TicketTemplatePayload {
 }
 
 export class TicketTemplatesApiService extends BaseApiService {
-  list   = ()                                                  => this.get<TicketTemplate[]>(API.TEMPLATES.LIST);
+  list   = (params?: Record<string, string>)                   => this.get<TicketTemplate[]>(API.TEMPLATES.LIST, { params });
   create = (data: TicketTemplatePayload)                       => this.post<TicketTemplate>(API.TEMPLATES.LIST, data);
   update = (id: string, data: Partial<TicketTemplatePayload>) => this.put<TicketTemplate>(API.TEMPLATES.BY_ID(id), data);
   remove = (id: string)                                        => this.delete<{ message: string }>(API.TEMPLATES.BY_ID(id));

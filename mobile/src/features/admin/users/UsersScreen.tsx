@@ -30,7 +30,7 @@ const UsersScreen: React.FC = () => {
   const toast       = useToast();
   const queryClient = useQueryClient();
   const { handleError } = useErrorHandler();
-  const { f, columns, exporting, handleExport, selectedId, setSelectedId, isSuperAdmin } = useUsers();
+  const { f, columns, exporting, handleExport, selectedId, setSelectedId, isSuperAdmin, page, setPage } = useUsers();
 
   // ── Detail → Edit state ────────────────────────────────────────────────────
   const [editingFromDetail, setEditingFromDetail] = useState<User | null>(null);
@@ -191,6 +191,8 @@ const UsersScreen: React.FC = () => {
         onRefresh={f.refetch}
         onExport={handleExport}
         exporting={exporting}
+        apiTotal={f.apiMeta?.total}
+        onPageChange={(p) => setPage(p)}
         searchPlaceholder={t('users.searchPlaceholder')}
         emptyMessage={t('users.emptyMessage')}
         emptyFilteredMessage={t('users.emptyFilteredMessage')}

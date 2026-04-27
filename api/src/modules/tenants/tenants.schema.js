@@ -17,6 +17,12 @@ export const tenants = pgTable('tenants', {
   slaLowHours: integer('sla_low_hours').notNull().default(72),
   epicAutoClose: boolean('epic_auto_close').notNull().default(true),
   dateFormat: text('date_format').notNull().default('dd/MM/yyyy'),
+  // ── Pagination settings ───────────────────────────────────────────────────
+  paginationMode:     text('pagination_mode').notNull().default('SERVER'),   // 'SERVER' | 'CLIENT'
+  defaultPageSize:    integer('default_page_size').notNull().default(20),
+  maxPageSize:        integer('max_page_size').notNull().default(100),
+  allowUserOverride:  boolean('allow_user_override').notNull().default(true),
+  maxClientRecords:   integer('max_client_records').notNull().default(500),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

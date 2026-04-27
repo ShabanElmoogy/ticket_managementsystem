@@ -72,15 +72,26 @@ if (error.status === 404) { ... }
 ```ts
 import { PAGINATION } from '@/src/constants/api';
 
-// ✅ Correct
-const PAGE_SIZE = PAGINATION.ADMIN_PAGE_SIZE;   // 5
+// ✅ Correct — stale times only (ADMIN_PAGE_SIZE is no longer used directly)
 staleTime: PAGINATION.DETAIL_STALE_TIME         // 2 * 60 * 1000
 staleTime: PAGINATION.LIST_STALE_TIME           // 30 * 1000
 
 // ❌ Wrong
-const PAGE_SIZE = 5;
 staleTime: 2 * 60_000
 ```
+
+**`AdminCrudScreen` uses tenant-aware pagination** — page size and mode come from `usePaginationStore`, not `PAGINATION.ADMIN_PAGE_SIZE`. Do not pass a hardcoded page size to `AdminCrudScreen`.
+
+```ts
+// AdminCrudScreen reads these automatically — no prop needed
+const paginationMode = usePaginationStore((s) => s.paginationMode);
+const pageSize       = usePaginationStore((s) => s.getEffectivePageSize());
+const maxClientRecs  = usePaginationStore((s) => s.maxClientRecords);
+```
+
+**Pagination modes:**
+- `CLIENT` — all entities fetched upfront, capped at `maxClientRecords`, then paginated locally with `pageSize`
+- `SERVER` — entities already paged by the API; pass `apiTotal` + `onPageChange` to `AdminCrudScreen` for correct page count and re-fetch on navigation
 
 ### Ticket query builder
 
@@ -641,7 +652,7 @@ export const formatDate = (date) => dayjs(date).format(getDayjsFormat());
 | `onSubmit` | () => void | Submit |
 | `submitting?` | boolean | Spinner on button |
 | `submitDisabled?` | boolean | `submitting \|\| isSubmitting` only |
-| `isDirty?` | boolean | `false` = gray "Fill required fields" |
+| `isDirty?` | boolean | `false` = button is disabled AND a `t('common.fillRequired')` hint text is rendered **below** the button; button label always shows `submitLabel` (never changes to the hint text) |
 | `submitLabel?` | string | Default: `t('common.save')` |
 
 ### Form hook pattern
@@ -794,6 +805,44 @@ export async function exportEntityPdf(items: Entity[], t: TFunction): Promise<vo
 "applications.columns.created"       → "Created"
 ```
 
+### User-specific additions
+
+`exportUserPdf` adds a **4-card summary stats row** above the table and uses:
+- `buildSummary(users, t)` — renders 4 stat cards: total (blue), admins (amber), employees (green), programmers (purple)
+- `roleBadge(role)` — inline HTML badge using `ROLE_STYLES` map (same colors as `ROLE_CONFIG` in `userColumns.tsx`)
+- Ticket count column: blue badge from `u._count?.assignedTickets`
+- `dialogTitle` passed to `Sharing.shareAsync` for a labelled share sheet
+
+**Summary card colors:**
+
+| Stat | Background | Text color |
+|---|---|---|
+| Total users | `#eff6ff` blue | `Palette.blue700` |
+| Admins | `#fffbeb` amber | `Palette.amber600` |
+| Employees | `#f0fdf4` green | `Palette.green600` |
+| Programmers | `#f5f3ff` purple | `Palette.violet600` |
+
+**Role badge styles (`ROLE_STYLES`):**
+
+| Role | Background | Color |
+|---|---|---|
+| `SUPER_ADMIN` | `#fef2f2` | `#dc2626` red |
+| `TENANT_ADMIN` | `#fffbeb` | `#d97706` amber |
+| `EMPLOYEE` | `#f0fdf4` | `#16a34a` green |
+| `PROGRAMMER` | `#f5f3ff` | `#7c3aed` purple |
+
+> **Note:** `exportUserPdf` must import `Palette` from `@/src/constants/theme` — it uses `Palette.*` tokens directly in the HTML template strings.
+
+### User PDF locale keys
+
+```json
+"users.pdf.totalUsers"   → "Total Users"
+"users.pdf.admins"       → "Admins"
+"users.pdf.employees"    → "Employees"
+"users.pdf.programmers"  → "Programmers"
+"users.columns.tickets"  → "Tickets"
+```
+
 ### CSS classes available in `PDF_CSS`
 
 Status: `.open` `.in_progress` `.resolved` `.closed`  
@@ -801,6 +850,124 @@ Priority: `.low` `.medium` `.high` `.urgent`
 Misc: `.badge` `.overdue` `.ontime` `.pct-open` `.pct-res` `.total`
 
 Use `class="badge"` with inline `style` for custom colors (status, subscription type).
+
+---
+
+## Settings Feature
+
+Settings panels live in `features/admin/settings/` and use `SettingsCard` + `AlertBanner` as their shell.
+
+### `SettingsCard` + `AlertBanner`
+
+```tsx
+import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/components/SettingsCard';
+
+<SettingsCard
+  icon="📄"
+  title={t('settings.pagination.title')}
+  description={t('settings.pagination.description')}
+  loading={loading}   // shows ActivityIndicator while fetching
+>
+  {alert && <AlertBanner type={alert.type} msg={alert.msg} />}
+  {/* panel content */}
+</SettingsCard>
+```
+
+`AlertBanner` accepts `type: 'success' | 'error' | 'info'` and auto-dismisses via `setTimeout(..., 4000)`.
+
+### Alert state pattern
+
+```ts
+type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
+const [alert, setAlert] = useState<AlertState>(null);
+
+const showAlert = (type: AlertState['type'], msg: string) => {
+  setAlert({ type, msg });
+  setTimeout(() => setAlert(null), 4000);
+};
+```
+
+### `NumberRow` — preset chips + custom input
+
+Settings panels that let users pick a numeric value use a preset-chip row above a free-text `AppTextInput`:
+
+```tsx
+<NumberRow
+  label={t('settings.pagination.defaultPageSize')}
+  hint={t('settings.pagination.defaultPageSizeHint')}
+  value={defaultPageSize}
+  min={5} max={200}
+  presets={[10, 20, 50, 100]}
+  onChange={setDefaultPageSize}
+/>
+```
+
+- Active preset chip: `Palette.blue500` background, white text
+- Custom input: `AppTextInput` with `fieldType="number"`, clamped to `[min, max]`
+
+### `Toggle` — boolean setting
+
+Inline toggle switch for boolean settings (no external library):
+
+```tsx
+<Toggle value={allowOverride} onValueChange={setAllowOverride} />
+```
+
+- On: `Palette.blue500` track, thumb slides to `flex-end`
+- Off: `Palette.slate300` track, thumb slides to `flex-start`
+- Includes `accessibilityRole="switch"` + `accessibilityState`
+
+### Sync store after save
+
+After saving pagination settings, immediately sync `usePaginationStore` so the app respects the new values without a reload:
+
+```ts
+const setPaginationSettings = usePaginationStore((s) => s.setSettings);
+
+const updated = await adminSettingsApi.savePaginationSettings(payload);
+setPaginationSettings({
+  paginationMode:    updated.paginationMode,
+  defaultPageSize:   updated.defaultPageSize,
+  maxPageSize:       updated.maxPageSize,
+  allowUserOverride: updated.allowUserOverride,
+  maxClientRecords:  updated.maxClientRecords,
+});
+```
+
+### `adminSettingsApi` methods (pagination)
+
+```ts
+adminSettingsApi.getPaginationSettings()           // GET /settings/pagination
+adminSettingsApi.savePaginationSettings(config)    // PUT /settings/pagination
+```
+
+### Pagination settings locale keys
+
+```json
+"settings.pagination.title"                  → "Pagination Settings"
+"settings.pagination.description"            → "..."
+"settings.pagination.mode"                   → "Mode"
+"settings.pagination.modeServer"             → "Server Pagination"
+"settings.pagination.modeServerDesc"         → "..."
+"settings.pagination.modeClient"             → "Client Pagination"
+"settings.pagination.modeClientDesc"         → "..."
+"settings.pagination.pageSizes"              → "Page Sizes"
+"settings.pagination.defaultPageSize"        → "Default Page Size"
+"settings.pagination.defaultPageSizeHint"    → "..."
+"settings.pagination.maxPageSize"            → "Max Page Size"
+"settings.pagination.maxPageSizeHint"        → "..."
+"settings.pagination.allowOverride"          → "Allow User Override"
+"settings.pagination.allowOverrideHint"      → "..."
+"settings.pagination.clientMode"             → "Client Mode"
+"settings.pagination.maxClientRecords"       → "Max Client Records"
+"settings.pagination.maxClientRecordsHint"   → "..."
+"settings.pagination.clientModeWarning"      → "⚠️ warning text"
+"settings.pagination.save"                   → "Save Settings"
+"settings.pagination.saveSuccess"            → "Settings saved"
+"settings.pagination.saveError"              → "Failed to save"
+"settings.pagination.loadError"              → "Failed to load"
+"settings.pagination.errorDefaultExceedsMax" → "Default page size cannot exceed max"
+```
 
 ---
 
@@ -983,3 +1150,23 @@ onSave={async (data: CreateEntityData) => {
 - [ ] `onRowPress={(item) => setSelectedId(item.id)}`
 - [ ] All button labels via `t()`
 - [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`, `deleteSuccessMessage`
+- [ ] SERVER mode: pass `apiTotal` (total record count from API) and `onPageChange` (callback to re-fetch when page changes)
+
+**SERVER mode pagination props:**
+
+```tsx
+// When paginationMode === 'SERVER', pass these two props so AdminCrudScreen
+// can compute correct totalPages and trigger re-fetches on page change.
+<AdminCrudScreen
+  entities={pageOfEntities}          // current page slice from API
+  apiTotal={totalFromApiResponse}    // total count for correct page count
+  onPageChange={(page, limit) => {   // called when user navigates pages
+    fetchPage(page, limit);
+  }}
+  // ... other props
+/>
+```
+
+- `apiTotal` — overrides the local `entities.length` count for `totalPages` calculation in SERVER mode
+- `onPageChange` — called with `(page, limit)` so the parent can re-fetch the correct page from the API
+- Both props are optional — omit them in CLIENT mode (default behavior unchanged)

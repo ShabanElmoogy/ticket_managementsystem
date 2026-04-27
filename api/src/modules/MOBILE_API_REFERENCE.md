@@ -675,7 +675,7 @@ X-Tenant-Slug: my-company
 This is set automatically by `httpClient.ts` via `tokenManager.getTenantSlug()`.
 
 ### Pagination
-Most list endpoints return arrays (no pagination by default). The mobile app handles pagination client-side via `AdminCrudScreen` (`PAGE_SIZE = 5`).
+Most list endpoints return arrays (no pagination by default). The mobile app handles pagination via `AdminCrudScreen` using tenant-configurable settings from `usePaginationStore` — page size and mode (client/server) are set in the admin Settings panel and applied automatically.
 
 ### Error responses
 ```json

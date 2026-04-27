@@ -10,21 +10,20 @@ import * as Print   from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { buildPdfPage } from '@/src/shared/utils/pdfTemplate';
 import { esc, fmtDate } from '@/src/shared/utils/htmlUtils';
-import { Palette } from '@/src/constants/tokens';
 import type { User } from '@/src/services/api/types';
 import type { TFunction } from 'i18next';
 
 // ── Role badge styles ─────────────────────────────────────────────────────────
 
 const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  SUPER_ADMIN:  { bg: '#fef2f2', color: Palette.red600,    label: 'Super Admin'  },
-  TENANT_ADMIN: { bg: '#fffbeb', color: Palette.amber600,  label: 'Admin'        },
-  EMPLOYEE:     { bg: '#f0fdf4', color: Palette.green600,  label: 'Employee'     },
-  PROGRAMMER:   { bg: '#f5f3ff', color: Palette.violet600, label: 'Programmer'   },
+  SUPER_ADMIN:  { bg: '#fef2f2', color: '#dc2626', label: 'Super Admin'  },
+  TENANT_ADMIN: { bg: '#fffbeb', color: '#d97706', label: 'Admin'        },
+  EMPLOYEE:     { bg: '#f0fdf4', color: '#16a34a', label: 'Employee'     },
+  PROGRAMMER:   { bg: '#f5f3ff', color: '#7c3aed', label: 'Programmer'   },
 };
 
 function roleBadge(role: string): string {
-  const s = ROLE_STYLES[role] ?? { bg: '#f9fafb', color: Palette.gray500, label: role };
+  const s = ROLE_STYLES[role] ?? { bg: '#f9fafb', color: '#6b7280', label: role };
   return `<span class="badge" style="background:${s.bg};color:${s.color};border:1px solid ${s.color}44">${esc(s.label)}</span>`;
 }
 
@@ -39,20 +38,20 @@ function buildSummary(users: User[], t: TFunction): string {
   return `
     <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
       <div style="flex:1;min-width:100px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:${Palette.blue700}">${total}</div>
-        <div style="font-size:11px;color:${Palette.blue500};margin-top:2px">${esc(t('users.pdf.totalUsers'))}</div>
+        <div style="font-size:22px;font-weight:800;color:#1d4ed8">${total}</div>
+        <div style="font-size:11px;color:#3b82f6;margin-top:2px">${esc(t('users.pdf.totalUsers'))}</div>
       </div>
       <div style="flex:1;min-width:100px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:${Palette.amber600}">${admins}</div>
-        <div style="font-size:11px;color:${Palette.amber500};margin-top:2px">${esc(t('users.pdf.admins'))}</div>
+        <div style="font-size:22px;font-weight:800;color:#d97706">${admins}</div>
+        <div style="font-size:11px;color:#f59e0b;margin-top:2px">${esc(t('users.pdf.admins'))}</div>
       </div>
       <div style="flex:1;min-width:100px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:${Palette.green600}">${employees}</div>
-        <div style="font-size:11px;color:${Palette.green500};margin-top:2px">${esc(t('users.pdf.employees'))}</div>
+        <div style="font-size:22px;font-weight:800;color:#16a34a">${employees}</div>
+        <div style="font-size:11px;color:#10b981;margin-top:2px">${esc(t('users.pdf.employees'))}</div>
       </div>
       <div style="flex:1;min-width:100px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:800;color:${Palette.violet600}">${programmers}</div>
-        <div style="font-size:11px;color:${Palette.violet500};margin-top:2px">${esc(t('users.pdf.programmers'))}</div>
+        <div style="font-size:22px;font-weight:800;color:#7c3aed">${programmers}</div>
+        <div style="font-size:11px;color:#8b5cf6;margin-top:2px">${esc(t('users.pdf.programmers'))}</div>
       </div>
     </div>
   `;
@@ -76,13 +75,13 @@ export async function exportUserPdf(users: User[], t: TFunction): Promise<void> 
     const tickets = u._count?.assignedTickets ?? 0;
     return `<tr>
       <td style="text-align:left;font-weight:600">${esc(u.name)}</td>
-      <td style="text-align:left;color:${Palette.slate600}">${esc(u.email)}</td>
+      <td style="text-align:left;color:#475569">${esc(u.email)}</td>
       <td>${roleBadge(u.role)}</td>
-      <td style="color:${Palette.gray500}">${esc(u.phone || '—')}</td>
+      <td style="color:#6b7280">${esc(u.phone || '—')}</td>
       <td>
-        <span class="badge" style="background:#dbeafe;color:${Palette.blue700};border:1px solid #bfdbfe">${tickets}</span>
+        <span class="badge" style="background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe">${tickets}</span>
       </td>
-      <td style="color:${Palette.gray500};font-size:11px">${esc(fmtDate(u.createdAt))}</td>
+      <td style="color:#6b7280;font-size:11px">${esc(fmtDate(u.createdAt))}</td>
     </tr>`;
   }).join('');
 

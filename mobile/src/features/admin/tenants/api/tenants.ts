@@ -35,7 +35,7 @@ type UpdateTenantPayload = Partial<CreateTenantPayload>;
 
 export class TenantsApiService extends BaseApiService {
   listPublic = ()                                          => this.get<Pick<Tenant, 'id' | 'name' | 'slug'>[]>(API.TENANTS.PUBLIC);
-  list       = ()                                          => this.get<Tenant[]>(API.TENANTS.LIST);
+  list       = (params?: Record<string, string>)           => this.get<Tenant[]>(API.TENANTS.LIST, { params });
   create     = (payload: CreateTenantPayload)             => this.post<Tenant>(API.TENANTS.LIST, payload);
   update     = (id: string, payload: UpdateTenantPayload) => this.patch<Tenant>(API.TENANTS.BY_ID(id), payload);
   remove     = (id: string)                               => this.delete<{ message: string }>(API.TENANTS.BY_ID(id));

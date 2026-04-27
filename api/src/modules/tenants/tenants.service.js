@@ -189,3 +189,56 @@ export async function deleteTenant(id) {
   invalidateTenantCache(updated.slug, updated.id);
   return { message: 'Tenant deactivated successfully' };
 }
+
+// ── Pagination settings ───────────────────────────────────────────────────────
+
+const PAGINATION_FIELDS = ['paginationMode', 'defaultPageSize', 'maxPageSize', 'allowUserOverride', 'maxClientRecords'];
+
+export async function getPaginationSettings(tenantId) {
+  const tenant = await repo.findTenantById(tenantId);
+  if (!tenant) throw fail('Tenant not found', 404);
+  return {
+    paginationMode:    tenant.paginationMode,
+    defaultPageSize:   tenant.defaultPageSize,
+    maxPageSize:       tenant.maxPageSize,
+    allowUserOverride: tenant.allowUserOverride,
+    maxClientRecords:  tenant.maxClientRecords,
+  };
+}
+
+export async function updatePaginationSettings(tenantId, body) {
+  const { paginationMode, defaultPageSize, maxPageSize, allowUserOverride, maxClientRecords } = body;
+
+  if (paginationMode !== undefined && !['SERVER', 'CLIENT'].includes(paginationMode)) {
+    throw fail('paginationMode must be SERVER or CLIENT');
+  }
+  if (defaultPageSize !== undefined && (defaultPageSize < 5 || defaultPageSize > 200)) {
+    throw fail('defaultPageSize must be between 5 and 200');
+  }
+  if (maxPageSize !== undefined && (maxPageSize < 5 || maxPageSize > 500)) {
+    throw fail('maxPageSize must be between 5 and 500');
+  }
+  if (maxClientRecords !== undefined && (maxClientRecords < 50 || maxClientRecords > 5000)) {
+    throw fail('maxClientRecords must be between 50 and 5000');
+  }
+
+  const patch = {};
+  if (paginationMode    !== undefined) patch.paginationMode    = paginationMode;
+  if (defaultPageSize   !== undefined) patch.defaultPageSize   = defaultPageSize;
+  if (maxPageSize       !== undefined) patch.maxPageSize       = maxPageSize;
+  if (allowUserOverride !== undefined) patch.allowUserOverride = allowUserOverride;
+  if (maxClientRecords  !== undefined) patch.maxClientRecords  = maxClientRecords;
+
+  const updated = await repo.updateTenantById(tenantId, patch);
+  if (!updated) throw fail('Tenant not found', 404);
+
+  invalidateTenantCache(updated.slug, updated.id);
+
+  return {
+    paginationMode:    updated.paginationMode,
+    defaultPageSize:   updated.defaultPageSize,
+    maxPageSize:       updated.maxPageSize,
+    allowUserOverride: updated.allowUserOverride,
+    maxClientRecords:  updated.maxClientRecords,
+  };
+}

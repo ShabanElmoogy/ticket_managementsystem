@@ -3,8 +3,8 @@ import { BaseApiService } from '@/src/services/api/base';
 import type { User, CreateUserData, UpdateUserData, UserStats } from '@/src/services/api/types';
 
 export class UsersApiService extends BaseApiService {
-  getUsers              = ()                                        => this.get<User[]>(API.USERS.LIST);
-  getTenantUsers        = ()                                        => this.get<User[]>(API.USERS.TENANT);
+  getUsers              = (params?: Record<string, string>)         => this.get<User[]>(API.USERS.LIST, { params });
+  getTenantUsers        = (params?: Record<string, string>)         => this.get<User[]>(API.USERS.TENANT, { params });
   getUser               = (id: string)                             => this.get<User>(API.USERS.BY_ID(id));
   createUser            = (data: CreateUserData)                   => this.post<User>(API.USERS.LIST, data);
   createTenantUser      = (data: CreateUserData)                   => this.post<User>(API.USERS.TENANT, data);

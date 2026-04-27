@@ -86,3 +86,20 @@ export const deleteTenant = async (req, res) => {
     res.json(await tenantsService.deleteTenant(req.params.id));
   } catch (e) { handleError(res, e, 'Delete tenant'); }
 };
+
+export const getPaginationSettings = async (req, res) => {
+  try {
+    // Tenant admin reads own tenant; super admin passes :id
+    const tenantId = req.user?.tenantId ?? req.params.id;
+    if (!tenantId) return res.status(400).json({ error: 'Tenant ID required' });
+    res.json(await tenantsService.getPaginationSettings(tenantId));
+  } catch (e) { handleError(res, e, 'Get pagination settings'); }
+};
+
+export const updatePaginationSettings = async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId ?? req.params.id;
+    if (!tenantId) return res.status(400).json({ error: 'Tenant ID required' });
+    res.json(await tenantsService.updatePaginationSettings(tenantId, req.body));
+  } catch (e) { handleError(res, e, 'Update pagination settings'); }
+};

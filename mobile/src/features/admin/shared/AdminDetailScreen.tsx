@@ -3,7 +3,6 @@ import { View, Text, ScrollView, ActivityIndicator, Pressable, StyleSheet } from
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
-import { Palette } from '@/src/constants/tokens';
 
 export interface AdminDetailScreenProps {
   title:         string;

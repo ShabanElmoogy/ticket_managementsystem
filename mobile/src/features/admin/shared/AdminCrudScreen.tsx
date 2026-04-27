@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { PAGINATION } from '@/src/constants/api';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, AppSearchInput, type ColDef } from '@/src/shared/components';
 import { useToast } from '@/src/shared/hooks/useToast';
 import { useUiStore } from '@/src/stores/uiStore';
+import { usePaginationStore } from '@/src/stores/paginationStore';
 
 export interface AdminCrudScreenProps<T extends { id: string }> {
   title:                string;
@@ -33,6 +33,10 @@ export interface AdminCrudScreenProps<T extends { id: string }> {
   refreshingLabel?:     string;
   deleteSuccessMessage?: string;
   onDeleteFailed?:      (item: T, error: unknown) => void;
+  /** SERVER mode: total from API response (for correct totalPages) */
+  apiTotal?:            number;
+  /** SERVER mode: called when page changes so parent can re-fetch */
+  onPageChange?:        (page: number, limit: number) => void;
 }
 
 // ── Auto-generated grid card ───────────────────────────────────────────────
@@ -168,12 +172,18 @@ function AdminCrudScreen<T extends { id: string }>({
   searchPlaceholder, emptyMessage, emptyFilteredMessage,
   addLabel, exportLabel, exportingLabel, refreshLabel, refreshingLabel,
   deleteSuccessMessage, onDeleteFailed,
+  apiTotal, onPageChange,
 }: AdminCrudScreenProps<T>) {
   const c      = useThemeColors();
   const isDark = useIsDark();
   const { setAdminView } = useUiStore();
   const toast  = useToast();
   const view   = useUiStore((s) => s.adminViews[title] ?? 'table');
+
+  // ── Tenant-aware pagination ────────────────────────────────────────────────
+  const paginationMode = usePaginationStore((s) => s.paginationMode);
+  const pageSize       = usePaginationStore((s) => s.getEffectivePageSize());
+  const maxClientRecs  = usePaginationStore((s) => s.maxClientRecords);
 
   const [search,       setSearch]       = useState('');
   const [formItem,     setFormItem]     = useState<T | null>(null);
@@ -208,17 +218,39 @@ function AdminCrudScreen<T extends { id: string }>({
 
   const handleSearchChange = useCallback((q: string) => { setSearch(q); setPage(1); }, []);
 
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGINATION.ADMIN_PAGE_SIZE));
+  // CLIENT mode: cap at maxClientRecords, then paginate locally
+  // SERVER mode: entities already paged by API — use apiTotal for correct totalPages
+  const cappedEntities = paginationMode === 'CLIENT'
+    ? filtered.slice(0, maxClientRecs)
+    : filtered;
+
+  const totalItems = paginationMode === 'SERVER' && apiTotal != null
+    ? apiTotal
+    : cappedEntities.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage   = Math.min(page, totalPages);
-  const pageRows   = useMemo(() => filtered.slice((safePage - 1) * PAGINATION.ADMIN_PAGE_SIZE, safePage * PAGINATION.ADMIN_PAGE_SIZE), [filtered, safePage]);
+
+  // SERVER mode: entities are already the current page from API — show as-is
+  // CLIENT mode: slice locally
+  const pageRows = useMemo(
+    () => paginationMode === 'SERVER'
+      ? cappedEntities                                                              // API already sliced
+      : cappedEntities.slice((safePage - 1) * pageSize, safePage * pageSize),     // local slice
+    [cappedEntities, safePage, pageSize, paginationMode],
+  );
+
+  const goToPage = useCallback((p: number) => {
+    const clamped = Math.max(1, Math.min(p, totalPages));
+    setPage(clamped);
+    onPageChange?.(clamped, pageSize);
+  }, [totalPages, pageSize, onPageChange]);
 
   const pagination = useMemo(() => ({
-    page: safePage, totalPages, totalItems, pageSize: PAGINATION.ADMIN_PAGE_SIZE,
+    page: safePage, totalPages, totalItems, pageSize,
     hasNext: safePage < totalPages, hasPrev: safePage > 1,
-    next: () => setPage((p: number) => Math.min(p + 1, totalPages)),
-    prev: () => setPage((p: number) => Math.max(p - 1, 1)),
-  }), [safePage, totalPages, totalItems]);
+    next: () => goToPage(safePage + 1),
+    prev: () => goToPage(safePage - 1),
+  }), [safePage, totalPages, totalItems, pageSize, goToPage]);
 
   const actionCol: ColDef<T> = {
     field: '__actions__', headerName: '', width: onRowPress ? 124 : 88, sortable: false, align: 'center',

@@ -21,11 +21,16 @@ export interface UIState<T> {
 export interface AdminFeatureConfig<T, CreateT> extends EntityConfig<T, CreateT> {
   entityName: string;
   messages:   MessagesConfig;
+  /** Current page (SERVER mode) — passed from AdminCrudScreen */
+  page?:  number;
+  /** Page size (SERVER mode) — passed from AdminCrudScreen */
+  limit?: number;
 }
 
 export interface AdminFeatureReturn<T, CreateT> {
   entities: T[];
   loading:  boolean;
+  apiMeta:  import('./useEntityData').PaginatedResponse<T>['pagination'] | null;
   refetch:  () => void;
 
   create: (data: CreateT) => Promise<T>;
@@ -73,7 +78,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export function useAdminFeature<T extends object, CreateT>(
   config: AdminFeatureConfig<T, CreateT>
 ): AdminFeatureReturn<T, CreateT> {
-  const { entities, loading, create, update, remove, refetch } =
+  const { entities, loading, create, update, remove, refetch, apiMeta } =
     useEntityData<T, CreateT>(config);
 
   const toast = useToast();
@@ -176,6 +181,7 @@ export function useAdminFeature<T extends object, CreateT>(
   return {
     entities,
     loading,
+    apiMeta,
     refetch,
     create,
     update,

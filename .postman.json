@@ -606,6 +606,72 @@
               "path": ["tenants", "{{tenantId}}"]
             }
           }
+        },
+        {
+          "name": "Get Pagination Settings (TENANT_ADMIN — own tenant)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/pagination-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "pagination-settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Pagination Settings (TENANT_ADMIN — own tenant)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paginationMode\": \"SERVER\",\n  \"defaultPageSize\": 25,\n  \"maxPageSize\": 100,\n  \"allowUserOverride\": true,\n  \"maxClientRecords\": 500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants/pagination-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "pagination-settings"]
+            }
+          }
+        },
+        {
+          "name": "Get Pagination Settings by Tenant ID (SUPER_ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}/pagination-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}", "pagination-settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Pagination Settings by Tenant ID (SUPER_ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paginationMode\": \"CLIENT\",\n  \"defaultPageSize\": 50,\n  \"maxPageSize\": 200,\n  \"allowUserOverride\": false,\n  \"maxClientRecords\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}/pagination-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}", "pagination-settings"]
+            }
+          }
         }
       ]
     },

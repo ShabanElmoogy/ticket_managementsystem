@@ -20,6 +20,7 @@ import SchedulerSettingsPanel from '@/src/features/admin/settings/SchedulerSetti
 import SlaSettingsPanel       from '@/src/features/admin/settings/SlaSettingsPanel';
 import EpicAutoClosePanel     from '@/src/features/admin/settings/EpicAutoClosePanel';
 import EmailIngestPanel       from '@/src/features/admin/settings/EmailIngestPanel';
+import PaginationSettingsPanel from '@/src/features/admin/settings/PaginationSettingsPanel';
 
 // ── Sub-tab bar ───────────────────────────────────────────────────────────────
 
@@ -106,9 +107,10 @@ const SUPER_ADMIN_TABS: MainTab[] = [
 ];
 
 const TENANT_ADMIN_TABS: MainTab[] = [
-  { id: 'general',   label: 'General',         icon: '⚙️' },
-  { id: 'tickets',   label: 'Tickets',          icon: '🎫' },
-  { id: 'epicClose', label: 'Epic Auto-Close',  icon: '🌳' },
+  { id: 'general',    label: 'General',         icon: '⚙️' },
+  { id: 'tickets',    label: 'Tickets',          icon: '🎫' },
+  { id: 'epicClose',  label: 'Epic Auto-Close',  icon: '🌳' },
+  { id: 'pagination', label: 'Pagination',       icon: '📄' },
 ];
 
 const SettingsScreen: React.FC = () => {
@@ -126,6 +128,11 @@ const SettingsScreen: React.FC = () => {
       case 'epicClose': return (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
           <EpicAutoClosePanel />
+        </ScrollView>
+      );
+      case 'pagination': return (
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+          <PaginationSettingsPanel />
         </ScrollView>
       );
       case 'email': return (

@@ -48,7 +48,7 @@ const UserDetailScreen: React.FC<Props> = ({
     enabled:  queryEnabled,
   });
 
-  const roleCfg = user ? (ROLE_CONFIG[user.role] ?? { color: Palette.gray500, bg: '#f9fafb', label: user.role }) : null;
+  const roleCfg = user ? (ROLE_CONFIG[user.role] ?? { color: '#6b7280', bg: '#f9fafb', label: user.role }) : null;
 
   // Initials avatar
   const initials = user?.name
@@ -120,9 +120,9 @@ const UserDetailScreen: React.FC<Props> = ({
           {/* ── Stats row ── */}
           <DetailStatRow
             stats={[
-              { value: user._count?.assignedTickets ?? 0, label: t('users.detail.assignedTickets'), color: Palette.blue700, bgColor: '#eff6ff' },
-              { value: user._count?.createdTickets  ?? 0, label: t('users.detail.createdTickets'),  color: Palette.green600, bgColor: '#f0fdf4' },
-              { value: user._count?.comments        ?? 0, label: t('users.detail.comments'),        color: Palette.violet600, bgColor: '#f5f3ff' },
+              { value: user._count?.assignedTickets ?? 0, label: t('users.detail.assignedTickets'), color: '#1d4ed8', bgColor: '#eff6ff' },
+              { value: user._count?.createdTickets  ?? 0, label: t('users.detail.createdTickets'),  color: '#16a34a', bgColor: '#f0fdf4' },
+              { value: user._count?.comments        ?? 0, label: t('users.detail.comments'),        color: '#7c3aed', bgColor: '#f5f3ff' },
             ]}
           />
 
@@ -176,7 +176,7 @@ const UserDetailScreen: React.FC<Props> = ({
 const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 14, borderWidth: 1, overflow: 'hidden',
-    shadowColor: Palette.black, shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
   accentBar: { height: 4 },

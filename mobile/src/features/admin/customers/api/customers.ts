@@ -3,7 +3,7 @@ import { API, QUERY_KEYS } from '@/src/constants/api';
 import type { Customer, CreateCustomerData, CustomerApplication } from '@/src/services/api/types';
 
 export class CustomersApiService extends BaseApiService {
-  getCustomers      = ()                                                    => this.get<Customer[]>(API.CUSTOMERS.LIST);
+  getCustomers      = (params?: Record<string, string>)                     => this.get<Customer[]>(API.CUSTOMERS.LIST, { params });
   getCustomer       = (id: string)                                          => this.get<Customer>(API.CUSTOMERS.BY_ID(id));
   createCustomer    = (data: CreateCustomerData)                            => this.post<Customer>(API.CUSTOMERS.LIST, data);
   updateCustomer    = (id: string, data: Partial<CreateCustomerData>)       => this.put<Customer>(API.CUSTOMERS.BY_ID(id), data);
