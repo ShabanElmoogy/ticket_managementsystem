@@ -177,6 +177,17 @@ const light = {
     ghost: {
       text: Palette.blue500,
     },
+    neutral: {
+      bg: Palette.slate100,
+      pressed: Palette.gray200,
+      text: Palette.slate600,
+    },
+    cancel: {
+      bg: 'transparent',
+      pressed: Palette.slate100,
+      text: Palette.slate500,
+      border: Palette.slate300,
+    },
   },
   tint: '#0a7ea4',
   icon: Palette.slate500,
@@ -269,6 +280,17 @@ const dark = {
     ghost: {
       text: Palette.blue400,
     },
+    neutral: {
+      bg: Palette.slate700,
+      pressed: Palette.slate600,
+      text: Palette.slate300,
+    },
+    cancel: {
+      bg: 'transparent',
+      pressed: Palette.slate700,
+      text: Palette.slate400,
+      border: Palette.slate600,
+    },
   },
   tint: Palette.white,
   icon: '#9BA1A6',
@@ -302,6 +324,8 @@ export type ThemeColors = {
     secondary: { bg: string; text: string; border: string };
     outline:   { border: string; text: string };
     ghost:     { text: string };
+    neutral:   { bg: string; pressed: string; text: string };
+    cancel:    { bg: string; pressed: string; text: string; border: string };
   };
   tint: string;
   icon: string;

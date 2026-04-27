@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
-import AppButton from '@/src/shared/components/forms/AppButton';
+import DialogButton from '@/src/shared/components/actions/DialogButton';
 
 export interface AdminFormPageProps {
   title:           string;
@@ -91,18 +91,13 @@ function AdminFormPage({
                 ⚠️  {t('common.fillRequired')}
               </Text>
             )}
-            <AppButton
-              variant="primary"
-              size="large"
-              fullWidth
-              loading={submitting}
-              loadingText={t('common.saving')}
+            <DialogButton
+              label={submitting ? t('common.saving') : resolvedLabel}
               onPress={onSubmit}
               disabled={isDisabled}
-              leftIcon={<Text style={styles.btnIcon}>💾</Text>}
-            >
-              {resolvedLabel}
-            </AppButton>
+              style={{ backgroundColor: c.buttons.primary.bg }}
+              labelStyle={{ color: c.buttons.primary.text }}
+            />
           </View>
         </KeyboardAvoidingView>
       </View>

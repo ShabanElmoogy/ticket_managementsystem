@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export const unstable_settings = { anchor: '(tabs)' };
+export const unstable_settings = { anchor: '(app)' };
 
 async function syncPaginationSettings() {
   try {

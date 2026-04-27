@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
-import { AppScreenHeader, AppDataTable, AppDeleteDialog, DataCard, AppSearchInput, type ColDef } from '@/src/shared/components';
+import { AppScreenHeader, AppDataTable, ConfirmDeleteDialog, DataCard, AppSearchInput, type ColDef } from '@/src/shared/components';
 import { useToast } from '@/src/shared/hooks/useToast';
 import { useUiStore } from '@/src/stores/uiStore';
 import { usePaginationStore } from '@/src/stores/paginationStore';
@@ -319,7 +319,7 @@ function AdminCrudScreen<T extends { id: string }>({
 
       {formOpen && renderForm(formItem, () => setFormOpen(false))}
 
-      <AppDeleteDialog
+      <ConfirmDeleteDialog
         open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         itemName={deleteTarget && getItemName ? getItemName(deleteTarget) : undefined}
@@ -330,3 +330,5 @@ function AdminCrudScreen<T extends { id: string }>({
 }
 
 export default AdminCrudScreen;
+
+

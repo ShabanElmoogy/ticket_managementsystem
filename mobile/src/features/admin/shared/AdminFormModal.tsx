@@ -3,8 +3,7 @@ import { View, Text, Pressable, Modal, ScrollView, KeyboardAvoidingView, Platfor
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
-import { AppButton } from '@/src/shared/components';
-import { useUiStore } from '@/src/stores/uiStore';
+import DialogButton from '@/src/shared/components/actions/DialogButton';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
 
 export interface AdminFormModalProps {
@@ -76,18 +75,13 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               styles.footer,
               { paddingBottom: insets.bottom || 10, backgroundColor: c.surface.primary, borderTopColor: c.border.primary },
             ]}>
-              <AppButton
-                variant="primary"
-                size="large"
-                fullWidth
-                loading={submitting}
-                loadingText={t('common.saving')}
+              <DialogButton
+                label={submitting ? t('common.saving') : resolvedLabel}
                 onPress={onSubmit}
                 disabled={isDisabled}
-                leftIcon={<Text style={{ fontSize: 17 }}>💾</Text>}
-              >
-                {resolvedLabel}
-              </AppButton>
+                style={{ backgroundColor: c.buttons.primary.bg }}
+                labelStyle={{ color: c.buttons.primary.text }}
+              />
             </View>
           </View>
         </KeyboardAvoidingView>

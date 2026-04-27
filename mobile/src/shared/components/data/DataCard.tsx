@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { useThemeColors, FontSize } from '@/src/constants/theme';
 import AppEmptyState   from '@/src/shared/components/feedback/AppEmptyState';
-import AppDeleteDialog from '@/src/shared/components/dialogs/AppDeleteDialog';
+import ConfirmDeleteDialog from '@/src/shared/components/dialogs/ConfirmDeleteDialog';
 import SectionHeader   from '@/src/shared/components/display/SectionHeader';
 import CountBadge      from '@/src/shared/components/display/CountBadge';
 import PaginatedView   from './PaginatedView';
@@ -175,7 +175,7 @@ function DataCard<T extends { id: string }>({
       {formOpen && renderForm && renderForm(editingItem, () => setFormOpen(false))}
 
       {onDelete && (
-        <AppDeleteDialog
+        <ConfirmDeleteDialog
           open={!!deleteItem}
           onClose={() => setDeleteItem(null)}
           onConfirm={handleDelete}

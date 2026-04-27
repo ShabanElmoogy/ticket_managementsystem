@@ -2,14 +2,14 @@
  * Shared UI components — grouped by concern.
  *
  * Subfolders:
- *   display/    — Avatar, Badge, StatCard, MetricCard, SectionHeader, etc.
- *   feedback/   — AppLoadingSpinner, AppEmptyState
+ *   display/    — Avatar, Badge, StatCard, SectionHeader, etc.
+ *   feedback/   — AppEmptyState, ErrorBoundary
  *   forms/      — AppTextInput, AppButton, AppSearchInput, AppBadge
- *   dialogs/    — AppDeleteDialog, AppConfirmDialog
+ *   dialogs/    — ConfirmDeleteDialog, ConfirmTextDialog, AlertDialog
  *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
- *   layout/     — AppCard, AppScreenHeader, AdminToolbar, ViewToggle, VerticalDivider
+ *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, HeaderActionGroup
  *   data/       — AppTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup
- *   actions/    — RefreshButton, ExportPdfButton
+ *   actions/    — HeaderIconButton, DialogButton, RefreshButton
  *   platform/   — HapticTab, IconSymbol
  *
  * All symbols are re-exported here so existing imports keep working:

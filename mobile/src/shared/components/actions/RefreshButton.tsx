@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Pressable, Text, View, Animated, Easing } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Animated } from 'react-native/Libraries/Animated/Animated';
+import { Easing } from 'react-native/Libraries/Animated/Easing';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 interface Props {
@@ -49,10 +51,10 @@ const RefreshButton: React.FC<Props> = ({
     <Pressable
       onPress={handlePress}
       disabled={loading}
-      style={({ pressed }) => ({
+      style={({ pressed }: { pressed: boolean }) => ({
         alignItems: 'center', justifyContent: 'center',
         height: 44, paddingHorizontal: 12, borderRadius: Radius.lg,
-        backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
+        backgroundColor: pressed ? c.buttons.neutral.pressed : c.buttons.neutral.bg,
         opacity: loading ? 0.7 : 1,
       })}
     >
@@ -60,7 +62,7 @@ const RefreshButton: React.FC<Props> = ({
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
           <Text style={{ fontSize: FontSize.xl, lineHeight: 18 }}>🔄</Text>
         </Animated.View>
-        <Text style={{ fontSize: FontSize.sm, fontWeight: FontWeight.extrabold, color: c.text.secondary }}>
+        <Text style={{ fontSize: FontSize.sm, fontWeight: FontWeight.extrabold, color: c.buttons.neutral.text }}>
           {loading ? loadingLabel : label}
         </Text>
       </View>

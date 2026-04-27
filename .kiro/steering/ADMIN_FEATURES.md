@@ -568,7 +568,57 @@ Use this pattern for any detail screen where the full-detail endpoint is role-re
 "users.detail.reminders"           → "Reminders"
 "users.detail.reminderInterval"    → "Reminder Interval"
 "users.detail.whatsapp"            → "WhatsApp"
+"users.messages.forceDeleted"      → "User and all related data deleted"
+"users.forceDelete.title"          → "Force Delete User"
+"users.forceDelete.message"        → "This will permanently delete {{name}} and all associated tickets, comments, and activities."
+"users.forceDelete.confirmLabel"   → "Delete Everything"
 ```
+
+### Force-delete flow
+
+When a user has associated data (tickets, comments, activities), a normal delete returns a 400 with "associated" in the error message. `UsersScreen` escalates to a type-to-confirm force-delete dialog.
+
+**`hasRelatedData` helper** — detects the escalation condition:
+
+```ts
+function hasRelatedData(error: unknown): boolean {
+  const msg = (error as any)?.response?.data?.error ?? (error as any)?.message ?? '';
+  return msg.toLowerCase().includes('associated');
+}
+```
+
+**Two escalation paths:**
+
+1. **From list view** — `AdminCrudScreen` calls `onDeleteFailed(item, error)` when `onDelete` throws; the screen checks `hasRelatedData` and opens the force-delete dialog.
+2. **From detail view** — the screen catches the error from `handleDeleteFromDetail`, closes the normal confirm dialog, and opens the force-delete dialog.
+
+**Role-aware force-delete API calls:**
+
+```ts
+if (isSuperAdmin) {
+  await usersApi.forceDeleteUser(id);          // DELETE /users/:id?force=true
+} else {
+  await usersApi.forceTenantDeleteUser(id);    // DELETE /users/tenant/:id?force=true
+}
+```
+
+**Force-delete dialog** uses `AppConfirmDialog` with `confirmWord="DELETE"`:
+
+```tsx
+<AppConfirmDialog
+  open={!!forceTarget}
+  onClose={() => setForceTarget(null)}
+  onConfirm={handleForceDelete}
+  title={t('users.forceDelete.title')}
+  message={t('users.forceDelete.message', { name: forceTarget?.name ?? '' })}
+  confirmWord="DELETE"
+  loading={forceDeleting}
+  confirmLabel={t('users.forceDelete.confirmLabel')}
+  confirmColor="error"
+/>
+```
+
+After force-delete: call `queryClient.removeQueries` for the detail cache key, call `f.refetch()` to refresh the list, and clear `selectedId` if the deleted user was open.
 
 ---
 
@@ -1198,6 +1248,7 @@ onSave={async (data: CreateEntityData) => {
 - [ ] All button labels via `t()`
 - [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`, `deleteSuccessMessage`
 - [ ] SERVER mode: pass `apiTotal` (total record count from API) and `onPageChange` (callback to re-fetch when page changes)
+- [ ] If the entity supports force-delete: pass `onDeleteFailed={(item, error) => { if (hasRelatedData(error)) setForceTarget(item); }}`
 
 **SERVER mode pagination props:**
 

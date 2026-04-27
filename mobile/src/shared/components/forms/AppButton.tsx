@@ -53,52 +53,67 @@ const AppButton = ({
           : variant === 'text'      ? 'ghost'
           : variant;
 
+  // When color is explicitly set, map it to the equivalent variant so tokens are used correctly.
+  // This lets variant="contained" color="error" → danger styling, etc.
+  const effectiveV =
+    color === 'error'   ? (v === 'outline' ? 'outline-danger' : 'danger')
+    : color === 'success' ? (v === 'outline' ? 'outline-success' : 'success')
+    : color === 'warning' ? (v === 'outline' ? 'outline-warning' : 'warning-filled')
+    : color === 'secondary' ? (v === 'outline' ? 'outline-secondary' : v === 'primary' ? 'secondary' : v)
+    : v;
+
   // ── Resolve colors from c.buttons tokens ─────────────────────────────────
   const getBg = (pressed: boolean): string => {
     if (isDisabled) return c.interactive.disabled;
-    switch (v) {
-      case 'primary':   return pressed ? c.buttons.primary.pressed   : c.buttons.primary.bg;
-      case 'success':   return pressed ? c.buttons.success.pressed   : c.buttons.success.bg;
-      case 'danger':    return pressed ? c.buttons.danger.pressed    : c.buttons.danger.bg;
-      case 'secondary': return pressed ? c.interactive.pressed       : c.buttons.secondary.bg;
-      case 'outline':   return pressed ? c.buttons.outline.border + '18' : 'transparent';
-      case 'ghost':     return pressed ? c.buttons.ghost.text + '14'    : 'transparent';
-      // legacy color prop fallback
-      default:
-        if (color === 'error')   return pressed ? c.interactive.errorPressed   : c.interactive.error;
-        if (color === 'success') return pressed ? c.interactive.successPressed : c.interactive.success;
-        if (color === 'warning') return pressed ? c.interactive.warningPressed : c.interactive.warning;
-        return pressed ? c.buttons.primary.pressed : c.buttons.primary.bg;
+    switch (effectiveV) {
+      case 'primary':          return pressed ? c.buttons.primary.pressed   : c.buttons.primary.bg;
+      case 'success':          return pressed ? c.buttons.success.pressed   : c.buttons.success.bg;
+      case 'danger':           return pressed ? c.buttons.danger.pressed    : c.buttons.danger.bg;
+      case 'warning-filled':   return pressed ? c.interactive.warningPressed : c.interactive.warning;
+      case 'secondary':        return pressed ? c.interactive.pressed       : c.buttons.secondary.bg;
+      case 'outline':          return pressed ? c.buttons.outline.border + '18' : 'transparent';
+      case 'outline-danger':   return pressed ? c.buttons.danger.bg + '22'  : 'transparent';
+      case 'outline-success':  return pressed ? c.buttons.success.bg + '22' : 'transparent';
+      case 'outline-warning':  return pressed ? c.interactive.warning + '22' : 'transparent';
+      case 'outline-secondary':return pressed ? c.interactive.pressed       : 'transparent';
+      case 'ghost':            return pressed ? c.buttons.ghost.text + '14' : 'transparent';
+      default:                 return pressed ? c.buttons.primary.pressed   : c.buttons.primary.bg;
     }
   };
 
   const getTextColor = (): string => {
     if (isDisabled) return c.text.muted;
-    switch (v) {
-      case 'primary':   return c.buttons.primary.text;
-      case 'success':   return c.buttons.success.text;
-      case 'danger':    return c.buttons.danger.text;
-      case 'secondary': return c.buttons.secondary.text;
-      case 'outline':   return c.buttons.outline.text;
-      case 'ghost':     return c.buttons.ghost.text;
-      default:
-        if (color === 'error')   return c.buttons.danger.text;
-        if (color === 'success') return c.buttons.success.text;
-        return c.buttons.primary.text;
+    switch (effectiveV) {
+      case 'primary':           return c.buttons.primary.text;
+      case 'success':           return c.buttons.success.text;
+      case 'danger':            return c.buttons.danger.text;
+      case 'warning-filled':    return c.buttons.primary.text;
+      case 'secondary':         return c.buttons.secondary.text;
+      case 'outline':           return c.buttons.outline.text;
+      case 'outline-danger':    return c.buttons.danger.bg;
+      case 'outline-success':   return c.buttons.success.bg;
+      case 'outline-warning':   return c.interactive.warning;
+      case 'outline-secondary': return c.buttons.secondary.text;
+      case 'ghost':             return c.buttons.ghost.text;
+      default:                  return c.buttons.primary.text;
     }
   };
 
   const getBorder = (): string | null => {
-    if (v === 'outline')   return c.buttons.outline.border;
-    if (v === 'secondary') return c.buttons.secondary.border;
+    if (effectiveV === 'outline')           return c.buttons.outline.border;
+    if (effectiveV === 'outline-danger')    return c.buttons.danger.bg;
+    if (effectiveV === 'outline-success')   return c.buttons.success.bg;
+    if (effectiveV === 'outline-warning')   return c.interactive.warning;
+    if (effectiveV === 'outline-secondary') return c.buttons.secondary.border;
+    if (effectiveV === 'secondary')         return c.buttons.secondary.border;
     return null;
   };
 
   const textColor  = getTextColor();
   const border     = getBorder();
-  const hasShadow  = (v === 'primary' || v === 'danger' || v === 'success') && !isDisabled;
-  const shadowColor = v === 'danger'  ? c.buttons.danger.bg
-                    : v === 'success' ? c.buttons.success.bg
+  const hasShadow  = (effectiveV === 'primary' || effectiveV === 'danger' || effectiveV === 'success') && !isDisabled;
+  const shadowColor = effectiveV === 'danger'  ? c.buttons.danger.bg
+                    : effectiveV === 'success' ? c.buttons.success.bg
                     : c.buttons.primary.bg;
 
   const label = loading && loadingText ? loadingText : children;

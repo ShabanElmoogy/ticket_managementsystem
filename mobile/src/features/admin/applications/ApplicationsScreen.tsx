@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen         from '@/src/features/admin/shared/AdminCrudScreen';
-import { AppDeleteDialog }     from '@/src/shared/components';
+import { ConfirmDeleteDialog }     from '@/src/shared/components';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useToast }            from '@/src/shared/hooks/useToast';
 import { useErrorHandler }     from '@/src/shared/hooks/useErrorHandler';
@@ -66,7 +66,7 @@ const ApplicationsScreen: React.FC = () => {
           onDelete={() => setDeletingFromDetail(selectedApp ?? null)}
           queryEnabled={!deletingFromDetail}
         />
-        <AppDeleteDialog
+        <ConfirmDeleteDialog
           open={!!deletingFromDetail}
           onClose={() => setDeletingFromDetail(null)}
           onConfirm={handleDeleteFromDetail}
@@ -156,3 +156,5 @@ const ApplicationsScreen: React.FC = () => {
 };
 
 export default ApplicationsScreen;
+
+

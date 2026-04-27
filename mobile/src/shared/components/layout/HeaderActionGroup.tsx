@@ -1,9 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
-import AddButton       from '../actions/AddButton';
-import ExportPdfButton from '../actions/ExportPdfButton';
-import RefreshButton   from '../actions/RefreshButton';
-import VerticalDivider from './VerticalDivider';
+import HeaderIconButton from '../actions/HeaderIconButton';
+import RefreshButton    from '../actions/RefreshButton';
+import VerticalDivider  from './VerticalDivider';
 
 export interface HeaderActionGroupProps {
   /** @deprecated — child components read theme internally via useThemeColors() */
@@ -34,7 +33,6 @@ export interface HeaderActionGroupProps {
  * Right-side action group for screen headers.
  * Renders: [extraActions] [Refresh] [Export PDF] [|] [Add]
  * Each button only appears when its handler is provided.
- * The vertical divider appears automatically between the action buttons and Add.
  */
 const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
   loading = false,
@@ -59,7 +57,8 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
       )}
 
       {onExport && (
-        <ExportPdfButton
+        <HeaderIconButton
+          variant="export"
           onPress={onExport}
           loading={exporting}
           disabled={exportDisabled}
@@ -73,7 +72,8 @@ const HeaderActionGroup: React.FC<HeaderActionGroupProps> = ({
       )}
 
       {onAdd && (
-        <AddButton
+        <HeaderIconButton
+          variant="add"
           onPress={onAdd}
           label={addLabel}
           loading={loading}
