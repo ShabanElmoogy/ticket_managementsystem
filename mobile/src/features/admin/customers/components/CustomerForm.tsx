@@ -1,10 +1,11 @@
 import React, { useCallback, useRef } from 'react';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useThemeColors } from '@/src/constants/theme';
+import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormField      from '@/src/features/admin/shared/FormField';
+import FormSection    from '@/src/shared/components/forms/FormSection';
 import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
 import { AppTextInput } from '@/src/shared/components';
 import AppDatePicker from '@/src/shared/components/forms/AppDatePicker';
@@ -69,135 +70,132 @@ const CustomerForm: React.FC<Props> = ({
 
   const fields_jsx = (
     <>
-      {/* ── Required fields ── */}
-      <FormField fieldId="name">
-        <AppTextInput
-          inputRef={firstInputRef}
-          nextRef={emailRef}
-          label={t('customers.form.name')}
-          value={fields.name}
-          onChangeText={onChangeName}
-          placeholder={t('customers.form.namePlaceholder')}
-          error={errors.name}
-          autoCapitalize="words"
-          maxLength={100}
-          showClearButton
-          onClear={onClearName}
-        />
-      </FormField>
+      {/* ── Basic Info ── */}
+      <FormSection title={t('customers.sections.basicInfo')} icon="👤">
+        <FormField fieldId="name">
+          <AppTextInput
+            inputRef={firstInputRef}
+            nextRef={emailRef}
+            label={t('customers.form.name')}
+            value={fields.name}
+            onChangeText={onChangeName}
+            placeholder={t('customers.form.namePlaceholder')}
+            error={errors.name}
+            required
+            autoCapitalize="words"
+            maxLength={100}
+            showClearButton
+            onClear={onClearName}
+          />
+        </FormField>
+        <FormField fieldId="email">
+          <AppTextInput
+            inputRef={emailRef}
+            nextRef={phoneRef}
+            label={t('customers.form.email')}
+            value={fields.email}
+            onChangeText={onChangeEmail}
+            placeholder={t('customers.form.emailPlaceholder')}
+            error={errors.email}
+            required
+            fieldType="email"
+            maxLength={150}
+            showClearButton
+            onClear={onClearEmail}
+          />
+        </FormField>
+        <FormField fieldId="phone">
+          <AppTextInput
+            inputRef={phoneRef}
+            nextRef={companyRef}
+            label={t('customers.form.phone')}
+            value={fields.phone}
+            onChangeText={onChangePhone}
+            placeholder={t('customers.form.phonePlaceholder')}
+            error={errors.phone}
+            maxLength={30}
+            showClearButton
+            onClear={onClearPhone}
+          />
+        </FormField>
+      </FormSection>
 
-      <FormField fieldId="email">
-        <AppTextInput
-          inputRef={emailRef}
-          nextRef={phoneRef}
-          label={t('customers.form.email')}
-          value={fields.email}
-          onChangeText={onChangeEmail}
-          placeholder={t('customers.form.emailPlaceholder')}
-          error={errors.email}
-          fieldType="email"
-          maxLength={150}
-          showClearButton
-          onClear={onClearEmail}
-        />
-      </FormField>
+      {/* ── Company ── */}
+      <FormSection title={t('customers.sections.company')} icon="🏢">
+        <FormField fieldId="company">
+          <AppTextInput
+            inputRef={companyRef}
+            nextRef={addressRef}
+            label={t('customers.form.company')}
+            value={fields.company}
+            onChangeText={onChangeCompany}
+            placeholder={t('customers.form.companyPlaceholder')}
+            error={errors.company}
+            autoCapitalize="words"
+            maxLength={100}
+            showClearButton
+            onClear={onClearCompany}
+          />
+        </FormField>
+        <FormField fieldId="address">
+          <AppTextInput
+            inputRef={addressRef}
+            label={t('customers.form.address')}
+            value={fields.address}
+            onChangeText={onChangeAddress}
+            placeholder={t('customers.form.addressPlaceholder')}
+            error={errors.address}
+            autoCapitalize="sentences"
+            maxLength={255}
+            showClearButton
+            onClear={onClearAddress}
+            multiline
+            numberOfLines={2}
+            blurOnSubmit
+          />
+        </FormField>
+      </FormSection>
 
-      {/* ── Optional contact ── */}
-      <FormField fieldId="phone">
-        <AppTextInput
-          inputRef={phoneRef}
-          nextRef={companyRef}
-          label={t('customers.form.phone')}
-          value={fields.phone}
-          onChangeText={onChangePhone}
-          placeholder={t('customers.form.phonePlaceholder')}
-          error={errors.phone}
-          maxLength={30}
-          showClearButton
-          onClear={onClearPhone}
-        />
-      </FormField>
+      {/* ── Subscription ── */}
+      <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item}>
+        <FormField fieldId="maintenanceType">
+          <MaintenanceTypeSelector
+            value={fields.maintenanceType}
+            onChange={(v) => handleChange('maintenanceType', v)}
+            t={t}
+          />
+        </FormField>
 
-      <FormField fieldId="company">
-        <AppTextInput
-          inputRef={companyRef}
-          nextRef={addressRef}
-          label={t('customers.form.company')}
-          value={fields.company}
-          onChangeText={onChangeCompany}
-          placeholder={t('customers.form.companyPlaceholder')}
-          error={errors.company}
-          autoCapitalize="words"
-          maxLength={100}
-          showClearButton
-          onClear={onClearCompany}
-        />
-      </FormField>
+        {fields.maintenanceType && fields.maintenanceType !== 'PAY_AS_YOU_GO' && (
+          <>
+            <FormField fieldId="subscriptionStartDate">
+              <AppDatePicker
+                label={t('customers.detail.subscriptionStart')}
+                value={fields.subscriptionStartDate}
+                onChange={(iso) => handleChange('subscriptionStartDate', iso)}
+                placeholder={t('customers.form.datePlaceholder')}
+                error={errors.subscriptionStartDate}
+              />
+            </FormField>
+            <FormField fieldId="subscriptionEndDate">
+              <AppDatePicker
+                label={t('customers.detail.subscriptionEnd')}
+                value={fields.subscriptionEndDate}
+                onChange={(iso) => handleChange('subscriptionEndDate', iso)}
+                placeholder={t('customers.form.datePlaceholder')}
+                error={errors.subscriptionEndDate}
+                minDate={fields.subscriptionStartDate ? new Date(fields.subscriptionStartDate) : undefined}
+              />
+            </FormField>
+          </>
+        )}
+      </FormSection>
 
-      <FormField fieldId="address">
-        <AppTextInput
-          inputRef={addressRef}
-          label={t('customers.form.address')}
-          value={fields.address}
-          onChangeText={onChangeAddress}
-          placeholder={t('customers.form.addressPlaceholder')}
-          error={errors.address}
-          autoCapitalize="sentences"
-          maxLength={255}
-          showClearButton
-          onClear={onClearAddress}
-          multiline
-          numberOfLines={2}
-          blurOnSubmit
-        />
-      </FormField>
-
-      {/* ── Maintenance type selector ── */}
-      <FormField fieldId="maintenanceType">
-        <MaintenanceTypeSelector
-          value={fields.maintenanceType}
-          onChange={(v) => handleChange('maintenanceType', v)}
-          t={t}
-        />
-      </FormField>
-
-      {/* ── Subscription dates — only for MONTHLY_SUBSCRIPTION and FREE_TRIAL ── */}
-      {fields.maintenanceType && fields.maintenanceType !== 'PAY_AS_YOU_GO' && (
-        <>
-          <FormField fieldId="subscriptionStartDate">
-            <AppDatePicker
-              label={t('customers.detail.subscriptionStart')}
-              value={fields.subscriptionStartDate}
-              onChange={(iso) => handleChange('subscriptionStartDate', iso)}
-              placeholder={t('customers.form.datePlaceholder')}
-              error={errors.subscriptionStartDate}
-            />
-          </FormField>
-
-          <FormField fieldId="subscriptionEndDate">
-            <AppDatePicker
-              label={t('customers.detail.subscriptionEnd')}
-              value={fields.subscriptionEndDate}
-              onChange={(iso) => handleChange('subscriptionEndDate', iso)}
-              placeholder={t('customers.form.datePlaceholder')}
-              error={errors.subscriptionEndDate}
-              minDate={fields.subscriptionStartDate ? new Date(fields.subscriptionStartDate) : undefined}
-            />
-          </FormField>
-        </>
-      )}
-
-      {/* ── Linked stats (edit mode only) ── */}
+      {/* ── Linked stats (edit mode) ── */}
       {item && (
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', alignItems: 'center' }}>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>{linkedTickets}</Text>
-            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('customers.columns.tickets')}</Text>
-          </View>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', alignItems: 'center' }}>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#065f46' }}>{linkedApplications}</Text>
-            <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>{t('customers.detail.applications')}</Text>
-          </View>
+        <View style={styles.statsRow}>
+          <StatCard value={linkedTickets}      label={t('customers.columns.tickets')}      color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
+          <StatCard value={linkedApplications} label={t('customers.detail.applications')}  color="#065f46" bg="#f0fdf4" border="#bbf7d0" />
         </View>
       )}
     </>
@@ -234,6 +232,17 @@ const CustomerForm: React.FC<Props> = ({
   );
 };
 
+// ── Stat card ─────────────────────────────────────────────────────────────────
+
+const StatCard: React.FC<{ value: number; label: string; color: string; bg: string; border: string }> = ({
+  value, label, color, bg, border,
+}) => (
+  <View style={[styles.statCard, { backgroundColor: bg, borderColor: border }]}>
+    <Text style={[styles.statValue, { color }]}>{value}</Text>
+    <Text style={[styles.statLabel, { color }]}>{label}</Text>
+  </View>
+);
+
 // ── Maintenance type selector ─────────────────────────────────────────────────
 
 interface SelectorProps {
@@ -244,11 +253,8 @@ interface SelectorProps {
 
 const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
   const c      = useThemeColors();
-  const labelColor = c.text.primary;
-  const border     = c.border.primary;
-  const bg         = c.surface.primary;
+  const isDark = useIsDark();
 
-  // Labels via t() — RTL-safe
   const MAINTENANCE_LABELS: Record<MaintenanceType, string> = {
     MONTHLY_SUBSCRIPTION: t('customers.maintenance.monthly'),
     FREE_TRIAL:           t('customers.maintenance.trial'),
@@ -256,30 +262,100 @@ const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }
   };
 
   return (
-    <View style={{ marginBottom: 12 }}>
-      <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 8, color: labelColor }}>
+    <View style={styles.selectorContainer}>
+      <Text style={[styles.selectorLabel, { color: c.text.secondary }]}>
         {t('customers.detail.maintenanceType')}
       </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {MAINTENANCE_TYPES.map((type) => (
-          <Pressable
-            key={type}
-            onPress={() => onChange(type)}
-            style={{
-              paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
-              borderWidth: 1.5,
-              borderColor: value === type ? '#3b82f6' : border,
-              backgroundColor: value === type ? c.surface.secondary : bg,
-            }}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: value === type ? '#2563eb' : c.text.secondary }}>
-              {MAINTENANCE_LABELS[type]}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.chipRow}>
+        {MAINTENANCE_TYPES.map((type) => {
+          const active = value === type;
+          return (
+            <Pressable
+              key={type}
+              onPress={() => onChange(type)}
+              style={({ pressed }) => [
+                styles.chip,
+                {
+                  borderColor:     active ? c.interactive.primary : c.border.primary,
+                  backgroundColor: active
+                    ? (isDark ? '#1a2e4a' : '#eff6ff')
+                    : pressed
+                    ? c.surface.tertiary
+                    : c.surface.secondary,
+                },
+              ]}
+            >
+              {active && <Text style={styles.chipCheck}>✓ </Text>}
+              <Text style={[
+                styles.chipText,
+                { color: active ? c.interactive.primary : c.text.secondary },
+              ]}>
+                {MAINTENANCE_LABELS[type]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 };
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  statsRow: {
+    flexDirection: 'row',
+    gap:           10,
+    marginBottom:  16,
+  },
+  statCard: {
+    flex:          1,
+    padding:       14,
+    borderRadius:  Radius.xl,
+    borderWidth:   1,
+    alignItems:    'center',
+  },
+  statValue: {
+    fontSize:   FontSize['3xl'],
+    fontWeight: FontWeight.extrabold,
+  },
+  statLabel: {
+    fontSize:  FontSize.xs,
+    marginTop: 3,
+    fontWeight: FontWeight.medium,
+  },
+  selectorContainer: {
+    marginBottom: 4,
+  },
+  selectorLabel: {
+    fontSize:      FontSize.sm,
+    fontWeight:    FontWeight.semibold,
+    marginBottom:  8,
+    letterSpacing: 0.1,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           8,
+    marginBottom:  4,
+  },
+  chip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: 14,
+    paddingVertical:   9,
+    borderRadius:      Radius.full,
+    borderWidth:       1.5,
+  },
+  chipCheck: {
+    fontSize:   FontSize.sm,
+    color:      '#2563eb',
+    fontWeight: FontWeight.bold,
+  },
+  chipText: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
+});
 
 export default CustomerForm;

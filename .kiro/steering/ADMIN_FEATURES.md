@@ -356,6 +356,9 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 ### Locale Keys
 
 ```json
+"customers.sections.basicInfo"     → "Basic Info"
+"customers.sections.company"       → "Company"
+"customers.sections.subscription"  → "Subscription"
 "customers.maintenance.monthly"    → "Monthly Subscription"
 "customers.maintenance.trial"      → "Free Trial"
 "customers.maintenance.payAsYouGo" → "Pay As You Go"
@@ -609,6 +612,37 @@ Header: back ← | title + subtitle | ✏️ Edit | 🗑️ (icon-only delete)
 
 Color palette: blue (tickets) · green (customers) · purple (applications)
 
+### `FormSection`
+
+Groups related form fields into a visually distinct card with a section title, optional emoji icon, and a horizontal divider. Import from `@/src/shared/components/forms/FormSection`.
+
+```tsx
+import FormSection from '@/src/shared/components/forms/FormSection';
+
+<FormSection title={t('customers.sections.basicInfo')} icon="👤">
+  <FormField fieldId="name"><AppTextInput ... /></FormField>
+  <FormField fieldId="email"><AppTextInput ... /></FormField>
+</FormSection>
+
+<FormSection title={t('customers.sections.subscription')} icon="💳" last>
+  {/* last=true removes the bottom margin on the final section */}
+  <FormField fieldId="maintenanceType">...</FormField>
+</FormSection>
+```
+
+**Props:**
+
+| Prop | Type | Notes |
+|---|---|---|
+| `title` | string | Section heading (uppercase, small caps) |
+| `icon?` | string | Emoji shown before the title |
+| `children` | ReactNode | `FormField` wrappers |
+| `last?` | boolean | `true` removes bottom margin — use on the last section before the stats row or submit button |
+
+**When to use:** any form with 3+ fields should be split into logical sections (e.g. Basic Info / Company / Subscription). Single-section forms don't need `FormSection`.
+
+---
+
 ### `AppDatePicker`
 
 Native OS date picker. Stores `YYYY-MM-DD`, displays using tenant's date format.
@@ -652,7 +686,7 @@ export const formatDate = (date) => dayjs(date).format(getDayjsFormat());
 | `onSubmit` | () => void | Submit |
 | `submitting?` | boolean | Spinner on button |
 | `submitDisabled?` | boolean | `submitting \|\| isSubmitting` only |
-| `isDirty?` | boolean | `false` = button is disabled AND a `t('common.fillRequired')` hint text is rendered **below** the button; button label always shows `submitLabel` (never changes to the hint text) |
+| `isDirty?` | boolean | `false` = a `t('common.fillRequired')` hint text is rendered **above** the button; button label always shows `submitLabel` (never changes to the hint text). Note: `isDirty=false` does **not** disable the button — only `submitDisabled` or `submitting` do. |
 | `submitLabel?` | string | Default: `t('common.save')` |
 
 ### Form hook pattern

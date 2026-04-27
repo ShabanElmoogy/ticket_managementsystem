@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable,
+  View, Text, TextInput, Pressable, StyleSheet,
   type TextInputProps, type StyleProp, type ViewStyle,
 } from 'react-native';
 import { useDirection } from '@/src/providers/DirectionProvider';
-import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export type AppTextInputFieldType = 'text' | 'search' | 'password' | 'number' | 'email';
 
 export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
   label?:           string;
+  hint?:            string;
   error?:           string;
+  required?:        boolean;
   fieldType?:       AppTextInputFieldType;
   showClearButton?: boolean;
   onClear?:         () => void;
@@ -24,7 +26,8 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
 }
 
 const AppTextInput: React.FC<AppTextInputProps> = ({
-  label, error, fieldType = 'text',
+  label, hint, error, required = false,
+  fieldType = 'text',
   showClearButton, onClear, containerStyle,
   value, onChangeText, maxLength,
   min, max, step = 1,
@@ -34,7 +37,8 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const [focused,      setFocused]      = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { isRtl } = useDirection();
-  const c = useThemeColors();
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   const isPassword = fieldType === 'password';
   const isSearch   = fieldType === 'search';
@@ -44,28 +48,30 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const showClear  = (showClearButton ?? isSearch) && hasValue;
   const showBadge  = maxLength !== undefined && !isNumber;
 
-  const badgeLevel: 'green' | 'amber' | 'red' = (() => {
-    if (!maxLength) return 'green';
-    const pct = charCount / maxLength;
-    if (pct >= 0.90) return 'red';
-    if (pct >= 0.75) return 'amber';
-    return 'green';
-  })();
-
-  const BADGE_COLORS = {
-    green: { bg: focused ? c.intent.successSurface : c.surface.tertiary, border: focused ? c.intent.success + '44' : c.border.primary, text: focused ? c.intent.success : c.text.muted },
-    amber: { bg: c.intent.warningSurface, border: c.intent.warning + '55', text: c.intent.warning },
-    red:   { bg: c.intent.errorSurface,   border: c.intent.error,          text: c.intent.error   },
-  } as const;
-
-  const badge = BADGE_COLORS[badgeLevel];
+  // Badge color based on fill %
+  const pct = maxLength ? charCount / maxLength : 0;
+  const badgeColor = pct >= 0.9 ? c.intent.error
+                   : pct >= 0.75 ? c.intent.warning
+                   : focused ? c.intent.success
+                   : c.text.muted;
 
   const keyboardType: TextInputProps['keyboardType'] =
     isNumber ? 'numeric' :
     fieldType === 'email' ? 'email-address' : 'default';
 
-  const borderColor = error ? c.intent.error : focused ? c.border.focus : c.border.secondary;
-  const textAlign   = isNumber ? 'center' : isRtl ? 'right' : 'left';
+  // Border: error → red, focused → blue, default → subtle
+  const borderColor = error   ? c.intent.error
+                    : focused ? c.interactive.primary
+                    : c.border.primary;
+
+  const borderWidth = focused || error ? 2 : 1;
+
+  // Input background: slightly different from page bg for depth
+  const inputBg = isDark
+    ? (focused ? '#1a2a3e' : '#162030')
+    : (focused ? '#f8faff' : c.surface.primary);
+
+  const textAlign = isNumber ? 'center' : isRtl ? 'right' : 'left';
 
   const handleStep = (dir: 1 | -1) => {
     const current = parseFloat(String(value ?? '0')) || 0;
@@ -75,64 +81,78 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
     onChangeText?.(String(next));
   };
 
-  const CountBadge = showBadge ? (
-    <View style={{
-      marginHorizontal: 8, paddingHorizontal: 7, paddingVertical: 3,
-      borderRadius: Radius.full, backgroundColor: badge.bg,
-      borderWidth: 1, borderColor: badge.border,
-    }}>
-      <Text style={{ fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: badge.text, fontVariant: ['tabular-nums'] }}>
-        {charCount}/{maxLength}
-      </Text>
-    </View>
-  ) : null;
-
-  const stepperBg = focused ? c.intent.infoSurface : c.surface.tertiary;
-
   return (
-    <View style={[{ marginBottom: 12 }, containerStyle]}>
+    <View style={[styles.container, containerStyle]}>
+      {/* Label row */}
       {label && (
-        <Text style={{
-          fontSize: FontSize.base, fontWeight: FontWeight.semibold, marginBottom: 4,
-          color: error ? c.intent.error : c.text.secondary,
-          textAlign: isRtl ? 'right' : 'left',
-        }}>
-          {label}
-        </Text>
+        <View style={styles.labelRow}>
+          <Text style={[
+            styles.label,
+            {
+              color:     error ? c.intent.error : c.text.secondary,
+              textAlign: isRtl ? 'right' : 'left',
+            },
+          ]}>
+            {label}
+            {required && <Text style={{ color: c.intent.error }}> *</Text>}
+          </Text>
+          {showBadge && (
+            <Text style={[styles.charCount, { color: badgeColor }]}>
+              {charCount}/{maxLength}
+            </Text>
+          )}
+        </View>
       )}
 
-      <View style={{
-        flexDirection: 'row', alignItems: 'center',
-        borderWidth: 2, borderColor, borderRadius: Radius.lg,
-        backgroundColor: c.surface.primary,
-        minHeight: 44, overflow: 'hidden',
-      }}>
+      {/* Input wrapper */}
+      <View style={[
+        styles.inputWrapper,
+        {
+          borderColor,
+          borderWidth,
+          borderRadius:    Radius.xl,
+          backgroundColor: inputBg,
+          // Subtle shadow when focused
+          ...(focused && {
+            shadowColor:   c.interactive.primary,
+            shadowOffset:  { width: 0, height: 0 },
+            shadowOpacity: isDark ? 0.35 : 0.15,
+            shadowRadius:  6,
+            elevation:     2,
+          }),
+        },
+      ]}>
+        {/* Search icon */}
         {isSearch && (
-          <Text style={{ paddingHorizontal: 12, color: c.text.muted, fontSize: FontSize.xl }}>🔍</Text>
+          <Text style={[styles.prefixIcon, { color: c.text.muted }]}>🔍</Text>
         )}
 
+        {/* Number stepper − */}
         {isNumber && (
           <Pressable
             onPress={() => handleStep(-1)}
-            style={{
-              width: 40, alignSelf: 'stretch',
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: stepperBg,
-              borderEndWidth: 1, borderEndColor: borderColor,
-            }}
+            style={[styles.stepper, {
+              borderEndWidth: 1,
+              borderEndColor: borderColor,
+              backgroundColor: isDark ? '#1e2d42' : '#f1f5f9',
+            }]}
           >
-            <Text style={{ fontSize: FontSize['3xl'], color: c.text.secondary, lineHeight: 24 }}>−</Text>
+            <Text style={{ fontSize: 20, color: c.text.secondary, lineHeight: 22 }}>−</Text>
           </Pressable>
         )}
 
+        {/* Text input */}
         <TextInput
           ref={inputRef as React.RefObject<TextInput>}
-          style={{
-            flex: 1, fontSize: FontSize.lg,
-            color: c.text.primary,
-            paddingHorizontal: 12, paddingVertical: 10,
-            textAlign, writingDirection: isRtl ? 'rtl' : 'ltr',
-          }}
+          style={[
+            styles.input,
+            {
+              fontSize:        FontSize.md,
+              color:           c.text.primary,
+              textAlign,
+              writingDirection: isRtl ? 'rtl' : 'ltr',
+            },
+          ]}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setFocused(true)}
@@ -149,48 +169,125 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           {...rest}
         />
 
+        {/* Number stepper + */}
         {isNumber && (
           <Pressable
             onPress={() => handleStep(1)}
-            style={{
-              width: 40, alignSelf: 'stretch',
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: stepperBg,
-              borderStartWidth: 1, borderStartColor: borderColor,
-            }}
+            style={[styles.stepper, {
+              borderStartWidth: 1,
+              borderStartColor: borderColor,
+              backgroundColor: isDark ? '#1e2d42' : '#f1f5f9',
+            }]}
           >
-            <Text style={{ fontSize: FontSize['3xl'], color: c.interactive.primary, lineHeight: 24 }}>+</Text>
+            <Text style={{ fontSize: 20, color: c.interactive.primary, lineHeight: 22 }}>+</Text>
           </Pressable>
         )}
 
-        {CountBadge}
-
+        {/* Password toggle */}
         {isPassword && (
-          <Pressable onPress={() => setShowPassword(v => !v)} style={{ padding: 10 }}>
-            <Text style={{ fontSize: FontSize.xl }}>{showPassword ? '🙈' : '👁️'}</Text>
+          <Pressable onPress={() => setShowPassword(v => !v)} style={styles.iconBtn}>
+            <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁️'}</Text>
           </Pressable>
         )}
 
+        {/* Clear button */}
         {showClear && (
-          <Pressable onPress={onClear} style={{ padding: 10 }} accessibilityLabel="Clear">
-            <Text style={{ color: c.text.muted, fontSize: FontSize.xl }}>✕</Text>
+          <Pressable onPress={onClear} style={styles.iconBtn} accessibilityLabel="Clear">
+            <View style={[styles.clearIcon, { backgroundColor: c.text.muted + '30' }]}>
+              <Text style={{ fontSize: 10, color: c.text.muted, fontWeight: '700' }}>✕</Text>
+            </View>
           </Pressable>
         )}
       </View>
 
+      {/* Error message */}
       {error && (
-        <Text style={{ fontSize: FontSize.xs, color: c.intent.error, marginTop: 4, textAlign: isRtl ? 'right' : 'left' }}>
-          {error}
-        </Text>
+        <View style={styles.errorRow}>
+          <Text style={{ fontSize: 11, color: c.intent.error }}>⚠ </Text>
+          <Text style={[styles.errorText, { color: c.intent.error, textAlign: isRtl ? 'right' : 'left' }]}>
+            {error}
+          </Text>
+        </View>
       )}
 
-      {isNumber && focused && (
-        <Text style={{ fontSize: FontSize.xs, color: c.interactive.primary, marginTop: 3, textAlign: isRtl ? 'right' : 'left' }}>
-          Tap − / + or type a value
+      {/* Hint (no error) */}
+      {hint && !error && (
+        <Text style={[styles.hint, { color: c.text.muted, textAlign: isRtl ? 'right' : 'left' }]}>
+          {hint}
         </Text>
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+  labelRow: {
+    flexDirection:  'row',
+    justifyContent: 'space-between',
+    alignItems:     'center',
+    marginBottom:   6,
+  },
+  label: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 0.1,
+  },
+  charCount: {
+    fontSize:   FontSize.xs,
+    fontWeight: FontWeight.medium,
+    fontVariant: ['tabular-nums'],
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    minHeight:     48,
+    overflow:      'hidden',
+  },
+  input: {
+    flex:            1,
+    paddingHorizontal: 14,
+    paddingVertical:   12,
+    includeFontPadding: false,
+  },
+  prefixIcon: {
+    paddingStart: 14,
+    fontSize:     16,
+  },
+  stepper: {
+    width:          44,
+    alignSelf:      'stretch',
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  iconBtn: {
+    paddingHorizontal: 12,
+    alignSelf:         'stretch',
+    alignItems:        'center',
+    justifyContent:    'center',
+  },
+  clearIcon: {
+    width:          18,
+    height:         18,
+    borderRadius:   9,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    marginTop:     5,
+  },
+  errorText: {
+    fontSize: FontSize.xs,
+    flex:     1,
+  },
+  hint: {
+    fontSize:  FontSize.xs,
+    marginTop: 4,
+  },
+});
 
 export default AppTextInput;

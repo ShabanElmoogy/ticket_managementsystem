@@ -6,7 +6,6 @@ import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/th
 import { AppButton } from '@/src/shared/components';
 import { useUiStore } from '@/src/stores/uiStore';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
-import AppButton from '@/src/shared/components/forms/AppButton';
 
 export interface AdminFormModalProps {
   open:             boolean;

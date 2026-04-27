@@ -15,6 +15,7 @@ import { useColorScheme } from 'react-native';
 import { useAuthStore } from '@/src/stores/authStore';
 import { initI18n } from '@/src/i18n';
 import { DirectionProvider } from '@/src/providers/DirectionProvider';
+import { ThemeProvider as AppThemeProvider } from '@/src/providers/ThemeProvider';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetworkErrorDialog from '@/src/components/NetworkErrorDialog';

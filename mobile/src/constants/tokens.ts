@@ -6,6 +6,21 @@
  *           Spacing, Radius, FontSize, FontWeight, Fonts.
  *
  * For reactive theme hooks (useThemeColors, useIsDark) import from theme.ts.
+ *
+ * Changes from v1:
+ *  - surface.elevated bumped to gray200 (#e5e7eb) for clear 3-tier light hierarchy
+ *  - dark surface.header changed to slate700 (#334155) — no longer identical to primary
+ *  - dark text.muted changed to slate500 (#64748b) — was slate600 (1.9:1 contrast, WCAG fail)
+ *  - interactive{} gains warning + warningPressed tokens (amber500/600)
+ *  - StatusSurfaces map added — paired light/dark tints for every status key
+ *  - ThemeColors type updated to reflect new interactive tokens
+ *
+ * Changes from v2:
+ *  - PrioritySurfaces added — paired light/dark tints matching PriorityColors keys
+ *  - RoleSurfaces added — paired light/dark tints matching RoleColors keys
+ *  - LineHeight scale added — proportional to FontSize (×1.5), replaces hardcoded values
+ *  - BorderWidth scale added — hairline/thin/base/thick replaces magic numbers in components
+ *  - IconSize scale added — distinct from FontSize, for icon rendering consistency
  */
 
 import { Platform } from 'react-native';
@@ -83,14 +98,14 @@ const light = {
     primary:   Palette.white,
     secondary: Palette.slate50,
     tertiary:  Palette.slate100,
-    elevated:  Palette.gray100,
+    elevated:  Palette.gray200,    // was gray100 — now clearly distinct from tertiary
     header:    Palette.indigo500,
   },
   text: {
     primary:   Palette.gray900,
     secondary: Palette.slate500,
     tertiary:  Palette.slate400,
-    muted:     Palette.gray400,
+    muted:     Palette.gray400,    // decorative/placeholder only — does not meet WCAG AA
     inverse:   Palette.white,
   },
   border: {
@@ -116,6 +131,8 @@ const light = {
     pressed:        Palette.slate100,
     success:        Palette.green500,
     successPressed: Palette.green600,
+    warning:        Palette.amber500,  // added — was missing, caused AppButton warning fallback to hardcoded hex
+    warningPressed: Palette.amber600,  // added
     error:          Palette.red500,
     errorPressed:   Palette.red600,
   },
@@ -132,13 +149,13 @@ const dark = {
     secondary: Palette.slate900,
     tertiary:  Palette.slate850,
     elevated:  Palette.slate700,
-    header:    Palette.slate800,
+    header:    Palette.slate700,   // was slate800 (= primary) — now visually distinct
   },
   text: {
     primary:   Palette.slate100,
     secondary: Palette.slate300,
     tertiary:  Palette.slate400,
-    muted:     Palette.slate600,
+    muted:     Palette.slate500,   // was slate600 (1.9:1 on slate800, WCAG fail) — now slate500 (3.1:1)
     inverse:   Palette.gray900,
   },
   border: {
@@ -164,6 +181,8 @@ const dark = {
     pressed:        Palette.slate700,
     success:        Palette.green500,
     successPressed: Palette.green600,
+    warning:        Palette.amber500,  // added
+    warningPressed: Palette.amber600,  // added
     error:          Palette.red500,
     errorPressed:   Palette.red600,
   },
@@ -181,7 +200,14 @@ export type ThemeColors = {
   text:        { primary: string; secondary: string; tertiary: string; muted: string; inverse: string };
   border:      { primary: string; secondary: string; focus: string };
   intent:      { success: string; successSurface: string; error: string; errorSurface: string; warning: string; warningSurface: string; info: string; infoSurface: string };
-  interactive: { primary: string; primaryPressed: string; secondary: string; disabled: string; pressed: string; success: string; successPressed: string; error: string; errorPressed: string };
+  interactive: {
+    primary: string; primaryPressed: string;
+    secondary: string;
+    disabled: string; pressed: string;
+    success: string; successPressed: string;
+    warning: string; warningPressed: string;  // added
+    error: string; errorPressed: string;
+  };
   tint:            string;
   icon:            string;
   tabIconDefault:  string;
@@ -204,6 +230,35 @@ export const StatusColors: Record<string, string> = {
   CLOSED:            Palette.gray500,
 };
 
+/**
+ * StatusSurfaces — paired background tints for status chips/badges.
+ * Use StatusColors[status] for the text/icon color and
+ * StatusSurfaces.light[status] / StatusSurfaces.dark[status] for the fill.
+ * This replaces per-component rgba() guesswork with shared, consistent tokens.
+ */
+export const StatusSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
+  light: {
+    OPEN:              '#fffbeb',
+    IN_PROGRESS:       '#ede9fe',
+    PROGRAMMING:       '#e0e7ff',
+    UNDER_DEVELOPMENT: '#f5f3ff',
+    CODE_REVIEW:       '#ecfeff',
+    TESTING:           '#f0fdfa',
+    RESOLVED:          '#d1fae5',
+    CLOSED:            '#f3f4f6',
+  },
+  dark: {
+    OPEN:              '#292109',
+    IN_PROGRESS:       '#2d1b69',
+    PROGRAMMING:       '#1e1b4b',
+    UNDER_DEVELOPMENT: '#2e1065',
+    CODE_REVIEW:       '#083344',
+    TESTING:           '#042f2e',
+    RESOLVED:          '#022c22',
+    CLOSED:            '#1f2937',
+  },
+};
+
 export const PriorityColors: Record<string, string> = {
   LOW:    Palette.green500,
   MEDIUM: Palette.amber500,
@@ -211,11 +266,51 @@ export const PriorityColors: Record<string, string> = {
   URGENT: Palette.red600,
 };
 
+/**
+ * PrioritySurfaces — paired background tints for priority chips/badges.
+ * Use PriorityColors[priority] for text/icon color and
+ * PrioritySurfaces.light[priority] / PrioritySurfaces.dark[priority] for the fill.
+ */
+export const PrioritySurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
+  light: {
+    LOW:    '#f0fdf4',
+    MEDIUM: '#fffbeb',
+    HIGH:   '#fef2f2',
+    URGENT: '#fff1f2',
+  },
+  dark: {
+    LOW:    '#022c22',
+    MEDIUM: '#292109',
+    HIGH:   '#3b1515',
+    URGENT: '#4c0519',
+  },
+};
+
 export const RoleColors: Record<string, string> = {
   SUPER_ADMIN:  Palette.red500,
   TENANT_ADMIN: Palette.amber500,
   PROGRAMMER:   Palette.violet500,
   EMPLOYEE:     Palette.blue500,
+};
+
+/**
+ * RoleSurfaces — paired background tints for role chips/badges.
+ * Use RoleColors[role] for text/icon color and
+ * RoleSurfaces.light[role] / RoleSurfaces.dark[role] for the fill.
+ */
+export const RoleSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
+  light: {
+    SUPER_ADMIN:  '#fef2f2',
+    TENANT_ADMIN: '#fffbeb',
+    PROGRAMMER:   '#f5f3ff',
+    EMPLOYEE:     '#eff6ff',
+  },
+  dark: {
+    SUPER_ADMIN:  '#3b1515',
+    TENANT_ADMIN: '#292109',
+    PROGRAMMER:   '#2e1065',
+    EMPLOYEE:     '#0c1a2e',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -242,6 +337,46 @@ export const FontWeight = {
   semibold:  '600' as const,
   bold:      '700' as const,
   extrabold: '800' as const,
+} as const;
+
+/**
+ * LineHeight — proportional to FontSize (approx ×1.5).
+ * Replaces magic numbers like `lineHeight: 18` in component styles.
+ */
+export const LineHeight = {
+  xs:   14,
+  sm:   16,
+  base: 20,
+  md:   20,
+  lg:   22,
+  xl:   24,
+  '2xl': 28,
+  '3xl': 30,
+  '4xl': 36,
+} as const;
+
+/**
+ * BorderWidth — named widths for borders, underlines, dividers.
+ * Replaces magic numbers like `borderWidth: 1.5` in component styles.
+ */
+export const BorderWidth = {
+  hairline: 0.5,
+  thin:     1,
+  base:     1.5,
+  thick:    2,
+} as const;
+
+/**
+ * IconSize — independent of FontSize; use for icon `width`/`height`.
+ * Keeps icon sizing consistent across components.
+ */
+export const IconSize = {
+  xs:   14,
+  sm:   16,
+  md:   20,
+  lg:   24,
+  xl:   28,
+  '2xl': 32,
 } as const;
 
 export const Fonts = Platform.select({

@@ -114,6 +114,11 @@
     "emptyFilteredMessage": "No customers match your search",
     "active": "ACTIVE",
     "inactive": "INACTIVE",
+    "sections": {
+      "basicInfo":    "Basic Info",
+      "company":      "Company",
+      "subscription": "Subscription"
+    },
     "columns": {
       "name": "Name",
       "email": "Email",
