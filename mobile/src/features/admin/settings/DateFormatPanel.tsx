@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import dayjs from 'dayjs';
 import { adminSettingsApi } from '@/src/features/admin/settings/api/adminSettingsApi';
 import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/components/SettingsCard';
 import { AppButton } from '@/src/shared/components';
-import { useThemeColors } from '@/src/constants/theme';
+import ChipSelector from '@/src/shared/components/forms/ChipSelector';
 import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '@/src/stores/tenantStore';
 
 type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
 
-// date-fns tokens → dayjs tokens (server stores date-fns format)
 const TO_DAYJS: Record<string, string> = {
   'dd/MM/yyyy':  'DD/MM/YYYY',
   'MM/dd/yyyy':  'MM/DD/YYYY',
@@ -24,14 +22,13 @@ const PREVIEW_DATE = dayjs('2025-12-31');
 
 const DateFormatPanel: React.FC = () => {
   const { dateFormat, setDateFormat } = useTenantStore();
-  const c = useThemeColors();
 
   const [selected, setSelected] = useState<DateFormatValue>(dateFormat);
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
   const [alert,    setAlert]    = useState<AlertState>(null);
 
-  const showAlert = (type: AlertState['type'], msg: string) => {
+  const showAlert = (type: 'success' | 'error' | 'info', msg: string) => {
     setAlert({ type, msg });
     setTimeout(() => setAlert(null), 3000);
   };
@@ -60,61 +57,36 @@ const DateFormatPanel: React.FC = () => {
     } finally { setSaving(false); }
   };
 
-  return (
-    <SettingsCard
-      icon="📅" title="Date Format"
-      description="Choose how dates are displayed across the entire application for all users in your organisation."
-      loading={loading}
-    >
+  // Build options from DATE_FORMATS — preview shows the formatted date
+  const options = DATE_FORMATS.map((fmt) => ({
+    value:   fmt.value,
+    label:   fmt.value,
+    description: fmt.preview,
+    preview: PREVIEW_DATE.format(TO_DAYJS[fmt.value] ?? fmt.value),
+  }));
+
+  const content = (
+    <>
       {alert && <AlertBanner {...alert} />}
-
-      {/* Format options */}
-      <View style={{ gap: 8, marginBottom: 16 }}>
-        {DATE_FORMATS.map((fmt) => {
-          const isActive = selected === fmt.value;
-          return (
-            <Pressable
-              key={fmt.value}
-              onPress={() => setSelected(fmt.value)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                padding: 12, borderRadius: 10,
-                backgroundColor: isActive ? '#3b82f618' : c.surface.secondary,
-                borderWidth: 2,
-                borderColor: isActive ? '#3b82f6' : c.border.primary,
-              }}
-            >
-              <View>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text.primary }}>
-                  {fmt.value}
-                </Text>
-                <Text style={{ fontSize: 11, color: c.text.muted, marginTop: 2 }}>
-                  {fmt.preview}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{
-                  backgroundColor: isActive ? '#3b82f6' : c.surface.tertiary,
-                  borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
-                }}>
-                  <Text style={{
-                    fontSize: 11, fontWeight: '700', fontFamily: 'monospace',
-                    color: isActive ? '#fff' : c.text.secondary,
-                  }}>
-                    {PREVIEW_DATE.format(TO_DAYJS[fmt.value] ?? fmt.value)}
-                  </Text>
-                </View>
-                {isActive && <Text style={{ color: '#3b82f6', fontSize: 16 }}>✓</Text>}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
+      <ChipSelector
+        options={options}
+        value={selected}
+        onChange={(v) => setSelected(v as DateFormatValue)}
+      />
       <AppButton variant="contained" loading={saving} loadingText="Saving…" onPress={handleSave} fullWidth>
         Save Date Format
       </AppButton>
-    </SettingsCard>
+    </>
+  );
+
+  return (
+    <SettingsCard
+      icon="📅"
+      title="Date Format"
+      description="Choose how dates are displayed across the entire application for all users in your organisation."
+      loading={loading}
+      children={content}
+    />
   );
 };
 

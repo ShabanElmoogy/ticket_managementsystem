@@ -1,15 +1,13 @@
-/**
- * SettingsCard — container for a settings section.
- * Matches web's <Paper sx={{ p: 3 }}> pattern.
- */
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
 
+// ── AlertBanner ───────────────────────────────────────────────────────────────
+
 interface AlertBannerProps { type: 'success' | 'error' | 'info'; msg: string }
 
-export const AlertBanner: React.FC<AlertBannerProps> = ({ type, msg }) => {
+export function AlertBanner({ type, msg }: AlertBannerProps) {
   const c     = useThemeColors();
   const bg    = type === 'success' ? c.intent.successSurface
               : type === 'error'   ? c.intent.errorSurface
@@ -24,17 +22,19 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({ type, msg }) => {
       <Text style={{ color, fontSize: 13, flex: 1 }}>{msg}</Text>
     </View>
   );
-};
-
-interface SettingsCardProps {
-  icon: string;
-  title: string;
-  description?: string;
-  loading?: boolean;
-  children: React.ReactNode;
 }
 
-const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, loading, children }) => {
+// ── SettingsCard ──────────────────────────────────────────────────────────────
+
+export interface SettingsCardProps {
+  icon:         string;
+  title:        string;
+  description?: string;
+  loading?:     boolean;
+  children:     React.ReactNode;
+}
+
+export default function SettingsCard({ icon, title, description, loading, children }: SettingsCardProps) {
   const c     = useThemeColors();
   const isRtl = useUiStore((s) => s.direction) === 'rtl';
 
@@ -45,17 +45,17 @@ const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, l
       shadowColor: c.shadow, shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
     }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <Text style={{ fontSize: 20 }}>{icon}</Text>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text.primary, textAlign: isRtl ? 'right' : 'left' }}>{title}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text.primary, textAlign: isRtl ? 'right' : 'left' }}>
+          {title}
+        </Text>
       </View>
       {description && (
         <Text style={{ fontSize: 12, color: c.text.muted, marginBottom: 16, lineHeight: 18, textAlign: isRtl ? 'right' : 'left' }}>
           {description}
         </Text>
       )}
-
       {loading ? (
         <View style={{ padding: 24, alignItems: 'center' }}>
           <ActivityIndicator color="#3b82f6" />
@@ -63,6 +63,4 @@ const SettingsCard: React.FC<SettingsCardProps> = ({ icon, title, description, l
       ) : children}
     </View>
   );
-};
-
-export default SettingsCard;
+}

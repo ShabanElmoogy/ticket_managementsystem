@@ -76,9 +76,7 @@ function AdminFormPage({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            <FormScrollProvider scrollRef={scrollRef} mode="page">
-              {children}
-            </FormScrollProvider>
+            <FormScrollProvider scrollRef={scrollRef} mode="page" children={children} />
           </ScrollView>
 
           {/* ── Sticky footer ── */}
@@ -86,6 +84,7 @@ function AdminFormPage({
             paddingBottom:   insets.bottom + 8,
             backgroundColor: c.surface.primary,
             borderTopColor:  c.border.primary,
+            shadowColor:     c.buttons.primary.bg,
           }]}>
             {!isDirty && !submitting && (
               <Text style={[styles.hint, { color: c.text.muted }]}>

@@ -31,7 +31,7 @@ import { Platform } from 'react-native';
 
 export const Palette = {
   // Slate
-  slate50:  '#f8fafc',
+  slate50: '#f8fafc',
   slate100: '#f1f5f9',
   slate200: '#e2e8f0',
   slate300: '#cbd5e1',
@@ -79,10 +79,10 @@ export const Palette = {
   amber600: '#d97706',
 
   // Red
-  red400:  '#f87171',
-  red500:  '#ef4444',
-  red600:  '#dc2626',
-  red700:  '#b91c1c',
+  red400: '#f87171',
+  red500: '#ef4444',
+  red600: '#dc2626',
+  red700: '#b91c1c',
 
   // White / Black
   white: '#ffffff',
@@ -95,125 +95,195 @@ export const Palette = {
 
 const light = {
   surface: {
-    primary:   Palette.white,
+    primary: Palette.white,
     secondary: Palette.slate50,
-    tertiary:  Palette.slate100,
-    elevated:  Palette.gray200,    // was gray100 — now clearly distinct from tertiary
-    header:    Palette.indigo500,
+    tertiary: Palette.slate100,
+    elevated: Palette.gray200,    // was gray100 — now clearly distinct from tertiary
+    header: Palette.indigo500,
   },
   text: {
-    primary:   Palette.gray900,
+    primary: Palette.gray900,
     secondary: Palette.slate500,
-    tertiary:  Palette.slate400,
-    muted:     Palette.gray400,    // decorative/placeholder only — does not meet WCAG AA
-    inverse:   Palette.white,
+    tertiary: Palette.slate400,
+    muted: Palette.gray400,    // decorative/placeholder only — does not meet WCAG AA
+    inverse: Palette.white,
   },
   border: {
-    primary:   Palette.slate200,
+    primary: Palette.slate200,
     secondary: Palette.gray300,
-    focus:     Palette.blue500,
+    focus: Palette.blue500,
   },
   intent: {
-    success:        Palette.green500,
+    success: Palette.green500,
     successSurface: '#f0fdf4',
-    error:          Palette.red500,
-    errorSurface:   '#fef2f2',
-    warning:        Palette.amber500,
+    error: Palette.red500,
+    errorSurface: '#fef2f2',
+    warning: Palette.amber500,
     warningSurface: '#fffbeb',
-    info:           Palette.blue500,
-    infoSurface:    '#eff6ff',
+    info: Palette.blue500,
+    infoSurface: '#eff6ff',
   },
   interactive: {
-    primary:        Palette.blue500,
+    primary: Palette.blue500,
     primaryPressed: Palette.blue600,
-    secondary:      Palette.slate200,
-    disabled:       Palette.gray300,
-    pressed:        Palette.slate100,
-    success:        Palette.green500,
+    secondary: Palette.slate200,
+    disabled: Palette.gray300,
+    pressed: Palette.slate100,
+    success: Palette.green500,
     successPressed: Palette.green600,
-    warning:        Palette.amber500,
+    warning: Palette.amber500,
     warningPressed: Palette.amber600,
-    error:          Palette.red500,
-    errorPressed:   Palette.red600,
+    error: Palette.red500,
+    errorPressed: Palette.red600,
     // ── Chip tokens ──────────────────────────────────────────────────────────
-    chipBg:         Palette.slate100,   // inactive chip background
-    chipBorder:     Palette.slate300,   // inactive chip border
-    chipActiveBg:   Palette.blue500,    // active chip background
+    chipBg: Palette.slate100,   // inactive chip background
+    chipBorder: Palette.slate300,   // inactive chip border
+    chipActiveBg: Palette.blue500,    // active chip background
     chipActiveBorder: Palette.blue600,  // active chip border
     chipActiveText: Palette.white,      // active chip label
-    chipText:       Palette.slate600,   // inactive chip label
+    chipText: Palette.slate600,   // inactive chip label
   },
-  tint:           '#0a7ea4',
-  icon:           Palette.slate500,
+  // 🔥 ── Buttons tokens (NEW) ───────────────────────────────
+  buttons: {
+    primary: {
+      bg: Palette.blue500,
+      pressed: Palette.blue600,
+      text: Palette.white,
+    },
+
+    success: {
+      bg: Palette.green500,
+      pressed: Palette.green600,
+      text: Palette.white,
+    },
+
+    danger: {
+      bg: Palette.red500,
+      pressed: Palette.red600,
+      text: Palette.white,
+    },
+
+    secondary: {
+      bg: Palette.gray200,
+      text: Palette.gray900,
+      border: Palette.gray300,
+    },
+
+    outline: {
+      border: Palette.blue500,
+      text: Palette.blue500,
+    },
+
+    ghost: {
+      text: Palette.blue500,
+    },
+  },
+  tint: '#0a7ea4',
+  icon: Palette.slate500,
   tabIconDefault: Palette.slate500,
-  tabIconSelected:'#0a7ea4',
-  shadow:         'rgba(0,0,0,0.18)',
+  tabIconSelected: '#0a7ea4',
+  shadow: 'rgba(0,0,0,0.18)',
 } as const;
 
 const dark = {
   surface: {
-    primary:   Palette.slate800,
+    primary: Palette.slate800,
     secondary: Palette.slate900,
-    tertiary:  Palette.slate850,
-    elevated:  Palette.slate700,
-    header:    Palette.slate700,   // was slate800 (= primary) — now visually distinct
+    tertiary: Palette.slate850,
+    elevated: Palette.slate700,
+    header: Palette.slate700,   // was slate800 (= primary) — now visually distinct
   },
   text: {
-    primary:   Palette.slate100,
+    primary: Palette.slate100,
     secondary: Palette.slate300,
-    tertiary:  Palette.slate400,
-    muted:     Palette.slate500,   // was slate600 (1.9:1 on slate800, WCAG fail) — now slate500 (3.1:1)
-    inverse:   Palette.gray900,
+    tertiary: Palette.slate400,
+    muted: Palette.slate500,   // was slate600 (1.9:1 on slate800, WCAG fail) — now slate500 (3.1:1)
+    inverse: Palette.gray900,
   },
   border: {
-    primary:   Palette.slate700,
+    primary: Palette.slate700,
     secondary: Palette.slate600,
-    focus:     Palette.blue400,
+    focus: Palette.blue400,
   },
   intent: {
-    success:        Palette.green500,
+    success: Palette.green500,
     successSurface: '#0c2a1a',
-    error:          Palette.red500,
-    errorSurface:   '#3b1515',
-    warning:        Palette.amber500,
+    error: Palette.red500,
+    errorSurface: '#3b1515',
+    warning: Palette.amber500,
     warningSurface: '#2d1f00',
-    info:           Palette.blue400,
-    infoSurface:    '#0c1a2e',
+    info: Palette.blue400,
+    infoSurface: '#0c1a2e',
   },
   interactive: {
-    primary:        Palette.blue500,
+    primary: Palette.blue500,
     primaryPressed: Palette.blue600,
-    secondary:      Palette.slate700,
-    disabled:       Palette.slate600,
-    pressed:        Palette.slate700,
-    success:        Palette.green500,
+    secondary: Palette.slate700,
+    disabled: Palette.slate600,
+    pressed: Palette.slate700,
+    success: Palette.green500,
     successPressed: Palette.green600,
-    warning:        Palette.amber500,
+    warning: Palette.amber500,
     warningPressed: Palette.amber600,
-    error:          Palette.red500,
-    errorPressed:   Palette.red600,
+    error: Palette.red500,
+    errorPressed: Palette.red600,
     // ── Chip tokens ──────────────────────────────────────────────────────────
-    chipBg:           '#1e3a5f',   // dark blue tint — visible on dark bg
-    chipBorder:       '#3b82f6',   // blue border — always visible
-    chipActiveBg:     Palette.blue500,
+    chipBg: '#1e3a5f',   // dark blue tint — visible on dark bg
+    chipBorder: '#3b82f6',   // blue border — always visible
+    chipActiveBg: Palette.blue500,
     chipActiveBorder: Palette.blue400,
-    chipActiveText:   Palette.white,
-    chipText:         Palette.slate300,   // readable on dark
+    chipActiveText: Palette.white,
+    chipText: Palette.slate300,   // readable on dark
   },
-  tint:           Palette.white,
-  icon:           '#9BA1A6',
+  // 🔥 ── Buttons tokens (NEW) ───────────────────────────────
+  buttons: {
+    primary: {
+      bg: Palette.blue400,   // 👈 أفتح عشان يبان في dark
+      pressed: Palette.blue500,
+      text: Palette.white,
+    },
+
+    success: {
+      bg: Palette.green500,
+      pressed: Palette.green600,
+      text: Palette.white,
+    },
+
+    danger: {
+      bg: Palette.red400,    // 👈 أفتح شوية
+      pressed: Palette.red500,
+      text: Palette.white,
+    },
+
+    secondary: {
+      bg: Palette.slate700,
+      text: Palette.slate100,
+      border: Palette.slate600,
+    },
+
+    outline: {
+      border: Palette.blue400,
+      text: Palette.blue400,
+    },
+
+    ghost: {
+      text: Palette.blue400,
+    },
+  },
+  tint: Palette.white,
+  icon: '#9BA1A6',
   tabIconDefault: '#9BA1A6',
   tabIconSelected: Palette.white,
-  shadow:         'rgba(0,0,0,0.45)',
+  shadow: 'rgba(0,0,0,0.45)',
 } as const;
 
 export const Colors = { light, dark } as const;
 
 export type ThemeColors = {
-  surface:     { primary: string; secondary: string; tertiary: string; elevated: string; header: string };
-  text:        { primary: string; secondary: string; tertiary: string; muted: string; inverse: string };
-  border:      { primary: string; secondary: string; focus: string };
-  intent:      { success: string; successSurface: string; error: string; errorSurface: string; warning: string; warningSurface: string; info: string; infoSurface: string };
+  surface: { primary: string; secondary: string; tertiary: string; elevated: string; header: string };
+  text: { primary: string; secondary: string; tertiary: string; muted: string; inverse: string };
+  border: { primary: string; secondary: string; focus: string };
+  intent: { success: string; successSurface: string; error: string; errorSurface: string; warning: string; warningSurface: string; info: string; infoSurface: string };
   interactive: {
     primary: string; primaryPressed: string;
     secondary: string;
@@ -225,11 +295,19 @@ export type ThemeColors = {
     chipActiveBg: string; chipActiveBorder: string;
     chipActiveText: string; chipText: string;
   };
-  tint:            string;
-  icon:            string;
-  tabIconDefault:  string;
+  buttons: {
+    primary:   { bg: string; pressed: string; text: string };
+    success:   { bg: string; pressed: string; text: string };
+    danger:    { bg: string; pressed: string; text: string };
+    secondary: { bg: string; text: string; border: string };
+    outline:   { border: string; text: string };
+    ghost:     { text: string };
+  };
+  tint: string;
+  icon: string;
+  tabIconDefault: string;
   tabIconSelected: string;
-  shadow:          string;
+  shadow: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -237,14 +315,14 @@ export type ThemeColors = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const StatusColors: Record<string, string> = {
-  OPEN:              Palette.amber500,
-  IN_PROGRESS:       Palette.violet600,
-  PROGRAMMING:       Palette.indigo500,
+  OPEN: Palette.amber500,
+  IN_PROGRESS: Palette.violet600,
+  PROGRAMMING: Palette.indigo500,
   UNDER_DEVELOPMENT: Palette.violet500,
-  CODE_REVIEW:       Palette.cyan500,
-  TESTING:           Palette.cyan600,
-  RESOLVED:          Palette.green500,
-  CLOSED:            Palette.gray500,
+  CODE_REVIEW: Palette.cyan500,
+  TESTING: Palette.cyan600,
+  RESOLVED: Palette.green500,
+  CLOSED: Palette.gray500,
 };
 
 /**
@@ -255,31 +333,31 @@ export const StatusColors: Record<string, string> = {
  */
 export const StatusSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    OPEN:              '#fffbeb',
-    IN_PROGRESS:       '#ede9fe',
-    PROGRAMMING:       '#e0e7ff',
+    OPEN: '#fffbeb',
+    IN_PROGRESS: '#ede9fe',
+    PROGRAMMING: '#e0e7ff',
     UNDER_DEVELOPMENT: '#f5f3ff',
-    CODE_REVIEW:       '#ecfeff',
-    TESTING:           '#f0fdfa',
-    RESOLVED:          '#d1fae5',
-    CLOSED:            '#f3f4f6',
+    CODE_REVIEW: '#ecfeff',
+    TESTING: '#f0fdfa',
+    RESOLVED: '#d1fae5',
+    CLOSED: '#f3f4f6',
   },
   dark: {
-    OPEN:              '#292109',
-    IN_PROGRESS:       '#2d1b69',
-    PROGRAMMING:       '#1e1b4b',
+    OPEN: '#292109',
+    IN_PROGRESS: '#2d1b69',
+    PROGRAMMING: '#1e1b4b',
     UNDER_DEVELOPMENT: '#2e1065',
-    CODE_REVIEW:       '#083344',
-    TESTING:           '#042f2e',
-    RESOLVED:          '#022c22',
-    CLOSED:            '#1f2937',
+    CODE_REVIEW: '#083344',
+    TESTING: '#042f2e',
+    RESOLVED: '#022c22',
+    CLOSED: '#1f2937',
   },
 };
 
 export const PriorityColors: Record<string, string> = {
-  LOW:    Palette.green500,
+  LOW: Palette.green500,
   MEDIUM: Palette.amber500,
-  HIGH:   Palette.red500,
+  HIGH: Palette.red500,
   URGENT: Palette.red600,
 };
 
@@ -290,24 +368,24 @@ export const PriorityColors: Record<string, string> = {
  */
 export const PrioritySurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    LOW:    '#f0fdf4',
+    LOW: '#f0fdf4',
     MEDIUM: '#fffbeb',
-    HIGH:   '#fef2f2',
+    HIGH: '#fef2f2',
     URGENT: '#fff1f2',
   },
   dark: {
-    LOW:    '#022c22',
+    LOW: '#022c22',
     MEDIUM: '#292109',
-    HIGH:   '#3b1515',
+    HIGH: '#3b1515',
     URGENT: '#4c0519',
   },
 };
 
 export const RoleColors: Record<string, string> = {
-  SUPER_ADMIN:  Palette.red500,
+  SUPER_ADMIN: Palette.red500,
   TENANT_ADMIN: Palette.amber500,
-  PROGRAMMER:   Palette.violet500,
-  EMPLOYEE:     Palette.blue500,
+  PROGRAMMER: Palette.violet500,
+  EMPLOYEE: Palette.blue500,
 };
 
 /**
@@ -317,16 +395,16 @@ export const RoleColors: Record<string, string> = {
  */
 export const RoleSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    SUPER_ADMIN:  '#fef2f2',
+    SUPER_ADMIN: '#fef2f2',
     TENANT_ADMIN: '#fffbeb',
-    PROGRAMMER:   '#f5f3ff',
-    EMPLOYEE:     '#eff6ff',
+    PROGRAMMER: '#f5f3ff',
+    EMPLOYEE: '#eff6ff',
   },
   dark: {
-    SUPER_ADMIN:  '#3b1515',
+    SUPER_ADMIN: '#3b1515',
     TENANT_ADMIN: '#292109',
-    PROGRAMMER:   '#2e1065',
-    EMPLOYEE:     '#0c1a2e',
+    PROGRAMMER: '#2e1065',
+    EMPLOYEE: '#0c1a2e',
   },
 };
 
@@ -349,10 +427,10 @@ export const FontSize = {
 } as const;
 
 export const FontWeight = {
-  normal:    '400' as const,
-  medium:    '500' as const,
-  semibold:  '600' as const,
-  bold:      '700' as const,
+  normal: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
   extrabold: '800' as const,
 } as const;
 
@@ -361,12 +439,12 @@ export const FontWeight = {
  * Replaces magic numbers like `lineHeight: 18` in component styles.
  */
 export const LineHeight = {
-  xs:   14,
-  sm:   16,
+  xs: 14,
+  sm: 16,
   base: 20,
-  md:   20,
-  lg:   22,
-  xl:   24,
+  md: 20,
+  lg: 22,
+  xl: 24,
   '2xl': 28,
   '3xl': 30,
   '4xl': 36,
@@ -378,9 +456,9 @@ export const LineHeight = {
  */
 export const BorderWidth = {
   hairline: 0.5,
-  thin:     1,
-  base:     1.5,
-  thick:    2,
+  thin: 1,
+  base: 1.5,
+  thick: 2,
 } as const;
 
 /**
@@ -388,21 +466,21 @@ export const BorderWidth = {
  * Keeps icon sizing consistent across components.
  */
 export const IconSize = {
-  xs:   14,
-  sm:   16,
-  md:   20,
-  lg:   24,
-  xl:   28,
+  xs: 14,
+  sm: 16,
+  md: 20,
+  lg: 24,
+  xl: 28,
   '2xl': 32,
 } as const;
 
 export const Fonts = Platform.select({
-  ios:     { sans: 'system-ui', serif: 'ui-serif', rounded: 'ui-rounded', mono: 'ui-monospace' },
-  default: { sans: 'normal',    serif: 'serif',    rounded: 'normal',     mono: 'monospace'    },
+  ios: { sans: 'system-ui', serif: 'ui-serif', rounded: 'ui-rounded', mono: 'ui-monospace' },
+  default: { sans: 'normal', serif: 'serif', rounded: 'normal', mono: 'monospace' },
   web: {
-    sans:    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    serif:   "Georgia, 'Times New Roman', serif",
+    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', sans-serif",
-    mono:    "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    mono: "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   },
 });
