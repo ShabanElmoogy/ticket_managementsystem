@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
-  View, Text, TextInput, Image, Pressable, ActivityIndicator, Alert,
+  View, Text, TextInput, Image, Pressable, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { tokenManager } from '@/src/services/api/tokenManager';
@@ -108,7 +109,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       onChange({ url: hostedPath });
       if (__DEV__) console.log('✅ Image uploaded:', hostedPath);
     } catch (err: any) {
-      Alert.alert('Upload failed', err?.message ?? 'Could not upload image. Please try again.');
+      Toast.show({ type: 'error', text1: 'Upload failed', text2: err?.message ?? 'Could not upload image.', visibilityTime: 3500, position: 'top' });
       if (__DEV__) console.error('❌ Image upload error:', err);
     } finally {
       setUploading(false);
@@ -118,7 +119,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const handlePickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please allow access to your media library.');
+      Toast.show({ type: 'info', text1: 'Permission required', text2: 'Please allow access to your media library.', visibilityTime: 3000, position: 'top' });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -137,7 +138,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please allow access to your camera.');
+      Toast.show({ type: 'info', text1: 'Permission required', text2: 'Please allow access to your camera.', visibilityTime: 3000, position: 'top' });
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -342,3 +343,5 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 };
 
 export default ImageBlockEditor;
+
+

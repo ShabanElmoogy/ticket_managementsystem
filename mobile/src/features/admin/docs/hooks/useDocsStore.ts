@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import type {
   BlockType, BlockSettings, DocBlock, Doc, TreeNode, FolderNode, DocRefNode,
   HeadingBlock, TextBlock, DividerBlock, ImageBlock, VideoBlock,
@@ -120,7 +120,7 @@ function deepCloneBlock(block: DocBlock): DocBlock {
 // ── Simple toast helper ───────────────────────────────────────────────────────
 
 function showErrorToast(message: string): void {
-  Alert.alert('Error', message);
+  Toast.show({ type: 'error', text1: 'Error', text2: message, visibilityTime: 3500, position: 'top' });
 }
 
 // ── Folder icon persistence (AsyncStorage) ────────────────────────────────────
@@ -701,3 +701,4 @@ export const useCurrentDoc = () =>
     // so we can return the doc directly — no new object needed
     return doc;
   });
+

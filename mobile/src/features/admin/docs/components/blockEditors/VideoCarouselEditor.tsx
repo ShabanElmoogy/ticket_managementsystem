@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
+import Toast from 'react-native-toast-message';
 import {
   View, Text, TextInput, Pressable,
-  ActivityIndicator, Alert, useWindowDimensions,
+  ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { WebView } from 'react-native-webview';
@@ -121,7 +122,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
       setPlaying(false);
       setEmbedError(false);
     } catch (err: any) {
-      Alert.alert('Upload failed', err?.message ?? 'Could not upload video.');
+      Toast.show({ type: 'error', text1: 'Upload failed', text2: err?.message ?? 'Could not upload video.', visibilityTime: 3500, position: 'top' });
     } finally {
       setUploading(false);
     }
@@ -129,7 +130,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
 
   const pickGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Permission required', 'Allow media library access.'); return; }
+    if (status !== 'granted') { Toast.show({ type: 'info', text1: 'Permission required', text2: 'Allow media library access.', visibilityTime: 3000, position: 'top' }); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false, quality: 1 });
     if (!result.canceled && result.assets[0]) {
       const a = result.assets[0];
@@ -139,7 +140,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
 
   const pickCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Permission required', 'Allow camera access.'); return; }
+    if (status !== 'granted') { Toast.show({ type: 'info', text1: 'Permission required', text2: 'Allow camera access.', visibilityTime: 3000, position: 'top' }); return; }
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['videos'],
       allowsEditing: false,
@@ -454,3 +455,4 @@ const VideoCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 };
 
 export default VideoCarouselEditor;
+

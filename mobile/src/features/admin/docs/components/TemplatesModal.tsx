@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Modal, View, Text, Pressable, FlatList,
-  TextInput, Alert,
+  Modal, View, Text, Pressable, FlatList, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
+import { ConfirmDeleteDialog } from '@/src/shared/components/dialogs';
 import type { BlockTemplate } from '@/src/features/admin/docs/hooks/useBlockTemplates';
 
 interface Props {
@@ -18,26 +18,15 @@ interface Props {
 
 // ── Template card ─────────────────────────────────────────────────────────────
 const TemplateCard: React.FC<{
-  template: BlockTemplate;
-  isDark: boolean;
-  onUse: () => void;
-  onDelete: () => void;
-}> = ({ template, isDark, onUse, onDelete }) => {
+  template:        BlockTemplate;
+  isDark:          boolean;
+  onUse:           () => void;
+  onDeleteRequest: () => void;
+}> = ({ template, isDark, onUse, onDeleteRequest }) => {
   const bg     = isDark ? '#1e293b' : '#fff';
   const border = isDark ? '#334155' : '#e2e8f0';
   const text   = isDark ? '#e2e8f0' : '#1e293b';
   const muted  = isDark ? '#64748b' : '#94a3b8';
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete template',
-      `Delete "${template.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ],
-    );
-  };
 
   return (
     <View style={{
@@ -62,7 +51,7 @@ const TemplateCard: React.FC<{
             {template.blocks.length} block{template.blocks.length !== 1 ? 's' : ''} · {new Date(template.createdAt).toLocaleDateString()}
           </Text>
         </View>
-        <Pressable onPress={handleDelete} hitSlop={6}>
+        <Pressable onPress={onDeleteRequest} hitSlop={6}>
           <Text style={{ fontSize: 14, color: '#ef4444' }}>🗑️</Text>
         </Pressable>
       </View>
@@ -113,7 +102,8 @@ const TemplateCard: React.FC<{
 const TemplatesModal: React.FC<Props> = ({
   visible, templates, isDark, onClose, onUse, onDelete,
 }) => {
-  const [search, setSearch] = useState('');
+  const [search,          setSearch]          = useState('');
+  const [deleteTarget,    setDeleteTarget]    = useState<BlockTemplate | null>(null);
 
   const bg       = isDark ? '#0f172a' : '#f8fafc';
   const headerBg = isDark ? '#1e293b' : '#fff';
@@ -191,12 +181,20 @@ const TemplatesModal: React.FC<Props> = ({
                 template={item}
                 isDark={isDark}
                 onUse={() => { onUse(item); onClose(); }}
-                onDelete={() => onDelete(item.id)}
+                onDeleteRequest={() => setDeleteTarget(item)}
               />
             )}
           />
         )}
       </SafeAreaView>
+
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) { onDelete(deleteTarget.id); setDeleteTarget(null); } }}
+        itemName={deleteTarget?.name}
+        itemType="template"
+      />
     </Modal>
   );
 };

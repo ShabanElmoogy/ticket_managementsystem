@@ -5,8 +5,9 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useState,
 } from 'react';
-import { Alert, Keyboard, ScrollView } from 'react-native';
+import { Keyboard } from 'react-native';
 
 export type FormMode = 'page' | 'modal';
 
@@ -24,9 +25,17 @@ interface FormScrollContextValue {
   registerFieldY:     (id: string, y: number) => void;
   registerFieldRef:   (id: string, ref: React.RefObject<any>) => void;
   scrollToField:      (id: string) => void;
-  scrollToFirstError: (ids: string[]) => void;
-  /** Returns false and shows toast if a required field above this one is empty */
+  /** Scroll + focus first empty required field. Returns true if any found. */
+  scrollToFirstError: (ids?: string[]) => boolean;
+  /** Returns false and scrolls/focuses/marks error if a required field above is empty */
   canFocusField:      (id: string) => boolean;
+  /** Mark a specific field as having an error (scroll + focus + inline error) */
+  markFieldError:     (id: string) => void;
+  /** Validate a single field — returns true if valid, false + marks error if invalid */
+  validateField:      (id: string) => boolean;
+  /** Field id that currently has an inline error shown */
+  errorFieldId:       string | null;
+  clearError:         () => void;
 }
 
 const FormScrollContext = createContext<FormScrollContextValue>({
@@ -35,22 +44,27 @@ const FormScrollContext = createContext<FormScrollContextValue>({
   registerFieldY:     () => {},
   registerFieldRef:   () => {},
   scrollToField:      () => {},
-  scrollToFirstError: () => {},
+  scrollToFirstError: () => false,
   canFocusField:      () => true,
+  markFieldError:     () => {},
+  validateField:      () => true,
+  errorFieldId:       null,
+  clearError:         () => {},
 });
 
 export const useFormScroll = (): FormScrollContextValue =>
   useContext(FormScrollContext);
 
 interface Props {
-  scrollRef: React.RefObject<any>;
-  mode:      FormMode;
-  children?: React.ReactNode;
+  scrollRef:  React.RefObject<any>;
+  mode:       FormMode;
+  children?:  React.ReactNode;
 }
 
 export const FormScrollProvider: React.FC<Props> = ({ scrollRef, mode, children }) => {
   const fields       = useRef<Map<string, FieldMeta>>(new Map());
   const pendingField = useRef<string | null>(null);
+  const [errorFieldId, setErrorFieldId] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode !== 'modal') return;
@@ -72,7 +86,6 @@ export const FormScrollProvider: React.FC<Props> = ({ scrollRef, mode, children 
     fields.current.set(id, { ...existing, ...meta });
   }, []);
 
-  // Legacy helpers — delegate to registerField
   const registerFieldY = useCallback((id: string, y: number) => {
     registerField(id, { y });
   }, [registerField]);
@@ -81,56 +94,89 @@ export const FormScrollProvider: React.FC<Props> = ({ scrollRef, mode, children 
     registerField(id, { ref });
   }, [registerField]);
 
-  // ── Focus guard ─────────────────────────────────────────────────────────────
+  const clearError = useCallback(() => setErrorFieldId(null), []);
 
-  /**
-   * Check if all required fields that appear ABOVE the target field (lower Y)
-   * have values. If any are empty, scroll to the first empty one, focus it,
-   * show a toast, and return false.
-   */
+  // ── Shared: scroll + focus + mark error on a field ─────────────────────────
+
+  const markFieldError = useCallback((id: string) => {
+    const meta = fields.current.get(id);
+    if (!meta) return;
+
+    setErrorFieldId(id);
+
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ y: Math.max(0, meta.y - 24), animated: true });
+    }
+    setTimeout(() => {
+      meta.ref?.current?.focus();
+      meta.ref?.current?.setNativeProps?.({ selection: { start: 0, end: 0 } });
+    }, 200);
+  }, [scrollRef]);
+
+  // ── Validate a single field ─────────────────────────────────────────────────
+
+  const validateField = useCallback((id: string): boolean => {
+    const meta = fields.current.get(id);
+    if (!meta) return true;
+    if (!meta.required) return true;
+    const isEmpty = String(meta.getValue?.() ?? '').trim().length === 0;
+    if (isEmpty) {
+      markFieldError(id);
+      return false;
+    }
+    return true;
+  }, [markFieldError]);
+
   const canFocusField = useCallback((targetId: string): boolean => {
     const target = fields.current.get(targetId);
     if (!target) return true;
 
-    // Collect required fields above this one (smaller Y) that are empty
     const blockers: { id: string; meta: FieldMeta }[] = [];
-
     for (const [id, meta] of fields.current.entries()) {
       if (id === targetId) continue;
       if (!meta.required) continue;
-      if (meta.y >= target.y) continue;           // not above
-      if (String(meta.getValue?.() ?? '').trim().length > 0) continue; // has value
+      if (meta.y >= target.y) continue;
+      if (String(meta.getValue?.() ?? '').trim().length > 0) continue;
       blockers.push({ id, meta });
     }
 
     if (blockers.length === 0) return true;
 
-    // Find the topmost blocker
+    // Find topmost blocker
     const first = blockers.reduce((a, b) => a.meta.y < b.meta.y ? a : b);
+    markFieldError(first.id);
+    return false;
+  }, [markFieldError]);
 
-    // Scroll to it
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ y: Math.max(0, first.meta.y - 24), animated: true });
+  // ── Scroll to first empty required field ────────────────────────────────────
+
+  const scrollToFirstError = useCallback((ids?: string[]): boolean => {
+    let errorIds: string[] = ids ?? [];
+
+    if (!ids) {
+      for (const [id, meta] of fields.current.entries()) {
+        if (meta.required && String(meta.getValue?.() ?? '').trim().length === 0) {
+          errorIds.push(id);
+        }
+      }
     }
 
-    // Focus it + show alert dialog
-    setTimeout(() => {
-      first.meta.ref?.current?.focus();
-      first.meta.ref?.current?.setNativeProps?.({ selection: { start: 9999, end: 9999 } });
-    }, 200);
+    if (errorIds.length === 0) return false;
 
-    const label = first.meta.label || 'This field';
-    Alert.alert(
-      'Required Field',
-      `"${label}" must be filled before continuing.`,
-      [{ text: 'OK', style: 'default' }],
-      { cancelable: true },
-    );
+    // Find topmost
+    let minY     = Infinity;
+    let targetId = errorIds[0];
 
-    return false;
-  }, [scrollRef, toast]);
+    for (const id of errorIds) {
+      const meta = fields.current.get(id);
+      if (meta && meta.y < minY) { minY = meta.y; targetId = id; }
+    }
 
-  // ── Scroll to field ─────────────────────────────────────────────────────────
+    markFieldError(targetId);
+    return true;
+  }, [markFieldError]);
+
+  // ── Scroll to field (modal keyboard) ────────────────────────────────────────
 
   const scrollToField = useCallback((id: string) => {
     if (mode !== 'modal') return;
@@ -143,40 +189,9 @@ export const FormScrollProvider: React.FC<Props> = ({ scrollRef, mode, children 
     }
   }, [mode, scrollRef]);
 
-  // ── Scroll + focus first error ──────────────────────────────────────────────
-
-  const scrollToFirstError = useCallback((ids: string[]) => {
-    if (ids.length === 0) return;
-
-    let minY     = Infinity;
-    let targetId = ids[0];
-    let targetY  = 0;
-
-    for (const id of ids) {
-      const meta = fields.current.get(id);
-      if (meta && meta.y < minY) {
-        minY     = meta.y;
-        targetId = id;
-        targetY  = meta.y;
-      }
-    }
-
-    if (minY !== Infinity && scrollRef.current) {
-      scrollRef.current.scrollTo({ y: Math.max(0, targetY - 24), animated: true });
-    }
-
-    setTimeout(() => {
-      const meta = fields.current.get(targetId);
-      if (meta?.ref?.current) {
-        meta.ref.current.focus();
-        meta.ref.current.setNativeProps?.({ selection: { start: 9999, end: 9999 } });
-      }
-    }, 200);
-  }, [scrollRef]);
-
   const value = useMemo(
-    () => ({ mode, registerField, registerFieldY, registerFieldRef, scrollToField, scrollToFirstError, canFocusField }),
-    [mode, registerField, registerFieldY, registerFieldRef, scrollToField, scrollToFirstError, canFocusField],
+    () => ({ mode, registerField, registerFieldY, registerFieldRef, scrollToField, scrollToFirstError, canFocusField, markFieldError, validateField, errorFieldId, clearError }),
+    [mode, registerField, registerFieldY, registerFieldRef, scrollToField, scrollToFirstError, canFocusField, markFieldError, validateField, errorFieldId, clearError],
   );
 
   return (

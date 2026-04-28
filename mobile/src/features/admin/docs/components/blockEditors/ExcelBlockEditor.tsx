@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
-  View, Text, TextInput, Pressable, ActivityIndicator, Alert, useWindowDimensions, Modal,
+  View, Text, TextInput, Pressable, ActivityIndicator, useWindowDimensions, Modal,
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -100,7 +101,7 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       const asset = result.assets[0];
       const ext   = asset.name.split('.').pop()?.toLowerCase() ?? '';
       if (!['xls', 'xlsx', 'csv'].includes(ext)) {
-        Alert.alert('Invalid file', 'Please select an Excel (.xls, .xlsx) or CSV file.');
+        Toast.show({ type: 'error', text1: 'Invalid file', text2: 'Please select an Excel (.xls, .xlsx) or CSV file.', visibilityTime: 3500, position: 'top' });
         return;
       }
       setUploading(true);
@@ -112,7 +113,7 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         setExpanded(false);
         if (__DEV__) console.log('✅ Excel uploaded:', url);
       } catch (err: any) {
-        Alert.alert('Upload failed', err?.message ?? 'Could not upload file.');
+        Toast.show({ type: 'error', text1: 'Upload failed', text2: err?.message ?? 'Could not upload file.', visibilityTime: 3500, position: 'top' });
         if (__DEV__) console.error('❌ Excel upload error:', err);
       } finally {
         setUploading(false);
@@ -361,3 +362,4 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 };
 
 export default ExcelBlockEditor;
+

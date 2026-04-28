@@ -15,7 +15,7 @@ export interface AdminFormModalProps {
   submitting?:      boolean;
   submitDisabled?:  boolean;
   submitLabel?:     string;
-  children:         React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const AdminFormModal: React.FC<AdminFormModalProps> = ({
@@ -126,3 +126,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminFormModal;
+

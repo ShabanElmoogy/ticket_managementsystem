@@ -1,6 +1,7 @@
 import React from 'react';
 import { TextInput } from 'react-native';
-import { IconTypeSelector, CalloutBox } from '@/src/shared/components';
+import { CalloutBox } from '@/src/shared/components';
+import ChipSelector from '@/src/shared/components/forms/ChipSelector';
 import type { CalloutBlock, CalloutType } from '../../types/types';
 
 // ── Callout type config ───────────────────────────────────────────────────────
@@ -35,14 +36,14 @@ const CalloutEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 
   return (
     <>
-      {/* Type selector — IconTypeSelector handles the tile row */}
-      <IconTypeSelector
+      {/* Type selector */}
+      <ChipSelector
+        layout="tiles"
         options={CALLOUT_TYPES.map(({ type, emoji, label, color }) => ({
-          value: type, emoji, label, color,
+          value: type, icon: emoji, label, color,
         }))}
         value={block.calloutType}
         onChange={(v) => onChange({ calloutType: v as CalloutType })}
-        isDark={isDark}
       />
 
       {/* Content area — CalloutBox handles stripe + icon badge + layout */}

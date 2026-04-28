@@ -1,18 +1,18 @@
-import React, { useCallback, useRef } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
-import FormField      from '@/src/features/admin/shared/FormField';
 import FormSection    from '@/src/shared/components/forms/FormSection';
 import ChipSelector   from '@/src/shared/components/forms/ChipSelector';
-import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
-import { AppTextInput } from '@/src/shared/components';
-import AppDatePicker from '@/src/shared/components/forms/AppDatePicker';
+import { AppTextInput, AppFormField } from '@/src/shared/components';
+import AppDatePicker  from '@/src/shared/components/forms/AppDatePicker';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
-import { useCustomerForm } from '../hooks/useCustomerForm';
-import { MAINTENANCE_TYPES, type MaintenanceType } from '../schemas/customerSchema';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 interface Props {
@@ -26,183 +26,199 @@ interface Props {
 const CustomerForm: React.FC<Props> = ({
   item, onClose, onSave, submitting, mode = 'page',
 }) => {
-  const { t }                  = useTranslation();
-  const { scrollToFirstError } = useFormScroll();
-  const c                      = useThemeColors();
+  const { t }  = useTranslation();
+  const c      = useThemeColors();
+  const toast  = useToast();
 
-  const {
-    fields, errors, isDirty, firstErrorFieldId,
-    isSubmitting, handleChange, handleClear, handleSubmit,
-  } = useCustomerForm({ item, onSave, onClose });
+  // ── RHF setup ──────────────────────────────────────────────────────────────
+  const toDateStr = (v: unknown): string => {
+    if (!v) return '';
+    const d = v instanceof Date ? v : new Date(v as string);
+    return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+  };
 
+  const form = useForm({
+    resolver: zodResolver(createCustomerFormSchema(t)),
+    mode: 'onBlur',
+    defaultValues: {
+      name:                  item?.name                  ?? '',
+      email:                 item?.email                 ?? '',
+      phone:                 item?.phone                 ?? '',
+      company:               item?.company               ?? '',
+      address:               item?.address               ?? '',
+      maintenanceType:       (item?.maintenanceType as MaintenanceType | null) ?? null,
+      subscriptionStartDate: toDateStr(item?.subscriptionStartDate),
+      subscriptionEndDate:   toDateStr(item?.subscriptionEndDate),
+    },
+  });
+
+  const { control, handleSubmit, watch, formState: { isSubmitting } } = form;
+  const maintenanceType = watch('maintenanceType');
+  const needsDates = maintenanceType === 'MONTHLY_SUBSCRIPTION' || maintenanceType === 'FREE_TRIAL';
+
+  // ── Keyboard chain ─────────────────────────────────────────────────────────
   const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
+  const emailRef      = useRef<any>(null);
+  const phoneRef      = useRef<any>(null);
+  const companyRef    = useRef<any>(null);
+  const addressRef    = useRef<any>(null);
 
-  // Return-key chain: Name → Email → Phone → Company → Address → done
-  const emailRef   = useRef<TextInput | null>(null);
-  const phoneRef   = useRef<TextInput | null>(null);
-  const companyRef = useRef<TextInput | null>(null);
-  const addressRef = useRef<TextInput | null>(null);
+  // ── Submit — pass doSave directly, AdminFormPage wraps with form.handleSubmit ──
+  const doSave = async (data: any) => {
+    try {
+      await onSave({
+        name:                  data.name,
+        email:                 data.email,
+        phone:                 data.phone                 || undefined,
+        company:               data.company               || undefined,
+        address:               data.address               || undefined,
+        maintenanceType:       data.maintenanceType       ?? undefined,
+        subscriptionStartDate: data.subscriptionStartDate ?? undefined,
+        subscriptionEndDate:   data.subscriptionEndDate   ?? undefined,
+      } as CreateCustomerData);
+      toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
+      onClose();
+    } catch {
+      toast.error(item ? t('customers.messages.errorUpdate') : t('customers.messages.errorCreate'));
+    }
+  };
 
-  // Stable handlers
-  const onChangeName    = useCallback((v: string) => handleChange('name',    v), [handleChange]);
-  const onChangeEmail   = useCallback((v: string) => handleChange('email',   v), [handleChange]);
-  const onChangePhone   = useCallback((v: string) => handleChange('phone',   v), [handleChange]);
-  const onChangeCompany = useCallback((v: string) => handleChange('company', v), [handleChange]);
-  const onChangeAddress = useCallback((v: string) => handleChange('address', v), [handleChange]);
+  const formTitle  = item ? t('customers.editTitle') : t('customers.addTitle');
+  const isDisabled = submitting || isSubmitting;
 
-  const onClearName    = useCallback(() => handleClear('name'),    [handleClear]);
-  const onClearEmail   = useCallback(() => handleClear('email'),   [handleClear]);
-  const onClearPhone   = useCallback(() => handleClear('phone'),   [handleClear]);
-  const onClearCompany = useCallback(() => handleClear('company'), [handleClear]);
-  const onClearAddress = useCallback(() => handleClear('address'), [handleClear]);
-
-  const onSubmit = useCallback(async () => {
-    await handleSubmit();
-    if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
-  }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
-
-  const formTitle       = item ? t('customers.editTitle') : t('customers.addTitle');
-  const isDisabled      = submitting || isSubmitting;
-  const isSubmittingAll = submitting || isSubmitting;
-
-  // Linked stats (edit mode only)
   const linkedTickets      = item?._count?.tickets      ?? 0;
   const linkedApplications = item?.applications?.length ?? 0;
 
+  // ── Fields JSX ─────────────────────────────────────────────────────────────
   const fields_jsx = (
     <>
-      {/* ── Basic Info ── */}
+      {/* Basic Info */}
       <FormSection title={t('customers.sections.basicInfo')} icon="👤">
-        <FormField fieldId="name">
+        <AppFormField name="name" control={control}>
           <AppTextInput
             inputRef={firstInputRef}
             nextRef={emailRef}
             label={t('customers.form.name')}
-            value={fields.name}
-            onChangeText={onChangeName}
             placeholder={t('customers.form.namePlaceholder')}
-            error={errors.name}
             required
             autoCapitalize="words"
             maxLength={100}
             showClearButton
-            onClear={onClearName}
           />
-        </FormField>
-        <FormField fieldId="email">
+        </AppFormField>
+
+        <AppFormField name="email" control={control}>
           <AppTextInput
             inputRef={emailRef}
             nextRef={phoneRef}
             label={t('customers.form.email')}
-            value={fields.email}
-            onChangeText={onChangeEmail}
             placeholder={t('customers.form.emailPlaceholder')}
-            error={errors.email}
             required
             fieldType="email"
             maxLength={150}
             showClearButton
-            onClear={onClearEmail}
           />
-        </FormField>
-        <FormField fieldId="phone">
+        </AppFormField>
+
+        <AppFormField name="phone" control={control}>
           <AppTextInput
             inputRef={phoneRef}
             nextRef={companyRef}
             label={t('customers.form.phone')}
-            value={fields.phone}
-            onChangeText={onChangePhone}
             placeholder={t('customers.form.phonePlaceholder')}
-            error={errors.phone}
             maxLength={30}
             keyboardType="phone-pad"
             showClearButton
-            onClear={onClearPhone}
           />
-        </FormField>
+        </AppFormField>
       </FormSection>
 
-      {/* ── Company ── */}
+      {/* Company */}
       <FormSection title={t('customers.sections.company')} icon="🏢">
-        <FormField fieldId="company">
+        <AppFormField name="company" control={control}>
           <AppTextInput
             inputRef={companyRef}
             nextRef={addressRef}
             label={t('customers.form.company')}
-            value={fields.company}
-            onChangeText={onChangeCompany}
             placeholder={t('customers.form.companyPlaceholder')}
-            error={errors.company}
             autoCapitalize="words"
             maxLength={100}
             showClearButton
-            onClear={onClearCompany}
           />
-        </FormField>
-        <FormField fieldId="address">
+        </AppFormField>
+
+        <AppFormField name="address" control={control}>
           <AppTextInput
             inputRef={addressRef}
             label={t('customers.form.address')}
-            value={fields.address}
-            onChangeText={onChangeAddress}
             placeholder={t('customers.form.addressPlaceholder')}
-            error={errors.address}
             autoCapitalize="sentences"
             maxLength={255}
             showClearButton
-            onClear={onClearAddress}
             multiline
             numberOfLines={2}
             blurOnSubmit
           />
-        </FormField>
+        </AppFormField>
       </FormSection>
 
-      {/* ── Subscription ── */}
+      {/* Subscription */}
       <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item}>
-        <FormField fieldId="maintenanceType">
-          <ChipSelector
-            label={t('customers.detail.maintenanceType')}
-            options={[
-              { value: 'MONTHLY_SUBSCRIPTION', label: t('customers.maintenance.monthly'),    icon: '📅', description: t('customers.maintenance.monthlyDesc') },
-              { value: 'FREE_TRIAL',           label: t('customers.maintenance.trial'),       icon: '🎁', description: t('customers.maintenance.trialDesc') },
-              { value: 'PAY_AS_YOU_GO',        label: t('customers.maintenance.payAsYouGo'), icon: '💳', description: t('customers.maintenance.payAsYouGoDesc') },
-            ]}
-            value={fields.maintenanceType}
-            onChange={(v) => handleChange('maintenanceType', v as MaintenanceType)}
-          />
-        </FormField>
+        <Controller
+          name="maintenanceType"
+          control={control}
+          render={({ field: { value, onChange } }) => (
+            <ChipSelector
+              label={t('customers.detail.maintenanceType')}
+              options={[
+                { value: 'MONTHLY_SUBSCRIPTION', label: t('customers.maintenance.monthly'),    icon: '📅', description: t('customers.maintenance.monthlyDesc') },
+                { value: 'FREE_TRIAL',           label: t('customers.maintenance.trial'),       icon: '🎁', description: t('customers.maintenance.trialDesc') },
+                { value: 'PAY_AS_YOU_GO',        label: t('customers.maintenance.payAsYouGo'), icon: '💳', description: t('customers.maintenance.payAsYouGoDesc') },
+              ]}
+              value={value}
+              onChange={onChange}
+            />
+          )}
+        />
 
-        {fields.maintenanceType && fields.maintenanceType !== 'PAY_AS_YOU_GO' && (
+        {needsDates && (
           <>
-            <FormField fieldId="subscriptionStartDate">
-              <AppDatePicker
-                label={t('customers.detail.subscriptionStart')}
-                value={fields.subscriptionStartDate}
-                onChange={(iso) => handleChange('subscriptionStartDate', iso)}
-                placeholder={t('customers.form.datePlaceholder')}
-                error={errors.subscriptionStartDate}
-              />
-            </FormField>
-            <FormField fieldId="subscriptionEndDate">
-              <AppDatePicker
-                label={t('customers.detail.subscriptionEnd')}
-                value={fields.subscriptionEndDate}
-                onChange={(iso) => handleChange('subscriptionEndDate', iso)}
-                placeholder={t('customers.form.datePlaceholder')}
-                error={errors.subscriptionEndDate}
-                minDate={fields.subscriptionStartDate ? new Date(fields.subscriptionStartDate) : undefined}
-              />
-            </FormField>
+            <Controller
+              name="subscriptionStartDate"
+              control={control}
+              render={({ field: { value, onChange }, fieldState: { error } }) => (
+                <AppDatePicker
+                  label={t('customers.detail.subscriptionStart')}
+                  value={value ?? ''}
+                  onChange={onChange}
+                  placeholder={t('customers.form.datePlaceholder')}
+                  error={error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="subscriptionEndDate"
+              control={control}
+              render={({ field: { value, onChange }, fieldState: { error } }) => (
+                <AppDatePicker
+                  label={t('customers.detail.subscriptionEnd')}
+                  value={value ?? ''}
+                  onChange={onChange}
+                  placeholder={t('customers.form.datePlaceholder')}
+                  error={error?.message}
+                  minDate={form.watch('subscriptionStartDate') ? new Date(form.watch('subscriptionStartDate')!) : undefined}
+                />
+              )}
+            />
           </>
         )}
       </FormSection>
 
-      {/* ── Linked stats (edit mode) ── */}
+      {/* Linked stats (edit mode) */}
       {item && (
         <View style={styles.statsRow}>
-          <StatCard value={linkedTickets}      label={t('customers.columns.tickets')}      color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
-          <StatCard value={linkedApplications} label={t('customers.detail.applications')}  color="#065f46" bg="#f0fdf4" border="#bbf7d0" />
+          <StatCard value={linkedTickets}      label={t('customers.columns.tickets')}     color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
+          <StatCard value={linkedApplications} label={t('customers.detail.applications')} color="#065f46" bg="#f0fdf4" border="#bbf7d0" />
         </View>
       )}
     </>
@@ -213,10 +229,9 @@ const CustomerForm: React.FC<Props> = ({
       <AdminFormPage
         title={formTitle}
         onBack={onClose}
-        onSubmit={onSubmit}
-        submitting={isSubmittingAll}
-        submitDisabled={isDisabled}
-        isDirty={isDirty}
+        onSubmit={doSave}
+        submitting={isDisabled}
+        form={form}
         submitLabel={t('common.save')}
       >
         {fields_jsx}
@@ -229,9 +244,8 @@ const CustomerForm: React.FC<Props> = ({
       open
       title={formTitle}
       onClose={onClose}
-      onSubmit={onSubmit}
-      submitting={isSubmittingAll}
-      submitDisabled={isDisabled}
+      onSubmit={handleSubmit(doSave)}
+      submitting={isDisabled}
       submitLabel={t('common.save')}
     >
       {fields_jsx}
@@ -250,185 +264,11 @@ const StatCard: React.FC<{ value: number; label: string; color: string; bg: stri
   </View>
 );
 
-// ── Maintenance type selector ─────────────────────────────────────────────────
-
-interface SelectorProps {
-  value:    MaintenanceType | null;
-  onChange: (v: MaintenanceType | null) => void;
-  t:        (key: string) => string;
-}
-
-const MaintenanceTypeSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
-  const c = useThemeColors();
-
-  const TYPES: { type: MaintenanceType; label: string; color: string; bg: string; border: string; icon: string }[] = [
-    {
-      type:   'MONTHLY_SUBSCRIPTION',
-      label:  t('customers.maintenance.monthly'),
-      icon:   '📅',
-      color:  '#2563eb',
-      bg:     '#eff6ff',
-      border: '#bfdbfe',
-    },
-    {
-      type:   'FREE_TRIAL',
-      label:  t('customers.maintenance.trial'),
-      icon:   '🎁',
-      color:  '#7c3aed',
-      bg:     '#f5f3ff',
-      border: '#ddd6fe',
-    },
-    {
-      type:   'PAY_AS_YOU_GO',
-      label:  t('customers.maintenance.payAsYouGo'),
-      icon:   '💳',
-      color:  '#059669',
-      bg:     '#f0fdf4',
-      border: '#bbf7d0',
-    },
-  ];
-
-  return (
-    <View style={styles.selectorContainer}>
-      <Text style={[styles.selectorLabel, { color: c.text.secondary }]}>
-        {t('customers.detail.maintenanceType')}
-      </Text>
-      <View style={styles.chipRow}>
-        {TYPES.map(({ type, label, icon, color, bg, border }) => {
-          const active = value === type;
-          return (
-            <Pressable
-              key={type}
-              onPress={() => onChange(type)}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.chip,
-                {
-                  backgroundColor: active ? bg : pressed ? c.surface.tertiary : c.surface.secondary,
-                  borderColor:     active ? color : c.border.primary,
-                  borderWidth:     active ? 2 : 1,
-                  shadowColor:     active ? color : 'transparent',
-                  shadowOffset:    { width: 0, height: active ? 3 : 0 },
-                  shadowOpacity:   active ? 0.22 : 0,
-                  shadowRadius:    active ? 8 : 0,
-                  elevation:       active ? 4 : 0,
-                },
-              ]}
-            >
-              {/* Left: colored icon badge */}
-              <View style={[styles.chipIconBadge, { backgroundColor: color + '22' }]}>
-                <Text style={{ fontSize: 18 }}>{icon}</Text>
-              </View>
-
-              {/* Label */}
-              <Text style={[
-                styles.chipText,
-                { color: active ? color : c.text.primary },
-              ]}>
-                {label}
-              </Text>
-
-              {/* Right: radio indicator */}
-              <View style={[
-                styles.chipRadio,
-                {
-                  borderColor:     active ? color : c.border.secondary,
-                  backgroundColor: active ? color : 'transparent',
-                },
-              ]}>
-                {active && <View style={styles.chipRadioInner} />}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-};
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  statsRow: {
-    flexDirection: 'row',
-    gap:           10,
-    marginBottom:  16,
-  },
-  statCard: {
-    flex:          1,
-    padding:       14,
-    borderRadius:  Radius.xl,
-    borderWidth:   1,
-    alignItems:    'center',
-  },
-  statValue: {
-    fontSize:   FontSize['3xl'],
-    fontWeight: FontWeight.extrabold,
-  },
-  statLabel: {
-    fontSize:  FontSize.xs,
-    marginTop: 3,
-    fontWeight: FontWeight.medium,
-  },
-  selectorContainer: {
-    marginBottom: 4,
-  },
-  selectorLabel: {
-    fontSize:      FontSize.sm,
-    fontWeight:    FontWeight.semibold,
-    marginBottom:  8,
-    letterSpacing: 0.1,
-  },
-  chipRow: {
-    flexDirection: 'column',
-    gap:           8,
-    marginBottom:  4,
-  },
-  chip: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    paddingHorizontal: 14,
-    paddingVertical:   12,
-    borderRadius:      Radius.xl,
-    borderWidth:       1,
-    gap:               12,
-  },
-  chipIconBadge: {
-    width:          40,
-    height:         40,
-    borderRadius:   Radius.lg,
-    alignItems:     'center',
-    justifyContent: 'center',
-    flexShrink:     0,
-  },
-  chipIcon: {
-    fontSize: 15,
-  },
-  chipText: {
-    flex:       1,
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.semibold,
-  },
-  chipDot: {
-    width:        6,
-    height:       6,
-    borderRadius: 3,
-    marginStart:  2,
-  },
-  chipRadio: {
-    width:          20,
-    height:         20,
-    borderRadius:   10,
-    borderWidth:    2,
-    alignItems:     'center',
-    justifyContent: 'center',
-    flexShrink:     0,
-  },
-  chipRadioInner: {
-    width:           8,
-    height:          8,
-    borderRadius:    4,
-    backgroundColor: '#fff',
-  },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statCard: { flex: 1, padding: 14, borderRadius: Radius.xl, borderWidth: 1, alignItems: 'center' },
+  statValue: { fontSize: FontSize['3xl'], fontWeight: FontWeight.extrabold },
+  statLabel: { fontSize: FontSize.xs, marginTop: 3, fontWeight: FontWeight.medium },
 });
 
 export default CustomerForm;

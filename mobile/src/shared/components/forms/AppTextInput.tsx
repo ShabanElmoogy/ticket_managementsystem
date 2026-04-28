@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, Pressable, StyleSheet,
   type TextInputProps, type StyleProp, type ViewStyle,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useDirection } from '@/src/providers/DirectionProvider';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
@@ -23,6 +24,19 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
   step?:            number;
   inputRef?:        React.RefObject<TextInput | null>;
   nextRef?:         React.RefObject<TextInput | null>;
+  // Explicit re-declarations to help TS server resolve inherited TextInputProps
+  placeholder?:     string;
+  autoCapitalize?:  'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?:    'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad' | 'decimal-pad' | 'url' | 'web-search' | 'visible-password';
+  multiline?:       boolean;
+  numberOfLines?:   number;
+  blurOnSubmit?:    boolean;
+  autoCorrect?:     boolean;
+  autoFocus?:       boolean;
+  returnKeyType?:   'done' | 'go' | 'next' | 'search' | 'send' | 'default';
+  onBlur?:          () => void;
+  onFocus?:         () => void;
+  onSubmitEditing?: () => void;
 }
 
 const AppTextInput: React.FC<AppTextInputProps> = ({
@@ -51,10 +65,18 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
   // Badge color based on fill %
   const pct = maxLength ? charCount / maxLength : 0;
-  const badgeColor = pct >= 0.9 ? c.intent.error
+  const badgeBg    = pct >= 0.9 ? c.intent.errorSurface
+                   : pct >= 0.75 ? c.intent.warningSurface
+                   : focused     ? c.intent.infoSurface
+                   : c.surface.elevated;
+  const badgeText  = pct >= 0.9 ? c.intent.error
                    : pct >= 0.75 ? c.intent.warning
-                   : focused ? c.intent.success
+                   : focused     ? c.interactive.primary
                    : c.text.muted;
+  const badgeBorder = pct >= 0.9 ? c.intent.error + '55'
+                    : pct >= 0.75 ? c.intent.warning + '55'
+                    : focused     ? c.interactive.primary + '44'
+                    : c.border.primary;
 
   const defaultKeyboardType: TextInputProps['keyboardType'] =
     isNumber ? 'numeric' :
@@ -100,11 +122,6 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
             {label}
             {required && <Text style={{ color: c.intent.error }}> *</Text>}
           </Text>
-          {showBadge && (
-            <Text style={[styles.charCount, { color: badgeColor }]}>
-              {charCount}/{maxLength}
-            </Text>
-          )}
         </View>
       )}
 
@@ -176,12 +193,13 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
             } else {
               // Show alert — field is required and empty
               const fieldLabel = String(label ?? 'This field').replace(' *', '').trim();
-              Alert.alert(
-                'Required Field',
-                `"${fieldLabel}" must be filled before continuing.`,
-                [{ text: 'OK', style: 'default' }],
-                { cancelable: true },
-              );
+              Toast.show({
+                type:           'error',
+                text1:          'Required field',
+                text2:          `"${fieldLabel}" must be filled before continuing.`,
+                visibilityTime: 3000,
+                position:       'top',
+              });
             }
           } : undefined}
           blurOnSubmit={!nextRef}
@@ -207,6 +225,15 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           <Pressable onPress={() => setShowPassword(v => !v)} style={styles.iconBtn}>
             <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁️'}</Text>
           </Pressable>
+        )}
+
+        {/* Character count badge — inside input, right side */}
+        {showBadge && (focused || charCount > 0) && (
+          <View style={[styles.charBadge, { backgroundColor: badgeBg, borderColor: badgeBorder }]}>
+            <Text style={[styles.charBadgeText, { color: badgeText }]}>
+              {charCount}/{maxLength}
+            </Text>
+          </View>
         )}
 
         {/* Clear button */}
@@ -254,10 +281,19 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     letterSpacing: 0.1,
   },
-  charCount: {
-    fontSize:   FontSize.xs,
-    fontWeight: FontWeight.medium,
-    fontVariant: ['tabular-nums'],
+  charBadge: {
+    paddingHorizontal: 7,
+    paddingVertical:   3,
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+    marginEnd:         8,
+    alignSelf:         'center',
+  },
+  charBadgeText: {
+    fontSize:    FontSize.xs,
+    fontWeight:  FontWeight.bold,
+    fontVariant: ['tabular-nums'] as any,
+    letterSpacing: 0.2,
   },
   inputWrapper: {
     flexDirection: 'row',

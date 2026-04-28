@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, Pressable, TextInput, Modal } from 'react-native';
 import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
 import type { DocBlock } from '@/src/features/admin/docs/types/types';
 import { ConfirmDeleteDialog } from '@/src/shared/components';

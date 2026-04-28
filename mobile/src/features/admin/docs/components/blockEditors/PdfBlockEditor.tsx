@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
-  View, Text, TextInput, Pressable, ActivityIndicator, Alert, useWindowDimensions,
+  View, Text, TextInput, Pressable, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { tokenManager } from '@/src/services/api/tokenManager';
@@ -111,7 +112,7 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         setExpanded(false);
         if (__DEV__) console.log('✅ PDF uploaded:', url);
       } catch (err: any) {
-        Alert.alert('Upload failed', err?.message ?? 'Could not upload PDF.');
+        Toast.show({ type: 'error', text1: 'Upload failed', text2: err?.message ?? 'Could not upload PDF.', visibilityTime: 3500, position: 'top' });
         if (__DEV__) console.error('❌ PDF upload error:', err);
       } finally {
         setUploading(false);
@@ -333,3 +334,4 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 };
 
 export default PdfBlockEditor;
+

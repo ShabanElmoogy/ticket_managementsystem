@@ -146,9 +146,9 @@ const AppButton = ({
 }: AppButtonProps) => {
   // Use resolvedColors if provided (Modal context), otherwise call hook
   const hookColors = useThemeColors();
-  const hookIsDark = useIsDark();
   const c      = resolvedColors ?? hookColors;
-  const isDark = hookIsDark;
+  // Only call useIsDark when not using resolvedColors (avoids context issues in Modal)
+  const isDark = useIsDark();
 
   const sz         = SIZES[size];
   const isDisabled = disabled || loading;

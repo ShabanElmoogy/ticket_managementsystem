@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import Toast from 'react-native-toast-message';
 import {
   View, Text, TextInput, Pressable, Image,
-  ActivityIndicator, Alert, ScrollView, useWindowDimensions,
+  ActivityIndicator, ScrollView, useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { tokenManager } from '@/src/services/api/tokenManager';
@@ -93,7 +94,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
       const hostedPath = await uploadImage(uri, mimeType, filename);
       onUpdate({ url: hostedPath });
     } catch (err: any) {
-      Alert.alert('Upload failed', err?.message ?? 'Could not upload image.');
+      Toast.show({ type: 'error', text1: 'Upload failed', text2: err?.message ?? 'Could not upload image.', visibilityTime: 3500, position: 'top' });
     } finally {
       setUploading(false);
     }
@@ -101,7 +102,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
 
   const pickGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Permission required', 'Allow media library access.'); return; }
+    if (status !== 'granted') { Toast.show({ type: 'info', text1: 'Permission required', text2: 'Allow media library access.', visibilityTime: 3000, position: 'top' }); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
     if (!result.canceled && result.assets[0]) {
       const a = result.assets[0];
@@ -111,7 +112,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
 
   const pickCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Permission required', 'Allow camera access.'); return; }
+    if (status !== 'granted') { Toast.show({ type: 'info', text1: 'Permission required', text2: 'Allow camera access.', visibilityTime: 3000, position: 'top' }); return; }
     const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.85 });
     if (!result.canceled && result.assets[0]) {
       const a = result.assets[0];
@@ -349,3 +350,4 @@ const ImageCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 };
 
 export default ImageCarouselEditor;
+
