@@ -1,26 +1,48 @@
+/**
+ * AppButton — theme-aware button for screens.
+ *
+ * ⚠️  Modal rule: This component calls useThemeColors() internally.
+ * When used inside a <Modal>, pass `resolvedColors` prop with colors
+ * from the parent's useThemeColors() call to avoid context issues.
+ *
+ * Usage in screens (normal):
+ *   <AppButton variant="primary" onPress={fn}>Save</AppButton>
+ *
+ * Usage inside Modal (pass resolved colors):
+ *   const c = useThemeColors();
+ *   <AppButton variant="primary" resolvedColors={c} onPress={fn}>Save</AppButton>
+ */
+
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useThemeColors, useIsDark, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import type { ThemeColors } from '@/src/constants/tokens';
 
-export type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success'
+export type AppButtonVariant =
+  | 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success'
   | 'contained' | 'outlined' | 'text'; // legacy aliases
+
 export type AppButtonColor = 'primary' | 'error' | 'warning' | 'success' | 'secondary';
 export type AppButtonSize  = 'small' | 'medium' | 'large';
 
 export interface AppButtonProps {
-  children?:    React.ReactNode;
-  onPress?:     () => void;
-  variant?:     AppButtonVariant;
-  color?:       AppButtonColor;
-  size?:        AppButtonSize;
-  loading?:     boolean;
-  loadingText?: string;
-  disabled?:    boolean;
-  fullWidth?:   boolean;
-  leftIcon?:    React.ReactNode;
-  rightIcon?:   React.ReactNode;
-  style?:       object;
+  children?:       React.ReactNode;
+  onPress?:        () => void;
+  variant?:        AppButtonVariant;
+  color?:          AppButtonColor;
+  size?:           AppButtonSize;
+  loading?:        boolean;
+  loadingText?:    string;
+  disabled?:       boolean;
+  fullWidth?:      boolean;
+  leftIcon?:       React.ReactNode;
+  rightIcon?:      React.ReactNode;
+  style?:          object;
+  /** Pass when rendering inside a <Modal> to bypass context issues */
+  resolvedColors?: ThemeColors;
 }
+
+// ── Size tokens ───────────────────────────────────────────────────────────────
 
 const SIZES = {
   small:  { pv: 9,  ph: 16, fs: FontSize.sm,   minH: 36, gap: 5, r: Radius.lg },
@@ -28,23 +50,107 @@ const SIZES = {
   large:  { pv: 15, ph: 24, fs: FontSize.md,    minH: 52, gap: 8, r: Radius.xl },
 };
 
+// ── Color resolver ────────────────────────────────────────────────────────────
+
+function resolveColors(
+  v: string,
+  color: AppButtonColor,
+  isDisabled: boolean,
+  pressed: boolean,
+  c: ThemeColors,
+  isDark: boolean,
+): { bg: string; text: string; border: string | null; shadowColor: string | null } {
+  if (isDisabled) {
+    return { bg: c.interactive.disabled, text: c.text.muted, border: null, shadowColor: null };
+  }
+
+  switch (v) {
+    case 'primary':
+      return {
+        bg:          pressed ? c.buttons.primary.pressed : c.buttons.primary.bg,
+        text:        c.buttons.primary.text,
+        border:      null,
+        shadowColor: c.buttons.primary.bg,
+      };
+    case 'success':
+      return {
+        bg:          pressed ? c.buttons.success.pressed : c.buttons.success.bg,
+        text:        c.buttons.success.text,
+        border:      null,
+        shadowColor: c.buttons.success.bg,
+      };
+    case 'danger':
+      return {
+        bg:          pressed ? c.buttons.danger.pressed : c.buttons.danger.bg,
+        text:        c.buttons.danger.text,
+        border:      null,
+        shadowColor: c.buttons.danger.bg,
+      };
+    case 'secondary':
+      return {
+        bg:          pressed ? c.interactive.pressed : c.buttons.secondary.bg,
+        text:        c.buttons.secondary.text,
+        border:      c.buttons.secondary.border,
+        shadowColor: null,
+      };
+    case 'outline':
+      return {
+        bg:          pressed ? c.buttons.outline.border + '18' : 'transparent',
+        text:        c.buttons.outline.text,
+        border:      c.buttons.outline.border,
+        shadowColor: null,
+      };
+    case 'ghost':
+      return {
+        bg:          pressed ? c.buttons.ghost.text + '14' : 'transparent',
+        text:        c.buttons.ghost.text,
+        border:      null,
+        shadowColor: null,
+      };
+    default: {
+      // Legacy color prop fallback
+      const main    = color === 'error'   ? c.interactive.error
+                    : color === 'success' ? c.interactive.success
+                    : color === 'warning' ? c.interactive.warning
+                    : c.buttons.primary.bg;
+      const pressed_ = color === 'error'   ? c.interactive.errorPressed
+                     : color === 'success' ? c.interactive.successPressed
+                     : color === 'warning' ? c.interactive.warningPressed
+                     : c.buttons.primary.pressed;
+      return {
+        bg:          pressed ? pressed_ : main,
+        text:        c.text.inverse,
+        border:      null,
+        shadowColor: main,
+      };
+    }
+  }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 const AppButton = ({
   children,
   onPress,
-  variant   = 'primary',
-  color     = 'primary',
-  size      = 'medium',
-  loading   = false,
+  variant        = 'primary',
+  color          = 'primary',
+  size           = 'medium',
+  loading        = false,
   loadingText,
-  disabled  = false,
-  fullWidth = false,
+  disabled       = false,
+  fullWidth      = false,
   leftIcon,
   rightIcon,
   style,
+  resolvedColors,
 }: AppButtonProps) => {
-  const c      = useThemeColors();
-  const isDark = useIsDark();
-  const sz     = SIZES[size];
+  // Use resolvedColors if provided (Modal context), otherwise call hook
+  const hookColors = useThemeColors();
+  const hookIsDark = useIsDark();
+  const c      = resolvedColors ?? hookColors;
+  const isDark = hookIsDark;
+
+  const sz         = SIZES[size];
   const isDisabled = disabled || loading;
 
   // Normalize legacy variant names
@@ -53,70 +159,8 @@ const AppButton = ({
           : variant === 'text'      ? 'ghost'
           : variant;
 
-  // When color is explicitly set, map it to the equivalent variant so tokens are used correctly.
-  // This lets variant="contained" color="error" → danger styling, etc.
-  const effectiveV =
-    color === 'error'   ? (v === 'outline' ? 'outline-danger' : 'danger')
-    : color === 'success' ? (v === 'outline' ? 'outline-success' : 'success')
-    : color === 'warning' ? (v === 'outline' ? 'outline-warning' : 'warning-filled')
-    : color === 'secondary' ? (v === 'outline' ? 'outline-secondary' : v === 'primary' ? 'secondary' : v)
-    : v;
-
-  // ── Resolve colors from c.buttons tokens ─────────────────────────────────
-  const getBg = (pressed: boolean): string => {
-    if (isDisabled) return c.interactive.disabled;
-    switch (effectiveV) {
-      case 'primary':          return pressed ? c.buttons.primary.pressed   : c.buttons.primary.bg;
-      case 'success':          return pressed ? c.buttons.success.pressed   : c.buttons.success.bg;
-      case 'danger':           return pressed ? c.buttons.danger.pressed    : c.buttons.danger.bg;
-      case 'warning-filled':   return pressed ? c.interactive.warningPressed : c.interactive.warning;
-      case 'secondary':        return pressed ? c.interactive.pressed       : c.buttons.secondary.bg;
-      case 'outline':          return pressed ? c.buttons.outline.border + '18' : 'transparent';
-      case 'outline-danger':   return pressed ? c.buttons.danger.bg + '22'  : 'transparent';
-      case 'outline-success':  return pressed ? c.buttons.success.bg + '22' : 'transparent';
-      case 'outline-warning':  return pressed ? c.interactive.warning + '22' : 'transparent';
-      case 'outline-secondary':return pressed ? c.interactive.pressed       : 'transparent';
-      case 'ghost':            return pressed ? c.buttons.ghost.text + '14' : 'transparent';
-      default:                 return pressed ? c.buttons.primary.pressed   : c.buttons.primary.bg;
-    }
-  };
-
-  const getTextColor = (): string => {
-    if (isDisabled) return c.text.muted;
-    switch (effectiveV) {
-      case 'primary':           return c.buttons.primary.text;
-      case 'success':           return c.buttons.success.text;
-      case 'danger':            return c.buttons.danger.text;
-      case 'warning-filled':    return c.buttons.primary.text;
-      case 'secondary':         return c.buttons.secondary.text;
-      case 'outline':           return c.buttons.outline.text;
-      case 'outline-danger':    return c.buttons.danger.bg;
-      case 'outline-success':   return c.buttons.success.bg;
-      case 'outline-warning':   return c.interactive.warning;
-      case 'outline-secondary': return c.buttons.secondary.text;
-      case 'ghost':             return c.buttons.ghost.text;
-      default:                  return c.buttons.primary.text;
-    }
-  };
-
-  const getBorder = (): string | null => {
-    if (effectiveV === 'outline')           return c.buttons.outline.border;
-    if (effectiveV === 'outline-danger')    return c.buttons.danger.bg;
-    if (effectiveV === 'outline-success')   return c.buttons.success.bg;
-    if (effectiveV === 'outline-warning')   return c.interactive.warning;
-    if (effectiveV === 'outline-secondary') return c.buttons.secondary.border;
-    if (effectiveV === 'secondary')         return c.buttons.secondary.border;
-    return null;
-  };
-
-  const textColor  = getTextColor();
-  const border     = getBorder();
-  const hasShadow  = (effectiveV === 'primary' || effectiveV === 'danger' || effectiveV === 'success') && !isDisabled;
-  const shadowColor = effectiveV === 'danger'  ? c.buttons.danger.bg
-                    : effectiveV === 'success' ? c.buttons.success.bg
-                    : c.buttons.primary.bg;
-
-  const label = loading && loadingText ? loadingText : children;
+  const hasShadow = (v === 'primary' || v === 'danger' || v === 'success') && !isDisabled;
+  const label     = loading && loadingText ? loadingText : children;
 
   return (
     <Pressable
@@ -124,36 +168,52 @@ const AppButton = ({
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      style={({ pressed }: { pressed: boolean }) => [
-        styles.base,
-        {
-          minHeight:         sz.minH,
-          paddingVertical:   sz.pv,
-          paddingHorizontal: sz.ph,
-          borderRadius:      sz.r,
-          backgroundColor:   getBg(pressed),
-          borderWidth:       border ? 1.5 : 0,
-          borderColor:       border ?? 'transparent',
-          opacity:           isDisabled ? 0.52 : pressed ? 0.88 : 1,
-          width:             fullWidth ? '100%' : undefined,
-        },
-        hasShadow && {
-          shadowColor,
-          shadowOffset:  { width: 0, height: size === 'large' ? 5 : 3 },
-          shadowOpacity: isDark ? 0.5 : 0.3,
-          shadowRadius:  size === 'large' ? 10 : 6,
-          elevation:     size === 'large' ? 6 : 4,
-        },
-        style,
-      ]}
+      style={({ pressed }: { pressed: boolean }) => {
+        const colors = resolveColors(v, color, isDisabled, pressed, c, isDark);
+        return [
+          styles.base,
+          {
+            minHeight:         sz.minH,
+            paddingVertical:   sz.pv,
+            paddingHorizontal: sz.ph,
+            borderRadius:      sz.r,
+            backgroundColor:   colors.bg,
+            borderWidth:       colors.border ? 1.5 : 0,
+            borderColor:       colors.border ?? 'transparent',
+            opacity:           isDisabled ? 0.52 : pressed ? 0.88 : 1,
+            width:             fullWidth ? '100%' : undefined,
+          },
+          hasShadow && colors.shadowColor && {
+            shadowColor:   colors.shadowColor,
+            shadowOffset:  { width: 0, height: size === 'large' ? 5 : 3 },
+            shadowOpacity: isDark ? 0.5 : 0.3,
+            shadowRadius:  size === 'large' ? 10 : 6,
+            elevation:     size === 'large' ? 6 : 4,
+          },
+          style,
+        ];
+      }}
     >
       {loading && (
-        <ActivityIndicator size="small" color={textColor} style={{ marginEnd: sz.gap }} />
+        <ActivityIndicator
+          size="small"
+          color={resolveColors(v, color, isDisabled, false, c, isDark).text}
+          style={{ marginEnd: sz.gap }}
+        />
       )}
       {!loading && leftIcon && (
         <View style={{ marginEnd: sz.gap }}>{leftIcon}</View>
       )}
-      <Text style={[styles.label, { fontSize: sz.fs, color: textColor }]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.label,
+          {
+            fontSize: sz.fs,
+            color:    resolveColors(v, color, isDisabled, false, c, isDark).text,
+          },
+        ]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
       {!loading && rightIcon && (
@@ -162,6 +222,8 @@ const AppButton = ({
     </Pressable>
   );
 };
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   base: {

@@ -66,9 +66,7 @@ const AdminFormModal: React.FC<AdminFormModalProps> = ({
               bounces={false}
               contentContainerStyle={[styles.scrollContent, { paddingBottom: 8 }]}
             >
-              <FormScrollProvider scrollRef={scrollRef} mode="modal">
-                {children}
-              </FormScrollProvider>
+              <FormScrollProvider scrollRef={scrollRef} mode="modal" children={children} />
             </ScrollView>
 
             {/* ── Sticky footer ── */}
