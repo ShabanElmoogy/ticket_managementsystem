@@ -121,6 +121,7 @@ const UserForm: React.FC<Props> = ({
           placeholder={t('users.form.phonePlaceholder')}
           error={errors.phone}
           maxLength={30}
+          keyboardType="phone-pad"
           showClearButton
           onClear={onClearPhone}
           blurOnSubmit

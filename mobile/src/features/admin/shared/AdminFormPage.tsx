@@ -81,22 +81,41 @@ function AdminFormPage({
 
           {/* ── Sticky footer ── */}
           <View style={[styles.footer, {
-            paddingBottom:   insets.bottom + 8,
+            paddingBottom:   insets.bottom - 40,
             backgroundColor: c.surface.primary,
             borderTopColor:  c.border.primary,
-            shadowColor:     c.buttons.primary.bg,
           }]}>
+            {/* Fill required fields hint */}
             {!isDirty && !submitting && (
-              <Text style={[styles.hint, { color: c.text.muted }]}>
-                ⚠️  {t('common.fillRequired')}
-              </Text>
+              <View style={[styles.hintRow, {
+                backgroundColor: c.intent.warningSurface,
+                borderColor:     c.intent.warning + '55',
+              }]}>
+                <View style={[styles.hintIconWrap, { backgroundColor: c.intent.warning + '22' }]}>
+                  <Text style={styles.hintIcon}>⚠️</Text>
+                </View>
+                <Text style={[styles.hintText, { color: c.intent.warning }]}>
+                  {t('common.fillRequired')}
+                </Text>
+              </View>
             )}
+
+            {/* Save button */}
             <DialogButton
               label={submitting ? t('common.saving') : resolvedLabel}
+              icon={submitting ? 'hourglass-empty' : 'save'}
               onPress={onSubmit}
               disabled={isDisabled}
-              style={{ backgroundColor: c.buttons.primary.bg }}
+              style={{
+                backgroundColor: isDisabled ? c.interactive.disabled : c.buttons.primary.bg,
+                shadowColor:     c.buttons.primary.bg,
+                shadowOffset:    { width: 0, height: 4 },
+                shadowOpacity:   isDisabled ? 0 : 0.35,
+                shadowRadius:    10,
+                elevation:       isDisabled ? 0 : 6,
+              }}
               labelStyle={{ color: c.buttons.primary.text }}
+              iconColor={c.buttons.primary.text}
             />
           </View>
         </KeyboardAvoidingView>
@@ -135,24 +154,42 @@ const styles = StyleSheet.create({
     padding:       16,
     paddingBottom: 24,
   },
+  // ── Footer ──────────────────────────────────────────────────────────────────
   footer: {
     paddingHorizontal: 16,
     paddingTop:        12,
     borderTopWidth:    1,
-    gap:               8,
+    gap:               10,
     shadowColor:       '#000',
     shadowOffset:      { width: 0, height: -2 },
-    shadowOpacity:     0.07,
+    shadowOpacity:     0.06,
     shadowRadius:      6,
     elevation:         8,
   },
-  hint: {
-    fontSize:  12,
-    textAlign: 'center',
+  hintRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               10,
+    paddingHorizontal: 14,
+    paddingVertical:   10,
+    borderRadius:      Radius.lg,
+    borderWidth:       1,
   },
-  btnIcon: {
-    fontSize: 16,
-    color:    '#fff',
+  hintIconWrap: {
+    width:          28,
+    height:         28,
+    borderRadius:   Radius.md,
+    alignItems:     'center',
+    justifyContent: 'center',
+    flexShrink:     0,
+  },
+  hintIcon: {
+    fontSize: 14,
+  },
+  hintText: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    flex:       1,
   },
 });
 

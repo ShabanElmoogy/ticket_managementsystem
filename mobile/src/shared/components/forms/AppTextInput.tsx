@@ -55,9 +55,12 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
                    : focused ? c.intent.success
                    : c.text.muted;
 
-  const keyboardType: TextInputProps['keyboardType'] =
+  const defaultKeyboardType: TextInputProps['keyboardType'] =
     isNumber ? 'numeric' :
     fieldType === 'email' ? 'email-address' : 'default';
+
+  // Explicit keyboardType prop takes precedence over fieldType-derived default
+  const keyboardType = rest.keyboardType ?? defaultKeyboardType;
 
   // Border: error → red, focused → blue, default → subtle
   const borderColor = error   ? c.intent.error

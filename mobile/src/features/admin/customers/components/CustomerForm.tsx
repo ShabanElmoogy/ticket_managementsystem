@@ -115,6 +115,7 @@ const CustomerForm: React.FC<Props> = ({
             placeholder={t('customers.form.phonePlaceholder')}
             error={errors.phone}
             maxLength={30}
+            keyboardType="phone-pad"
             showClearButton
             onClear={onClearPhone}
           />
