@@ -3,13 +3,13 @@ import { View, Text, ActivityIndicator } from 'react-native';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { FlatList, RefreshControl } = require('react-native') as { FlatList: any; RefreshControl: any };
 import { useThemeColors, FontSize } from '@/src/constants/theme';
-import AppEmptyState   from '@/src/shared/components/feedback/AppEmptyState';
+import AppEmptyState       from '@/src/shared/components/feedback/AppEmptyState';
 import ConfirmDeleteDialog from '@/src/shared/components/dialogs/ConfirmDeleteDialog';
-import SectionHeader   from '@/src/shared/components/display/SectionHeader';
-import CountBadge      from '@/src/shared/components/display/CountBadge';
-import PaginatedView   from './PaginatedView';
-import AppPagination   from './AppPagination';
-import type { AdminView } from '@/src/stores/uiStore';
+import SectionHeader       from '@/src/shared/components/display/SectionHeader';
+import CountBadge          from '@/src/shared/components/display/CountBadge';
+import PaginatedView       from './PaginatedView';
+import AppPagination       from './AppPagination';
+import type { AdminView }  from '@/src/stores/uiStore';
 
 // ── Pagination state shape ────────────────────────────────────────────────────
 
@@ -28,14 +28,10 @@ export interface PaginationState {
 
 export interface DataCardProps<T extends { id: string }> {
   title:              string;
-  /** @deprecated — theme is resolved automatically via useThemeColors() */
-  isDark?:            boolean;
   totalCount:         number;
   rows:               T[];
   loading:            boolean;
   search:             string;
-  onSearchChange:     (q: string) => void;
-  searchPlaceholder?: string;
   view:               AdminView;
   renderTable:        () => React.ReactElement | null;
   pagination?:        PaginationState;
@@ -43,7 +39,6 @@ export interface DataCardProps<T extends { id: string }> {
   renderCompactItem?: (item: T) => React.ReactElement | null;
   headerExtras?:      React.ReactNode;
   onRefresh?:         () => void;
-  renderForm?:        (editingItem: T | null, onClose: () => void) => React.ReactNode;
   onDelete?:          (id: string) => Promise<void>;
   getItemName?:       (item: T) => string;
   itemType?:          string;
@@ -54,25 +49,21 @@ export interface DataCardProps<T extends { id: string }> {
 function DataCard<T extends { id: string }>({
   title,
   totalCount, rows, loading,
-  search, onSearchChange, searchPlaceholder = 'Search…',
-  view,
+  search, view,
   renderTable, pagination,
   renderGridItem, renderCompactItem,
-  headerExtras,
-  onRefresh,
-  renderForm, onDelete, getItemName, itemType = 'item',
+  headerExtras, onRefresh,
+  onDelete, getItemName, itemType = 'item',
 }: DataCardProps<T>) {
   const c = useThemeColors();
 
-  const [formOpen,    setFormOpen]    = useState(false);
-  const [editingItem, setEditingItem] = useState<T | null>(null);
-  const [deleteItem,  setDeleteItem]  = useState<T | null>(null);
-  const [deleting,    setDeleting]    = useState(false);
+  const [deleteItem, setDeleteItem] = useState<T | null>(null);
+  const [deleting,   setDeleting]   = useState(false);
 
   const handleDelete = async () => {
     if (!deleteItem || !onDelete) return;
     setDeleting(true);
-    try { await onDelete(deleteItem.id); }
+    try   { await onDelete(deleteItem.id); }
     finally { setDeleting(false); setDeleteItem(null); }
   };
 
@@ -103,17 +94,16 @@ function DataCard<T extends { id: string }>({
       flex: 1, borderRadius: 12, overflow: 'hidden',
       borderWidth: 1, borderColor: c.border.primary,
       backgroundColor: c.surface.primary,
-      shadowColor: c.shadow,
-      shadowOffset: { width: 0, height: 2 },
+      shadowColor: c.shadow, shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
     }}>
-      {/* ── Header ── */}
+      {/* Header */}
       <SectionHeader
         title={title}
         right={<CountBadge count={rows.length} total={totalCount} isFiltered={isFiltered} />}
       />
 
-      {/* ── Loading ── */}
+      {/* Loading */}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <ActivityIndicator size="large" color={c.interactive.primary} />
@@ -173,8 +163,6 @@ function DataCard<T extends { id: string }>({
           />
         </View>
       )}
-
-      {formOpen && renderForm && renderForm(editingItem, () => setFormOpen(false))}
 
       {onDelete && (
         <ConfirmDeleteDialog

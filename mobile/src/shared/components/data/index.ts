@@ -9,6 +9,7 @@ export { default as DataCard } from './DataCard';
 export type { DataCardProps, PaginationState } from './DataCard';
 
 export { default as CompactListRow } from './CompactListRow';
+export type { CompactListRowProps } from './CompactListRow';
 
 export { default as PaginatedView } from './PaginatedView';
 

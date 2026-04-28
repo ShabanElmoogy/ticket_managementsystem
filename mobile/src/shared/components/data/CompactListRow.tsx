@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 
-interface Props {
+export interface CompactListRowProps {
   title:     string;
   subtitle?: string;
   left?:     React.ReactNode;
@@ -10,38 +10,49 @@ interface Props {
   onPress?:  () => void;
 }
 
-const CompactListRow: React.FC<Props> = ({ title, subtitle, left, right, onPress }) => {
+const CompactListRow: React.FC<CompactListRowProps> = ({
+  title, subtitle, left, right, onPress,
+}) => {
   const c = useThemeColors();
 
   const content = (
-    <View style={{
-      flexDirection: 'row', alignItems: 'center',
-      paddingHorizontal: 14, paddingVertical: 10,
-      borderBottomWidth: 1, borderBottomColor: c.border.primary,
-    }}>
-      {left && <View style={{ marginEnd: 10 }}>{left}</View>}
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: c.text.primary }} numberOfLines={1}>
+    <View style={[styles.row, { borderBottomColor: c.border.primary }]}>
+      {!!left  && <View style={styles.leftSlot}>{left}</View>}
+      <View style={styles.body}>
+        <Text style={[styles.title, { color: c.text.primary }]} numberOfLines={1}>
           {title}
         </Text>
-        {subtitle ? (
-          <Text style={{ fontSize: FontSize.xs, color: c.text.muted, marginTop: 1 }} numberOfLines={1}>
+        {!!subtitle && (
+          <Text style={[styles.subtitle, { color: c.text.muted }]} numberOfLines={1}>
             {subtitle}
           </Text>
-        ) : null}
+        )}
       </View>
-      {right && <View style={{ marginStart: 8 }}>{right}</View>}
+      {!!right && <View style={styles.rightSlot}>{right}</View>}
     </View>
   );
 
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} style={({ pressed }: { pressed: boolean }) => ({ backgroundColor: pressed ? c.interactive.pressed : 'transparent' })}>
-        {content}
-      </Pressable>
-    );
-  }
-  return content;
+  if (!onPress) return content;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }: { pressed: boolean }) => ({
+        backgroundColor: pressed ? c.interactive.pressed : 'transparent',
+      })}
+    >
+      {content}
+    </Pressable>
+  );
 };
+
+const styles = StyleSheet.create({
+  row:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1 },
+  leftSlot:  { marginEnd: 10 },
+  rightSlot: { marginStart: 8 },
+  body:      { flex: 1 },
+  title:     { fontSize: FontSize.base, fontWeight: FontWeight.semibold },
+  subtitle:  { fontSize: FontSize.xs, marginTop: 1 },
+});
 
 export default CompactListRow;

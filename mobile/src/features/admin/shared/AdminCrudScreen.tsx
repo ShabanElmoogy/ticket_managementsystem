@@ -252,7 +252,7 @@ function AdminCrudScreen<T extends { id: string }>({
     prev: () => goToPage(safePage - 1),
   }), [safePage, totalPages, totalItems, pageSize, goToPage]);
 
-  const actionCol: ColDef<T> = {
+  const actionCol: ColDef<T> = useMemo(() => ({
     field: '__actions__', headerName: '', width: onRowPress ? 124 : 88, sortable: false, align: 'center',
     renderCell: (row: T) => (
       <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
@@ -269,7 +269,7 @@ function AdminCrudScreen<T extends { id: string }>({
         </Pressable>
       </View>
     ),
-  };
+  }), [c, onRowPress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderTable = useCallback(() => (
     <AppDataTable<T>
@@ -279,7 +279,7 @@ function AdminCrudScreen<T extends { id: string }>({
       emptyMessage={search ? (emptyFilteredMessage ?? `No ${title.toLowerCase()} match "${search}"`) : (emptyMessage ?? `No ${title.toLowerCase()} yet`)}
       onRowPress={onRowPress}
     />
-  ), [pageRows, columns, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
+  ), [pageRows, columns, actionCol, loading, search, title, emptyMessage, emptyFilteredMessage, onRowPress]);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
@@ -295,15 +295,14 @@ function AdminCrudScreen<T extends { id: string }>({
       />
 
       <View style={{ marginTop: 8, marginBottom: 4 }}>
-        <AppSearchInput value={search} onChange={handleSearchChange} isDark={isDark} placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`} />
+        <AppSearchInput value={search} onChange={handleSearchChange} placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`} />
       </View>
 
       <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12 }}>
         <DataCard<T>
-          title={title} isDark={isDark}
+          title={title}
           totalCount={entities.length} rows={pageRows} loading={loading}
-          search={search} onSearchChange={handleSearchChange}
-          searchPlaceholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
+          search={search}
           view={view} renderTable={renderTable} pagination={pagination}
           renderGridItem={(item) =>
             renderCard
@@ -313,7 +312,7 @@ function AdminCrudScreen<T extends { id: string }>({
           renderCompactItem={(item) =>
             <CompactRow item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} />
           }
-          renderForm={renderForm} onDelete={onDelete} getItemName={getItemName} itemType={itemType}
+          onDelete={onDelete} getItemName={getItemName} itemType={itemType}
         />
       </View>
 

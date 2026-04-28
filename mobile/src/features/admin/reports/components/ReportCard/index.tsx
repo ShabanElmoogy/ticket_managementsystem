@@ -127,7 +127,6 @@ const ReportCard: React.FC<Props> = ({
   return (
     <DataCard<TaggedRow>
       title={label}
-      isDark={isDark}
       totalCount={totalUnfiltered}
       rows={activeRows as TaggedRow[]}
       loading={loading}
