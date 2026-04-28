@@ -32,6 +32,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   value, onChangeText, maxLength,
   min, max, step = 1,
   inputRef, nextRef,
+  keyboardType: keyboardTypeProp,  // extract so it doesn't conflict with internal resolution
   ...rest
 }) => {
   const [focused,      setFocused]      = useState(false);
@@ -60,7 +61,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
     fieldType === 'email' ? 'email-address' : 'default';
 
   // Explicit keyboardType prop takes precedence over fieldType-derived default
-  const keyboardType = rest.keyboardType ?? defaultKeyboardType;
+  const keyboardType = keyboardTypeProp ?? defaultKeyboardType;
 
   // Border: error → red, focused → blue, default → subtle
   const borderColor = error   ? c.intent.error
@@ -167,7 +168,22 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           maxLength={maxLength}
           placeholderTextColor={c.text.muted}
           returnKeyType={nextRef ? 'next' : 'done'}
-          onSubmitEditing={nextRef ? () => nextRef.current?.focus() : undefined}
+          onSubmitEditing={nextRef ? () => {
+            // Only advance if field has a value OR it's not required
+            const hasValue = String(value ?? '').trim().length > 0;
+            if (hasValue || !required) {
+              nextRef.current?.focus();
+            } else {
+              // Show alert — field is required and empty
+              const fieldLabel = String(label ?? 'This field').replace(' *', '').trim();
+              Alert.alert(
+                'Required Field',
+                `"${fieldLabel}" must be filled before continuing.`,
+                [{ text: 'OK', style: 'default' }],
+                { cancelable: true },
+              );
+            }
+          } : undefined}
           blurOnSubmit={!nextRef}
           {...rest}
         />

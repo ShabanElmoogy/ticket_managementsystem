@@ -5,44 +5,47 @@ import { useFormScroll } from './FormScrollContext';
 let fieldCounter = 0;
 
 interface FormFieldProps {
-  children: React.ReactNode;
-  fieldId?: string;
+  children:  React.ReactNode;
+  fieldId?:  string;
 }
 
-/**
- * FormField — wraps a single form input.
- *
- * In 'modal' mode: registers Y position + injects onFocus scroll handler.
- * In 'page'  mode: renders children as-is — OS handles keyboard avoidance,
- *                  no scroll injection needed.
- */
 const FormField = React.memo(({ children, fieldId }: FormFieldProps) => {
   const id = useRef(fieldId ?? `field_${++fieldCounter}`).current;
-  const { mode, registerFieldY, scrollToField } = useFormScroll();
+  const { mode, registerField, registerFieldY, registerFieldRef, scrollToField, canFocusField } = useFormScroll();
 
-  // Page mode — plain wrapper, zero overhead
-  if (mode === 'page') {
-    return <View>{children}</View>;
-  }
-
-  // Modal mode — register Y + inject onFocus scroll
   return (
-    <View onLayout={(e: any) => registerFieldY(id, e.nativeEvent.layout.y)}>
+    <View
+      onLayout={(e: any) => registerFieldY(id, e.nativeEvent.layout.y)}
+    >
       {React.Children.map(children, (child: any) => {
         if (!React.isValidElement(child)) return child;
 
-        const childProps      = child.props as Record<string, unknown>;
-        const originalOnFocus = childProps.onFocus as ((...args: unknown[]) => void) | undefined;
+        const props = child.props as Record<string, unknown>;
 
-        return React.cloneElement(
-          child as any,
-          {
-            onFocus: (...args: unknown[]) => {
-              scrollToField(id);
-              originalOnFocus?.(...args);
-            },
+        // Register inputRef
+        const inputRef = props.inputRef as React.RefObject<any> | undefined;
+        if (inputRef) registerFieldRef(id, inputRef);
+
+        // Register required + getValue + label so canFocusField can check them
+        const isRequired = !!(props.required);
+        const label      = String(props.label ?? '').replace(' *', '').trim();
+        const value      = props.value;
+        registerField(id, {
+          required: isRequired,
+          label,
+          getValue: () => String(value ?? '').trim(),
+        });
+
+        const originalOnFocus = props.onFocus as ((...args: unknown[]) => void) | undefined;
+
+        return React.cloneElement(child as any, {
+          onFocus: (...args: unknown[]) => {
+            // Block focus if a required field above this one is empty
+            if (!canFocusField(id)) return;
+            scrollToField(id);
+            originalOnFocus?.(...args);
           },
-        );
+        });
       })}
     </View>
   );

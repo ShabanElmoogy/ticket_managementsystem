@@ -843,6 +843,30 @@ interface UseFeatureFormReturn {
 - `handleClear` — convenience wrapper: `(field) => handleChange(field, '')`
 - `isDirty` — computed by comparing current fields against `getInitial()` on every `handleChange`
 
+### `FormScrollContext` — `registerFieldRef`
+
+`scrollToFirstError` now **scrolls AND focuses** the first error field. For focus to work, each `FormField` must register its `TextInput` ref via `registerFieldRef`:
+
+```tsx
+import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
+
+const { registerFieldY, registerFieldRef, scrollToFirstError } = useFormScroll();
+const inputRef = useRef<TextInput>(null);
+
+// In onLayout — register position
+// In component mount — register ref
+useEffect(() => {
+  registerFieldRef(fieldId, inputRef);
+}, [fieldId, registerFieldRef]);
+
+<TextInput ref={inputRef} ... />
+```
+
+- `registerFieldY(id, y)` — called in `onLayout`, records the field's Y position for scroll targeting
+- `registerFieldRef(id, ref)` — called on mount, records the `TextInput` ref so `scrollToFirstError` can call `.focus()` after scrolling (200ms delay to let scroll settle), then moves the cursor to end of existing text via `setNativeProps({ selection: { start: 9999, end: 9999 } })`
+- Both registrations are required for full scroll-then-focus behavior
+- In `page` mode, `scrollToField` is a no-op but `scrollToFirstError` still focuses the input
+
 ---
 
 ## PDF Export — Mobile Pattern
