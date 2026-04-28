@@ -16,7 +16,7 @@ interface FormFieldProps {
  * In 'page'  mode: renders children as-is — OS handles keyboard avoidance,
  *                  no scroll injection needed.
  */
-const FormField: React.FC<FormFieldProps> = React.memo(({ children, fieldId }: FormFieldProps) => {
+const FormField = React.memo(({ children, fieldId }: FormFieldProps) => {
   const id = useRef(fieldId ?? `field_${++fieldCounter}`).current;
   const { mode, registerFieldY, scrollToField } = useFormScroll();
 

@@ -3,6 +3,7 @@ import { View, Text, Pressable, Modal, ScrollView, KeyboardAvoidingView, Platfor
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 import DialogButton from '@/src/shared/components/actions/DialogButton';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
 

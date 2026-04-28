@@ -41,7 +41,7 @@ export const useFormScroll = (): FormScrollContextValue =>
 interface Props {
   scrollRef: React.RefObject<any>;
   mode:      FormMode;
-  children:  React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const FormScrollProvider: React.FC<Props> = ({ scrollRef, mode, children }) => {

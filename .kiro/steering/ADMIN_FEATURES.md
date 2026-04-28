@@ -626,6 +626,27 @@ After force-delete: call `queryClient.removeQueries` for the detail cache key, c
 
 ## Shared Infrastructure
 
+### `AdminFormModal` — RTL in Modals
+
+`AdminFormModal` (and any component that renders a `<Modal>`) sits **outside the `DirectionProvider` tree**, so the `direction` CSS property is not inherited automatically. These components must read `direction` directly from `useUiStore` and apply it to the sheet's root `View`:
+
+```ts
+import { useUiStore } from '@/src/stores/uiStore';
+
+const direction = useUiStore((s) => s.direction);
+const isRtl     = direction === 'rtl';
+
+// Apply to the modal sheet root View
+<View style={[styles.sheet, { direction: isRtl ? 'rtl' : 'ltr' }]}>
+```
+
+**Why `useUiStore` and not `useDirection()`?**
+`useDirection()` reads from `DirectionContext` which is provided by `DirectionProvider`. Inside a `<Modal>`, that context is unavailable. Zustand stores are global singletons — they work correctly inside any React tree, including Modal trees.
+
+**Rule:** Any component that renders a `<Modal>` must apply `direction` manually via `useUiStore(s => s.direction)`. Components rendered inside a normal screen tree should continue to use `useDirection()` from `DirectionProvider`.
+
+---
+
 ### `AdminDetailScreen`
 
 Shell component — handles header, loading, not-found, scrollable body.
