@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, Pressable, ScrollView,
   KeyboardAvoidingView, Platform, Modal, StyleSheet,
@@ -9,6 +9,7 @@ import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/th
 import { useUiStore } from '@/src/stores/uiStore';
 import { FormScrollProvider } from '@/src/features/admin/shared/FormScrollContext';
 import DialogButton from '@/src/shared/components/actions/DialogButton';
+import { AlertDialog } from '@/src/shared/components/dialogs';
 
 export interface AdminFormPageProps {
   title:           string;
@@ -26,27 +27,37 @@ function AdminFormPage({
   submitting = false, submitDisabled = false, submitLabel,
   isDirty = true, children,
 }: AdminFormPageProps) {
-  const { t }     = useTranslation();
-  const c         = useThemeColors();
-  const isRtl     = useUiStore((s) => s.direction) === 'rtl';
-  const insets    = useSafeAreaInsets();
-  const scrollRef = useRef<InstanceType<typeof ScrollView>>(null);
+  const { t }       = useTranslation();
+  const c           = useThemeColors();
+  const isRtl       = useUiStore((s) => s.direction) === 'rtl';
+  const insets      = useSafeAreaInsets();
+  const scrollRef   = useRef<InstanceType<typeof ScrollView>>(null);
+  const [showDiscard, setShowDiscard] = useState(false);
 
   const resolvedLabel = submitLabel ?? t('common.save');
   const isDisabled    = submitDisabled || submitting;
 
+  const handleBack = () => {
+    if (isDirty) {
+      setShowDiscard(true);
+    } else {
+      onBack();
+    }
+  };
+
   return (
-    <Modal visible transparent={false} animationType="slide" onRequestClose={onBack} statusBarTranslucent>
+    <>
+      <Modal visible transparent={false} animationType="slide" onRequestClose={handleBack} statusBarTranslucent>
       <View style={[styles.root, { backgroundColor: c.surface.secondary }]}>
 
-        {/* ── Header ── */}
+        {/* Header */}
         <View style={[styles.header, {
           paddingTop:        insets.top + 8,
           backgroundColor:   c.surface.primary,
           borderBottomColor: c.border.primary,
         }]}>
           <Pressable
-            onPress={onBack}
+            onPress={handleBack}
             style={[styles.backBtn, { backgroundColor: c.surface.tertiary }]}
             accessibilityRole="button"
             accessibilityLabel={t('common.back')}
@@ -64,7 +75,7 @@ function AdminFormPage({
           <View style={styles.backBtn} />
         </View>
 
-        {/* ── Scrollable fields ── */}
+        {/* Scrollable fields */}
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -79,13 +90,12 @@ function AdminFormPage({
             <FormScrollProvider scrollRef={scrollRef} mode="page" children={children} />
           </ScrollView>
 
-          {/* ── Sticky footer ── */}
+          {/* Sticky footer */}
           <View style={[styles.footer, {
-            paddingBottom:   insets.bottom - 40,
+            paddingBottom:   insets.bottom - 20,
             backgroundColor: c.surface.primary,
             borderTopColor:  c.border.primary,
           }]}>
-            {/* Fill required fields hint */}
             {!isDirty && !submitting && (
               <View style={[styles.hintRow, {
                 backgroundColor: c.intent.warningSurface,
@@ -100,7 +110,6 @@ function AdminFormPage({
               </View>
             )}
 
-            {/* Save button */}
             <DialogButton
               label={submitting ? t('common.saving') : resolvedLabel}
               icon={submitting ? 'hourglass-empty' : 'save'}
@@ -120,7 +129,31 @@ function AdminFormPage({
           </View>
         </KeyboardAvoidingView>
       </View>
-    </Modal>
+
+      </Modal>
+
+      {/* Discard changes confirmation — rendered outside Modal to avoid nested native view tree issues */}
+      <AlertDialog
+        visible={showDiscard}
+        onClose={() => setShowDiscard(false)}
+        title={t('common.discardChanges')}
+        message={t('common.discardChangesMessage')}
+        icon="⚠️"
+        accentColor={c.intent.warning}
+        actions={[
+          {
+            label:   t('common.discard'),
+            onPress: () => { setShowDiscard(false); onBack(); },
+            variant: 'primary',
+          },
+          {
+            label:   t('common.keepEditing'),
+            onPress: () => setShowDiscard(false),
+            variant: 'cancel',
+          },
+        ]}
+      />
+    </>
   );
 }
 
@@ -154,7 +187,6 @@ const styles = StyleSheet.create({
     padding:       16,
     paddingBottom: 24,
   },
-  // ── Footer ──────────────────────────────────────────────────────────────────
   footer: {
     paddingHorizontal: 16,
     paddingTop:        12,
@@ -183,9 +215,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink:     0,
   },
-  hintIcon: {
-    fontSize: 14,
-  },
+  hintIcon: { fontSize: 14 },
   hintText: {
     fontSize:   FontSize.sm,
     fontWeight: FontWeight.semibold,
