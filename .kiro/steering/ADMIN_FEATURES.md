@@ -754,6 +754,11 @@ import FormSection from '@/src/shared/components/forms/FormSection';
   {/* last=true removes the bottom margin on the final section */}
   <FormField fieldId="maintenanceType">...</FormField>
 </FormSection>
+
+<FormSection title={t('customers.sections.subscription')} icon="💳" collapsible>
+  {/* collapsible=true makes the section expandable/collapsible */}
+  <FormField fieldId="maintenanceType">...</FormField>
+</FormSection>
 ```
 
 **Props:**
@@ -764,8 +769,9 @@ import FormSection from '@/src/shared/components/forms/FormSection';
 | `icon?` | string | Emoji shown before the title |
 | `children` | ReactNode | `FormField` wrappers |
 | `last?` | boolean | `true` removes bottom margin — use on the last section before the stats row or submit button |
+| `collapsible?` | boolean | `true` makes the section expandable/collapsible (default: `false`) |
 
-**When to use:** any form with 3+ fields should be split into logical sections (e.g. Basic Info / Company / Subscription). Single-section forms don't need `FormSection`.
+**When to use:** any form with 3+ fields should be split into logical sections (e.g. Basic Info / Company / Subscription). Single-section forms don't need `FormSection`. Use `collapsible` when a section has many fields that can be hidden by default to reduce visual clutter.
 
 ---
 

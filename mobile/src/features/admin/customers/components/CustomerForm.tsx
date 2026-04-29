@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import FormSection    from '@/src/shared/components/forms/FormSection';
@@ -27,7 +27,6 @@ const CustomerForm: React.FC<Props> = ({
   item, onClose, onSave, submitting, mode = 'page',
 }) => {
   const { t }  = useTranslation();
-  const c      = useThemeColors();
   const toast  = useToast();
 
   // ── RHF setup ──────────────────────────────────────────────────────────────
@@ -92,7 +91,7 @@ const CustomerForm: React.FC<Props> = ({
   // ── Fields JSX ─────────────────────────────────────────────────────────────
   const fields_jsx = (
     <>
-      {/* Basic Info */}
+      {/* Basic Info — always expanded (required fields) */}
       <FormSection title={t('customers.sections.basicInfo')} icon="👤">
         <AppFormField name="name" control={control}>
           <AppTextInput
@@ -133,8 +132,8 @@ const CustomerForm: React.FC<Props> = ({
         </AppFormField>
       </FormSection>
 
-      {/* Company */}
-      <FormSection title={t('customers.sections.company')} icon="🏢">
+      {/* Company — collapsible, starts collapsed */}
+      <FormSection title={t('customers.sections.company')} icon="🏢" collapsible>
         <AppFormField name="company" control={control}>
           <AppTextInput
             inputRef={companyRef}
@@ -163,7 +162,7 @@ const CustomerForm: React.FC<Props> = ({
       </FormSection>
 
       {/* Subscription */}
-      <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item}>
+      <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item} collapsible>
         <Controller
           name="maintenanceType"
           control={control}
