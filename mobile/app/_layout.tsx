@@ -1,5 +1,9 @@
 import '../global.css';
-import 'react-native-gesture-handler'; // must be first import
+// react-native-gesture-handler must be imported first on native only
+import { Platform } from 'react-native';
+if (Platform.OS !== 'web') {
+  require('react-native-gesture-handler');
+}
 
 import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
