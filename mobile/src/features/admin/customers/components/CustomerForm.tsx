@@ -51,7 +51,7 @@ const CustomerForm: React.FC<Props> = ({
     },
   });
 
-  const { control, handleSubmit, watch, formState: { isSubmitting } } = form;
+  const { control, handleSubmit, watch, formState: { isSubmitting, errors } } = form;
   const maintenanceType = watch('maintenanceType');
   const needsDates = maintenanceType === 'MONTHLY_SUBSCRIPTION' || maintenanceType === 'FREE_TRIAL';
 
@@ -92,7 +92,11 @@ const CustomerForm: React.FC<Props> = ({
   const fields_jsx = (
     <>
       {/* Basic Info — always expanded (required fields) */}
-      <FormSection title={t('customers.sections.basicInfo')} icon="👤">
+      <FormSection
+        title={t('customers.sections.basicInfo')}
+        icon="👤"
+        hasError={!!(errors.name || errors.email || errors.phone)}
+      >
         <AppFormField name="name" control={control}>
           <AppTextInput
             inputRef={firstInputRef}
@@ -133,7 +137,12 @@ const CustomerForm: React.FC<Props> = ({
       </FormSection>
 
       {/* Company — collapsible, starts collapsed */}
-      <FormSection title={t('customers.sections.company')} icon="🏢" collapsible>
+      <FormSection
+        title={t('customers.sections.company')}
+        icon="🏢"
+        collapsible
+        hasError={!!(errors.company || errors.address)}
+      >
         <AppFormField name="company" control={control}>
           <AppTextInput
             inputRef={companyRef}
@@ -162,7 +171,13 @@ const CustomerForm: React.FC<Props> = ({
       </FormSection>
 
       {/* Subscription */}
-      <FormSection title={t('customers.sections.subscription')} icon="💳" last={!item} collapsible>
+      <FormSection
+        title={t('customers.sections.subscription')}
+        icon="💳"
+        collapsible
+        last={!item}
+        hasError={!!(errors.maintenanceType || errors.subscriptionStartDate || errors.subscriptionEndDate)}
+      >
         <Controller
           name="maintenanceType"
           control={control}

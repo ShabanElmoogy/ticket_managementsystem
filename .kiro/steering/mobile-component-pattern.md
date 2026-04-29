@@ -116,7 +116,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `AlertDialog` | `dialogs/AlertDialog.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — uses `DialogSheet` | Standalone modal |
 | `ConfirmDeleteDialog` | `dialogs/ConfirmDeleteDialog.tsx` | ✅ Yes | ❌ No | `AdminCrudScreen`, feature screens |
 | `FormSection` | `forms/FormSection.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | All admin feature forms (CustomerForm, UserForm, etc.) — page context only |
-| `AppForm` | `forms/AppForm.tsx` | ❌ No | ✅ Yes (no hooks) | ⚠️ INCOMPLETE — not used anywhere. Stub RHF + ScrollView wrapper. See JSDoc in file before using. |
+| `AppForm` | `forms/AppForm.tsx` | ❌ No | ✅ Yes (no hooks) | `AdminFormPage` (when `form` prop is passed). Provides `FormProvider` + `FormFocusProvider` + `ScrollView`. Exposes `focusFirst` via `onFocusRef` callback. |
 | `AppFormField` | `forms/AppFormField.tsx` | ✅ Yes (`useFormContext`, `useFormFocus`) | ❌ No — screens only | `CustomerForm` (all text input fields) |
 | `FormFocusContext` | `forms/FormFocusContext.tsx` | ❌ No (context only — `useRef`, `useCallback`) | ✅ Yes | `AppForm` (provides `FormFocusProvider`), `AppFormField` (calls `useFormFocus`) |
 

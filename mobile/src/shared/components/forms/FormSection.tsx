@@ -59,6 +59,8 @@ export interface FormSectionProps {
   collapsible?:      boolean;
   /** Start in collapsed state (only applies when collapsible=true) */
   defaultCollapsed?: boolean;
+  /** Force section open — use when a field inside has a validation error */
+  hasError?:         boolean;
 }
 
 const FormSection: React.FC<FormSectionProps> = ({
@@ -66,12 +68,14 @@ const FormSection: React.FC<FormSectionProps> = ({
   last             = false,
   collapsible      = false,
   defaultCollapsed = false,
+  hasError         = false,
 }) => {
   const c = useThemeColors();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const isCollapsible = collapsible;
-  const isCollapsed   = isCollapsible && collapsed;
+  // Force open when a field inside has an error
+  const isCollapsed   = isCollapsible && collapsed && !hasError;
 
   return (
     <View style={[styles.section, !last && styles.sectionMargin]}>

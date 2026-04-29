@@ -770,8 +770,23 @@ import FormSection from '@/src/shared/components/forms/FormSection';
 | `children` | ReactNode | `FormField` wrappers |
 | `last?` | boolean | `true` removes bottom margin — use on the last section before the stats row or submit button |
 | `collapsible?` | boolean | `true` makes the section expandable/collapsible (default: `false`) |
+| `defaultCollapsed?` | boolean | Start in collapsed state — only applies when `collapsible=true` (default: `false`) |
+| `hasError?` | boolean | Force the section open when a field inside has a validation error — pass `!!(errors.field1 \|\| errors.field2)` |
 
 **When to use:** any form with 3+ fields should be split into logical sections (e.g. Basic Info / Company / Subscription). Single-section forms don't need `FormSection`. Use `collapsible` when a section has many fields that can be hidden by default to reduce visual clutter.
+
+**`hasError` rule:** always pass `hasError` on collapsible sections so validation errors are never hidden from the user:
+
+```tsx
+<FormSection
+  title={t('customers.sections.company')}
+  icon="🏢"
+  collapsible
+  hasError={!!(errors.company || errors.address)}
+>
+```
+
+When `hasError` is `true`, the section ignores its collapsed state and renders its children — the user can see and fix the error even if they had previously collapsed the section.
 
 ---
 
