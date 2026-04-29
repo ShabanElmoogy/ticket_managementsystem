@@ -626,6 +626,46 @@ After force-delete: call `queryClient.removeQueries` for the detail cache key, c
 
 ## Shared Infrastructure
 
+### Native-only libraries — Platform split + lazy require
+
+Some libraries (e.g. `react-native-pell-rich-editor`) access `window` at module load time and crash when the Metro bundler targets web. The fix is a **Platform split with a lazy `require()`** inside the native branch — the import never executes on web.
+
+```tsx
+import { Platform } from 'react-native';
+
+// ── Web fallback — no window dependency ──────────────────────────────────────
+const MyEditorWeb: React.FC<Props> = ({ ... }) => (
+  <View>
+    <Text>Feature not available on web.</Text>
+  </View>
+);
+
+// ── Native — lazy require avoids window at module level ──────────────────────
+const MyEditorNative: React.FC<Props> = ({ ... }) => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { NativeOnlyComponent } = require('native-only-library');
+  // ...
+};
+
+// ── Export — web gets fallback, native gets full component ───────────────────
+const MyEditor: React.FC<Props> = (props) =>
+  Platform.OS === 'web'
+    ? <MyEditorWeb {...props} />
+    : <MyEditorNative {...props} />;
+
+export default MyEditor;
+```
+
+**Rules:**
+- Never `import` a native-only library at the top of the file — it runs on all platforms at module init
+- Use `require()` inside the native component function body so it only executes on native
+- Always provide a meaningful web fallback (plain text, stripped HTML, or a "not available" message)
+- The `eslint-disable` comment for `@typescript-eslint/no-var-requires` is expected and correct here
+
+**Reference implementation:** `mobile/src/features/admin/docs/components/blockEditors/TextBlockEditor.tsx`
+
+---
+
 ### `AdminFormModal` — RTL in Modals
 
 `AdminFormModal` (and any component that renders a `<Modal>`) sits **outside the `DirectionProvider` tree**, so the `direction` CSS property is not inherited automatically. These components must read `direction` directly from `useUiStore` and apply it to the sheet's root `View`:

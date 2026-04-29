@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { Platform } from 'react-native';
 import { useAuthStore } from '@/src/stores/authStore';
 import { SOCKET } from '@/src/constants/api';
 
@@ -7,6 +8,9 @@ const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') ?? 'http
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
+  if (Platform.OS === 'web') {
+    throw new Error('Socket not available on web');
+  }
   if (!socket) {
     const token = useAuthStore.getState().token;
     socket = io(SOCKET_URL, {

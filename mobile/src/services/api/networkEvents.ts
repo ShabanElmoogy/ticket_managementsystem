@@ -1,4 +1,5 @@
 import * as Network from 'expo-network';
+import { Platform } from 'react-native';
 import type { AxiosRequestConfig } from 'axios';
 
 /**
@@ -118,21 +119,19 @@ export const networkEvents = {
     if (isWatching) return;
     isWatching = true;
 
-    // Check current state immediately
+    // expo-network native APIs not available on web
+    if (Platform.OS === 'web') return;
+
     Network.getNetworkStateAsync().then((state) => {
       isOnline = !!(state.isConnected && state.isInternetReachable);
-    });
+    }).catch(() => {});
 
-    // Watch for changes
     networkSub = Network.addNetworkStateListener((state) => {
       const wasOffline = !isOnline;
       isOnline = !!(state.isConnected && state.isInternetReachable);
 
-      if (__DEV__) {
-        console.log(`🌐 Network: ${isOnline ? 'online' : 'offline'}`);
-      }
+      if (__DEV__) console.log(`🌐 Network: ${isOnline ? 'online' : 'offline'}`);
 
-      // Came back online — notify auth handler first (token refresh), then drain request queue
       if (wasOffline && isOnline) {
         connectivityCallback?.();
         if (queue.length > 0) drainQueue();
