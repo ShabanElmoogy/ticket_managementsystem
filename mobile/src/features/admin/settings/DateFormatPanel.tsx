@@ -73,7 +73,7 @@ const DateFormatPanel: React.FC = () => {
         value={selected}
         onChange={(v) => setSelected(v as DateFormatValue)}
       />
-      <AppButton variant="contained" loading={saving} loadingText="Saving…" onPress={handleSave} fullWidth>
+      <AppButton variant="primary" loading={saving} loadingText="Saving…" onPress={handleSave} fullWidth>
         Save Date Format
       </AppButton>
     </>

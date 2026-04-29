@@ -1,42 +1,137 @@
+/**
+ * AppTextInput — themed text input with label, error, hint, and field-type variants.
+ *
+ * @variants
+ *   - text     — default single-line input
+ *   - search   — prefixed with 🔍, shows clear button when non-empty
+ *   - password — toggleable show/hide via 👁️ button
+ *   - number   — stepper (−/+) buttons, numeric keyboard
+ *   - email    — email keyboard
+ *
+ * @usage
+ *   Used in all admin forms and screens (never inside a <Modal>):
+ *   - CustomerForm, ApplicationForm, UserForm, TenantForm, TemplateForm
+ *   - LoginScreen, ProfileScreen, and any other screen-level form
+ *
+ * @modal-safety ❌ NOT Modal-safe
+ *   Calls useThemeColors(), useIsDark(), and useDirection() internally.
+ *   These hooks read from React context which is unavailable inside a <Modal> tree.
+ *   For Modal use, pass resolved colors via the `containerStyle` prop or use DialogButton instead.
+ *
+ * @rtl
+ *   Reads isRtl from useDirection() for textAlign and writingDirection.
+ *   Uses logical margin/padding properties (marginStart/End) for RTL-safe spacing.
+ */
+/**
+ * AppTextInput — styled text input with label, error, validation, and field types.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FIELD TYPES
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   text     — default, plain text
+ *   search   — shows 🔍 icon, auto-shows clear button
+ *   password — shows 👁️ toggle, hides text
+ *   number   — shows − / + steppers, numeric keyboard
+ *   email    — email keyboard, validation
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FEATURES
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   - Label with required * indicator
+ *   - Character count badge (colored by fill %)
+ *   - Clear button (circular badge)
+ *   - Error message with ⚠ icon
+ *   - Hint text (shown when no error)
+ *   - Focus state: blue border + colored shadow
+ *   - Return key chain: validates required fields before advancing
+ *   - RTL support: text alignment + writing direction
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ MODAL RULE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Calls useThemeColors(), useIsDark(), useDirection() internally.
+ * Do NOT use inside a <Modal> — screens only.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WHERE IT IS USED
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   All admin forms: CustomerForm, UserForm, ApplicationForm, etc.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * USAGE
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   <AppTextInput
+ *     label="Email *"
+ *     value={fields.email}
+ *     onChangeText={(v) => handleChange('email', v)}
+ *     placeholder="email@example.com"
+ *     error={errors.email}
+ *     required
+ *     fieldType="email"
+ *     maxLength={150}
+ *     showClearButton
+ *     onClear={() => handleClear('email')}
+ *     inputRef={emailRef}
+ *     nextRef={phoneRef}
+ *   />
+ */
+
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet,
-  type TextInputProps, type StyleProp, type ViewStyle,
+  View, Text, Pressable, StyleSheet,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useDirection } from '@/src/providers/DirectionProvider';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
+// Bypass @types/react-native@0.72 named export conflicts
+const RN = require('react-native') as any;
+const TextInput = RN.TextInput as any;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 export type AppTextInputFieldType = 'text' | 'search' | 'password' | 'number' | 'email';
 
-export interface AppTextInputProps extends Omit<TextInputProps, 'style'> {
+export interface AppTextInputProps {
+  // Core
+  value?:           string;
+  onChangeText?:    (v: string) => void;
+  placeholder?:     string;
+  // Label / validation
   label?:           string;
   hint?:            string;
   error?:           string;
   required?:        boolean;
+  // Field type
   fieldType?:       AppTextInputFieldType;
+  keyboardType?:    string;
+  // Clear button
   showClearButton?: boolean;
   onClear?:         () => void;
-  containerStyle?:  StyleProp<ViewStyle>;
+  // Container
+  containerStyle?:  object;
+  // Limits
   maxLength?:       number;
   min?:             number;
   max?:             number;
   step?:            number;
-  inputRef?:        React.RefObject<TextInput | null>;
-  nextRef?:         React.RefObject<TextInput | null>;
-  // Explicit re-declarations to help TS server resolve inherited TextInputProps
-  placeholder?:     string;
+  // Refs
+  inputRef?:        React.RefObject<any>;
+  nextRef?:         React.RefObject<any>;
+  // TextInput passthrough
   autoCapitalize?:  'none' | 'sentences' | 'words' | 'characters';
-  keyboardType?:    'default' | 'email-address' | 'numeric' | 'phone-pad' | 'number-pad' | 'decimal-pad' | 'url' | 'web-search' | 'visible-password';
   multiline?:       boolean;
   numberOfLines?:   number;
   blurOnSubmit?:    boolean;
   autoCorrect?:     boolean;
   autoFocus?:       boolean;
-  returnKeyType?:   'done' | 'go' | 'next' | 'search' | 'send' | 'default';
+  returnKeyType?:   string;
   onBlur?:          () => void;
   onFocus?:         () => void;
   onSubmitEditing?: () => void;
+  secureTextEntry?: boolean;
+  editable?:        boolean;
+  testID?:          string;
 }
 
 const AppTextInput: React.FC<AppTextInputProps> = ({
@@ -78,7 +173,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
                     : focused     ? c.interactive.primary + '44'
                     : c.border.primary;
 
-  const defaultKeyboardType: TextInputProps['keyboardType'] =
+  const defaultKeyboardType: string =
     isNumber ? 'numeric' :
     fieldType === 'email' ? 'email-address' : 'default';
 
@@ -164,7 +259,7 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
         {/* Text input */}
         <TextInput
-          ref={inputRef as React.RefObject<TextInput>}
+          ref={inputRef}
           style={[
             styles.input,
             {

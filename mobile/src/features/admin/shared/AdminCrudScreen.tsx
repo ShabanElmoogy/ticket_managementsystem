@@ -253,19 +253,19 @@ function AdminCrudScreen<T extends { id: string }>({
   }), [safePage, totalPages, totalItems, pageSize, goToPage]);
 
   const actionCol: ColDef<T> = useMemo(() => ({
-    field: '__actions__', headerName: '', width: onRowPress ? 124 : 88, sortable: false, align: 'center',
+    field: '__actions__', headerName: '', width: onRowPress ? 108 : 76, sortable: false, align: 'center',
     renderCell: (row: T) => (
-      <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
         {onRowPress && (
-          <Pressable onPress={() => onRowPress(row)} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: FontSize.md }}>👁️</Text>
+          <Pressable onPress={() => onRowPress(row)} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: FontSize.sm }}>👁️</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => { setFormItem(row); setFormOpen(true); }} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: FontSize.md }}>✏️</Text>
+        <Pressable onPress={() => { setFormItem(row); setFormOpen(true); }} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: FontSize.sm }}>✏️</Text>
         </Pressable>
-        <Pressable onPress={() => setDeleteTarget(row)} style={{ width: 32, height: 32, borderRadius: Radius.md, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: c.intent.error, fontSize: FontSize.xl, lineHeight: 18 }}>✕</Text>
+        <Pressable onPress={() => setDeleteTarget(row)} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: c.intent.error, fontSize: FontSize.base, lineHeight: 16 }}>✕</Text>
         </Pressable>
       </View>
     ),

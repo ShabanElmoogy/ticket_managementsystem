@@ -175,12 +175,14 @@ const DataCell = <T,>({
   <View
     style={{
       width,
-      paddingHorizontal: 12,
+      // Action columns need no horizontal padding — buttons fill the cell
+      paddingHorizontal: col.field === '__actions__' ? 4 : 12,
       paddingVertical:   7,
       justifyContent:    'center',
       alignItems:        col.align === 'center' ? 'center' : col.align === 'right' ? 'flex-end' : 'flex-start',
       borderRightWidth:  1,
       borderRightColor:  c.surface.tertiary,
+      overflow:          'visible',
     }}
   >
     {col.renderCell ? (

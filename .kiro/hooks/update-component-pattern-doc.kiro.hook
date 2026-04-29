@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Update Component Pattern Doc",
+  "description": "After editing any shared component in mobile/src/shared/components/, prompt to update the mobile-component-pattern.md steering file with the latest usage locations, Modal safety status, and component catalogue entry.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "mobile/src/shared/components/**/*.tsx",
+      "mobile/src/shared/components/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A shared component in mobile/src/shared/components/ was just edited. Check if .kiro/steering/mobile-component-pattern.md needs updating:\n\n1. Is the component in the catalogue table? If not, add it with: file path, has hooks (yes/no), Modal-safe (yes/no/with-workaround), and where it is used.\n2. Did the component's Modal safety status change? Update the table.\n3. Was a new usage location added? Update the \"Used in\" column.\n4. Does the component have a JSDoc header documenting its usage locations, variants, and Modal safety? If not, add one.\n\nOnly update the steering file if something actually changed. Do not update if the catalogue is already accurate."
+  }
+}

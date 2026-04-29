@@ -30,7 +30,18 @@ interface RetryableRequestConfig extends InternalAxiosRequestConfig {
 
 export const REQUEST_TIMEOUT = 30_000; // 30s — mobile networks are slower
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api/v1';
+/**
+ * API base URL — resolved by platform:
+ *   - EXPO_PUBLIC_API_URL env var (set in .env / .env.local)
+ *   - Web fallback: localhost (browser runs on same machine as API)
+ *   - Native fallback: remote API
+ */
+import { Platform } from 'react-native';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL
+  ?? (Platform.OS === 'web'
+    ? 'http://localhost:3001/api/v1'          // web dev: API on same machine
+    : 'https://shabanapi.runasp.net/api/v1'); // native: remote API
 
 /**
  * `http`  — the main client used everywhere in the app.
