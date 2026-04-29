@@ -3,6 +3,32 @@ import { Pressable, Text, StyleSheet, View, type ViewStyle, type TextStyle } fro
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Radius, FontSize, FontWeight } from '@/src/constants/tokens';
 
+/**
+ * DialogButton — dumb action button for dialogs and modals.
+ *
+ * No hooks — all colors passed via `style` and `labelStyle` from the parent.
+ * Safe to use inside `<Modal>` (no context/theme hook calls).
+ *
+ * @example
+ * // Delete button (red)
+ * <DialogButton
+ *   label="Delete"
+ *   icon="delete"
+ *   onPress={onConfirm}
+ *   style={{ backgroundColor: c.buttons.danger.bg }}
+ *   labelStyle={{ color: c.buttons.danger.text }}
+ * />
+ *
+ * // Cancel button (bordered)
+ * <DialogButton
+ *   label="Cancel"
+ *   icon="close"
+ *   onPress={onClose}
+ *   style={{ backgroundColor: 'transparent', borderWidth: 1.5, borderColor: c.border.secondary }}
+ *   labelStyle={{ color: c.text.secondary }}
+ * />
+ */
+
 export interface DialogButtonProps {
   label:        string;
   onPress:      () => void;

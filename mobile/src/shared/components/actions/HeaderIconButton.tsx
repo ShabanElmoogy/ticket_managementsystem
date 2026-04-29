@@ -5,6 +5,27 @@ const { Animated, Easing } = require('react-native') as { Animated: any; Easing:
 import { Radius, FontSize, FontWeight, Spacing, LineHeight } from '@/src/constants/tokens';
 import { useThemeColors } from '@/src/constants/theme';
 
+/**
+ * HeaderIconButton — compact square button with icon above label.
+ * Used in admin screen headers for Add / Export / Refresh / custom actions.
+ *
+ * Variants:
+ *   add     — green tint bg, dark green text
+ *   export  — red tint bg, dark red text
+ *   refresh — neutral bg, spinning animation on press/loading
+ *   neutral — neutral bg, secondary text (default)
+ *
+ * Usage locations: `HeaderActionGroup`
+ *
+ * ⚠️ Modal safety: NOT safe inside <Modal> — calls useThemeColors() internally.
+ * Use only in screen-level headers, never inside a Modal tree.
+ *
+ * @example
+ * <HeaderIconButton variant="add"     onPress={handleAdd}    label="Add Customer" />
+ * <HeaderIconButton variant="export"  onPress={handleExport} loading={exporting} />
+ * <HeaderIconButton variant="refresh" onPress={refetch}      loading={isLoading} />
+ */
+
 export type HeaderIconButtonVariant = 'add' | 'export' | 'refresh' | 'neutral';
 
 export interface HeaderIconButtonProps {
@@ -77,12 +98,18 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
 
   // ── Colors ────────────────────────────────────────────────────────────────
   const bg        = isDisabled          ? c.surface.elevated
+                  : variant === 'add'    ? '#dcfce7'   // green-100
+                  : variant === 'export' ? '#fee2e2'   // red-100
                   : c.surface.tertiary;
 
   const bgPressed = isDisabled          ? c.surface.elevated
+                  : variant === 'add'    ? '#bbf7d0'   // green-200
+                  : variant === 'export' ? '#fecaca'   // red-200
                   : c.surface.elevated;
 
   const textColor = isDisabled          ? c.text.muted
+                  : variant === 'add'    ? '#15803d'   // green-700
+                  : variant === 'export' ? '#b91c1c'   // red-700
                   : c.text.secondary;
 
   // ── Display values ─────────────────────────────────────────────────────────
