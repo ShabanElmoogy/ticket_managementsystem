@@ -13,17 +13,16 @@ import UserForm from '@/src/features/admin/users/components/UserForm';
 import { useUsers } from '@/src/features/admin/users/hooks/useUsers';
 import type { User, CreateUserData } from '@/src/services/api/types';
 
-// ── Helper — extract error message from API response ──────────────────────────
-function getErrorMessage(error: unknown): string {
+// ── Helper — detect "associated data" error from API response ────────────────
+// This is the single place where we inspect the error message.
+// The reason code is then passed as a structured flag — never re-parsed downstream.
+function isAssociatedDataError(error: unknown): boolean {
   if (error && typeof error === 'object') {
     const e = error as any;
-    return e?.response?.data?.error ?? e?.message ?? '';
+    const msg: string = e?.response?.data?.error ?? e?.message ?? '';
+    return msg.toLowerCase().includes('associated');
   }
-  return '';
-}
-
-function hasRelatedData(error: unknown): boolean {
-  return getErrorMessage(error).toLowerCase().includes('associated');
+  return false;
 }
 
 const UsersScreen: React.FC = () => {
@@ -78,8 +77,15 @@ const UsersScreen: React.FC = () => {
       setDeletingFromDetail(null);
     } catch (error) {
       setDeletingFromDetail(null);
-      if (hasRelatedData(error)) {
-        // Store pending — ForceDeleteConfirmDialog opens only after user presses OK
+      if (isAssociatedDataError(error)) {
+        // Emit with structured reason so NetworkErrorDialog shows the right label
+        const e = error as any;
+        networkEvents.emitApiError(
+          e?.status ?? 400,
+          e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
+          e?.response?.data,
+          'associated_data',
+        );
         pendingForceTarget.current = deletingFromDetail;
       } else {
         handleError(error, { feature: 'users', operation: 'delete' });
@@ -115,11 +121,18 @@ const UsersScreen: React.FC = () => {
 
   // ── Delete failed from list view → escalate to force-delete ───────────────
   const handleListDeleteFailed = (item: User, error: unknown) => {
-    if (hasRelatedData(error)) {
-      // Store pending — ForceDeleteConfirmDialog opens only after user presses OK
+    if (isAssociatedDataError(error)) {
+      // Emit with structured reason so NetworkErrorDialog shows the right label
+      const e = error as any;
+      networkEvents.emitApiError(
+        e?.status ?? 400,
+        e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
+        e?.response?.data,
+        'associated_data',
+      );
       pendingForceTarget.current = item;
     }
-    // Other errors are handled by NetworkErrorDialog globally
+    // Other errors are handled by NetworkErrorDialog globally via httpClient
   };
 
   // ── Detail view ────────────────────────────────────────────────────────────

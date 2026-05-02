@@ -580,18 +580,22 @@ Use this pattern for any detail screen where the full-detail endpoint is role-re
 
 When a user has associated data (tickets, comments, activities), a normal delete returns a 400 with "associated" in the error message. `UsersScreen` escalates to a type-to-confirm force-delete dialog.
 
-**`hasRelatedData` helper** — detects the escalation condition:
+**`isAssociatedDataError` helper** — detects the escalation condition. This is the single place where the error message is inspected; the result is passed as a structured boolean flag — never re-parsed downstream.
 
 ```ts
-function hasRelatedData(error: unknown): boolean {
-  const msg = (error as any)?.response?.data?.error ?? (error as any)?.message ?? '';
-  return msg.toLowerCase().includes('associated');
+function isAssociatedDataError(error: unknown): boolean {
+  if (error && typeof error === 'object') {
+    const e = error as any;
+    const msg: string = e?.response?.data?.error ?? e?.message ?? '';
+    return msg.toLowerCase().includes('associated');
+  }
+  return false;
 }
 ```
 
 **Two escalation paths:**
 
-1. **From list view** — `AdminCrudScreen` calls `onDeleteFailed(item, error)` when `onDelete` throws; the screen checks `hasRelatedData` and opens the force-delete dialog.
+1. **From list view** — `AdminCrudScreen` calls `onDeleteFailed(item, error)` when `onDelete` throws; the screen checks `isAssociatedDataError` and opens the force-delete dialog.
 2. **From detail view** — the screen catches the error from `handleDeleteFromDetail`, closes the normal confirm dialog, and opens the force-delete dialog.
 
 **Deferred force-delete via `networkEvents.onOkPress`**
@@ -615,7 +619,7 @@ useEffect(() => {
 }, []);
 
 // In the delete error handler — store pending instead of opening immediately
-if (hasRelatedData(error)) {
+if (isAssociatedDataError(error)) {
   pendingForceTarget.current = targetItem;
   // NetworkErrorDialog will show; force-delete opens only after user presses OK
 } else {
@@ -1387,7 +1391,7 @@ onSave={async (data: CreateEntityData) => {
 - [ ] All button labels via `t()`
 - [ ] `searchPlaceholder`, `emptyMessage`, `emptyFilteredMessage`, `deleteSuccessMessage`
 - [ ] SERVER mode: pass `apiTotal` (total record count from API) and `onPageChange` (callback to re-fetch when page changes)
-- [ ] If the entity supports force-delete: pass `onDeleteFailed={(item, error) => { if (hasRelatedData(error)) setForceTarget(item); }}`
+- [ ] If the entity supports force-delete: pass `onDeleteFailed={(item, error) => { if (isAssociatedDataError(error)) setForceTarget(item); }}`
 
 **SERVER mode pagination props:**
 

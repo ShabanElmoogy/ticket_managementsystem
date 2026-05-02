@@ -17,7 +17,7 @@ import type { AxiosRequestConfig } from 'axios';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type NetworkErrorListener   = (message: string) => void;
-type ApiErrorListener       = (status: number, message: string, details?: unknown) => void;
+type ApiErrorListener       = (status: number, message: string, details?: unknown, reason?: string) => void;
 type RetrySuccessListener   = (count: number) => void;
 type OkPressListener        = () => void;
 type RetryCallback          = (config: AxiosRequestConfig) => Promise<unknown>;
@@ -68,8 +68,8 @@ export const networkEvents = {
   },
 
   /** Emit an API error (called by httpClient for non-network errors) */
-  emitApiError: (status: number, message: string, details?: unknown) => {
-    apiErrorListeners.forEach((fn) => fn(status, message, details));
+  emitApiError: (status: number, message: string, details?: unknown, reason?: string) => {
+    apiErrorListeners.forEach((fn) => fn(status, message, details, reason));
   },
 
   // ── Retry queue ───────────────────────────────────────────────────────────

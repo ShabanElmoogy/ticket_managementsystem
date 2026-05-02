@@ -31,6 +31,7 @@
     "requiredFields": "حقول مطلوبة",
     "requiredFieldsMessage": "يرجى ملء جميع الحقول المطلوبة قبل الحفظ.",
     "ok": "حسناً",
+    "understood": "مفهوم",
     "cancel": "إلغاء",
     "delete": "حذف",
     "edit": "تعديل",
@@ -386,7 +387,8 @@
       "showDetails": "إظهار التفاصيل",
       "reportIssue": "الإبلاغ عن مشكلة",
       "goBack": "العودة",
-      "deleteRelatedData": "حذف البيانات المرتبطة"
+      "deleteRelatedData": "حذف البيانات المرتبطة",
+      "associatedDataHint": "⚠️ هذا العنصر يحتوي على بيانات مرتبطة. اضغط \"مفهوم\" للمتابعة إلى تأكيد الحذف الإجباري."
     }
   },
   "deviceInfo": {

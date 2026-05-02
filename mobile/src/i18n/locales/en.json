@@ -31,6 +31,7 @@
     "requiredFields": "Required fields missing",
     "requiredFieldsMessage": "Please fill in all required fields before saving.",
     "ok": "OK",
+    "understood": "Understood",
     "add": "Add",
     "refresh": "Refresh",
     "refreshing": "Loading…",
@@ -394,7 +395,8 @@
       "showDetails": "Show Details",
       "reportIssue": "Report Issue",
       "goBack": "Go Back",
-      "deleteRelatedData": "Delete Related Data"
+      "deleteRelatedData": "Delete Related Data",
+      "associatedDataHint": "⚠️ This item has related data. Press \"Understood\" to proceed to the force-delete confirmation."
     }
   },
   "deviceInfo": {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
@@ -50,7 +50,7 @@ const NetworkErrorDialog: React.FC = () => {
       setVisible(true);
     });
 
-    const unsubApi = networkEvents.onApiError((status, message, details) => {
+    const unsubApi = networkEvents.onApiError((status, message, details, reason) => {
       setError({
         kind:      'api',
         title:     statusLabel(status),
@@ -60,6 +60,7 @@ const NetworkErrorDialog: React.FC = () => {
         details,
         count:     1,
         timestamp: new Date().toLocaleString(),
+        reason:    reason as ErrorState['reason'],
       });
       setRetrying(false);
       setShareExpanded(false);
@@ -87,16 +88,30 @@ const NetworkErrorDialog: React.FC = () => {
   const accentColor = retrying ? '#10b981' : statusColor(error?.status);
   const icon        = retrying ? '🔄'      : statusIcon(error?.status);
 
-  // OK label — context-aware based on error type
-  const isAssociatedError = (error?.message ?? '').toLowerCase().includes('associated');
-  const okLabel = isAssociatedError
-    ? t('errors.actions.deleteRelatedData')
-    : t('common.ok');
+  // For associated_data errors, the OK button acknowledges the error and
+  // triggers ForceDeleteConfirmDialog (via emitOkPress → UsersScreen listener).
+  // The label is always "Understood" — the actual deletion happens in the next dialog.
+  const okLabel = t('common.understood');
 
   // ── extra slot: banner + share panel ──────────────────────────────────────
   const extra = (
     <>
       <ErrorExtraBanner error={error} retrying={retrying} />
+
+      {/* Hint for associated_data: tells user what OK will do next */}
+      {error?.reason === 'associated_data' && (
+        <Text style={{
+          fontSize: 12,
+          color: c.intent.warning,
+          backgroundColor: c.intent.warningSurface,
+          borderRadius: 8,
+          padding: 10,
+          marginTop: 8,
+          lineHeight: 18,
+        }}>
+          {t('errors.actions.associatedDataHint')}
+        </Text>
+      )}
 
       {shareExpanded && error && !retrying && (
         <SharePanel
@@ -110,12 +125,12 @@ const NetworkErrorDialog: React.FC = () => {
   );
 
   // ── actions override: two rows ────────────────────────────────────────────
-  // Row 1: "Delete Related Data" (OK) — full width, accent
+  // Row 1: "Understood" — full width, accent, acknowledges error
   // Row 2: Share + Cancel — side by side
   const actionsOverride = error && !retrying ? (
     <View style={{ width: '100%', gap: 10 }}>
 
-      {/* Row 1 — OK: full width, accent filled, clear intent label */}
+      {/* Row 1 — OK: full width, accent filled, acknowledges error */}
       <DialogButton
         label={okLabel}
         icon="check-circle"
