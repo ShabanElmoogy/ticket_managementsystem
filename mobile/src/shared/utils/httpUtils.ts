@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import type { ApiError } from './types';
+import type { ApiError } from '@/src/services/api/types';
 
 /** Extract a human-readable message from any error shape */
 export const getErrorMessage = (error: unknown): string => {

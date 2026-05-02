@@ -63,6 +63,9 @@ export const refreshClient = axios.create({
  * Decode a JWT exp claim safely.
  * JWT uses base64url (RFC 4648 §5) which replaces + with - and / with _.
  * Standard atob() only handles base64 — must normalize before decoding.
+ *
+ * This is the ONLY place JWT decoding happens in the app.
+ * Returns null for malformed tokens — callers must handle null explicitly.
  */
 function getTokenExp(token: string): number | null {
   try {
@@ -203,10 +206,15 @@ async function callRefreshEndpoint(): Promise<{
       refreshToken?: string;
     }>('/auth/refresh', { refreshToken });
 
-    const newToken        = response.data.token;
-    const newRefreshToken = response.data.refreshToken ?? refreshToken;
+    const data = response.data;
+    if (!data || typeof data !== 'object') {
+      throw new Error('Refresh response is not an object');
+    }
 
-    if (!newToken) throw new Error('Refresh response missing token');
+    const newToken        = data.token;
+    const newRefreshToken = data.refreshToken ?? refreshToken;
+
+    if (!newToken)        throw new Error('Refresh response missing token');
     if (!newRefreshToken) throw new Error('Refresh response missing refreshToken');
 
     if (__DEV__) {
@@ -273,30 +281,38 @@ http.interceptors.request.use(async (config) => {
   ) {
     const token = tokenManager.getToken();
     if (token) {
-      const exp         = getTokenExp(token);
-      const msRemaining = exp ? exp * 1000 - Date.now() : 0;
+      const exp = getTokenExp(token);
 
-      if (msRemaining <= 10_000) {
-        if (__DEV__) console.log('🔍 [PRE-VALIDATE] Token expired — refreshing before request...');
+      // Malformed token — can't decode expiry, skip pre-validation.
+      // The request will proceed and get a 401 if the token is invalid,
+      // which the reactive handler will process normally.
+      if (exp === null) {
+        if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Token is malformed — skipping pre-validation');
+      } else {
+        const msRemaining = exp * 1000 - Date.now();
 
-        isRefreshing    = true;
-        cfg._preValidated = true; // mark so the retry doesn't re-enter this block
+        if (msRemaining <= 10_000) {
+          if (__DEV__) console.log('🔍 [PRE-VALIDATE] Token expired — refreshing before request...');
 
-        try {
-          const { newToken, newRefreshToken } = await callRefreshEndpoint();
-          applyNewTokens(newToken, newRefreshToken);
-          startTokenRefreshCycle(newToken);
-          if (__DEV__) console.log('✅ [PRE-VALIDATE] Token refreshed inline');
-        } catch (err: any) {
-          const isNetworkErr = !err?.response;
-          if (!isNetworkErr) {
-            // Auth failure — clear session, let the request proceed to get a 401
-            // which will be handled by the response interceptor's logout path
-            if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Inline refresh failed — proceeding to 401');
+          isRefreshing      = true;
+          cfg._preValidated = true; // mark so the retry doesn't re-enter this block
+
+          try {
+            const { newToken, newRefreshToken } = await callRefreshEndpoint();
+            applyNewTokens(newToken, newRefreshToken);
+            startTokenRefreshCycle(newToken);
+            if (__DEV__) console.log('✅ [PRE-VALIDATE] Token refreshed inline');
+          } catch (err: any) {
+            const isNetworkErr = !err?.response;
+            if (!isNetworkErr) {
+              // Auth failure — clear session, let the request proceed to get a 401
+              // which will be handled by the response interceptor's logout path
+              if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Inline refresh failed — proceeding to 401');
+            }
+            // Network error — proceed anyway; the response interceptor will queue it
+          } finally {
+            isRefreshing = false;
           }
-          // Network error — proceed anyway; the response interceptor will queue it
-        } finally {
-          isRefreshing = false;
         }
       }
     }
@@ -646,5 +662,9 @@ circuitBreaker.onSessionExpired(() => {
   requestDeduplicator.clear();
   tokenManager.clear();
   stopTokenRefreshCycle();
-  try { authEvents.sessionExpired(); } catch { }
+  try {
+    authEvents.sessionExpired();
+  } catch (err) {
+    if (__DEV__) console.error('⚠️ [CircuitBreaker] sessionExpired handler threw:', err);
+  }
 });

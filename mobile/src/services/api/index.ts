@@ -1,10 +1,10 @@
 // Types
-export * from './types/index';
+export type { ApiError } from './types';
 
 // HTTP infrastructure
 export { api } from './apiClient';
 export { http } from './httpClient';
-export type { ApiError } from './httpClient';
+export type { ApiError as HttpClientApiError } from './httpClient';
 
 // Domain API singletons — added here as each feature is built
 // export { authApi }         from '../../features/auth/api/auth';
