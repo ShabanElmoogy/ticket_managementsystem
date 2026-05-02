@@ -1,10 +1,35 @@
+/**
+ * ForceDeleteConfirmDialog — type-to-confirm destructive action dialog.
+ *
+ * Renders its own DialogSheet (Modal-backed). useThemeColors() and useTranslation()
+ * are called at the component level, before the Modal renders — safe.
+ *
+ * ⚠️ Modal safety: hooks are called outside the Modal tree. Do NOT nest inside another Modal.
+ *
+ * @example
+ * <ForceDeleteConfirmDialog
+ *   open={open}
+ *   onClose={() => setOpen(false)}
+ *   onConfirm={handleForceDelete}
+ *   title="Force Delete User"
+ *   message="This will delete all related data."
+ *   confirmWord="DELETE"
+ *   loading={deleting}
+ *   confirmLabel="Delete Everything"
+ *   confirmColor="error"
+ * />
+ *
+ * Used in: UsersScreen (force-delete), feature screens requiring type-to-confirm
+ * Variants: confirmColor = 'error' | 'warning' | 'primary'
+ */
 import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 import { DialogSheet, DialogHeader, DialogBanner, DialogTextInput } from './dialog.primitives';
 import DialogButton from '@/src/shared/components/actions/DialogButton';
 
-export interface ConfirmTextDialogProps {
+export interface ForceDeleteConfirmDialogProps {
   open:           boolean;
   onClose:        () => void;
   onConfirm:      () => void;
@@ -18,35 +43,57 @@ export interface ConfirmTextDialogProps {
   confirmColor?:  'error' | 'warning' | 'primary';
 }
 
-const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
+const ICON: Record<string, string> = {
+  error:   '🗑️',
+  warning: '⚠️',
+  primary: '✓',
+};
+
+const ForceDeleteConfirmDialog: React.FC<ForceDeleteConfirmDialogProps> = ({
   open, onClose, onConfirm,
-  title = 'Confirm Action', message,
+  title, message,
   confirmWord = 'DELETE', loading = false,
-  errorText, confirmLabel = 'Delete Related Data',
-  cancelLabel = 'Cancel', confirmColor = 'error',
+  errorText, confirmLabel, cancelLabel,
+  confirmColor = 'error',
 }) => {
   const c = useThemeColors();
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
+
   const isValid = value.trim() === confirmWord;
 
+  // Reset input when dialog closes
   useEffect(() => { if (!open) setValue(''); }, [open]);
 
-  const confirmBg = confirmColor === 'warning' ? c.interactive.warning
+  const resolvedTitle        = title        ?? t('common.confirmAction');
+  const resolvedConfirmLabel = confirmLabel ?? t('common.delete');
+  const resolvedCancelLabel  = cancelLabel  ?? t('common.cancel');
+
+  const confirmBg = confirmColor === 'warning' ? c.intent.warning
                   : confirmColor === 'primary'  ? c.buttons.primary.bg
                   : c.buttons.danger.bg;
+
+  // Green border when typed correctly, default border otherwise
+  const inputBorderColor = isValid ? c.intent.success : c.border.secondary;
 
   return (
     <DialogSheet
       visible={open}
       onClose={onClose}
+      lockBackdrop={loading}
       bg={c.surface.primary}
       shadowColor={c.shadow}
       shake={false}
     >
       <DialogHeader
-        title={title}
-        iconBg={c.intent.errorSurface}
-        iconColor={c.intent.error}
+        title={resolvedTitle}
+        icon={ICON[confirmColor]}
+        iconBg={confirmColor === 'error'   ? c.intent.errorSurface
+              : confirmColor === 'warning' ? c.intent.warningSurface
+              : c.buttons.primary.bg + '22'}
+        iconColor={confirmColor === 'error'   ? c.intent.error
+                 : confirmColor === 'warning' ? c.intent.warning
+                 : c.buttons.primary.bg}
         titleColor={c.text.primary}
       />
 
@@ -66,13 +113,13 @@ const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
       )}
 
       <Text style={{ fontSize: FontSize.sm, color: c.text.muted, marginBottom: 14 }}>
-        This action will also delete related data and cannot be undone.
+        {t('common.actionDeletesRelatedData')}
       </Text>
 
       <Text style={{ fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: c.text.secondary, marginBottom: 6 }}>
-        {'Type '}
+        {t('common.typeToConfirmPrefix')}{' '}
         <Text style={{ fontWeight: FontWeight.extrabold, color: c.intent.error }}>{confirmWord}</Text>
-        {' to confirm'}
+        {' '}{t('common.typeToConfirmSuffix')}
       </Text>
 
       <DialogTextInput
@@ -81,32 +128,36 @@ const ConfirmTextDialog: React.FC<ConfirmTextDialogProps> = ({
         placeholder={confirmWord}
         autoCapitalize="characters"
         autoCorrect={false}
-        borderColor={isValid ? c.intent.error : c.border.secondary}
+        borderColor={inputBorderColor}
         textColor={c.text.primary}
         bg={c.surface.secondary}
         placeholderColor={c.text.muted}
       />
 
       <View style={{ gap: 10 }}>
+
+        {/* Confirm — colored, disabled until word matches */}
         <DialogButton
-          label={loading ? `${confirmLabel}…` : confirmLabel}
+          label={loading ? `${resolvedConfirmLabel}…` : resolvedConfirmLabel}
           onPress={onConfirm}
           disabled={!isValid || loading}
-          style={{ backgroundColor: confirmBg }}
-          labelStyle={{ color: c.text.inverse }}
+          style={{ backgroundColor: confirmBg, opacity: (!isValid || loading) ? 0.45 : 1 }}
+          labelStyle={{ color: '#ffffff' }}
         />
+
+        {/* Cancel */}
         <DialogButton
-          label={cancelLabel}
+          label={resolvedCancelLabel}
           onPress={onClose}
           disabled={loading}
           icon="close"
-          iconColor={c.text.secondary}
           style={{ backgroundColor: 'transparent', borderWidth: 1.5, borderColor: c.border.secondary }}
           labelStyle={{ color: c.text.secondary }}
         />
+
       </View>
     </DialogSheet>
   );
 };
 
-export default ConfirmTextDialog;
+export default ForceDeleteConfirmDialog;

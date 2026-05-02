@@ -54,7 +54,17 @@
     "phone": "Phone",
     "priority": "Priority",
     "assignedTo": "Assigned To",
-    "created": "Created"
+    "created": "Created",
+    "item": "item",
+    "deleting": "Deleting…",
+    "deleteTitle": "Delete {{type}}",
+    "deleteConfirmNamed": "Are you sure you want to delete \"{{name}}\"?",
+    "deleteConfirmGeneric": "Are you sure you want to delete this {{type}}?",
+    "actionCannotBeUndone": "This action cannot be undone.",
+    "confirmAction": "Confirm Action",
+    "actionDeletesRelatedData": "This action will also delete related data and cannot be undone.",
+    "typeToConfirmPrefix": "Type",
+    "typeToConfirmSuffix": "to confirm"
   },
   "validation": {
     "required": "{{field}} is required",

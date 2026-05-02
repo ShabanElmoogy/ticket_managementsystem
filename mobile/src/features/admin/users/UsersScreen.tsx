@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen      from '@/src/features/admin/shared/AdminCrudScreen';
-import { ConfirmDeleteDialog, ConfirmTextDialog } from '@/src/shared/components';
+import { ConfirmDeleteDialog, ForceDeleteConfirmDialog } from '@/src/shared/components';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useToast }         from '@/src/shared/hooks/useToast';
 import { useErrorHandler }  from '@/src/shared/hooks/useErrorHandler';
@@ -133,7 +133,7 @@ const UsersScreen: React.FC = () => {
         />
 
         {/* Force-delete confirm — shown after normal delete fails */}
-        <ConfirmTextDialog
+        <ForceDeleteConfirmDialog
           open={!!forceTarget && !deletingFromDetail}
           onClose={() => setForceTarget(null)}
           onConfirm={handleForceDelete}
@@ -226,7 +226,7 @@ const UsersScreen: React.FC = () => {
       />
 
       {/* Force-delete confirm — shown after list delete fails */}
-      <ConfirmTextDialog
+      <ForceDeleteConfirmDialog
         open={!!forceTarget}
         onClose={() => setForceTarget(null)}
         onConfirm={handleForceDelete}

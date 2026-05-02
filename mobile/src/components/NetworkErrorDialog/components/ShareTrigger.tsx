@@ -11,6 +11,7 @@ interface Props {
 const ShareTrigger: React.FC<Props> = ({ onPress, style, labelStyle }) => (
   <DialogButton
     label="Share"
+    icon="share"
     onPress={onPress}
     style={style}
     labelStyle={labelStyle}

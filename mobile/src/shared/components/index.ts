@@ -5,7 +5,7 @@
  *   display/    — Avatar, Badge, StatCard, SectionHeader, etc.
  *   feedback/   — AppEmptyState, ErrorBoundary
  *   forms/      — AppTextInput, AppButton, AppSearchInput, AppBadge
- *   dialogs/    — ConfirmDeleteDialog, ConfirmTextDialog, AlertDialog
+ *   dialogs/    — ConfirmDeleteDialog, ForceDeleteConfirmDialog, AlertDialog
  *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
  *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, HeaderActionGroup
  *   data/       — AppDataTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup

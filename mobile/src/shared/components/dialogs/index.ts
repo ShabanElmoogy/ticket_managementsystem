@@ -1,11 +1,11 @@
 // ── Full dialogs ──────────────────────────────────────────────────────────────
-export { default as ConfirmDeleteDialog }  from './ConfirmDeleteDialog';
-export type { ConfirmDeleteDialogProps }   from './ConfirmDeleteDialog';
+export { default as ConfirmDeleteDialog }       from './ConfirmDeleteDialog';
+export type { ConfirmDeleteDialogProps }        from './ConfirmDeleteDialog';
 
-export { default as ConfirmTextDialog }    from './ConfirmTextDialog';
-export type { ConfirmTextDialogProps }     from './ConfirmTextDialog';
+export { default as ForceDeleteConfirmDialog }  from './ForceDeleteConfirmDialog';
+export type { ForceDeleteConfirmDialogProps }   from './ForceDeleteConfirmDialog';
 
-export { default as AlertDialog }          from './AlertDialog';
+export { default as AlertDialog }               from './AlertDialog';
 export type { AlertDialogProps, AlertDialogAction } from './AlertDialog';
 
 // ── Dialog primitives (for building custom dialogs) ───────────────────────────

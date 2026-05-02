@@ -54,7 +54,17 @@
     "phone": "الهاتف",
     "priority": "الأولوية",
     "assignedTo": "مسند إلى",
-    "created": "تاريخ الإنشاء"
+    "created": "تاريخ الإنشاء",
+    "item": "عنصر",
+    "deleting": "جارٍ الحذف…",
+    "deleteTitle": "حذف {{type}}",
+    "deleteConfirmNamed": "هل أنت متأكد من حذف \"{{name}}\"؟",
+    "deleteConfirmGeneric": "هل أنت متأكد من حذف هذا {{type}}؟",
+    "actionCannotBeUndone": "لا يمكن التراجع عن هذا الإجراء.",
+    "confirmAction": "تأكيد الإجراء",
+    "actionDeletesRelatedData": "سيؤدي هذا الإجراء أيضاً إلى حذف البيانات المرتبطة ولا يمكن التراجع عنه.",
+    "typeToConfirmPrefix": "اكتب",
+    "typeToConfirmSuffix": "للتأكيد"
   },
   "validation": {
     "required": "{{field}} مطلوب",
