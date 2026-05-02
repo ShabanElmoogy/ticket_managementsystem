@@ -60,7 +60,7 @@ const NetworkErrorDialog: React.FC = () => {
         details,
         count:     1,
         timestamp: new Date().toLocaleString(),
-        reason:    reason as ErrorState['reason'],
+        reason,
       });
       setRetrying(false);
       setShareExpanded(false);
@@ -88,10 +88,11 @@ const NetworkErrorDialog: React.FC = () => {
   const accentColor = retrying ? '#10b981' : statusColor(error?.status);
   const icon        = retrying ? '🔄'      : statusIcon(error?.status);
 
-  // For associated_data errors, the OK button acknowledges the error and
-  // triggers ForceDeleteConfirmDialog (via emitOkPress → UsersScreen listener).
-  // The label is always "Understood" — the actual deletion happens in the next dialog.
-  const okLabel = t('common.understood');
+  // "Understood" for associated_data (signals a follow-up dialog is coming),
+  // "OK" for all other errors (generic acknowledgement).
+  const okLabel = error?.reason === 'associated_data'
+    ? t('common.understood')
+    : t('common.ok');
 
   // ── extra slot: banner + share panel ──────────────────────────────────────
   const extra = (

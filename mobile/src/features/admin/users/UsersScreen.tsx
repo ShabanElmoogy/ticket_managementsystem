@@ -14,13 +14,18 @@ import { useUsers } from '@/src/features/admin/users/hooks/useUsers';
 import type { User, CreateUserData } from '@/src/services/api/types';
 
 // ── Helper — detect "associated data" error from API response ────────────────
-// This is the single place where we inspect the error message.
-// The reason code is then passed as a structured flag — never re-parsed downstream.
+// Prefers the structured errorCode field added by the backend.
+// Falls back to substring match only for older API versions that lack errorCode.
 function isAssociatedDataError(error: unknown): boolean {
   if (error && typeof error === 'object') {
     const e = error as any;
-    const msg: string = e?.response?.data?.error ?? e?.message ?? '';
-    return msg.toLowerCase().includes('associated');
+    // Structured check — preferred, stable
+    if (e?.response?.data?.errorCode === 'ASSOCIATED_DATA') return true;
+    // Fallback substring match — only if no errorCode present
+    if (!e?.response?.data?.errorCode) {
+      const msg: string = e?.response?.data?.error ?? e?.message ?? '';
+      return msg.toLowerCase().includes('associated');
+    }
   }
   return false;
 }
@@ -78,12 +83,13 @@ const UsersScreen: React.FC = () => {
     } catch (error) {
       setDeletingFromDetail(null);
       if (isAssociatedDataError(error)) {
-        // Emit with structured reason so NetworkErrorDialog shows the right label
+        // Emit with structured reason so NetworkErrorDialog shows the right label.
+        // details is omitted — raw API payload must not be forwarded to the share flow.
         const e = error as any;
         networkEvents.emitApiError(
           e?.status ?? 400,
           e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
-          e?.response?.data,
+          undefined,
           'associated_data',
         );
         pendingForceTarget.current = deletingFromDetail;
@@ -122,12 +128,13 @@ const UsersScreen: React.FC = () => {
   // ── Delete failed from list view → escalate to force-delete ───────────────
   const handleListDeleteFailed = (item: User, error: unknown) => {
     if (isAssociatedDataError(error)) {
-      // Emit with structured reason so NetworkErrorDialog shows the right label
+      // Emit with structured reason so NetworkErrorDialog shows the right label.
+      // details is omitted — raw API payload must not be forwarded to the share flow.
       const e = error as any;
       networkEvents.emitApiError(
         e?.status ?? 400,
         e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
-        e?.response?.data,
+        undefined,
         'associated_data',
       );
       pendingForceTarget.current = item;

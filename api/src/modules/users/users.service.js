@@ -156,7 +156,7 @@ export async function deleteUser(id, force = false) {
   if (!force && hasRelated) {
     throw Object.assign(
       new Error('Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.'),
-      { status: 400 },
+      { status: 400, errorCode: 'ASSOCIATED_DATA' },
     );
   }
 
@@ -290,7 +290,7 @@ export async function deleteTenantUser(id, tenantId, force = false) {
   if (!force && hasRelated) {
     throw Object.assign(
       new Error('Cannot delete user with associated tickets or comments. Please reassign or remove associated data first.'),
-      { status: 400 },
+      { status: 400, errorCode: 'ASSOCIATED_DATA' },
     );
   }
 

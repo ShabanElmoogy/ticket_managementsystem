@@ -27,6 +27,7 @@ export function handleError(res, error, context) {
 
   res.status(status).json({
     error: message,
+    ...(error.errorCode ? { errorCode: error.errorCode } : {}),
     ...(cause ? { cause } : {}),
   });
 }

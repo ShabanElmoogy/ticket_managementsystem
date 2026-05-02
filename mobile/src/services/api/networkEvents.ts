@@ -1,6 +1,7 @@
 import * as Network from 'expo-network';
 import { Platform } from 'react-native';
 import type { AxiosRequestConfig } from 'axios';
+import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
 
 /**
  * Lightweight event bus + offline retry queue.
@@ -17,7 +18,7 @@ import type { AxiosRequestConfig } from 'axios';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type NetworkErrorListener   = (message: string) => void;
-type ApiErrorListener       = (status: number, message: string, details?: unknown, reason?: string) => void;
+type ApiErrorListener       = (status: number, message: string, details?: unknown, reason?: ErrorReason) => void;
 type RetrySuccessListener   = (count: number) => void;
 type OkPressListener        = () => void;
 type RetryCallback          = (config: AxiosRequestConfig) => Promise<unknown>;
@@ -68,7 +69,7 @@ export const networkEvents = {
   },
 
   /** Emit an API error (called by httpClient for non-network errors) */
-  emitApiError: (status: number, message: string, details?: unknown, reason?: string) => {
+  emitApiError: (status: number, message: string, details?: unknown, reason?: ErrorReason) => {
     apiErrorListeners.forEach((fn) => fn(status, message, details, reason));
   },
 
