@@ -393,7 +393,8 @@
       "retry": "Try Again",
       "showDetails": "Show Details",
       "reportIssue": "Report Issue",
-      "goBack": "Go Back"
+      "goBack": "Go Back",
+      "deleteRelatedData": "Delete Related Data"
     }
   },
   "deviceInfo": {

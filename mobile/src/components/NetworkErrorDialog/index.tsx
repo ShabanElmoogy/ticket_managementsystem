@@ -87,6 +87,12 @@ const NetworkErrorDialog: React.FC = () => {
   const accentColor = retrying ? '#10b981' : statusColor(error?.status);
   const icon        = retrying ? '🔄'      : statusIcon(error?.status);
 
+  // OK label — context-aware based on error type
+  const isAssociatedError = (error?.message ?? '').toLowerCase().includes('associated');
+  const okLabel = isAssociatedError
+    ? t('errors.actions.deleteRelatedData')
+    : t('common.ok');
+
   // ── extra slot: banner + share panel ──────────────────────────────────────
   const extra = (
     <>
@@ -103,30 +109,32 @@ const NetworkErrorDialog: React.FC = () => {
     </>
   );
 
-  // ── actions override: Share | OK | Cancel — one row ───────────────────────
+  // ── actions override: two rows ────────────────────────────────────────────
+  // Row 1: "Delete Related Data" (OK) — full width, accent
+  // Row 2: Share + Cancel — side by side
   const actionsOverride = error && !retrying ? (
-    <View style={{ flexDirection: 'row', width: '100%', gap: 10, alignItems: 'stretch' }}>
+    <View style={{ width: '100%', gap: 10 }}>
 
-      {/* Share — left */}
-      <ShareTrigger
-        onPress={() => setShareExpanded((v) => !v)}
-        style={{ flex: 1, backgroundColor: c.surface.secondary, borderWidth: 1.5, borderColor: c.border.secondary }}
-        labelStyle={{ color: c.text.secondary }}
+      {/* Row 1 — OK: full width, accent filled, clear intent label */}
+      <DialogButton
+        label={okLabel}
+        icon="check-circle"
+        onPress={dismiss}
+        style={{ backgroundColor: accentColor }}
+        labelStyle={{ color: '#ffffff' }}
       />
 
-      {/* OK + Cancel — right side */}
-      <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
+      {/* Row 2 — Share + Cancel side by side */}
+      <View style={{ flexDirection: 'row', gap: 10 }}>
 
-        {/* OK — accent filled */}
-        <DialogButton
-          label={t('common.ok')}
-          icon="check"
-          onPress={dismiss}
-          style={{ flex: 1, backgroundColor: accentColor }}
-          labelStyle={{ color: '#ffffff' }}
+        {/* Share */}
+        <ShareTrigger
+          onPress={() => setShareExpanded((v) => !v)}
+          style={{ flex: 1, backgroundColor: c.surface.secondary, borderWidth: 1.5, borderColor: c.border.secondary }}
+          labelStyle={{ color: c.text.secondary }}
         />
 
-        {/* Cancel — subtle bordered */}
+        {/* Cancel */}
         <DialogButton
           label={t('common.cancel')}
           icon="close"

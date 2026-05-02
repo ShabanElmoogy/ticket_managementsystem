@@ -385,7 +385,8 @@
       "retry": "حاول مرة أخرى",
       "showDetails": "إظهار التفاصيل",
       "reportIssue": "الإبلاغ عن مشكلة",
-      "goBack": "العودة"
+      "goBack": "العودة",
+      "deleteRelatedData": "حذف البيانات المرتبطة"
     }
   },
   "deviceInfo": {
