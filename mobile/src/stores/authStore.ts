@@ -5,7 +5,12 @@ import type { UserRole } from '../constants/roles';
 import { tokenManager } from '../services/api/tokenManager';
 import { authEvents } from '../services/api/authEvents';
 import { circuitBreaker } from '../services/api/circuitBreaker';
-import { startTokenRefreshCycle, stopTokenRefreshCycle } from '../services/api/httpClient';
+import {
+  startTokenRefreshCycle,
+  stopTokenRefreshCycle,
+  callRefreshEndpoint,
+  applyNewTokens,
+} from '../services/api/httpClient';
 import { HTTP_STATUS } from '../constants/api';
 
 // ============================================================================
@@ -62,7 +67,14 @@ export function decodeToken(token: string): TokenPayload | null {
     if (!token || typeof token !== 'string') return null;
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
+    // Normalize base64url → base64 (RFC 4648 §5: - → +, _ → /)
+    // then pad to a multiple of 4 before decoding.
+    const base64url = parts[1];
+    const base64 = base64url
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
+    const payload = JSON.parse(atob(base64));
     if (!payload.userId || !payload.email || !payload.role) return null;
     return payload as TokenPayload;
   } catch {
@@ -196,21 +208,35 @@ export const useAuthStore = create<AuthState>()(
 
           const expiresIn = getTokenExpiresIn(token);
 
-          // Refresh on cold start if token is expired OR expiring within 70s.
-          // 70s matches the proactive cycle threshold — tokens with less than
-          // 70s left can't schedule a proactive refresh, so we do it eagerly
-          // here before any screens render.
-          if (expiresIn <= 70 && refreshToken) {
-            if (__DEV__) console.log(`⏰ Token expiring soon on cold start (${Math.round(expiresIn)}s left) — refreshing...`);
+          // Refresh on cold start if the token has less than 25% of its lifetime
+          // remaining (same ratio as the proactive cycle threshold).
+          // This ensures cold-start behaviour is consistent with the running app
+          // regardless of token lifetime (1m dev tokens or 15m production tokens).
+          const tokenLifetimeSec = (() => {
             try {
-              const { refreshClient } = await import('../services/api/httpClient');
-              const response = await refreshClient.post<{ token: string; refreshToken: string }>(
-                '/auth/refresh', { refreshToken }
-              );
-              const newToken        = response.data.token;
-              const newRefreshToken = response.data.refreshToken;
-              tokenManager.setToken(newToken);
-              tokenManager.setRefreshToken(newRefreshToken);
+              const parts = token.split('.');
+              const base64url = parts[1];
+              const base64 = base64url
+                .replace(/-/g, '+')
+                .replace(/_/g, '/')
+                .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
+              const p = JSON.parse(atob(base64));
+              return typeof p.iat === 'number' ? p.exp - p.iat : 15 * 60;
+            } catch { return 15 * 60; }
+          })();
+          const coldStartThresholdSec = tokenLifetimeSec * 0.25; // 25% of lifetime
+
+          if (expiresIn <= coldStartThresholdSec && refreshToken) {
+            if (__DEV__) console.log(
+              `⏰ Token expiring soon on cold start (${Math.round(expiresIn)}s remaining,` +
+              ` threshold ${Math.round(coldStartThresholdSec)}s / 25% of ${tokenLifetimeSec}s lifetime)` +
+              ` — refreshing...`
+            );
+            try {
+              // callRefreshEndpoint is imported at the top — circuit breaker
+              // tracks this attempt consistently with all other refresh paths.
+              const { newToken, newRefreshToken } = await callRefreshEndpoint();
+              applyNewTokens(newToken, newRefreshToken);
               startTokenRefreshCycle(newToken);
               const newPayload = decodeToken(newToken);
               set({
@@ -228,7 +254,7 @@ export const useAuthStore = create<AuthState>()(
               }
               return;
             } catch (refreshErr: any) {
-              const status = refreshErr?.response?.status;
+              const status = refreshErr?.response?.status ?? refreshErr?.status;
               const isNetworkError = !refreshErr?.response && (
                 refreshErr?.code === 'ECONNABORTED' ||
                 refreshErr?.code === 'ERR_NETWORK' ||

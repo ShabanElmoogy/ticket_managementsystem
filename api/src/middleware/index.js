@@ -32,6 +32,20 @@ export const authRateLimit = rateLimit({
   message:        { error: 'Too many requests, please try again later.' },
 });
 
+// ── Rate limiter for token refresh ───────────────────────────────────────────
+// Tighter than authRateLimit — refresh is called automatically by clients,
+// so a stolen refresh token should not be able to hammer the endpoint.
+// 30 requests per 15 min per IP is generous for legitimate use (proactive
+// refresh fires once per token lifetime, ~every 15 min).
+
+export const refreshRateLimit = rateLimit({
+  windowMs:        15 * 60 * 1000, // 15 minutes
+  max:             parseInt(process.env.REFRESH_RATE_LIMIT_MAX ?? '30', 10),
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message:         { error: 'Too many refresh attempts, please try again later.' },
+});
+
 // ── Core middleware registration ──────────────────────────────────────────────
 
 export function registerCoreMiddleware(app, notificationEmitter) {

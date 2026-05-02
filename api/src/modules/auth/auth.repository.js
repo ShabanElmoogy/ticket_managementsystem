@@ -103,13 +103,19 @@ export async function findTenantBySlug(slug) {
 
 // ── Refresh token queries ─────────────────────────────────────────────────────
 
-/** Store a new refresh token, expiry driven by REFRESH_TOKEN_EXPIRES_IN env var. */
-export async function insertRefreshToken(token, userId) {
+// ── Shared expiry helper ──────────────────────────────────────────────────────
+
+/**
+ * Parse REFRESH_TOKEN_EXPIRES_IN env var (e.g. "7d", "24h", "30m") into a
+ * future Date. Falls back to 7 days if the value is missing or malformed.
+ * Centralised here so insertRefreshToken and rotateRefreshToken stay in sync.
+ */
+function buildRefreshTokenExpiry() {
   const expiresAt = new Date();
   const raw       = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d';
   const match     = raw.match(/^(\d+)([smhd])$/);
   if (match) {
-    const n = parseInt(match[1], 10);
+    const n    = parseInt(match[1], 10);
     const unit = match[2];
     if      (unit === 's') expiresAt.setSeconds(expiresAt.getSeconds() + n);
     else if (unit === 'm') expiresAt.setMinutes(expiresAt.getMinutes() + n);
@@ -118,7 +124,12 @@ export async function insertRefreshToken(token, userId) {
   } else {
     expiresAt.setDate(expiresAt.getDate() + 7); // safe fallback
   }
-  await db.insert(refreshTokens).values({ token, userId, expiresAt });
+  return expiresAt;
+}
+
+/** Store a new refresh token, expiry driven by REFRESH_TOKEN_EXPIRES_IN env var. */
+export async function insertRefreshToken(token, userId) {
+  await db.insert(refreshTokens).values({ token, userId, expiresAt: buildRefreshTokenExpiry() });
 }
 
 /** Find a refresh token row by token string. */
@@ -138,21 +149,7 @@ export async function rotateRefreshToken(oldToken, newToken, userId) {
       .set({ revokedAt: new Date() })
       .where(eq(refreshTokens.token, oldToken));
 
-    const expiresAt = new Date();
-    const raw       = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d';
-    const match     = raw.match(/^(\d+)([smhd])$/);
-    if (match) {
-      const n = parseInt(match[1], 10);
-      const unit = match[2];
-      if      (unit === 's') expiresAt.setSeconds(expiresAt.getSeconds() + n);
-      else if (unit === 'm') expiresAt.setMinutes(expiresAt.getMinutes() + n);
-      else if (unit === 'h') expiresAt.setHours(expiresAt.getHours() + n);
-      else if (unit === 'd') expiresAt.setDate(expiresAt.getDate() + n);
-    } else {
-      expiresAt.setDate(expiresAt.getDate() + 7);
-    }
-
-    await tx.insert(refreshTokens).values({ token: newToken, userId, expiresAt });
+    await tx.insert(refreshTokens).values({ token: newToken, userId, expiresAt: buildRefreshTokenExpiry() });
   });
 }
 

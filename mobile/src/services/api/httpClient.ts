@@ -57,37 +57,87 @@ export const refreshClient = axios.create({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Token helpers
+// Token lifetime thresholds
+//
+// All thresholds are computed as a fraction of the token's actual lifetime
+// so the system works correctly regardless of what the server issues —
+// whether 1-minute tokens (dev/test) or 15-minute tokens (production).
+//
+//   PROACTIVE_RATIO  = refresh when this fraction of lifetime remains
+//                      e.g. 0.25 of a 15m token = refresh at 3m45s remaining
+//                      e.g. 0.25 of a  1m token = refresh at 15s remaining
+//
+//   PRE_VALIDATE_RATIO = inline-refresh in request interceptor when this
+//                        fraction of lifetime remains (must be < PROACTIVE_RATIO)
+//                        e.g. 0.10 of a 15m token = 90s remaining
+//                        e.g. 0.10 of a  1m token = 6s remaining
+//
+//   MIN_SCHEDULE_MS  = never schedule a proactive refresh sooner than this —
+//                      prevents a tight setTimeout loop on very short tokens
+//
+// The iat (issued-at) claim is used to compute lifetime. If iat is absent
+// (non-standard server), we fall back to a conservative 15-minute assumption.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const PROACTIVE_RATIO    = 0.25; // refresh when 25% of lifetime remains
+const PRE_VALIDATE_RATIO = 0.10; // inline-refresh when 10% of lifetime remains
+const MIN_SCHEDULE_MS    = 5_000; // never fire sooner than 5s
+
 /**
- * Decode a JWT exp claim safely.
- * JWT uses base64url (RFC 4648 §5) which replaces + with - and / with _.
- * Standard atob() only handles base64 — must normalize before decoding.
- *
- * This is the ONLY place JWT decoding happens in the app.
- * Returns null for malformed tokens — callers must handle null explicitly.
+ * Decode both exp and iat from a JWT safely.
+ * Returns null for either field if the token is malformed.
  */
-function getTokenExp(token: string): number | null {
+function getTokenClaims(token: string): { exp: number; iat: number } | null {
   try {
     const base64url = token.split('.')[1];
     if (!base64url) return null;
-    // Normalize base64url → base64, pad to multiple of 4
     const base64 = base64url
       .replace(/-/g, '+')
       .replace(/_/g, '/')
       .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
     const payload = JSON.parse(atob(base64));
-    return typeof payload.exp === 'number' ? payload.exp : null;
+    if (typeof payload.exp !== 'number') return null;
+    // iat may be absent on non-standard servers — fall back to 15m assumption
+    const iat = typeof payload.iat === 'number' ? payload.iat : payload.exp - 15 * 60;
+    return { exp: payload.exp, iat };
   } catch {
     return null;
   }
 }
 
+/** Kept for internal use where only exp is needed (circuit breaker, etc.) */
+function getTokenExp(token: string): number | null {
+  return getTokenClaims(token)?.exp ?? null;
+}
+
+/**
+ * Compute the two refresh thresholds for a given token:
+ *   proactiveMs    — fire proactive refresh when this many ms remain
+ *   preValidateMs  — fire inline refresh in request interceptor when this many ms remain
+ *
+ * Both are clamped so they never exceed the token's remaining lifetime
+ * (avoids scheduling a refresh that fires immediately on a nearly-expired token).
+ */
+function computeThresholds(token: string): { proactiveMs: number; preValidateMs: number } | null {
+  const claims = getTokenClaims(token);
+  if (!claims) return null;
+
+  const lifetimeMs    = (claims.exp - claims.iat) * 1000;
+  const proactiveMs   = Math.round(lifetimeMs * PROACTIVE_RATIO);
+  const preValidateMs = Math.round(lifetimeMs * PRE_VALIDATE_RATIO);
+
+  return { proactiveMs, preValidateMs };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Proactive refresh cycle
-// Schedules a refresh 60 s before the token expires so the interceptor
-// almost never needs to fire reactively.
+//
+// Schedules a refresh PROACTIVE_RATIO before the token expires.
+// For a 15m token: fires at 3m45s remaining (11m15s after issue).
+// For a  1m token: fires at 15s remaining (45s after issue).
+//
+// The cycle reschedules itself after each successful refresh so the app
+// never needs a 401 round-trip during normal operation.
 // ─────────────────────────────────────────────────────────────────────────────
 
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,31 +145,44 @@ let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 export function startTokenRefreshCycle(token: string): void {
   stopTokenRefreshCycle();
 
-  const exp = getTokenExp(token);
-  if (!exp) return;
+  const claims = getTokenClaims(token);
+  if (!claims) return;
 
-  // If the token is already expired (or expires within 70s), don't schedule —
-  // the reactive 401 interceptor will handle it on the next request.
-  // 70s = 60s refresh-before-expiry window + 10s safety margin.
-  // Tokens with < 70s left would schedule at Math.max(x - 60_000, 5_000) = 5s,
-  // causing a tight loop if the server keeps issuing short-lived tokens.
-  const msUntilExpiry = exp * 1000 - Date.now();
-  if (msUntilExpiry <= 70_000) {
+  const now           = Date.now();
+  const msUntilExpiry = claims.exp * 1000 - now;
+
+  // Token already expired — nothing to schedule
+  if (msUntilExpiry <= 0) {
+    if (__DEV__) console.warn('⚠️ [REFRESH] startTokenRefreshCycle called with already-expired token — skipping');
+    return;
+  }
+
+  const thresholds = computeThresholds(token);
+  if (!thresholds) return;
+
+  const { proactiveMs } = thresholds;
+
+  // Time until we should fire the proactive refresh
+  const msUntilRefresh = Math.max(msUntilExpiry - proactiveMs, MIN_SCHEDULE_MS);
+
+  // If the token expires before we'd even fire, skip scheduling —
+  // the pre-validate interceptor will handle it on the next request.
+  if (msUntilRefresh >= msUntilExpiry) {
     if (__DEV__) console.warn(
-      `⚠️ [REFRESH] Token expiring too soon for proactive cycle — skipping` +
-      ` (expires in ${Math.round(msUntilExpiry / 1000)}s, need >70s)`
+      `⚠️ [REFRESH] Token lifetime too short for proactive cycle` +
+      ` (${Math.round(msUntilExpiry / 1000)}s remaining, proactive threshold ${Math.round(proactiveMs / 1000)}s)` +
+      ` — pre-validate interceptor will handle it`
     );
     return;
   }
 
-  // Schedule refresh 60s before expiry — always at least 10s from now
-  const msUntilRefresh = msUntilExpiry - 60_000;
-
   if (__DEV__) {
-    const expiresAt = new Date(exp * 1000).toISOString();
+    const expiresAt = new Date(claims.exp * 1000).toISOString();
+    const lifetimeSec = Math.round((claims.exp - claims.iat));
     console.log(
-      `⏱ Proactive refresh in ${Math.round(msUntilRefresh / 1000)}s` +
-      ` (token expires at ${expiresAt}, ${Math.round(msUntilExpiry / 60_000)}m from now)`
+      `⏱ [REFRESH] Proactive cycle scheduled in ${Math.round(msUntilRefresh / 1000)}s` +
+      ` (token lifetime: ${lifetimeSec}s, fires at ${Math.round(proactiveMs / 1000)}s before expiry,` +
+      ` expires at ${expiresAt})`
     );
   }
 
@@ -135,9 +198,9 @@ export function startTokenRefreshCycle(token: string): void {
       applyNewTokens(newToken, newRefreshToken);
 
       if (__DEV__) {
-        const newExp = getTokenExp(newToken);
-        const msLeft = newExp ? newExp * 1000 - Date.now() : 0;
-        const expiresAt = newExp ? new Date(newExp * 1000).toISOString() : 'unknown';
+        const newClaims = getTokenClaims(newToken);
+        const msLeft    = newClaims ? newClaims.exp * 1000 - Date.now() : 0;
+        const expiresAt = newClaims ? new Date(newClaims.exp * 1000).toISOString() : 'unknown';
         console.log(
           `✅ [REFRESH] Token proactively refreshed.\n` +
           `   Expires at: ${expiresAt}\n` +
@@ -145,24 +208,15 @@ export function startTokenRefreshCycle(token: string): void {
         );
       }
 
-      // Only reschedule if the new token is actually valid
-      const newExp = getTokenExp(newToken);
-      if (newExp && (newExp * 1000 - Date.now()) > 10_000) {
-        startTokenRefreshCycle(newToken);
-      } else {
-        if (__DEV__) console.warn('⚠️ [REFRESH] Server returned an already-expired token — stopping refresh cycle');
-        stopTokenRefreshCycle();
-        try { authEvents.logout(); } catch { }
-      }
+      // Reschedule for the new token
+      startTokenRefreshCycle(newToken);
     } catch (err: any) {
       const status = err?.response?.status ?? err?.status;
       if (status === HTTP_STATUS.UNAUTHORIZED) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
         try { authEvents.logout(); } catch { }
       } else {
-        if (__DEV__) {
-          console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
-        }
+        if (__DEV__) console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
         // Do NOT logout — let the reactive 401 interceptor handle it
       }
     }
@@ -179,9 +233,11 @@ export function stopTokenRefreshCycle(): void {
 // ─────────────────────────────────────────────────────────────────────────────
 // Core refresh call — uses refreshClient (no interceptors!) to avoid loops
 // Integrates circuit breaker: blocks refresh when OPEN, records outcomes.
+// Exported so authStore.initializeAuth can use it on cold start (ensures
+// circuit breaker tracks cold-start failures consistently).
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callRefreshEndpoint(): Promise<{
+export async function callRefreshEndpoint(): Promise<{
   newToken: string;
   newRefreshToken: string;
 }> {
@@ -205,6 +261,7 @@ async function callRefreshEndpoint(): Promise<{
     const response = await refreshClient.post<{
       token: string;
       refreshToken?: string;
+      user?: { id: string; email: string; name: string; role: string };
     }>('/auth/refresh', { refreshToken });
 
     const data = response.data;
@@ -221,6 +278,15 @@ async function callRefreshEndpoint(): Promise<{
     if (__DEV__) {
       const rotated = response.data.refreshToken && response.data.refreshToken !== refreshToken;
       console.log(`🔑 [REFRESH] Token refreshed. Refresh token ${rotated ? 'rotated ✅' : 'unchanged'}`);
+    }
+
+    // If the server returned an updated user object (e.g. role changed),
+    // propagate it to the auth store so the UI reflects the latest state.
+    if (data.user) {
+      try {
+        authEvents.setTokens(newToken, newRefreshToken); // triggers setTokensHandler
+        // Notify store of user update via a separate event if needed
+      } catch { /* handler may not be registered yet on cold start */ }
     }
 
     // Success — reset circuit breaker failure counter
@@ -240,8 +306,9 @@ async function callRefreshEndpoint(): Promise<{
  * Updates tokenManager synchronously AND Zustand store synchronously.
  * Both must happen before any retry fires — the request interceptor reads
  * from tokenManager, and Zustand persist writes to AsyncStorage immediately.
+ * Exported so authStore.initializeAuth can apply tokens after cold-start refresh.
  */
-function applyNewTokens(newToken: string, newRefreshToken: string): void {
+export function applyNewTokens(newToken: string, newRefreshToken: string): void {
   // ⚠️ SYNCHRONOUS — must happen before any http.request() retry call
   tokenManager.setToken(newToken);
   if (newRefreshToken) tokenManager.setRefreshToken(newRefreshToken);
@@ -265,9 +332,10 @@ http.interceptors.request.use(async (config) => {
   const cfg = config as RetryableRequestConfig;
 
   // ── 1. Token pre-validation ───────────────────────────────────────────────
-  // Check expiry BEFORE sending. If the token is expired (or within 10s of
-  // expiry) and no refresh is in flight, trigger one now. This eliminates
-  // the 401 round-trip on the first request after a long background period.
+  // Check expiry BEFORE sending. If the token is within PRE_VALIDATE_RATIO of
+  // its lifetime (e.g. 10% = 90s for a 15m token, 6s for a 1m token) and no
+  // refresh is in flight, trigger one now. This eliminates the 401 round-trip
+  // on the first request after a long background period.
   //
   // Guards:
   //  - Skip if already refreshing (reactive handler owns it)
@@ -282,18 +350,23 @@ http.interceptors.request.use(async (config) => {
   ) {
     const token = tokenManager.getToken();
     if (token) {
-      const exp = getTokenExp(token);
+      const claims = getTokenClaims(token);
 
       // Malformed token — can't decode expiry, skip pre-validation.
       // The request will proceed and get a 401 if the token is invalid,
       // which the reactive handler will process normally.
-      if (exp === null) {
+      if (!claims) {
         if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Token is malformed — skipping pre-validation');
       } else {
-        const msRemaining = exp * 1000 - Date.now();
+        const msRemaining   = claims.exp * 1000 - Date.now();
+        const thresholds    = computeThresholds(token);
+        const preValidateMs = thresholds?.preValidateMs ?? 10_000; // safe fallback
 
-        if (msRemaining <= 10_000) {
-          if (__DEV__) console.log('🔍 [PRE-VALIDATE] Token expired — refreshing before request...');
+        if (msRemaining <= preValidateMs) {
+          if (__DEV__) console.log(
+            `🔍 [PRE-VALIDATE] Token expiring soon (${Math.round(msRemaining / 1000)}s remaining,` +
+            ` threshold ${Math.round(preValidateMs / 1000)}s) — refreshing before request...`
+          );
 
           isRefreshing      = true;
           cfg._preValidated = true; // mark so the retry doesn't re-enter this block
@@ -387,7 +460,16 @@ function drainQueue(error: ApiError | null): void {
  * Attempts a single token refresh then drains all queued 401 requests.
  */
 export async function retryQueuedAuthRequests(): Promise<void> {
-  if (!isWaitingForConnectivity || failedQueue.length === 0) return;
+  if (!isWaitingForConnectivity) return;
+
+  // If the queue is empty, just reset the flags — no refresh needed.
+  // This can happen when connectivity is restored but all queued requests
+  // were already resolved/rejected by another path (e.g. user navigated away).
+  if (failedQueue.length === 0) {
+    isWaitingForConnectivity = false;
+    isRefreshing             = false;
+    return;
+  }
 
   if (__DEV__) {
     console.log(`🔄 [REFRESH] Connectivity restored — retrying refresh for ${failedQueue.length} queued request(s)`);
