@@ -19,6 +19,7 @@ import type { AxiosRequestConfig } from 'axios';
 type NetworkErrorListener   = (message: string) => void;
 type ApiErrorListener       = (status: number, message: string, details?: unknown) => void;
 type RetrySuccessListener   = (count: number) => void;
+type OkPressListener        = () => void;
 type RetryCallback          = (config: AxiosRequestConfig) => Promise<unknown>;
 type ConnectivityCallback   = () => void;
 
@@ -33,6 +34,7 @@ interface QueuedRequest {
 const errorListeners:        Set<NetworkErrorListener> = new Set();
 const apiErrorListeners:     Set<ApiErrorListener>     = new Set();
 const retrySuccessListeners: Set<RetrySuccessListener> = new Set();
+const okPressListeners:      Set<OkPressListener>      = new Set();
 const queue:                 QueuedRequest[]           = [];
 
 let retryCallback:        RetryCallback        | null = null;
@@ -107,6 +109,23 @@ export const networkEvents = {
   onRetrySuccess: (fn: RetrySuccessListener) => {
     retrySuccessListeners.add(fn);
     return () => retrySuccessListeners.delete(fn);
+  },
+
+  // ── OK press notification ─────────────────────────────────────────────────
+
+  /**
+   * Subscribe to be notified when the user presses OK on the error dialog.
+   * Use this to trigger follow-up actions (e.g. open force-delete dialog)
+   * only after the user has acknowledged the error.
+   */
+  onOkPress: (fn: OkPressListener) => {
+    okPressListeners.add(fn);
+    return () => okPressListeners.delete(fn);
+  },
+
+  /** Emit OK press — called by NetworkErrorDialog when user presses OK */
+  emitOkPress: () => {
+    okPressListeners.forEach((fn) => fn());
   },
 
   // ── Connectivity watcher ──────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen      from '@/src/features/admin/shared/AdminCrudScreen';
@@ -7,6 +7,7 @@ import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoun
 import { useToast }         from '@/src/shared/hooks/useToast';
 import { useErrorHandler }  from '@/src/shared/hooks/useErrorHandler';
 import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
+import { networkEvents }    from '@/src/services/api/networkEvents';
 import UserDetailScreen from '@/src/features/admin/users/components/UserDetailScreen';
 import UserForm from '@/src/features/admin/users/components/UserForm';
 import { useUsers } from '@/src/features/admin/users/hooks/useUsers';
@@ -40,8 +41,21 @@ const UsersScreen: React.FC = () => {
   const [deleting,           setDeleting]           = useState(false);
 
   // ── Force-delete state (both list and detail paths) ────────────────────────
-  const [forceTarget,  setForceTarget]  = useState<User | null>(null);
+  const [forceTarget,   setForceTarget]   = useState<User | null>(null);
   const [forceDeleting, setForceDeleting] = useState(false);
+  // Pending target — set when error fires, promoted to forceTarget only on OK press
+  const pendingForceTarget = useRef<User | null>(null);
+
+  // Subscribe to OK press on NetworkErrorDialog — open force-delete then
+  useEffect(() => {
+    const unsub = networkEvents.onOkPress(() => {
+      if (pendingForceTarget.current) {
+        setForceTarget(pendingForceTarget.current);
+        pendingForceTarget.current = null;
+      }
+    });
+    return unsub;
+  }, []);
 
   // ── Error handler for feature-level errors ─────────────────────────────────
   const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
@@ -65,8 +79,8 @@ const UsersScreen: React.FC = () => {
     } catch (error) {
       setDeletingFromDetail(null);
       if (hasRelatedData(error)) {
-        // Escalate to force-delete dialog
-        setForceTarget(deletingFromDetail);
+        // Store pending — ForceDeleteConfirmDialog opens only after user presses OK
+        pendingForceTarget.current = deletingFromDetail;
       } else {
         handleError(error, { feature: 'users', operation: 'delete' });
       }
@@ -102,7 +116,8 @@ const UsersScreen: React.FC = () => {
   // ── Delete failed from list view → escalate to force-delete ───────────────
   const handleListDeleteFailed = (item: User, error: unknown) => {
     if (hasRelatedData(error)) {
-      setForceTarget(item);
+      // Store pending — ForceDeleteConfirmDialog opens only after user presses OK
+      pendingForceTarget.current = item;
     }
     // Other errors are handled by NetworkErrorDialog globally
   };

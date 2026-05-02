@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
 import { useThemeColors } from '@/src/constants/theme';
@@ -12,26 +13,34 @@ import type { ErrorState } from './types';
 
 const NetworkErrorDialog: React.FC = () => {
   const c           = useThemeColors();
+  const { t }       = useTranslation();
   const [visible,       setVisible]       = useState(false);
   const [retrying,      setRetrying]      = useState(false);
   const [error,         setError]         = useState<ErrorState | null>(null);
   const [shareExpanded, setShareExpanded] = useState(false);
 
-  // ── dismiss ────────────────────────────────────────────────────────────────
+  // ── dismiss (OK — fully clears error state + notifies listeners) ─────────
   const dismiss = useCallback(() => {
+    networkEvents.emitOkPress();
     setVisible(false);
     setRetrying(false);
     setError(null);
     setShareExpanded(false);
   }, []);
 
-  // ── socket listeners ───────────────────────────────────────────────────────
+  // ── close (Cancel — hides dialog but keeps error state) ───────────────────
+  const close = useCallback(() => {
+    setVisible(false);
+    setShareExpanded(false);
+  }, []);
+
+  // ── event listeners ────────────────────────────────────────────────────────
   useEffect(() => {
     const unsubNetwork = networkEvents.onError((msg) => {
       setError((prev) => ({
         kind:      'network',
-        title:     'Connection Error',
-        subtitle:  'Network unavailable',
+        title:     t('errors.network.message'),
+        subtitle:  t('errors.network.message'),
         message:   msg,
         count:     prev?.kind === 'network' ? prev.count + 1 : 1,
         timestamp: new Date().toLocaleString(),
@@ -59,11 +68,12 @@ const NetworkErrorDialog: React.FC = () => {
 
     const unsubSuccess = networkEvents.onRetrySuccess((savedCount) => {
       setRetrying(true);
+      setVisible(true);
       setTimeout(() => {
         dismiss();
         Toast.show({
           type:           'success',
-          text1:          'Back online ✓',
+          text1:          t('errors.actions.retry'),
           text2:          `${savedCount} pending request${savedCount > 1 ? 's' : ''} saved successfully`,
           visibilityTime: 3500,
           position:       'bottom',
@@ -72,9 +82,7 @@ const NetworkErrorDialog: React.FC = () => {
     });
 
     return () => { unsubNetwork(); unsubApi(); unsubSuccess(); };
-  }, [dismiss]);
-
-  if (!error && !retrying) return null;
+  }, [dismiss, t]);
 
   const accentColor = retrying ? '#10b981' : statusColor(error?.status);
   const icon        = retrying ? '🔄'      : statusIcon(error?.status);
@@ -95,7 +103,7 @@ const NetworkErrorDialog: React.FC = () => {
     </>
   );
 
-  // ── actions override: Share (left) | OK + Cancel (right) — one row ────────
+  // ── actions override: Share | OK | Cancel — one row ───────────────────────
   const actionsOverride = error && !retrying ? (
     <View style={{ flexDirection: 'row', width: '100%', gap: 10, alignItems: 'stretch' }}>
 
@@ -109,9 +117,9 @@ const NetworkErrorDialog: React.FC = () => {
       {/* OK + Cancel — right side */}
       <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
 
-        {/* OK — accent filled (red for errors, green for success) */}
+        {/* OK — accent filled */}
         <DialogButton
-          label="OK"
+          label={t('common.ok')}
           icon="check"
           onPress={dismiss}
           style={{ flex: 1, backgroundColor: accentColor }}
@@ -120,9 +128,9 @@ const NetworkErrorDialog: React.FC = () => {
 
         {/* Cancel — subtle bordered */}
         <DialogButton
-          label="Cancel"
+          label={t('common.cancel')}
           icon="close"
-          onPress={dismiss}
+          onPress={close}
           style={{ flex: 1, backgroundColor: c.surface.secondary, borderWidth: 1.5, borderColor: c.border.secondary }}
           labelStyle={{ color: c.text.secondary }}
         />
@@ -134,12 +142,12 @@ const NetworkErrorDialog: React.FC = () => {
   return (
     <AlertDialog
       visible={visible}
-      onClose={dismiss}
+      onClose={close}
       accentColor={accentColor}
       icon={icon}
-      title={retrying ? 'Reconnecting…' : (error?.title ?? 'Error')}
+      title={retrying ? t('errors.actions.retry') : (error?.title ?? t('errors.generic.title'))}
       subtitle={retrying ? undefined : error?.subtitle}
-      message={retrying ? undefined : (error?.message ?? 'An unexpected error occurred.')}
+      message={retrying ? undefined : (error?.message ?? t('errors.unexpected.message'))}
       extra={extra}
       actions={retrying ? [] : undefined}
       actionsOverride={actionsOverride}

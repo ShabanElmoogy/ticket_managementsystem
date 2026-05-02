@@ -594,6 +594,37 @@ function hasRelatedData(error: unknown): boolean {
 1. **From list view** — `AdminCrudScreen` calls `onDeleteFailed(item, error)` when `onDelete` throws; the screen checks `hasRelatedData` and opens the force-delete dialog.
 2. **From detail view** — the screen catches the error from `handleDeleteFromDetail`, closes the normal confirm dialog, and opens the force-delete dialog.
 
+**Deferred force-delete via `networkEvents.onOkPress`**
+
+When a delete fails with "associated" data, the `NetworkErrorDialog` is shown globally. The force-delete dialog must not open until the user dismisses that dialog (presses OK). Use a `pendingForceTarget` ref to hold the target and promote it only on OK press:
+
+```ts
+import { networkEvents } from '@/src/services/api/networkEvents';
+
+const pendingForceTarget = useRef<User | null>(null);
+
+// Subscribe to OK press — open force-delete only after NetworkErrorDialog is dismissed
+useEffect(() => {
+  const unsub = networkEvents.onOkPress(() => {
+    if (pendingForceTarget.current) {
+      setForceTarget(pendingForceTarget.current);
+      pendingForceTarget.current = null;
+    }
+  });
+  return unsub;
+}, []);
+
+// In the delete error handler — store pending instead of opening immediately
+if (hasRelatedData(error)) {
+  pendingForceTarget.current = targetItem;
+  // NetworkErrorDialog will show; force-delete opens only after user presses OK
+} else {
+  handleError(error, { feature: 'users', operation: 'delete' });
+}
+```
+
+This prevents two dialogs from stacking on top of each other. Apply this pattern in any screen where a delete failure can trigger both the `NetworkErrorDialog` and a secondary confirmation dialog.
+
 **Role-aware force-delete API calls:**
 
 ```ts
