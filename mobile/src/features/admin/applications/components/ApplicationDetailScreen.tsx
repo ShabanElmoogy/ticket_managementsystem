@@ -7,6 +7,7 @@ import { useThemeColors } from '@/src/constants/theme';
 import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
 import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
 import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
+import CountBadge        from '@/src/shared/components/display/CountBadge';
 import { applicationsApi, applicationsKeys } from '../api/applications';
 import { PAGINATION } from '@/src/constants/api';
 
@@ -131,9 +132,7 @@ const ApplicationDetailScreen: React.FC<Props> = ({
                 <Text style={[styles.listTitle, { color: labelColor }]}>
                   👥  {t('applications.columns.customers')}
                 </Text>
-                <View style={styles.countBadge}>
-                  <Text style={styles.countText}>{app.customers.length}</Text>
-                </View>
+                <CountBadge count={app.customers.length} />
               </View>
               {app.customers.map((ca: any, i: number) => (
                 <View
@@ -217,8 +216,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1,
   },
   listTitle:    { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  countBadge:   { backgroundColor: '#3b82f620', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
-  countText:    { fontSize: 11, fontWeight: '700', color: '#3b82f6' },
   listRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 16, paddingVertical: 12,

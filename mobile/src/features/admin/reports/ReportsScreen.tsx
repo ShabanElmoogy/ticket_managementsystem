@@ -1,10 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
 import ReportCard from '@/src/features/admin/reports/components/ReportCard';
-import ReportErrorBanner from '@/src/features/admin/reports/components/ReportErrorBanner';
 import ReportsHeader from '@/src/features/admin/reports/components/ReportsHeader';
 import ReportTypeSelector from '@/src/features/admin/reports/components/ReportTypeSelector';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
+import { ErrorBanner } from '@/src/shared/components';
 import { useReports } from '@/src/features/admin/reports/hooks/useReports';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
@@ -43,14 +43,14 @@ const ReportsScreen: React.FC = () => {
           />
 
           {error && (
-            <ReportErrorBanner
+            <ErrorBanner
               message={
                 (error as any)?.message === 'Network Error'
                   ? 'Network error. Check your connection.'
                   : 'Failed to load report data.'
               }
               onRetry={refresh}
-              isDark={isDark}
+              style={{ marginHorizontal: 4, marginBottom: 8 }}
             />
           )}
 

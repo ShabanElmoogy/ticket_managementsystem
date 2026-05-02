@@ -24,12 +24,14 @@ const ErrorCard: React.FC<Props> = ({ error, accentColor, icon }) => (
     sections={
       error.details
         ? [{
-            label:   'Response Details',
-            content: typeof error.details === 'string'
+            key:        'details',
+            label:      'Response Details',
+            content:    typeof error.details === 'string'
               ? error.details
               : JSON.stringify(error.details, null, 2),
-            mono:     true,
-            maxLines: 6,
+            mono:       true,
+            maxLines:   6,
+            selectable: true,
           }]
         : []
     }

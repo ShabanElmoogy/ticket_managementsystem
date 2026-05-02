@@ -19,9 +19,12 @@ export const W = {
   name:     140,
 } as const;
 
-// ── Badge ─────────────────────────────────────────────────────────────────────
+// ── Tinted badge (table cells only) ──────────────────────────────────────────
+// Distinct from the shared Badge component — this variant has a colored border
+// and uses the accent color as the text color (not c.text.inverse).
+// Used exclusively inside table renderCell functions.
 
-export const Badge: React.FC<{ label: string | number; color: string }> = ({ label, color }) => (
+const TintedBadge: React.FC<{ label: string | number; color: string }> = ({ label, color }) => (
   <View style={{
     paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full,
     backgroundColor: color + '22', borderWidth: 1, borderColor: color + '55',
@@ -44,7 +47,7 @@ export function createBadgeColumn<T>(
     headerName,
     width,
     align: 'center',
-    renderCell: (r) => <Badge label={r[field] as number} color={color} />,
+    renderCell: (r) => <TintedBadge label={r[field] as number} color={color} />,
   };
 }
 

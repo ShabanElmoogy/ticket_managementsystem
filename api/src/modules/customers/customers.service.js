@@ -6,12 +6,7 @@
 
 import * as repo from './customers.repository.js';
 import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
-
-// ── Error helper ──────────────────────────────────────────────────────────────
-
-function fail(message, status = 400) {
-  return Object.assign(new Error(message), { status });
-}
+import { detailAsync, fail } from '../../utils/controllerHelpers.js';
 
 // ── Subscription status helpers ───────────────────────────────────────────────
 
