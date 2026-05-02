@@ -5,20 +5,10 @@ import { authEvents } from './authEvents';
 import { circuitBreaker } from './circuitBreaker';
 import { requestDeduplicator } from './requestDeduplicator';
 import { HTTP_STATUS } from '@/src/constants/api';
-import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
-import { ERROR_REASON_BY_CODE } from './errorCodes';
+import type { ApiError } from './types';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type ApiError = {
-  status?: number;
-  message: string;
-  details?: unknown;
-  code?: string;
-  isRetryable?: boolean;
-};
+// Re-export so existing consumers of `import type { ApiError } from './httpClient'` keep working
+export type { ApiError } from './types';
 
 // Extend config type to carry our retry flags
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
@@ -613,12 +603,18 @@ http.interceptors.response.use(
       status !== undefined;
 
     if (shouldShowDialog) {
-      // Map backend errorCode → typed ErrorReason via the shared lookup table.
-      // ERROR_REASON_BY_CODE is the single source of truth for this conversion.
-      const errorCode = (data as Record<string, unknown>)?.errorCode as string | undefined;
-      const reason: ErrorReason | undefined = errorCode
-        ? ERROR_REASON_BY_CODE[errorCode as keyof typeof ERROR_REASON_BY_CODE]
-        : undefined;
+      // Map backend errorCode → UI reason inline.
+      // Normalize to SCREAMING_SNAKE before lookup so casing variants
+      // ('associated_data', 'Associated_Data', etc.) all resolve correctly.
+      // Kept here as a plain object to avoid importing errorCodes.ts,
+      // which would create a circular dependency chain.
+      // errorCodes.ts is the canonical reference — keep these in sync.
+      const REASON_MAP: Record<string, string> = {
+        ASSOCIATED_DATA: 'associated_data',
+      };
+      const rawCode   = (data as Record<string, unknown>)?.errorCode as string | undefined;
+      const errorCode = rawCode?.toUpperCase().replace(/-/g, '_');
+      const reason    = errorCode ? REASON_MAP[errorCode] as any : undefined;
 
       networkEvents.emitApiError(status!, message, data, reason);
     }

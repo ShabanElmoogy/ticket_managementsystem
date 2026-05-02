@@ -8,6 +8,7 @@ import { useToast }         from '@/src/shared/hooks/useToast';
 import { useErrorHandler }  from '@/src/shared/hooks/useErrorHandler';
 import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
 import { isAssociatedDataError } from '@/src/services/api/errorCodes';
+import { networkEvents } from '@/src/services/api/networkEvents';
 import UserDetailScreen from '@/src/features/admin/users/components/UserDetailScreen';
 import UserForm from '@/src/features/admin/users/components/UserForm';
 import { useUsers } from '@/src/features/admin/users/hooks/useUsers';

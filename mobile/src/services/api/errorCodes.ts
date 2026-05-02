@@ -48,10 +48,11 @@ export const ERROR_REASON_BY_CODE: Readonly<Record<ApiErrorCode, ErrorReason>> =
  * Used by: UsersScreen, any future screen with force-delete escalation.
  */
 export function isAssociatedDataError(error: unknown): boolean {
-  const code = getErrorCode(error);
+  const rawCode = getErrorCode(error);
 
-  // Structured check — stable, locale-independent
-  if (code !== undefined) {
+  // Structured check — normalize casing before comparing
+  if (rawCode !== undefined) {
+    const code = rawCode.toUpperCase().replace(/-/g, '_');
     return code === API_ERROR_CODES.ASSOCIATED_DATA;
   }
 
