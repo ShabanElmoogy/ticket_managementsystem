@@ -7,28 +7,11 @@ import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoun
 import { useToast }         from '@/src/shared/hooks/useToast';
 import { useErrorHandler }  from '@/src/shared/hooks/useErrorHandler';
 import { usersApi, usersKeys } from '@/src/features/admin/users/api/users';
-import { networkEvents }    from '@/src/services/api/networkEvents';
+import { isAssociatedDataError } from '@/src/services/api/errorCodes';
 import UserDetailScreen from '@/src/features/admin/users/components/UserDetailScreen';
 import UserForm from '@/src/features/admin/users/components/UserForm';
 import { useUsers } from '@/src/features/admin/users/hooks/useUsers';
 import type { User, CreateUserData } from '@/src/services/api/types';
-
-// ── Helper — detect "associated data" error from API response ────────────────
-// Prefers the structured errorCode field added by the backend.
-// Falls back to substring match only for older API versions that lack errorCode.
-function isAssociatedDataError(error: unknown): boolean {
-  if (error && typeof error === 'object') {
-    const e = error as any;
-    // Structured check — preferred, stable
-    if (e?.response?.data?.errorCode === 'ASSOCIATED_DATA') return true;
-    // Fallback substring match — only if no errorCode present
-    if (!e?.response?.data?.errorCode) {
-      const msg: string = e?.response?.data?.error ?? e?.message ?? '';
-      return msg.toLowerCase().includes('associated');
-    }
-  }
-  return false;
-}
 
 const UsersScreen: React.FC = () => {
   const { t }       = useTranslation();
@@ -83,15 +66,8 @@ const UsersScreen: React.FC = () => {
     } catch (error) {
       setDeletingFromDetail(null);
       if (isAssociatedDataError(error)) {
-        // Emit with structured reason so NetworkErrorDialog shows the right label.
-        // details is omitted — raw API payload must not be forwarded to the share flow.
-        const e = error as any;
-        networkEvents.emitApiError(
-          e?.status ?? 400,
-          e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
-          undefined,
-          'associated_data',
-        );
+        // httpClient already emitted emitApiError with reason:'associated_data'.
+        // Just store the pending target — ForceDeleteConfirmDialog opens on OK press.
         pendingForceTarget.current = deletingFromDetail;
       } else {
         handleError(error, { feature: 'users', operation: 'delete' });
@@ -128,15 +104,8 @@ const UsersScreen: React.FC = () => {
   // ── Delete failed from list view → escalate to force-delete ───────────────
   const handleListDeleteFailed = (item: User, error: unknown) => {
     if (isAssociatedDataError(error)) {
-      // Emit with structured reason so NetworkErrorDialog shows the right label.
-      // details is omitted — raw API payload must not be forwarded to the share flow.
-      const e = error as any;
-      networkEvents.emitApiError(
-        e?.status ?? 400,
-        e?.response?.data?.error ?? e?.message ?? t('errors.unexpected.message'),
-        undefined,
-        'associated_data',
-      );
+      // httpClient already emitted emitApiError with reason:'associated_data'.
+      // Just store the pending target — ForceDeleteConfirmDialog opens on OK press.
       pendingForceTarget.current = item;
     }
     // Other errors are handled by NetworkErrorDialog globally via httpClient

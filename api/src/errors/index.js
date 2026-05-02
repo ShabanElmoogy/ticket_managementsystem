@@ -1,5 +1,13 @@
 import { TenantScopeError } from '../utils/tenantUtils.js';
 
+// ── Safe error codes allowlist ────────────────────────────────────────────────
+// Only codes in this set are ever included in the HTTP response body.
+// Add new codes here deliberately — never reflect arbitrary error.errorCode.
+
+const SAFE_ERROR_CODES = new Set([
+  'ASSOCIATED_DATA', // User/entity has related records — triggers force-delete flow
+]);
+
 // ── Controller error handler ──────────────────────────────────────────────────
 
 /**
@@ -24,10 +32,12 @@ export function handleError(res, error, context) {
 
   const message = error.message ?? 'Internal server error';
   const cause   = error.cause?.message ?? null;
+  // Only expose errorCode when it is in the known-safe allowlist
+  const safeCode = SAFE_ERROR_CODES.has(error.errorCode) ? error.errorCode : undefined;
 
   res.status(status).json({
     error: message,
-    ...(error.errorCode ? { errorCode: error.errorCode } : {}),
+    ...(safeCode ? { errorCode: safeCode } : {}),
     ...(cause ? { cause } : {}),
   });
 }

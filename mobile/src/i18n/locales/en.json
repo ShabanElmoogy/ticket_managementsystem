@@ -393,9 +393,6 @@
     "actions": {
       "retry": "Try Again",
       "showDetails": "Show Details",
-      "reportIssue": "Report Issue",
-      "goBack": "Go Back",
-      "deleteRelatedData": "Delete Related Data",
       "associatedDataHint": "⚠️ This item has related data. Press \"Understood\" to proceed to the force-delete confirmation."
     }
   },
