@@ -6,6 +6,7 @@ import { circuitBreaker } from './circuitBreaker';
 import { requestDeduplicator } from './requestDeduplicator';
 import { HTTP_STATUS } from '@/src/constants/api';
 import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
+import { ERROR_REASON_BY_CODE } from './errorCodes';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -612,11 +613,12 @@ http.interceptors.response.use(
       status !== undefined;
 
     if (shouldShowDialog) {
-      // Map backend errorCode to a typed ErrorReason — only known codes pass through.
-      // Unknown/absent codes produce undefined, keeping the dialog generic.
-      const errorCode = (data as Record<string, unknown>)?.errorCode;
-      const reason: ErrorReason | undefined =
-        errorCode === 'ASSOCIATED_DATA' ? 'associated_data' : undefined;
+      // Map backend errorCode → typed ErrorReason via the shared lookup table.
+      // ERROR_REASON_BY_CODE is the single source of truth for this conversion.
+      const errorCode = (data as Record<string, unknown>)?.errorCode as string | undefined;
+      const reason: ErrorReason | undefined = errorCode
+        ? ERROR_REASON_BY_CODE[errorCode as keyof typeof ERROR_REASON_BY_CODE]
+        : undefined;
 
       networkEvents.emitApiError(status!, message, data, reason);
     }

@@ -19,6 +19,21 @@ export const getErrorMessage = (error: unknown): string => {
   return 'An unknown error occurred';
 };
 
+/**
+ * Extract the structured errorCode from an API error response body.
+ * Returns undefined when absent — callers should not assume a default.
+ */
+export const getErrorCode = (error: unknown): string | undefined => {
+  if (error && typeof error === 'object') {
+    const e = error as any;
+    // Raw AxiosError — read from response.data
+    if (e?.response?.data?.errorCode) return String(e.response.data.errorCode);
+    // Normalized ApiError — httpClient may forward details.errorCode
+    if (e?.details?.errorCode) return String(e.details.errorCode);
+  }
+  return undefined;
+};
+
 export const isNetworkError = (error: unknown): boolean =>
   error instanceof AxiosError && !error.response;
 

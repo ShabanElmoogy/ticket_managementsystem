@@ -7,6 +7,9 @@
  * Backend source of truth: api/src/errors/index.js → SAFE_ERROR_CODES
  */
 
+import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
+import { getErrorCode, getErrorMessage } from '@/src/shared/utils/httpUtils';
+
 // ── Known backend error codes ─────────────────────────────────────────────────
 
 /** All error codes the backend may include in a 4xx response body. */
@@ -17,31 +20,22 @@ export const API_ERROR_CODES = {
 
 export type ApiErrorCode = typeof API_ERROR_CODES[keyof typeof API_ERROR_CODES];
 
+// ── Backend errorCode → UI ErrorReason mapping ────────────────────────────────
+//
+// This is the ONLY place where backend SCREAMING_SNAKE codes are mapped to
+// UI snake_case ErrorReason values. httpClient imports this map — never
+// hardcodes the conversion inline.
+//
+// To add a new code:
+//   1. Add to API_ERROR_CODES above
+//   2. Add to ErrorReason union in NetworkErrorDialog/types.ts
+//   3. Add the mapping entry here
+
+export const ERROR_REASON_BY_CODE: Readonly<Record<ApiErrorCode, ErrorReason>> = {
+  [API_ERROR_CODES.ASSOCIATED_DATA]: 'associated_data',
+};
+
 // ── Detection helpers ─────────────────────────────────────────────────────────
-
-/**
- * Extract the structured errorCode from an API error response.
- * Returns undefined if no code is present.
- */
-function getErrorCode(error: unknown): string | undefined {
-  if (error && typeof error === 'object') {
-    const e = error as any;
-    return e?.response?.data?.errorCode ?? undefined;
-  }
-  return undefined;
-}
-
-/**
- * Extract the error message string from an API error response.
- * Checks response.data.error, then error.message.
- */
-function getErrorMessage(error: unknown): string {
-  if (error && typeof error === 'object') {
-    const e = error as any;
-    return e?.response?.data?.error ?? e?.message ?? '';
-  }
-  return '';
-}
 
 /**
  * Returns true when the API error indicates the entity has associated data

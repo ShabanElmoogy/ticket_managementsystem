@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useEntityData, type EntityConfig } from './useEntityData';
 import { useToast } from './useToast';
+import { getErrorMessage as extractErrorMessage } from '@/src/shared/utils/httpUtils';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -65,12 +66,7 @@ export interface AdminFeatureReturn<T, CreateT> {
 // ── Error helper ───────────────────────────────────────────────────────────
 
 function getErrorMessage(error: unknown, fallback: string): string {
-  if (!error) return fallback;
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'object' && 'message' in (error as object))
-    return String((error as Record<string, unknown>).message);
-  return fallback;
+  return extractErrorMessage(error) || fallback;
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────
