@@ -57,37 +57,84 @@ export const refreshClient = axios.create({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Token lifetime thresholds
+// Clock skew compensation
 //
+// The server clock may differ from the device clock (common on IIS/Windows
+// servers where the time service drifts). Without compensation, a server that
+// is 1 hour behind will issue tokens that appear to expire immediately from
+// the device's perspective (exp - iat = 3600s but exp - deviceNow = 18s).
+//
+// We measure skew from the HTTP Date response header on every response and
+// store a rolling estimate. All "time remaining" calculations use:
+//   msUntilExpiry = exp * 1000 - (Date.now() - clockSkewMs)
+//
+// where clockSkewMs = deviceTime - serverTime (positive = device is ahead).
+// ─────────────────────────────────────────────────────────────────────────────
+
+let clockSkewMs = 0; // device time minus server time, in milliseconds
+
+/** Update clock skew estimate from an HTTP Date header value. */
+function updateClockSkew(serverDateHeader: string | null): void {
+  if (!serverDateHeader) return;
+  const serverTime = Date.parse(serverDateHeader);
+  if (isNaN(serverTime)) return;
+  const skew = Date.now() - serverTime;
+  // Only update if the skew is significant (> 5s) to avoid noise from
+  // network latency. Cap at ±24h to reject obviously wrong values.
+  if (Math.abs(skew) > 5_000 && Math.abs(skew) < 86_400_000) {
+    clockSkewMs = skew;
+    if (__DEV__ && Math.abs(skew) > 30_000) {
+      console.warn(
+        `⏰ [CLOCK SKEW] Server is ${skew > 0 ? 'behind' : 'ahead'} by` +
+        ` ${Math.round(Math.abs(skew) / 1000)}s.` +
+        ` Token expiry calculations adjusted.`
+      );
+    }
+  }
+}
+
+/** Current server time estimate, adjusted for clock skew. */
+function serverNowMs(): number {
+  return Date.now() - clockSkewMs;
+}
+
 // All thresholds are computed as a fraction of the token's actual lifetime
-// so the system works correctly regardless of what the server issues —
-// whether 1-minute tokens (dev/test) or 15-minute tokens (production).
+// so the system works correctly regardless of what the server issues.
 //
-//   PROACTIVE_RATIO  = refresh when this fraction of lifetime remains
-//                      e.g. 0.25 of a 15m token = refresh at 3m45s remaining
-//                      e.g. 0.25 of a  1m token = refresh at 15s remaining
+//   PROACTIVE_RATIO    = refresh when this fraction of lifetime remains
+//                        e.g. 0.25 of a 15m token → refresh at 3m45s remaining
+//                        e.g. 0.25 of a  1m token → refresh at 15s remaining
 //
 //   PRE_VALIDATE_RATIO = inline-refresh in request interceptor when this
 //                        fraction of lifetime remains (must be < PROACTIVE_RATIO)
-//                        e.g. 0.10 of a 15m token = 90s remaining
-//                        e.g. 0.10 of a  1m token = 6s remaining
+//                        e.g. 0.10 of a 15m token → 90s remaining
+//                        e.g. 0.10 of a  1m token → 6s remaining
 //
-//   MIN_SCHEDULE_MS  = never schedule a proactive refresh sooner than this —
-//                      prevents a tight setTimeout loop on very short tokens
+//   MIN_PROACTIVE_LIFETIME_MS = minimum token lifetime for proactive scheduling.
+//                        Tokens shorter than this are too short to schedule a
+//                        proactive refresh — the pre-validate interceptor handles
+//                        them instead. Prevents the 5s-loop on very short tokens.
 //
 // The iat (issued-at) claim is used to compute lifetime. If iat is absent
 // (non-standard server), we fall back to a conservative 15-minute assumption.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROACTIVE_RATIO    = 0.25; // refresh when 25% of lifetime remains
-const PRE_VALIDATE_RATIO = 0.10; // inline-refresh when 10% of lifetime remains
-const MIN_SCHEDULE_MS    = 5_000; // never fire sooner than 5s
+const PROACTIVE_RATIO             = 0.25;       // refresh when 25% of lifetime remains
+const PRE_VALIDATE_RATIO          = 0.10;       // inline-refresh when 10% of lifetime remains
+const MIN_PROACTIVE_LIFETIME_MS   = 30_000;     // don't schedule proactive for tokens < 30s lifetime
+const MIN_SCHEDULE_MS             = 5_000;      // never fire sooner than 5s (floor)
 
 /**
  * Decode both exp and iat from a JWT safely.
- * Returns null for either field if the token is malformed.
+ * Returns null if the token is malformed or exp is missing.
+ * msRemaining is computed using serverNowMs() to compensate for clock skew.
  */
-function getTokenClaims(token: string): { exp: number; iat: number } | null {
+function getTokenClaims(token: string): {
+  exp: number;
+  iat: number;
+  lifetimeMs: number;
+  msRemaining: number;
+} | null {
   try {
     const base64url = token.split('.')[1];
     if (!base64url) return null;
@@ -97,36 +144,31 @@ function getTokenClaims(token: string): { exp: number; iat: number } | null {
       .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
     const payload = JSON.parse(atob(base64));
     if (typeof payload.exp !== 'number') return null;
-    // iat may be absent on non-standard servers — fall back to 15m assumption
-    const iat = typeof payload.iat === 'number' ? payload.iat : payload.exp - 15 * 60;
-    return { exp: payload.exp, iat };
+    const iat         = typeof payload.iat === 'number' ? payload.iat : payload.exp - 15 * 60;
+    const lifetimeMs  = (payload.exp - iat) * 1000;
+    const msRemaining = payload.exp * 1000 - serverNowMs();
+    return { exp: payload.exp, iat, lifetimeMs, msRemaining };
   } catch {
     return null;
   }
 }
 
-/** Kept for internal use where only exp is needed (circuit breaker, etc.) */
+/** Returns only exp — for callers that don't need the full claims. */
 function getTokenExp(token: string): number | null {
   return getTokenClaims(token)?.exp ?? null;
 }
 
 /**
- * Compute the two refresh thresholds for a given token:
- *   proactiveMs    — fire proactive refresh when this many ms remain
- *   preValidateMs  — fire inline refresh in request interceptor when this many ms remain
- *
- * Both are clamped so they never exceed the token's remaining lifetime
- * (avoids scheduling a refresh that fires immediately on a nearly-expired token).
+ * Compute refresh thresholds from a token's actual lifetime.
+ * Returns null if the token is malformed.
  */
 function computeThresholds(token: string): { proactiveMs: number; preValidateMs: number } | null {
   const claims = getTokenClaims(token);
   if (!claims) return null;
-
-  const lifetimeMs    = (claims.exp - claims.iat) * 1000;
-  const proactiveMs   = Math.round(lifetimeMs * PROACTIVE_RATIO);
-  const preValidateMs = Math.round(lifetimeMs * PRE_VALIDATE_RATIO);
-
-  return { proactiveMs, preValidateMs };
+  return {
+    proactiveMs:   Math.round(claims.lifetimeMs * PROACTIVE_RATIO),
+    preValidateMs: Math.round(claims.lifetimeMs * PRE_VALIDATE_RATIO),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -135,6 +177,9 @@ function computeThresholds(token: string): { proactiveMs: number; preValidateMs:
 // Schedules a refresh PROACTIVE_RATIO before the token expires.
 // For a 15m token: fires at 3m45s remaining (11m15s after issue).
 // For a  1m token: fires at 15s remaining (45s after issue).
+//
+// Tokens shorter than MIN_PROACTIVE_LIFETIME_MS are not scheduled — the
+// pre-validate interceptor handles them on the next request instead.
 //
 // The cycle reschedules itself after each successful refresh so the app
 // never needs a 401 round-trip during normal operation.
@@ -148,46 +193,53 @@ export function startTokenRefreshCycle(token: string): void {
   const claims = getTokenClaims(token);
   if (!claims) return;
 
-  const now           = Date.now();
-  const msUntilExpiry = claims.exp * 1000 - now;
+  const msUntilExpiry = claims.msRemaining;
 
-  // Token already expired — nothing to schedule
+  // Token already expired (server time) — nothing to schedule
   if (msUntilExpiry <= 0) {
     if (__DEV__) console.warn('⚠️ [REFRESH] startTokenRefreshCycle called with already-expired token — skipping');
     return;
   }
 
-  const thresholds = computeThresholds(token);
-  if (!thresholds) return;
-
-  const { proactiveMs } = thresholds;
-
-  // Time until we should fire the proactive refresh
-  const msUntilRefresh = Math.max(msUntilExpiry - proactiveMs, MIN_SCHEDULE_MS);
-
-  // If the token expires before we'd even fire, skip scheduling —
-  // the pre-validate interceptor will handle it on the next request.
-  if (msUntilRefresh >= msUntilExpiry) {
-    if (__DEV__) console.warn(
-      `⚠️ [REFRESH] Token lifetime too short for proactive cycle` +
-      ` (${Math.round(msUntilExpiry / 1000)}s remaining, proactive threshold ${Math.round(proactiveMs / 1000)}s)` +
-      ` — pre-validate interceptor will handle it`
+  // Token lifetime too short for proactive scheduling.
+  // This catches the case where the server issues very short-lived tokens
+  // (e.g. 17s) — scheduling a proactive refresh on a 17s token would fire
+  // almost immediately and loop. The pre-validate interceptor handles these.
+  if (claims.lifetimeMs < MIN_PROACTIVE_LIFETIME_MS) {
+    if (__DEV__) console.log(
+      `⏭ [REFRESH] Skipping proactive schedule — token lifetime ${Math.round(claims.lifetimeMs / 1000)}s` +
+      ` is below minimum ${MIN_PROACTIVE_LIFETIME_MS / 1000}s. Pre-validate will handle it.`
     );
     return;
   }
 
+  const proactiveMs = Math.round(claims.lifetimeMs * PROACTIVE_RATIO);
+
+  // If less time remains than the proactive threshold, don't schedule —
+  // the token is already in the "should refresh soon" window.
+  // The pre-validate interceptor will catch it on the next request.
+  if (msUntilExpiry <= proactiveMs) {
+    if (__DEV__) console.log(
+      `⏭ [REFRESH] Skipping proactive schedule — token expires in ${Math.round(msUntilExpiry / 1000)}s` +
+      ` (within the ${Math.round(proactiveMs / 1000)}s refresh window). Pre-validate will handle it.`
+    );
+    return;
+  }
+
+  // Schedule refresh at (msUntilExpiry - proactiveMs), floored at MIN_SCHEDULE_MS
+  const msUntilRefresh = Math.max(msUntilExpiry - proactiveMs, MIN_SCHEDULE_MS);
+
   if (__DEV__) {
-    const expiresAt = new Date(claims.exp * 1000).toISOString();
-    const lifetimeSec = Math.round((claims.exp - claims.iat));
+    const expiresAt   = new Date(claims.exp * 1000).toISOString();
+    const lifetimeSec = Math.round(claims.lifetimeMs / 1000);
     console.log(
       `⏱ [REFRESH] Proactive cycle scheduled in ${Math.round(msUntilRefresh / 1000)}s` +
-      ` (token lifetime: ${lifetimeSec}s, fires at ${Math.round(proactiveMs / 1000)}s before expiry,` +
+      ` (lifetime: ${lifetimeSec}s, fires ${Math.round(proactiveMs / 1000)}s before expiry,` +
       ` expires at ${expiresAt})`
     );
   }
 
   refreshTimer = setTimeout(async () => {
-    // Skip if a reactive refresh is already in flight
     if (isRefreshing) {
       if (__DEV__) console.log('⏭ [REFRESH] Proactive skipped — reactive refresh in progress');
       return;
@@ -208,13 +260,26 @@ export function startTokenRefreshCycle(token: string): void {
         );
       }
 
-      // Reschedule for the new token
       startTokenRefreshCycle(newToken);
     } catch (err: any) {
       const status = err?.response?.status ?? err?.status;
       if (status === HTTP_STATUS.UNAUTHORIZED) {
         if (__DEV__) console.log('🔑 [REFRESH] Refresh token expired/revoked — logging out');
         try { authEvents.logout(); } catch { }
+      } else if (status === HTTP_STATUS.TOO_MANY_REQUESTS) {
+        // 429 after the built-in retry — server is still throttling.
+        // Reschedule in 30s using the current token so we try again before expiry.
+        const currentToken = tokenManager.getToken();
+        if (currentToken) {
+          const c      = getTokenClaims(currentToken);
+          const msLeft = c ? c.exp * 1000 - Date.now() : 0;
+          if (msLeft > 30_000) {
+            if (__DEV__) console.warn('⏳ [REFRESH] Still rate-limited — rescheduling in 30s');
+            refreshTimer = setTimeout(() => startTokenRefreshCycle(currentToken), 30_000);
+          } else {
+            if (__DEV__) console.warn('⏳ [REFRESH] Rate-limited and token expiring soon — pre-validate will handle it');
+          }
+        }
       } else {
         if (__DEV__) console.warn('⚠️ [REFRESH] Proactive refresh failed:', err?.message ?? err);
         // Do NOT logout — let the reactive 401 interceptor handle it
@@ -235,7 +300,21 @@ export function stopTokenRefreshCycle(): void {
 // Integrates circuit breaker: blocks refresh when OPEN, records outcomes.
 // Exported so authStore.initializeAuth can use it on cold start (ensures
 // circuit breaker tracks cold-start failures consistently).
+//
+// 429 handling: reads Retry-After header and waits before retrying once.
+// 429 does NOT count as a circuit breaker failure — it is a transient
+// server-side throttle, not an auth error.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Parse Retry-After header → milliseconds. Defaults to `fallbackMs`. */
+function parseRetryAfterMs(headers: Record<string, unknown>, fallbackMs: number): number {
+  const raw = headers['retry-after'] ?? headers['Retry-After'];
+  if (typeof raw === 'string') {
+    const seconds = parseInt(raw, 10);
+    if (!isNaN(seconds) && seconds > 0) return seconds * 1000;
+  }
+  return fallbackMs;
+}
 
 export async function callRefreshEndpoint(): Promise<{
   newToken: string;
@@ -257,16 +336,42 @@ export async function callRefreshEndpoint(): Promise<{
     console.log('🔄 [REFRESH] Calling /auth/refresh with token:', refreshToken.slice(0, 20) + '...');
   }
 
-  try {
+  const attemptRefresh = async (): Promise<{
+    token: string;
+    refreshToken?: string;
+    user?: { id: string; email: string; name: string; role: string };
+  }> => {
     const response = await refreshClient.post<{
       token: string;
       refreshToken?: string;
       user?: { id: string; email: string; name: string; role: string };
     }>('/auth/refresh', { refreshToken });
 
-    const data = response.data;
-    if (!data || typeof data !== 'object') {
+    if (!response.data || typeof response.data !== 'object') {
       throw new Error('Refresh response is not an object');
+    }
+    return response.data;
+  };
+
+  try {
+    let data: Awaited<ReturnType<typeof attemptRefresh>>;
+
+    try {
+      data = await attemptRefresh();
+    } catch (firstErr: any) {
+      // ── 429 — wait for Retry-After then try once more ─────────────────────
+      if (firstErr?.response?.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
+        const waitMs = parseRetryAfterMs(
+          firstErr.response.headers as Record<string, unknown>,
+          5_000, // default 5s if header is absent
+        );
+        if (__DEV__) console.warn(`⏳ [REFRESH] Rate-limited (429) — retrying in ${Math.round(waitMs / 1000)}s`);
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        // Second attempt — if this also 429s, let it propagate as a 429 error
+        data = await attemptRefresh();
+      } else {
+        throw firstErr;
+      }
     }
 
     const newToken        = data.token;
@@ -276,7 +381,7 @@ export async function callRefreshEndpoint(): Promise<{
     if (!newRefreshToken) throw new Error('Refresh response missing refreshToken');
 
     if (__DEV__) {
-      const rotated = response.data.refreshToken && response.data.refreshToken !== refreshToken;
+      const rotated = data.refreshToken && data.refreshToken !== refreshToken;
       console.log(`🔑 [REFRESH] Token refreshed. Refresh token ${rotated ? 'rotated ✅' : 'unchanged'}`);
     }
 
@@ -284,8 +389,7 @@ export async function callRefreshEndpoint(): Promise<{
     // propagate it to the auth store so the UI reflects the latest state.
     if (data.user) {
       try {
-        authEvents.setTokens(newToken, newRefreshToken); // triggers setTokensHandler
-        // Notify store of user update via a separate event if needed
+        authEvents.setTokens(newToken, newRefreshToken);
       } catch { /* handler may not be registered yet on cold start */ }
     }
 
@@ -296,8 +400,9 @@ export async function callRefreshEndpoint(): Promise<{
 
   } catch (err: any) {
     const isNetworkErr = !err?.response;
-    // Only count non-network errors as circuit breaker failures
-    circuitBreaker.recordFailure(isNetworkErr);
+    const isRateLimit  = err?.response?.status === HTTP_STATUS.TOO_MANY_REQUESTS;
+    // 429 and network errors do NOT count as circuit breaker failures
+    circuitBreaker.recordFailure(isNetworkErr, isRateLimit);
     throw err;
   }
 }
@@ -358,15 +463,16 @@ http.interceptors.request.use(async (config) => {
       if (!claims) {
         if (__DEV__) console.warn('⚠️ [PRE-VALIDATE] Token is malformed — skipping pre-validation');
       } else {
-        const msRemaining   = claims.exp * 1000 - Date.now();
-        const thresholds    = computeThresholds(token);
-        const preValidateMs = thresholds?.preValidateMs ?? 10_000; // safe fallback
+        const msRemaining   = claims.msRemaining;
+        const preValidateMs = Math.round(claims.lifetimeMs * PRE_VALIDATE_RATIO);
 
         if (msRemaining <= preValidateMs) {
-          if (__DEV__) console.log(
-            `🔍 [PRE-VALIDATE] Token expiring soon (${Math.round(msRemaining / 1000)}s remaining,` +
-            ` threshold ${Math.round(preValidateMs / 1000)}s) — refreshing before request...`
-          );
+          if (__DEV__) {
+            const label = msRemaining <= 0
+              ? `expired ${Math.abs(Math.round(msRemaining / 1000))}s ago`
+              : `expiring in ${Math.round(msRemaining / 1000)}s (threshold ${Math.round(preValidateMs / 1000)}s)`;
+            console.log(`🔍 [PRE-VALIDATE] Token ${label} — refreshing before request...`);
+          }
 
           isRefreshing      = true;
           cfg._preValidated = true; // mark so the retry doesn't re-enter this block
@@ -515,6 +621,9 @@ export async function retryQueuedAuthRequests(): Promise<void> {
 
 http.interceptors.response.use(
   (response) => {
+    // Update clock skew estimate from every response's Date header
+    updateClockSkew(response.headers['date'] as string | null ?? null);
+
     if (__DEV__) {
       const reqId  = response.config.headers?.['X-Request-ID'] as string | null;
       const method = (response.config.method ?? 'GET').toUpperCase().padEnd(6);

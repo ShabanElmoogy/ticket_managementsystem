@@ -208,29 +208,33 @@ export const useAuthStore = create<AuthState>()(
 
           const expiresIn = getTokenExpiresIn(token);
 
-          // Refresh on cold start if the token has less than 25% of its lifetime
-          // remaining (same ratio as the proactive cycle threshold).
-          // This ensures cold-start behaviour is consistent with the running app
-          // regardless of token lifetime (1m dev tokens or 15m production tokens).
-          const tokenLifetimeSec = (() => {
+          // Refresh on cold start if:
+          //   a) The token has less than 25% of its lifetime remaining, OR
+          //   b) The token lifetime is < 30s (too short for proactive scheduling)
+          // This mirrors the proactive cycle logic so cold-start and running-app
+          // behaviour are consistent regardless of token lifetime.
+          const coldStartShouldRefresh = (() => {
             try {
-              const parts = token.split('.');
+              const parts     = token.split('.');
               const base64url = parts[1];
-              const base64 = base64url
+              const base64    = base64url
                 .replace(/-/g, '+')
                 .replace(/_/g, '/')
                 .padEnd(Math.ceil(base64url.length / 4) * 4, '=');
-              const p = JSON.parse(atob(base64));
-              return typeof p.iat === 'number' ? p.exp - p.iat : 15 * 60;
-            } catch { return 15 * 60; }
+              const p          = JSON.parse(atob(base64));
+              const iat        = typeof p.iat === 'number' ? p.iat : p.exp - 15 * 60;
+              const lifetimeSec = p.exp - iat;
+              // Too short to schedule proactively — always refresh on cold start
+              if (lifetimeSec < 30) return true;
+              // Within the proactive window (25% of lifetime remaining)
+              return expiresIn <= lifetimeSec * 0.25;
+            } catch { return expiresIn <= 225; } // fallback: 25% of 15m
           })();
-          const coldStartThresholdSec = tokenLifetimeSec * 0.25; // 25% of lifetime
 
-          if (expiresIn <= coldStartThresholdSec && refreshToken) {
+          if (coldStartShouldRefresh && refreshToken) {
             if (__DEV__) console.log(
-              `⏰ Token expiring soon on cold start (${Math.round(expiresIn)}s remaining,` +
-              ` threshold ${Math.round(coldStartThresholdSec)}s / 25% of ${tokenLifetimeSec}s lifetime)` +
-              ` — refreshing...`
+              `⏰ Cold start: token needs refresh` +
+              ` (${Math.round(expiresIn)}s remaining) — refreshing...`
             );
             try {
               // callRefreshEndpoint is imported at the top — circuit breaker

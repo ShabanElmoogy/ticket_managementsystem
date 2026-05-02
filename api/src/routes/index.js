@@ -12,6 +12,21 @@ export function registerRoutes(app) {
       timestamp: new Date().toISOString(),
       version:   process.env.npm_package_version ?? 'unknown',
       env:       process.env.NODE_ENV ?? 'development',
+      // Token config — shows the actual values the running server is using.
+      // Useful for diagnosing short-token issues on hosted deployments where
+      // env vars are set in web.config / hosting dashboard, not in .env.
+      tokenConfig: {
+        accessTokenExpiry:  process.env.ACCESS_TOKEN_EXPIRES_IN  ?? '15m (default)',
+        refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d (default)',
+        // Confirm the secrets are set (never log the actual values)
+        jwtSecretSet:          !!process.env.JWT_SECRET,
+        refreshSecretSet:      !!process.env.REFRESH_TOKEN_SECRET,
+        secretsAreDifferent:   !!(
+          process.env.JWT_SECRET &&
+          process.env.REFRESH_TOKEN_SECRET &&
+          process.env.JWT_SECRET !== process.env.REFRESH_TOKEN_SECRET
+        ),
+      },
     });
   });
 

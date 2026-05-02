@@ -74,10 +74,16 @@ export const circuitBreaker = {
 
   /**
    * Record a refresh failure.
-   * Network errors are excluded — pass isNetworkError=true to skip counting.
+   * Network errors and rate-limit (429) responses are excluded —
+   * pass isNetworkError=true or isRateLimit=true to skip counting.
+   *
+   * 429 is a transient server-side throttle, not an auth failure.
+   * Counting it would open the circuit and log the user out just because
+   * the server is busy — exactly the wrong behaviour.
    */
-  recordFailure: (isNetworkError = false): void => {
+  recordFailure: (isNetworkError = false, isRateLimit = false): void => {
     if (isNetworkError) return; // offline ≠ auth failure
+    if (isRateLimit)    return; // throttled ≠ auth failure
 
     failureCount++;
     if (__DEV__) {

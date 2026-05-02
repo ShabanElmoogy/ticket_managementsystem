@@ -33,17 +33,35 @@ export const authRateLimit = rateLimit({
 });
 
 // ── Rate limiter for token refresh ───────────────────────────────────────────
-// Tighter than authRateLimit — refresh is called automatically by clients,
-// so a stolen refresh token should not be able to hammer the endpoint.
-// 30 requests per 15 min per IP is generous for legitimate use (proactive
-// refresh fires once per token lifetime, ~every 15 min).
+// Keyed by the refresh token body value, NOT by IP.
+//
+// Why not IP? On a shared/hosted server (Render, Railway, etc.) all users
+// share the same egress IP. An IP-based limit of 30/15min would be exhausted
+// by ~2 concurrent users with 1h tokens (each refreshes ~once per hour).
+//
+// Keying by refresh token means each token gets its own counter:
+//   - Legitimate client: 1 refresh per token lifetime → never hits the limit
+//   - Stolen token being hammered: hits the limit after MAX attempts
+//
+// Falls back to IP if the body can't be parsed (malformed request).
 
 export const refreshRateLimit = rateLimit({
   windowMs:        15 * 60 * 1000, // 15 minutes
-  max:             parseInt(process.env.REFRESH_RATE_LIMIT_MAX ?? '30', 10),
+  max:             parseInt(process.env.REFRESH_RATE_LIMIT_MAX ?? '10', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message:         { error: 'Too many refresh attempts, please try again later.' },
+  keyGenerator:    (req) => {
+    // Use the refresh token as the rate-limit key so each token has its own
+    // counter. Truncate to 16 chars — enough to be unique, avoids storing
+    // full secrets in the rate-limit store.
+    const token = req.body?.refreshToken;
+    if (typeof token === 'string' && token.length > 0) {
+      return `rt:${token.slice(0, 16)}`;
+    }
+    // Fallback to IP for malformed requests
+    return req.ip ?? 'unknown';
+  },
 });
 
 // ── Core middleware registration ──────────────────────────────────────────────

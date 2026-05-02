@@ -50,6 +50,24 @@ export async function startServer() {
   const app    = express();
   const server = createHttpOrHttpsServer(app);
 
+  // ── Startup config log ────────────────────────────────────────────────────
+  // Printed before any request is handled so it appears at the top of IIS /
+  // hosting logs. Shows the actual values the server resolved from its
+  // environment (web.config, hosting dashboard, .env, or defaults).
+  console.log('─────────────────────────────────────────');
+  console.log('  Server configuration');
+  console.log('─────────────────────────────────────────');
+  console.log(`  NODE_ENV                  : ${process.env.NODE_ENV ?? '(not set) → development'}`);
+  console.log(`  PORT                      : ${process.env.PORT ?? '(not set) → 3000'}`);
+  console.log(`  ACCESS_TOKEN_EXPIRES_IN   : ${process.env.ACCESS_TOKEN_EXPIRES_IN ?? '(not set) → 15m'}`);
+  console.log(`  REFRESH_TOKEN_EXPIRES_IN  : ${process.env.REFRESH_TOKEN_EXPIRES_IN ?? '(not set) → 7d'}`);
+  console.log(`  JWT_SECRET                : ${process.env.JWT_SECRET ? '✅ set' : '❌ MISSING'}`);
+  console.log(`  REFRESH_TOKEN_SECRET      : ${process.env.REFRESH_TOKEN_SECRET ? '✅ set' : '❌ MISSING'}`);
+  console.log(`  AUTH_RATE_LIMIT_MAX       : ${process.env.AUTH_RATE_LIMIT_MAX ?? '(not set) → 20'}`);
+  console.log(`  REFRESH_RATE_LIMIT_MAX    : ${process.env.REFRESH_RATE_LIMIT_MAX ?? '(not set) → 10'}`);
+  console.log(`  DATABASE_URL              : ${process.env.DATABASE_URL ? '✅ set' : '❌ MISSING'}`);
+  console.log('─────────────────────────────────────────');
+
   const { notificationEmitter } = setupSocket(server);
 
   registerCoreMiddleware(app, notificationEmitter);
