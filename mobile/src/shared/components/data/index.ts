@@ -12,8 +12,10 @@ export { default as CompactListRow } from './CompactListRow';
 export type { CompactListRowProps } from './CompactListRow';
 
 export { default as PaginatedView } from './PaginatedView';
+export type { PaginatedViewProps } from './PaginatedView';
 
 export { default as AppPagination } from './AppPagination';
+export type { AppPaginationProps } from './AppPagination';
 
 export { default as FilterChipGroup } from './FilterChipGroup';
-export type { FilterChipOption } from './FilterChipGroup';
+export type { FilterChipOption, FilterChipGroupProps } from './FilterChipGroup';

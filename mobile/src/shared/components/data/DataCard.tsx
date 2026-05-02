@@ -1,15 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+/**
+ * DataCard — admin list card with table/grid/compact view switching.
+ *
+ * Handles: loading state, empty state, pagination, pull-to-refresh.
+ * Delete dialog is managed by the parent via `onDelete` — DataCard does NOT
+ * manage delete state internally (the dialog is in AdminCrudScreen).
+ */
+import React from 'react';
+import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { FlatList, RefreshControl } = require('react-native') as { FlatList: any; RefreshControl: any };
 import { useThemeColors, FontSize } from '@/src/constants/theme';
-import AppEmptyState       from '@/src/shared/components/feedback/AppEmptyState';
-import ConfirmDeleteDialog from '@/src/shared/components/dialogs/ConfirmDeleteDialog';
-import SectionHeader       from '@/src/shared/components/display/SectionHeader';
-import CountBadge          from '@/src/shared/components/display/CountBadge';
-import PaginatedView       from './PaginatedView';
-import AppPagination       from './AppPagination';
-import type { AdminView }  from '@/src/stores/uiStore';
+import AppEmptyState from '@/src/shared/components/feedback/AppEmptyState';
+import SectionHeader from '@/src/shared/components/display/SectionHeader';
+import CountBadge    from '@/src/shared/components/display/CountBadge';
+import PaginatedView from './PaginatedView';
+import AppPagination from './AppPagination';
+import type { AdminView } from '@/src/stores/uiStore';
 
 // ── Pagination state shape ────────────────────────────────────────────────────
 
@@ -39,9 +45,9 @@ export interface DataCardProps<T extends { id: string }> {
   renderCompactItem?: (item: T) => React.ReactElement | null;
   headerExtras?:      React.ReactNode;
   onRefresh?:         () => void;
-  onDelete?:          (id: string) => Promise<void>;
-  getItemName?:       (item: T) => string;
-  itemType?:          string;
+  /** Empty state messages — defaults to English if not provided */
+  emptyMessage?:      string;
+  emptyFilteredMessage?: string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -53,28 +59,15 @@ function DataCard<T extends { id: string }>({
   renderTable, pagination,
   renderGridItem, renderCompactItem,
   headerExtras, onRefresh,
-  onDelete, getItemName, itemType = 'item',
+  emptyMessage = 'No data available',
+  emptyFilteredMessage = 'No results found',
 }: DataCardProps<T>) {
   const c = useThemeColors();
 
-  const [deleteItem, setDeleteItem] = useState<T | null>(null);
-  const [deleting,   setDeleting]   = useState(false);
-
-  const handleDelete = async () => {
-    if (!deleteItem || !onDelete) return;
-    setDeleting(true);
-    try   { await onDelete(deleteItem.id); }
-    finally { setDeleting(false); setDeleteItem(null); }
-  };
-
   const isFiltered = search.trim().length > 0;
+  const emptyMsg   = isFiltered ? emptyFilteredMessage : emptyMessage;
   const emptyIcon  = isFiltered ? '🔍' : '📭';
-  const emptyMsg   = isFiltered ? 'No results found' : 'No data available';
   const emptySub   = isFiltered ? `No rows match "${search}"` : undefined;
-
-  const ListHeader = useMemo(() => (
-    headerExtras ? <View>{headerExtras}</View> : undefined
-  ), [headerExtras]);
 
   const paginationBar = pagination ? (
     <AppPagination
@@ -111,67 +104,56 @@ function DataCard<T extends { id: string }>({
         </View>
 
       ) : view === 'table' ? (
+        // ── Table view ──────────────────────────────────────────────────────
         pagination ? (
           <PaginatedView
             renderContent={renderTable}
-            ListHeader={ListHeader}
+            ListHeader={headerExtras ? <View>{headerExtras}</View> : undefined}
             pagination={pagination}
-            loading={loading}
+            loading={false}
             onRefresh={onRefresh ?? (() => {})}
           />
         ) : (
-          <FlatList
-            data={[{ key: 'table' }]}
-            keyExtractor={(i: any) => i.key}
-            renderItem={() => renderTable()}
-            ListHeaderComponent={ListHeader}
-            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
-            showsVerticalScrollIndicator={false}
+          <ScrollView
             keyboardShouldPersistTaps="handled"
-          />
+            showsVerticalScrollIndicator={false}
+            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
+          >
+            {headerExtras}
+            {renderTable()}
+          </ScrollView>
         )
 
       ) : view === 'grid' ? (
-        <View style={{ flex: 1 }}>
-          <FlatList
-            style={{ flex: 1 }}
-            data={rows}
-            keyExtractor={(item: any) => item.id}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
-            ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-            ListFooterComponent={paginationBar}
-            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }: { item: any }) => renderGridItem ? (renderGridItem(item) ?? null) : null}
-          />
-        </View>
+        // ── Grid view ───────────────────────────────────────────────────────
+        <FlatList
+          style={{ flex: 1 }}
+          data={rows}
+          keyExtractor={(item: any) => item.id}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
+          ListHeaderComponent={headerExtras ? <View>{headerExtras}</View> : undefined}
+          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListFooterComponent={paginationBar}
+          refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }: { item: any }) => renderGridItem ? (renderGridItem(item) ?? null) : null}
+        />
 
       ) : (
-        <View style={{ flex: 1 }}>
-          <FlatList
-            style={{ flex: 1 }}
-            data={rows}
-            keyExtractor={(item: any) => item.id}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
-            ListFooterComponent={paginationBar}
-            refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }: { item: any }) => renderCompactItem ? (renderCompactItem(item) ?? null) : null}
-          />
-        </View>
-      )}
-
-      {onDelete && (
-        <ConfirmDeleteDialog
-          open={!!deleteItem}
-          onClose={() => setDeleteItem(null)}
-          onConfirm={handleDelete}
-          itemName={deleteItem && getItemName ? getItemName(deleteItem) : undefined}
-          itemType={itemType}
-          loading={deleting}
+        // ── Compact view ────────────────────────────────────────────────────
+        <FlatList
+          style={{ flex: 1 }}
+          data={rows}
+          keyExtractor={(item: any) => item.id}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          ListHeaderComponent={headerExtras ? <View>{headerExtras}</View> : undefined}
+          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListFooterComponent={paginationBar}
+          refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }: { item: any }) => renderCompactItem ? (renderCompactItem(item) ?? null) : null}
         />
       )}
     </View>
@@ -179,3 +161,4 @@ function DataCard<T extends { id: string }>({
 }
 
 export default DataCard;
+

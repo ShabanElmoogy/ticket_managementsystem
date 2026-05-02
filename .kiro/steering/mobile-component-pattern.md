@@ -113,7 +113,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `ChipTiles` | `forms/ChipTiles.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ChipSelector` (layout="tiles") |
 | `AppSearchInput` | `forms/AppSearchInput.tsx` | ✅ Yes (`useThemeColors`, `useDirection`) | ❌ No — screens only | `AdminCrudScreen` |
 | `AppDatePicker` | `forms/AppDatePicker.tsx` | ✅ Yes | ❌ No — screens only | `CustomerForm` |
-| `AlertDialog` | `dialogs/AlertDialog.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — uses `DialogSheet` | Standalone modal |
+| `AlertDialog` | `dialogs/AlertDialog.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before `<Modal>` renders | Standalone modal |
 | `ConfirmDeleteDialog` | `dialogs/ConfirmDeleteDialog.tsx` | ✅ Yes | ❌ No | `AdminCrudScreen`, feature screens |
 | `FormSection` | `forms/FormSection.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | All admin feature forms (CustomerForm, UserForm, etc.) — page context only |
 | `AppForm` | `forms/AppForm.tsx` | ❌ No | ✅ Yes (no hooks) | `AdminFormPage` (when `form` prop is passed). Provides `FormProvider` + `FormFocusProvider` + `ScrollView`. Exposes `focusFirst` via `onFocusRef` callback. |
@@ -121,6 +121,12 @@ Keep this table updated whenever a component is added or its usage changes.
 | `FormFocusContext` | `forms/FormFocusContext.tsx` | ❌ No (context only — `useRef`, `useCallback`) | ✅ Yes | `AppForm` (provides `FormFocusProvider`), `AppFormField` (calls `useFormFocus`) |
 | `SegmentedControl` | `forms/SegmentedControl.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `LanguageSwitcher` |
 | `HeaderIconButton` | `actions/HeaderIconButton.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `HeaderActionGroup` |
+| `DataCard` | `data/DataCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AdminCrudScreen`, `ReportCard` |
+| `CompactListRow` | `data/CompactListRow.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportCompactRow` |
+| `AppDataTable` | `data/AppDataTable.tsx` | ✅ Yes (`useThemeColors`, `useWindowDimensions`) | ❌ No — screens only | `AdminCrudScreen` |
+| `AppPagination` | `data/AppPagination.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `DataCard`, `PaginatedView` |
+| `PaginatedView` | `data/PaginatedView.tsx` | ❌ No (no hooks — delegates to `AppPagination`) | ✅ Yes | `DataCard` (table view with pagination) |
+| `FilterChipGroup` | `data/FilterChipGroup.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportTypeSelector`, `ActivityPeriodSelector` (reports feature) |
 
 ---
 

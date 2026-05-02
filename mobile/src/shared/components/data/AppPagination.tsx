@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
-interface Props {
+export interface AppPaginationProps {
   page:       number;
   totalPages: number;
   totalItems: number;
@@ -17,12 +17,14 @@ interface Props {
  * Generic pagination bar — prev/next buttons, page indicator, item range.
  * Returns null when there is only one page (nothing to paginate).
  */
-const AppPagination: React.FC<Props> = ({
+const AppPagination: React.FC<AppPaginationProps> = ({
   page, totalPages, totalItems, pageSize, hasNext, hasPrev, onNext, onPrev,
 }) => {
+  // Hook must be called unconditionally — before any early return
+  const c = useThemeColors();
+
   if (totalPages <= 1) return null;
 
-  const c    = useThemeColors();
   const from = Math.min((page - 1) * pageSize + 1, totalItems);
   const to   = Math.min(page * pageSize, totalItems);
 
@@ -33,15 +35,20 @@ const AppPagination: React.FC<Props> = ({
       backgroundColor: c.surface.secondary,
       borderTopWidth: 1, borderTopColor: c.border.primary,
     }}>
+      {/* Item range */}
       <Text style={{ fontSize: FontSize.sm, color: c.text.secondary }}>
         {from}–{to} of {totalItems}
       </Text>
 
+      {/* Prev / page indicator / Next */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Pressable
           onPress={onPrev}
           disabled={!hasPrev}
           hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Previous page"
+          accessibilityState={{ disabled: !hasPrev }}
           style={({ pressed }: { pressed: boolean }) => ({
             width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',
@@ -66,6 +73,9 @@ const AppPagination: React.FC<Props> = ({
           onPress={onNext}
           disabled={!hasNext}
           hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Next page"
+          accessibilityState={{ disabled: !hasNext }}
           style={({ pressed }: { pressed: boolean }) => ({
             width: 34, height: 34, borderRadius: Radius.md,
             alignItems: 'center', justifyContent: 'center',

@@ -1,34 +1,36 @@
+/**
+ * PaginatedView — wraps any content block with pull-to-refresh and a pagination footer.
+ *
+ * Uses a single-item FlatList so the header, content, and pagination bar
+ * all scroll together as one unit.
+ */
 import React from 'react';
-import { View, FlatList, RefreshControl } from 'react-native';
+import { View } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { FlatList, RefreshControl } = require('react-native') as { FlatList: any; RefreshControl: any };
 import AppPagination from './AppPagination';
 import type { PaginationState } from './DataCard';
 
-interface Props {
+export interface PaginatedViewProps {
   /** Renders the main content (table, list, etc.) */
-  renderContent: () => React.ReactElement | null;
-  /** Optional header rendered above the content (search bar, filters, etc.) */
-  ListHeader?: React.ReactElement;
-  pagination: PaginationState;
-  loading: boolean;
-  onRefresh: () => void;
+  renderContent:  () => React.ReactElement | null;
+  /** Optional header rendered above the content */
+  ListHeader?:    React.ReactElement;
+  pagination:     PaginationState;
+  loading:        boolean;
+  onRefresh:      () => void;
 }
 
+// Single sentinel item — FlatList renders it once, giving us header/footer/refresh for free
 const SENTINEL = [{ key: 'content' }];
 
-/**
- * Generic paginated view — renders a single content block inside a FlatList
- * with an optional header, pagination footer, and pull-to-refresh.
- *
- * The FlatList wrapper is needed so the header, content, and pagination
- * footer all scroll together as one unit.
- */
-const PaginatedView: React.FC<Props> = ({
+const PaginatedView: React.FC<PaginatedViewProps> = ({
   renderContent, ListHeader, pagination, loading, onRefresh,
 }) => (
   <View style={{ flex: 1 }}>
     <FlatList
       data={SENTINEL}
-      keyExtractor={(item) => item.key}
+      keyExtractor={(item: { key: string }) => item.key}
       renderItem={() => renderContent()}
       ListHeaderComponent={ListHeader}
       ListFooterComponent={

@@ -125,19 +125,17 @@ export async function listCustomers(tenantId, query = {}) {
 }
 
 export async function getCustomerById(id, tenantId) {
-  const customer = await repo.findCustomerById(id, tenantId ?? null);
-  if (!customer) throw fail('Customer not found', 404);
-
-  const [customerApps, customerTickets] = await Promise.all([
-    repo.findCustomerApplications(id),
-    repo.findCustomerTickets(id),
-  ]);
-
-  return {
-    ...withSubscription(customer),
-    applications: customerApps,
-    tickets:      customerTickets,
-  };
+  return detailAsync({
+    finderFn:   repo.findCustomerById,
+    entityName: 'Customer',
+    id,
+    finderArgs: [tenantId ?? null],
+    transform:  withSubscription,
+    relations: [
+      { key: 'applications', fn: repo.findCustomerApplications },
+      { key: 'tickets',      fn: repo.findCustomerTickets      },
+    ],
+  });
 }
 
 // ── Write operations ──────────────────────────────────────────────────────────
