@@ -118,36 +118,14 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
 
               {/* Actions */}
               <View style={[styles.actionsRow, { borderTopColor: c.border.primary }]}>
-                {actionsOverride ?? resolvedActions.map((action) => {
-                  const isPrimary = action.variant === 'primary';
-                  return (
-                    <View key={action.label} style={{ flex: 1 }}>
-                      <DialogButton
-                        label={action.label}
-                        onPress={action.onPress}
-                        style={isPrimary
-                          ? {
-                              backgroundColor: accent,
-                              shadowColor:     accent,
-                              shadowOffset:    { width: 0, height: 4 },
-                              shadowOpacity:   0.35,
-                              shadowRadius:    8,
-                              elevation:       4,
-                            }
-                          : {
-                              backgroundColor: c.surface.secondary,
-                              borderWidth:     1.5,
-                              borderColor:     c.border.secondary,
-                            }
-                        }
-                        labelStyle={isPrimary
-                          ? { color: '#ffffff' }
-                          : { color: c.text.secondary }
-                        }
-                      />
-                    </View>
-                  );
-                })}
+                {actionsOverride ?? resolvedActions.map((action) => (
+                  <View key={action.label} style={{ flex: 1 }}>
+                    <DialogButton
+                      label={action.label}
+                      onPress={action.onPress}
+                    />
+                  </View>
+                ))}
               </View>
             </View>
           </Pressable>

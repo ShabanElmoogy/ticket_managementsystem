@@ -102,8 +102,8 @@ const NetworkErrorDialog: React.FC = () => {
       {/* Share — left */}
       <ShareTrigger
         onPress={() => setShareExpanded((v) => !v)}
-        style={{ flex: 1, backgroundColor: accentColor , borderWidth: 1.5, borderColor: c.border.secondary }}
-        labelStyle={{ color: c.text.secondary }}
+        style={{ flex: 1, backgroundColor: c.buttons.danger.bg , borderWidth: 1.5, borderColor: c.border.secondary }}
+        labelStyle={{ color: c.text.inverse }}
       />
 
       {/* OK + Cancel — right side */}
