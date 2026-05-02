@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
+import { useThemeColors } from '@/src/constants/theme';
 import { AlertDialog, DialogButton } from '@/src/shared/components';
 import ErrorExtraBanner from './components/ErrorExtraBanner';
 import SharePanel       from './components/SharePanel';
@@ -10,6 +11,7 @@ import { statusColor, statusIcon, statusLabel } from './utils';
 import type { ErrorState } from './types';
 
 const NetworkErrorDialog: React.FC = () => {
+  const c           = useThemeColors();
   const [visible,       setVisible]       = useState(false);
   const [retrying,      setRetrying]      = useState(false);
   const [error,         setError]         = useState<ErrorState | null>(null);
@@ -100,25 +102,19 @@ const NetworkErrorDialog: React.FC = () => {
       {/* Share — left */}
       <ShareTrigger
         onPress={() => setShareExpanded((v) => !v)}
+        style={{ flex: 1, backgroundColor: accentColor , borderWidth: 1.5, borderColor: c.border.secondary }}
+        labelStyle={{ color: c.text.secondary }}
       />
 
       {/* OK + Cancel — right side */}
       <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
 
-        {/* OK */}
+        {/* Cancel — subtle bordered */}
         <DialogButton
-          intent="danger"
-          label="OK"
-          icon="✓"
-          onPress={dismiss}
-        />
-
-        {/* Cancel */}
-        <DialogButton
-          intent="cancel"
           label="Cancel"
-          icon="✕"
           onPress={dismiss}
+          style={{ flex: 1, backgroundColor: c.surface.secondary, borderWidth: 1.5, borderColor: c.border.secondary }}
+          labelStyle={{ color: c.text.secondary }}
         />
 
       </View>
@@ -134,7 +130,6 @@ const NetworkErrorDialog: React.FC = () => {
       title={retrying ? 'Reconnecting…' : (error?.title ?? 'Error')}
       subtitle={retrying ? undefined : error?.subtitle}
       message={retrying ? undefined : (error?.message ?? 'An unexpected error occurred.')}
-      copyable={__DEV__ && !retrying}
       extra={extra}
       actions={retrying ? [] : undefined}
       actionsOverride={actionsOverride}

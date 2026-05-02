@@ -65,7 +65,7 @@ const DialogButton: React.FC<DialogButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    width:           '100%',
+    alignSelf:       'stretch',
     borderRadius:    Radius.xl,
     paddingVertical: 14,
     alignItems:      'center',

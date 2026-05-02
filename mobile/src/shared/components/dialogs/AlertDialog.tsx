@@ -71,7 +71,8 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resolvedActions: AlertDialogAction[] = actions ?? [
-    { label: 'OK', onPress: onClose, variant: 'primary' },
+    { label: 'OK',     onPress: onClose, variant: 'primary' },
+    { label: 'Cancel', onPress: onClose, variant: 'cancel'  },
   ];
 
   return (
@@ -140,7 +141,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
                             }
                         }
                         labelStyle={isPrimary
-                          ? { color: c.text.inverse }
+                          ? { color: '#ffffff' }
                           : { color: c.text.secondary }
                         }
                       />
