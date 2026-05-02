@@ -51,17 +51,17 @@ const NetworkErrorDialog: React.FC = () => {
     });
 
     const unsubApi = networkEvents.onApiError((status, message, details, reason) => {
-      setError({
+      setError((prev) => ({
         kind:      'api',
         title:     statusLabel(status),
         subtitle:  `HTTP ${status}`,
         message,
         status,
         details,
-        count:     1,
+        count:     prev?.kind === 'api' && prev.status === status ? prev.count + 1 : 1,
         timestamp: new Date().toLocaleString(),
         reason,
-      });
+      }));
       setRetrying(false);
       setShareExpanded(false);
       setVisible(true);

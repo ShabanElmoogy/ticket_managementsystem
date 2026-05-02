@@ -9,6 +9,7 @@
 
 import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
 import { getErrorCode, getErrorMessage } from '@/src/shared/utils/httpUtils';
+import { ERROR_REASON_MAP } from './types';
 
 // ── Known backend error codes ─────────────────────────────────────────────────
 
@@ -21,19 +22,8 @@ export const API_ERROR_CODES = {
 export type ApiErrorCode = typeof API_ERROR_CODES[keyof typeof API_ERROR_CODES];
 
 // ── Backend errorCode → UI ErrorReason mapping ────────────────────────────────
-//
-// This is the ONLY place where backend SCREAMING_SNAKE codes are mapped to
-// UI snake_case ErrorReason values. httpClient imports this map — never
-// hardcodes the conversion inline.
-//
-// To add a new code:
-//   1. Add to API_ERROR_CODES above
-//   2. Add to ErrorReason union in NetworkErrorDialog/types.ts
-//   3. Add the mapping entry here
-
-export const ERROR_REASON_BY_CODE: Readonly<Record<ApiErrorCode, ErrorReason>> = {
-  [API_ERROR_CODES.ASSOCIATED_DATA]: 'associated_data',
-};
+// Canonical mapping lives in types.ts (ERROR_REASON_MAP) — imported above.
+// Both httpClient and errorCodes.ts use the same map; no duplication.
 
 // ── Detection helpers ─────────────────────────────────────────────────────────
 
@@ -50,7 +40,7 @@ export const ERROR_REASON_BY_CODE: Readonly<Record<ApiErrorCode, ErrorReason>> =
 export function isAssociatedDataError(error: unknown): boolean {
   const rawCode = getErrorCode(error);
 
-  // Structured check — normalize casing before comparing
+  // Structured check — normalize casing, then compare against the known code
   if (rawCode !== undefined) {
     const code = rawCode.toUpperCase().replace(/-/g, '_');
     return code === API_ERROR_CODES.ASSOCIATED_DATA;

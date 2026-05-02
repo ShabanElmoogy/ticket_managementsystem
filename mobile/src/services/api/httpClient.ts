@@ -6,6 +6,7 @@ import { circuitBreaker } from './circuitBreaker';
 import { requestDeduplicator } from './requestDeduplicator';
 import { HTTP_STATUS } from '@/src/constants/api';
 import type { ApiError } from './types';
+import { ERROR_REASON_MAP } from './types';
 
 // Re-export so existing consumers of `import type { ApiError } from './httpClient'` keep working
 export type { ApiError } from './types';
@@ -619,18 +620,11 @@ http.interceptors.response.use(
       status !== undefined;
 
     if (shouldShowDialog) {
-      // Map backend errorCode → UI reason inline.
-      // Normalize to SCREAMING_SNAKE before lookup so casing variants
-      // ('associated_data', 'Associated_Data', etc.) all resolve correctly.
-      // Kept here as a plain object to avoid importing errorCodes.ts,
-      // which would create a circular dependency chain.
-      // errorCodes.ts is the canonical reference — keep these in sync.
-      const REASON_MAP: Record<string, string> = {
-        ASSOCIATED_DATA: 'associated_data',
-      };
+      // Map backend errorCode → UI reason via the shared ERROR_REASON_MAP in types.ts.
+      // Normalize casing so 'associated_data', 'ASSOCIATED_DATA', etc. all resolve.
       const rawCode   = (data as Record<string, unknown>)?.errorCode as string | undefined;
       const errorCode = rawCode?.toUpperCase().replace(/-/g, '_');
-      const reason    = errorCode ? REASON_MAP[errorCode] as any : undefined;
+      const reason    = errorCode ? ERROR_REASON_MAP[errorCode] : undefined;
 
       networkEvents.emitApiError(status!, message, data, reason);
     }

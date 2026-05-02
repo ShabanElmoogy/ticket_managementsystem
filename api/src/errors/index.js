@@ -30,15 +30,18 @@ export function handleError(res, error, context) {
     console.warn(`${context} [${status}]:`, error.message);
   }
 
-  const message = error.message ?? 'Internal server error';
-  const cause   = error.cause?.message ?? null;
+  const message  = error.message ?? 'Internal server error';
   // Only expose errorCode when it is in the known-safe allowlist
   const safeCode = SAFE_ERROR_CODES.has(error.errorCode) ? error.errorCode : undefined;
+  // cause may contain internal details (DB errors, upstream messages) —
+  // only include in non-production environments for debugging
+  const isDev    = process.env.NODE_ENV !== 'production';
+  const cause    = isDev ? (error.cause?.message ?? null) : null;
 
   res.status(status).json({
     error: message,
     ...(safeCode ? { errorCode: safeCode } : {}),
-    ...(cause ? { cause } : {}),
+    ...(cause    ? { cause }              : {}),
   });
 }
 

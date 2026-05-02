@@ -1,10 +1,8 @@
-export type ErrorKind   = 'network' | 'api';
+// ErrorReason is defined in services/api/types.ts (dependency-free module)
+// and re-exported here so UI components can import from the nearest location.
+export type { ErrorReason } from '@/src/services/api/types';
 
-/**
- * Structured reason codes — set by the caller, never inferred from message text.
- * Add new codes here as needed rather than parsing free-form strings.
- */
-export type ErrorReason = 'associated_data';
+export type ErrorKind = 'network' | 'api';
 
 export interface ErrorState {
   kind:      ErrorKind;
@@ -16,5 +14,5 @@ export interface ErrorState {
   count:     number;
   timestamp: string;
   /** Structured reason code — drives UI decisions (button labels, icons, etc.) */
-  reason?:   ErrorReason;
+  reason?:   import('@/src/services/api/types').ErrorReason;
 }
