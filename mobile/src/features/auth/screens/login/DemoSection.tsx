@@ -24,9 +24,9 @@ const DemoSection: React.FC<DemoSectionProps> = ({
 
   const roles = tenant
     ? [
-        { label: 'Admin',      email: tenant.adminEmail      },
-        { label: 'Employee',   email: tenant.employeeEmail   },
-        { label: 'Programmer', email: tenant.programmerEmail },
+        { label: 'Admin',      email: tenant.adminEmail,      icon: '🛡️' },
+        { label: 'Employee',   email: tenant.employeeEmail,   icon: '👤' },
+        { label: 'Programmer', email: tenant.programmerEmail, icon: '💻' },
       ].filter((r) => r.email)
     : [];
 
@@ -60,6 +60,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`Login as ${r.label}`}
               >
+                <Text style={styles.roleIcon}>{r.icon}</Text>
                 <Text style={[styles.roleBtnText, { color: text }]}>{r.label}</Text>
               </Pressable>
             );
@@ -116,8 +117,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems:     'center',
     justifyContent: 'center',
+    flexDirection:  'row',
+    gap:            6,
   },
   roleBtnText:     { fontSize: 13, fontWeight: '700' },
+  roleIcon:        { fontSize: 15 },
 
   adminCard: {
     borderRadius:    12,

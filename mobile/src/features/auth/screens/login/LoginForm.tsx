@@ -64,6 +64,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         loadingText={t('auth.signingIn')}
         onPress={onSubmit}
         style={styles.submitBtn}
+        leftIcon={<Text style={{ fontSize: 18 }}>🔐</Text>}
       >
         {t('auth.signInButton')}
       </AppButton>

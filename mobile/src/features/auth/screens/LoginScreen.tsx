@@ -114,7 +114,7 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   root:          { flex: 1 },
   flex:          { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingTop: 16, paddingBottom: 32 },
+  scrollContent: { flexGrow: 1, paddingTop: 10, paddingBottom: 10 },
 
   card: {
     marginHorizontal: 16,

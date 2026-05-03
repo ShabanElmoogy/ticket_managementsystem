@@ -175,7 +175,7 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
       </View>
 
       {/* ── Feature pills ──────────────────────────────────────────────────── */}
-      <View style={styles.pillRow}>
+      {/* <View style={styles.pillRow}>
         {pills.map((f) => (
           <View
             key={f}
@@ -192,7 +192,7 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
             <Text style={[styles.pillText, { color: c.interactive.primary }]}>{f}</Text>
           </View>
         ))}
-      </View>
+      </View> */}
     </Animated.View>
   );
 };
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 5,
     alignSelf: 'stretch',
   },
 
