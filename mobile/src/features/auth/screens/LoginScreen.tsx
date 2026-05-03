@@ -6,11 +6,13 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  StatusBar,
   Modal,
-  FlatList,
-  TextInput,
 } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const RN = require('react-native') as any;
+const FlatList  = RN.FlatList  as any;
+const TextInput = RN.TextInput as any;
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import { useLoginForm } from '@/src/features/auth/hooks/useLoginForm';
@@ -32,7 +34,7 @@ const TenantPicker: React.FC<TenantPickerProps> = ({ tenants, value, loading, di
   const selected              = tenants.find((t) => t.slug === value);
 
   const filtered = search.trim()
-    ? tenants.filter((t) =>
+    ? tenants.filter((t: PublicTenant) =>
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.slug.toLowerCase().includes(search.toLowerCase())
       )
@@ -209,7 +211,7 @@ const TenantPicker: React.FC<TenantPickerProps> = ({ tenants, value, loading, di
             {/* List */}
             <FlatList
               data={filtered}
-              keyExtractor={(t) => t.id}
+              keyExtractor={(t: PublicTenant) => t.id}
               keyboardShouldPersistTaps="handled"
               ListEmptyComponent={
                 <View style={{ alignItems: 'center', paddingVertical: 40 }}>
@@ -217,7 +219,7 @@ const TenantPicker: React.FC<TenantPickerProps> = ({ tenants, value, loading, di
                   <Text style={{ fontSize: 14, color: c.text.muted }}>No tenants found</Text>
                 </View>
               }
-              renderItem={({ item }) => {
+              renderItem={({ item }: { item: PublicTenant }) => {
                 const isSelected = item.slug === value;
                 return (
                   <Pressable
@@ -323,17 +325,17 @@ const DemoSection: React.FC<DemoSectionProps> = ({ tenantSlug, tenants, loading,
       {tenantSlug && roles.length > 0 ? (
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
           {roles.map((r) => (
-            <AppButton
-              key={r.label}
-              variant="outlined"
-              color={r.color}
-              size="small"
-              disabled={loading}
-              onPress={() => onDemoLogin(r.email!, '', { tenantSlug })}
-              style={{ flex: 1 }}
-            >
-              {r.label}
-            </AppButton>
+            <View key={r.label} style={{ flex: 1 }}>
+              <AppButton
+                variant="outline"
+                size="small"
+                disabled={loading}
+                onPress={() => onDemoLogin(r.email!, '', { tenantSlug })}
+                style={{ flex: 1 }}
+              >
+                {r.label}
+              </AppButton>
+            </View>
           ))}
         </View>
       ) : null}
@@ -413,7 +415,7 @@ const LoginScreen: React.FC = () => {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: c.surface.secondary }}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -660,7 +662,6 @@ const LoginScreen: React.FC = () => {
           {/* Submit */}
           <AppButton
             variant="contained"
-            color="primary"
             size="large"
             fullWidth
             loading={loading}
