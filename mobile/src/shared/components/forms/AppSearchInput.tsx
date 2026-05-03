@@ -18,14 +18,16 @@
  *   <AppSearchInput
  *     value={search}
  *     onChange={setSearch}
- *     placeholder="Search customers…"
+ *     placeholder={t('common.search')}
  *   />
  */
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { ViewStyle } from 'react-native';
-// TextInput via require — avoids @types/react-native 0.72 named export conflict
+import { useTranslation } from 'react-i18next';
+// TextInput via require — avoids a named-export conflict in the installed
+// @types/react-native version. Revisit when upgrading react-native types.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const RN = require('react-native');
 const TextInput = RN.TextInput as any;
@@ -38,15 +40,16 @@ interface AppSearchInputProps {
   placeholder?: string;
   /** Container style override — use for margin/positioning */
   style?:       ViewStyle;
-  /** @deprecated — theme resolved internally */
-  isDark?:      boolean;
 }
 
 const AppSearchInput: React.FC<AppSearchInputProps> = ({
-  value, onChange, placeholder = 'Search…', style,
+  value, onChange, placeholder, style,
 }) => {
   const { isRtl } = useDirection();
-  const c = useThemeColors();
+  const c         = useThemeColors();
+  const { t }     = useTranslation();
+
+  const resolvedPlaceholder = placeholder ?? t('common.search');
 
   return (
     <View style={[
@@ -64,11 +67,13 @@ const AppSearchInput: React.FC<AppSearchInputProps> = ({
       <TextInput
         value={value}
         onChangeText={onChange}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         placeholderTextColor={c.text.muted}
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
+        accessibilityLabel={resolvedPlaceholder}
+        accessibilityRole="search"
         style={[
           styles.input,
           {
@@ -83,8 +88,8 @@ const AppSearchInput: React.FC<AppSearchInputProps> = ({
       {value.length > 0 && (
         <Pressable
           onPress={() => onChange('')}
-          hitSlop={8}
-          accessibilityLabel="Clear search"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel={t('common.clearSearch')}
           accessibilityRole="button"
         >
           <View style={[styles.clearIcon, { backgroundColor: c.text.muted + '30' }]}>
@@ -110,9 +115,9 @@ const styles = StyleSheet.create({
     marginEnd: 8,
   },
   input: {
-    flex:            1,
-    fontSize:        FontSize.base,
-    paddingVertical: 0,
+    flex:               1,
+    fontSize:           FontSize.base,
+    paddingVertical:    0,
     includeFontPadding: false,
   },
   clearIcon: {

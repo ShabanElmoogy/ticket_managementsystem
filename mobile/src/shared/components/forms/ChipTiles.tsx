@@ -9,7 +9,7 @@
  *
  *   Active:   solid accent color bg + white text
  *   Inactive: surface.secondary bg + border.primary border + muted text
- *   Pressed:  tinted accent bg (13% opacity)
+ *   Pressed:  tinted accent bg (~9% opacity)
  *
  *   Supports per-option `color` override (from ChipOption.color).
  *   Falls back to `c.interactive.chipActiveBg` (blue) when no color set.
@@ -33,7 +33,7 @@
  *       { value: 'MEDIUM', label: 'Medium', icon: '🟡', color: '#f59e0b' },
  *       { value: 'HIGH',   label: 'High',   icon: '🔴', color: '#ef4444' },
  *     ]}
- *     value={priority}
+ *     value={priority}   // null = no selection
  *     onChange={setPriority}
  *   />
  */
@@ -43,8 +43,12 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import type { ChipOption } from './ChipOption';
 
+// Hex alpha for ~9% opacity tint on pressed/active background — matches ChipRows
+const PRESSED_BG_ALPHA = '18';
+
 export interface ChipTilesProps<T extends string = string> {
   options:   ChipOption<T>[];
+  /** Currently selected value. Pass null for no selection. */
   value:     T | null;
   onChange:  (value: T) => void;
   disabled?: boolean;
@@ -56,31 +60,36 @@ function ChipTiles<T extends string = string>({
   const c = useThemeColors();
 
   return (
-    <View style={styles.row}>
+    <View
+      style={[styles.row, disabled && styles.rowDisabled]}
+      accessibilityRole="radiogroup"
+    >
       {options.map((opt) => {
-        const active  = value === opt.value;
-        const accent  = opt.color ?? c.interactive.chipActiveBg;
+        const active = value === opt.value;
+        const accent = opt.color ?? c.interactive.chipActiveBg;
 
         return (
           <Pressable
             key={opt.value}
-            onPress={() => !disabled && onChange(opt.value)}
+            onPress={() => onChange(opt.value)}
             disabled={disabled}
             accessibilityRole="radio"
+            accessibilityLabel={opt.label}
             accessibilityState={{ selected: active, disabled }}
             style={({ pressed }: { pressed: boolean }) => [
               styles.tile,
               {
                 backgroundColor: active
                   ? accent
-                  : pressed ? accent + '18' : c.surface.secondary,
+                  : pressed ? accent + PRESSED_BG_ALPHA : c.surface.secondary,
                 borderColor: active ? accent : c.border.primary,
-                opacity:     disabled ? 0.45 : 1,
               },
             ]}
           >
             {opt.icon && (
-              <Text style={styles.icon}>{opt.icon}</Text>
+              <Text style={styles.icon} accessibilityElementsHidden>
+                {opt.icon}
+              </Text>
             )}
             <Text style={[
               styles.label,
@@ -101,13 +110,16 @@ const styles = StyleSheet.create({
     flexWrap:      'wrap',
     gap:           6,
   },
+  rowDisabled: {
+    opacity: 0.45,
+  },
   tile: {
-    flex:           1,
-    alignItems:     'center',
+    flex:            1,
+    alignItems:      'center',
     paddingVertical: 8,
-    borderRadius:   Radius.lg,
-    borderWidth:    1.5,
-    minWidth:       60,   // prevents tiles from collapsing on many options
+    borderRadius:    Radius.lg,
+    borderWidth:     1.5,
+    minWidth:        60,   // prevents tiles from collapsing on many options
   },
   icon: {
     fontSize:     FontSize['2xl'],

@@ -1,30 +1,6 @@
 /**
  * AppTextInput — themed text input with label, error, hint, and field-type variants.
  *
- * @variants
- *   - text     — default single-line input
- *   - search   — prefixed with 🔍, shows clear button when non-empty
- *   - password — toggleable show/hide via 👁️ button
- *   - number   — stepper (−/+) buttons, numeric keyboard
- *   - email    — email keyboard
- *
- * @usage
- *   Used in all admin forms and screens (never inside a <Modal>):
- *   - CustomerForm, ApplicationForm, UserForm, TenantForm, TemplateForm
- *   - LoginScreen, ProfileScreen, and any other screen-level form
- *
- * @modal-safety ❌ NOT Modal-safe
- *   Calls useThemeColors(), useIsDark(), and useDirection() internally.
- *   These hooks read from React context which is unavailable inside a <Modal> tree.
- *   For Modal use, pass resolved colors via the `containerStyle` prop or use DialogButton instead.
- *
- * @rtl
- *   Reads isRtl from useDirection() for textAlign and writingDirection.
- *   Uses logical margin/padding properties (marginStart/End) for RTL-safe spacing.
- */
-/**
- * AppTextInput — styled text input with label, error, validation, and field types.
- *
  * ─────────────────────────────────────────────────────────────────────────────
  * FIELD TYPES
  * ─────────────────────────────────────────────────────────────────────────────
@@ -32,7 +8,7 @@
  *   search   — shows 🔍 icon, auto-shows clear button
  *   password — shows 👁️ toggle, hides text
  *   number   — shows − / + steppers, numeric keyboard
- *   email    — email keyboard, validation
+ *   email    — email keyboard
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * FEATURES
@@ -79,12 +55,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet,
+  type ViewStyle,
+  type TextInputProps,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useDirection } from '@/src/providers/DirectionProvider';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 // Bypass @types/react-native@0.72 named export conflicts
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const RN = require('react-native') as any;
 const TextInput = RN.TextInput as any;
 
@@ -109,21 +89,21 @@ export interface AppTextInputProps {
   showClearButton?: boolean;
   onClear?:         () => void;
   // Container
-  containerStyle?:  object;
+  containerStyle?:  ViewStyle;
   // Limits
   maxLength?:       number;
   min?:             number;
   max?:             number;
   step?:            number;
   // Refs
-  inputRef?:        React.RefObject<any>;
-  nextRef?:         React.RefObject<any>;
+  inputRef?:        React.RefObject<{ focus: () => void }>;
+  nextRef?:         React.RefObject<{ focus: () => void }>;
   // TextInput passthrough
   autoCapitalize?:  'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?:     boolean;
   multiline?:       boolean;
   numberOfLines?:   number;
   blurOnSubmit?:    boolean;
-  autoCorrect?:     boolean;
   autoFocus?:       boolean;
   returnKeyType?:   string;
   onBlur?:          () => void;
@@ -141,7 +121,8 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   value, onChangeText, maxLength,
   min, max, step = 1,
   inputRef, nextRef,
-  keyboardType: keyboardTypeProp,  // extract so it doesn't conflict with internal resolution
+  autoCorrect,
+  keyboardType: keyboardTypeProp,
   ...rest
 }) => {
   const [focused,      setFocused]      = useState(false);
@@ -149,36 +130,37 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
   const { isRtl } = useDirection();
   const c      = useThemeColors();
   const isDark = useIsDark();
+  const { t }  = useTranslation();
 
   const isPassword = fieldType === 'password';
   const isSearch   = fieldType === 'search';
   const isNumber   = fieldType === 'number';
-  const hasValue   = String(value ?? '').length > 0;
-  const charCount  = String(value ?? '').length;
-  const showClear  = (showClearButton ?? isSearch) && hasValue;
-  const showBadge  = maxLength !== undefined && !isNumber;
+  const inputHasValue = String(value ?? '').length > 0;
+  const charCount     = String(value ?? '').length;
+  const showClear     = (showClearButton ?? isSearch) && inputHasValue;
+  const showBadge     = maxLength !== undefined && !isNumber;
 
   // Badge color based on fill %
   const pct = maxLength ? charCount / maxLength : 0;
-  const badgeBg    = pct >= 0.9 ? c.intent.errorSurface
-                   : pct >= 0.75 ? c.intent.warningSurface
-                   : focused     ? c.intent.infoSurface
-                   : c.surface.elevated;
-  const badgeText  = pct >= 0.9 ? c.intent.error
-                   : pct >= 0.75 ? c.intent.warning
-                   : focused     ? c.interactive.primary
-                   : c.text.muted;
+  const badgeBg = pct >= 0.9 ? c.intent.errorSurface
+                : pct >= 0.75 ? c.intent.warningSurface
+                : focused     ? c.intent.infoSurface
+                : c.surface.elevated;
+  const badgeText = pct >= 0.9 ? c.intent.error
+                  : pct >= 0.75 ? c.intent.warning
+                  : focused     ? c.interactive.primary
+                  : c.text.muted;
   const badgeBorder = pct >= 0.9 ? c.intent.error + '55'
                     : pct >= 0.75 ? c.intent.warning + '55'
                     : focused     ? c.interactive.primary + '44'
                     : c.border.primary;
 
   const defaultKeyboardType: string =
-    isNumber ? 'numeric' :
-    fieldType === 'email' ? 'email-address' : 'default';
+    isNumber          ? 'numeric'
+    : fieldType === 'email' ? 'email-address'
+    : 'default';
 
-  // Explicit keyboardType prop takes precedence over fieldType-derived default
-  const keyboardType = keyboardTypeProp ?? defaultKeyboardType;
+  const resolvedKeyboardType = keyboardTypeProp ?? defaultKeyboardType;
 
   // Border: error → red, focused → blue, default → subtle
   const borderColor = error   ? c.intent.error
@@ -201,6 +183,22 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
     if (max !== undefined) next = Math.min(max, next);
     onChangeText?.(String(next));
   };
+
+  const handleSubmitEditing = nextRef ? () => {
+    const fieldHasValue = String(value ?? '').trim().length > 0;
+    if (fieldHasValue || !required) {
+      nextRef.current?.focus();
+    } else {
+      const fieldLabel = String(label ?? '').replace(' *', '').trim();
+      Toast.show({
+        type:           'error',
+        text1:          t('validation.requiredFieldTitle'),
+        text2:          t('validation.requiredFieldMessage', { field: fieldLabel }),
+        visibilityTime: 3000,
+        position:       'top',
+      });
+    }
+  } : undefined;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -228,7 +226,6 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           borderWidth,
           borderRadius:    Radius.xl,
           backgroundColor: inputBg,
-          // Subtle shadow when focused
           ...(focused && {
             shadowColor:   c.interactive.primary,
             shadowOffset:  { width: 0, height: 0 },
@@ -247,10 +244,12 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
         {isNumber && (
           <Pressable
             onPress={() => handleStep(-1)}
+            accessibilityLabel={t('common.decrement')}
+            accessibilityRole="button"
             style={[styles.stepper, {
-              borderEndWidth: 1,
-              borderEndColor: borderColor,
-              backgroundColor: isDark ? '#1e2d42' : '#f1f5f9',
+              borderEndWidth:  1,
+              borderEndColor:  borderColor,
+              backgroundColor: c.surface.tertiary,
             }]}
           >
             <Text style={{ fontSize: 20, color: c.text.secondary, lineHeight: 22 }}>−</Text>
@@ -263,41 +262,25 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
           style={[
             styles.input,
             {
-              fontSize:        FontSize.md,
-              color:           c.text.primary,
+              fontSize:         FontSize.md,
+              color:            c.text.primary,
               textAlign,
               writingDirection: isRtl ? 'rtl' : 'ltr',
             },
           ]}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { setFocused(true); rest.onFocus?.(); }}
+          onBlur={() => { setFocused(false); rest.onBlur?.(); }}
           secureTextEntry={isPassword && !showPassword}
-          keyboardType={keyboardType}
+          keyboardType={resolvedKeyboardType}
           autoCapitalize={isPassword || isSearch || isNumber ? 'none' : rest.autoCapitalize}
-          autoCorrect={false}
+          autoCorrect={autoCorrect ?? false}
           maxLength={maxLength}
           placeholderTextColor={c.text.muted}
-          returnKeyType={nextRef ? 'next' : 'done'}
-          onSubmitEditing={nextRef ? () => {
-            // Only advance if field has a value OR it's not required
-            const hasValue = String(value ?? '').trim().length > 0;
-            if (hasValue || !required) {
-              nextRef.current?.focus();
-            } else {
-              // Show alert — field is required and empty
-              const fieldLabel = String(label ?? 'This field').replace(' *', '').trim();
-              Toast.show({
-                type:           'error',
-                text1:          'Required field',
-                text2:          `"${fieldLabel}" must be filled before continuing.`,
-                visibilityTime: 3000,
-                position:       'top',
-              });
-            }
-          } : undefined}
-          blurOnSubmit={!nextRef}
+          returnKeyType={nextRef ? 'next' : (rest.returnKeyType ?? 'done')}
+          onSubmitEditing={handleSubmitEditing ?? rest.onSubmitEditing}
+          blurOnSubmit={nextRef == null}
           {...rest}
         />
 
@@ -305,10 +288,12 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
         {isNumber && (
           <Pressable
             onPress={() => handleStep(1)}
+            accessibilityLabel={t('common.increment')}
+            accessibilityRole="button"
             style={[styles.stepper, {
-              borderStartWidth: 1,
-              borderStartColor: borderColor,
-              backgroundColor: isDark ? '#1e2d42' : '#f1f5f9',
+              borderStartWidth:  1,
+              borderStartColor:  borderColor,
+              backgroundColor:   c.surface.tertiary,
             }]}
           >
             <Text style={{ fontSize: 20, color: c.interactive.primary, lineHeight: 22 }}>+</Text>
@@ -317,12 +302,17 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
         {/* Password toggle */}
         {isPassword && (
-          <Pressable onPress={() => setShowPassword(v => !v)} style={styles.iconBtn}>
+          <Pressable
+            onPress={() => setShowPassword(v => !v)}
+            style={styles.iconBtn}
+            accessibilityLabel={showPassword ? t('common.hidePassword') : t('common.showPassword')}
+            accessibilityRole="button"
+          >
             <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁️'}</Text>
           </Pressable>
         )}
 
-        {/* Character count badge — inside input, right side */}
+        {/* Character count badge */}
         {showBadge && (focused || charCount > 0) && (
           <View style={[styles.charBadge, { backgroundColor: badgeBg, borderColor: badgeBorder }]}>
             <Text style={[styles.charBadgeText, { color: badgeText }]}>
@@ -333,7 +323,12 @@ const AppTextInput: React.FC<AppTextInputProps> = ({
 
         {/* Clear button */}
         {showClear && (
-          <Pressable onPress={onClear} style={styles.iconBtn} accessibilityLabel="Clear">
+          <Pressable
+            onPress={onClear}
+            style={styles.iconBtn}
+            accessibilityLabel={t('common.clearSearch')}
+            accessibilityRole="button"
+          >
             <View style={[styles.clearIcon, { backgroundColor: c.text.muted + '30' }]}>
               <Text style={{ fontSize: 10, color: c.text.muted, fontWeight: '700' }}>✕</Text>
             </View>
@@ -372,8 +367,8 @@ const styles = StyleSheet.create({
     marginBottom:   6,
   },
   label: {
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontSize:      FontSize.sm,
+    fontWeight:    FontWeight.semibold,
     letterSpacing: 0.1,
   },
   charBadge: {
@@ -385,9 +380,9 @@ const styles = StyleSheet.create({
     alignSelf:         'center',
   },
   charBadgeText: {
-    fontSize:    FontSize.xs,
-    fontWeight:  FontWeight.bold,
-    fontVariant: ['tabular-nums'] as any,
+    fontSize:      FontSize.xs,
+    fontWeight:    FontWeight.bold,
+    fontVariant:   ['tabular-nums'] as any,
     letterSpacing: 0.2,
   },
   inputWrapper: {
@@ -397,9 +392,9 @@ const styles = StyleSheet.create({
     overflow:      'hidden',
   },
   input: {
-    flex:            1,
-    paddingHorizontal: 14,
-    paddingVertical:   12,
+    flex:               1,
+    paddingHorizontal:  14,
+    paddingVertical:    12,
     includeFontPadding: false,
   },
   prefixIcon: {

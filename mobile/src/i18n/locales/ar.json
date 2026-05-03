@@ -38,6 +38,11 @@
     "create": "إنشاء",
     "update": "تحديث",
     "search": "بحث",
+    "clearSearch": "مسح البحث",
+    "decrement": "تقليل القيمة",
+    "increment": "زيادة القيمة",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
     "filter": "تصفية",
     "actions": "الإجراءات",
     "name": "الاسم",
@@ -70,6 +75,8 @@
   "validation": {
     "required": "{{field}} مطلوب",
     "minLength": "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
+    "requiredFieldTitle": "حقل مطلوب",
+    "requiredFieldMessage": "يجب ملء \"{{field}}\" قبل المتابعة."
     "maxLength": "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
     "invalidEmail": "البريد الإلكتروني غير صالح",
     "endAfterStart": "تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء"

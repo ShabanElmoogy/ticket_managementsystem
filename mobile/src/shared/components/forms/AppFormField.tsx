@@ -52,13 +52,15 @@ import {
 } from 'react-hook-form';
 import { useFormFocus } from './FormFocusContext';
 
-interface AppFormFieldProps<T extends FieldValues> {
+type FocusableRef = React.RefObject<{ focus(): void }>;
+
+export interface AppFormFieldProps<T extends FieldValues> {
   /** RHF field name — must match a key in the form schema */
   name:       Path<T>;
   /** RHF control object from useForm() */
   control:    Control<T>;
   /** The input component to render — must accept value, onChangeText, error props */
-  children?:  React.ReactElement<any>;
+  children:   React.ReactElement<Record<string, unknown>>;
   /** Optional value transformer applied before calling RHF onChange */
   transform?: (v: string) => string;
   /** Container style override — use for margin adjustments between fields */
@@ -72,51 +74,58 @@ function AppFormField<T extends FieldValues>({
 }: AppFormFieldProps<T>) {
   const formContext = useFormContext<T>();
   const trigger     = formContext?.trigger;
-  const { registerRef, registerY } = useFormFocus();
+  const { registerRef, registerY, unregisterField } = useFormFocus();
 
-  // Register inputRef into FormFocusContext once on mount
-  // (not during render — side effects belong in useEffect)
-  const childInputRef = (children?.props as Record<string, unknown>)?.inputRef as React.RefObject<{ focus(): void }> | undefined;
+  // Register inputRef into FormFocusContext once on mount.
+  // Unregister on unmount to clean up conditional fields.
+  // Read from children.props inside the effect — avoids re-running when
+  // children identity changes due to inline JSX re-creation.
   useEffect(() => {
+    const childInputRef = (children.props as Record<string, unknown>)?.inputRef as FocusableRef | undefined;
     if (childInputRef) registerRef(String(name), childInputRef);
-  }, [name, childInputRef, registerRef]);
+    return () => unregisterField(String(name));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, registerRef, unregisterField]);
 
-  // Stable wrapped nextRef — validates current field before advancing
-  // useRef so the object identity is stable across renders
-  const originalNextRef = (children?.props as Record<string, unknown>)?.nextRef as React.RefObject<{ focus(): void }> | undefined;
-  const wrappedNextRef  = useRef(
-    originalNextRef
-      ? {
-          current: {
-            focus: async () => {
-              const valid = trigger ? await trigger(name) : true;
-              if (valid) originalNextRef.current?.focus();
-            },
-          },
-        }
-      : undefined,
-  );
+  // Stable wrapped nextRef — validates current field before advancing.
+  // Stored in a ref so its identity is stable across renders.
+  // The inner focus function is updated via useEffect when dependencies change.
+  const wrappedNextRef = useRef<{ current: { focus(): void } } | undefined>(undefined);
 
-  // Keep the wrapped ref's focus function up to date if originalNextRef changes
   useEffect(() => {
-    if (!originalNextRef || !wrappedNextRef.current) return;
-    wrappedNextRef.current.current.focus = async () => {
+    const originalNextRef = (children.props as Record<string, unknown>)?.nextRef as FocusableRef | undefined;
+    if (!originalNextRef) {
+      wrappedNextRef.current = undefined;
+      return;
+    }
+    // Create or update the wrapped ref with the latest trigger + originalNextRef
+    const focusFn = async () => {
       const valid = trigger ? await trigger(name) : true;
       if (valid) originalNextRef.current?.focus();
     };
-  }, [name, trigger, originalNextRef]);
+    if (!wrappedNextRef.current) {
+      wrappedNextRef.current = { current: { focus: focusFn } };
+    } else {
+      wrappedNextRef.current.current.focus = focusFn;
+    }
+  }, [name, trigger, children.props]);
 
   return (
     <View
-      onLayout={(e: { nativeEvent: { layout: { y: number } } }) => registerY(String(name), e.nativeEvent.layout.y)}
-      style={[style, disabled ? { opacity: 0.45 } : undefined]}
-      pointerEvents={disabled ? 'none' : 'auto'}
+      onLayout={(e: { nativeEvent: { layout: { y: number } } }) =>
+        registerY(String(name), e.nativeEvent.layout.y)
+      }
+      style={[
+        style,
+        disabled ? { opacity: 0.45, pointerEvents: 'none' } : undefined,
+      ]}
     >
       <Controller
         name={name}
         control={control}
         render={({ field: { value, onChange, onBlur }, fieldState: { error } }) =>
-          React.cloneElement(children as React.ReactElement<Record<string, unknown>> & { key: string | null }, {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          React.cloneElement(children as any, {
             value:        value ?? '',
             onChangeText: (v: string) => onChange(transform ? transform(v) : v),
             onBlur,

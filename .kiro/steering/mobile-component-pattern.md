@@ -106,12 +106,12 @@ Keep this table updated whenever a component is added or its usage changes.
 |---|---|---|---|---|
 | `DialogButton` | `actions/DialogButton.tsx` | ❌ No | ✅ Yes | `AdminFormModal`, `AlertDialog`, `ConfirmDeleteDialog` |
 | `AppButton` | `forms/AppButton.tsx` | ✅ Yes (`useThemeColors`, `useIsDark`) | ⚠️ Pass `resolvedColors` prop | `AdminFormPage`, screens |
-| `AppTextInput` | `forms/AppTextInput.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | All admin forms |
+| `AppTextInput` | `forms/AppTextInput.tsx` | ✅ Yes (`useThemeColors`, `useIsDark`, `useDirection`, `useTranslation`) | ❌ No — screens only | All admin forms |
 | `AppBadge` | `forms/AppBadge.tsx` | ❌ No | ✅ Yes (no hooks — colors from static token maps) | `TicketsScreen`, `TenantsScreen`, `TemplatesScreen` |
 | `ChipSelector` | `forms/ChipSelector.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `CustomerForm`, `DateFormatPanel`, `PaginationSettingsPanel`, `CalloutEditor` |
 | `ChipRows` | `forms/ChipRows.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ChipSelector` (layout="rows"), `DateFormatPanel`, `CustomerForm` |
 | `ChipTiles` | `forms/ChipTiles.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ChipSelector` (layout="tiles") |
-| `AppSearchInput` | `forms/AppSearchInput.tsx` | ✅ Yes (`useThemeColors`, `useDirection`) | ❌ No — screens only | `AdminCrudScreen` |
+| `AppSearchInput` | `forms/AppSearchInput.tsx` | ✅ Yes (`useThemeColors`, `useDirection`, `useTranslation`) | ❌ No — screens only | `AdminCrudScreen` |
 | `AppDatePicker` | `forms/AppDatePicker.tsx` | ✅ Yes (`useThemeColors`, `useDirection`, `useTranslation`) | ❌ No — screens only | `CustomerForm` (subscriptionStartDate, subscriptionEndDate) |
 | `AlertDialog` | `dialogs/AlertDialog.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before `<Modal>` renders | Standalone modal |
 | `ConfirmDeleteDialog` | `dialogs/ConfirmDeleteDialog.tsx` | ✅ Yes (`useThemeColors`, `useTranslation`) | ❌ No | `AdminCrudScreen`, feature screens |
