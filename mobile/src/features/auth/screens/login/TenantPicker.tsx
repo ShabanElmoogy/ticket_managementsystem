@@ -51,7 +51,7 @@ const TenantPicker: React.FC<TenantPickerProps> = ({
       <Pressable
         onPress={handleOpen}
         accessibilityRole="button"
-        accessibilityLabel={selected ? `Tenant: ${selected.name}` : 'Select tenant'}
+        accessibilityLabel={selected ? `Tenant: ${selected.name}` : t('auth.selectTenant')}
         style={[
           styles.trigger,
           {
@@ -81,9 +81,15 @@ const TenantPicker: React.FC<TenantPickerProps> = ({
             </Text>
           )}
         </View>
-        <Text style={{ fontSize: 14, marginStart: 8, color: selected ? c.interactive.primary : c.text.muted }}>
-          {selected ? '✕' : '▼'}
-        </Text>
+
+        {/* Green checkmark when selected, chevron otherwise */}
+        {selected ? (
+          <View style={[styles.checkBadgeTrigger, { backgroundColor: c.intent.success }]}>
+            <Text style={[styles.checkBadgeTriggerText, { color: c.text.inverse }]}>✓</Text>
+          </View>
+        ) : (
+          <Text style={{ fontSize: 14, marginStart: 8, color: c.text.muted }}>▼</Text>
+        )}
       </Pressable>
 
       {/* Clear link */}
@@ -107,37 +113,47 @@ const TenantPicker: React.FC<TenantPickerProps> = ({
         animationType="slide"
         onRequestClose={() => setOpen(false)}
       >
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => setOpen(false)}
-        >
+        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable
             style={[styles.sheet, { backgroundColor: c.surface.primary }]}
             onPress={() => {}}
           >
             {/* Handle */}
             <View style={styles.handleRow}>
-              <View style={[styles.handle, { backgroundColor: c.border.primary }]} />
+              <View style={[styles.handle, { backgroundColor: c.border.secondary }]} />
             </View>
+
+            {/* Accent stripe */}
+            <View style={[styles.sheetAccentBar, { backgroundColor: c.interactive.primary }]} />
 
             {/* Header */}
             <View style={[styles.sheetHeader, { borderColor: c.border.secondary }]}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: c.text.primary }}>
-                {t('auth.selectTenantTitle')}
-              </Text>
+              <View style={styles.sheetHeaderLeft}>
+                <View style={[styles.sheetHeaderIcon, { backgroundColor: c.intent.infoSurface }]}>
+                  <Text style={{ fontSize: 18 }}>🏢</Text>
+                </View>
+                <View>
+                  <Text style={[styles.sheetTitle, { color: c.text.primary }]}>
+                    {t('auth.selectTenantTitle')}
+                  </Text>
+                  <Text style={[styles.sheetSubtitle, { color: c.text.muted }]}>
+                    {filtered.length} {filtered.length === 1 ? 'workspace' : 'workspaces'}
+                  </Text>
+                </View>
+              </View>
               <Pressable
-                style={[styles.closeBtn, { backgroundColor: c.surface.secondary }]}
+                style={[styles.closeBtn, { backgroundColor: c.surface.secondary, borderColor: c.border.primary }]}
                 onPress={() => setOpen(false)}
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <Text style={{ fontSize: 16, color: c.text.secondary }}>✕</Text>
+                <Text style={{ fontSize: 14, color: c.text.secondary }}>✕</Text>
               </Pressable>
             </View>
 
             {/* Search */}
             <View style={[styles.searchRow, { borderColor: c.border.secondary }]}>
-              <View style={[styles.searchBox, { backgroundColor: c.surface.secondary }]}>
+              <View style={[styles.searchBox, { backgroundColor: c.surface.secondary, borderColor: c.border.primary }]}>
                 <Text style={{ color: c.text.muted }}>🔍</Text>
                 <TextInput
                   style={{ flex: 1, fontSize: 14, color: c.text.primary }}
@@ -198,8 +214,8 @@ const TenantPicker: React.FC<TenantPickerProps> = ({
                       <Text style={{ fontSize: 12, marginTop: 2, color: c.text.muted }}>{item.slug}</Text>
                     </View>
                     {isSelected && (
-                      <View style={[styles.checkBadge, { backgroundColor: c.interactive.primary }]}>
-                        <Text style={{ fontSize: 12, fontWeight: 'bold', color: c.text.inverse }}>✓</Text>
+                      <View style={[styles.checkBadge, { backgroundColor: c.intent.success }]}>
+                        <Text style={[styles.checkBadgeText, { color: c.text.inverse }]}>✓</Text>
                       </View>
                     )}
                   </Pressable>
@@ -214,22 +230,34 @@ const TenantPicker: React.FC<TenantPickerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  trigger:     { borderRadius: 12, borderWidth: 2, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  triggerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  avatar:      { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  clearLink:   { marginBottom: 12, marginTop: -8, alignSelf: 'flex-end' },
-  backdrop:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet:       { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '70%' },
-  handleRow:   { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
-  handle:      { width: 40, height: 4, borderRadius: 2 },
-  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
-  closeBtn:    { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  searchRow:   { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
-  searchBox:   { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  emptyState:  { alignItems: 'center', paddingVertical: 40 },
-  listItem:    { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
-  listAvatar:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  checkBadge:  { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  trigger:              { borderRadius: 12, borderWidth: 2, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  triggerLeft:          { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  avatar:               { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  checkBadgeTrigger:    { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginStart: 8 },
+  checkBadgeTriggerText: { fontSize: 12, fontWeight: 'bold' },
+  clearLink:            { marginBottom: 12, marginTop: -8, alignSelf: 'flex-end' },
+
+  backdrop:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet:                { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '70%', overflow: 'hidden' },
+  handleRow:            { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
+  handle:               { width: 40, height: 4, borderRadius: 2 },
+
+  sheetAccentBar:       { height: 3, width: '100%' },
+  sheetHeader:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  sheetHeaderLeft:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  sheetHeaderIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  sheetTitle:           { fontSize: 17, fontWeight: '700' },
+  sheetSubtitle:        { fontSize: 12, marginTop: 1 },
+  closeBtn:             { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+
+  searchRow:            { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  searchBox:            { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+
+  emptyState:           { alignItems: 'center', paddingVertical: 40 },
+  listItem:             { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  listAvatar:           { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  checkBadge:           { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  checkBadgeText:       { fontSize: 12, fontWeight: 'bold' },
 });
 
 export default TenantPicker;
