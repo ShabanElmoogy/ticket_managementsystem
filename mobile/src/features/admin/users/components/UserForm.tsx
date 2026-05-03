@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useThemeColors } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
@@ -36,9 +36,9 @@ const UserForm: React.FC<Props> = ({
   const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
 
   // Return-key chain: Name → Email → Password → Phone
-  const emailRef    = useRef<TextInput | null>(null);
-  const passwordRef = useRef<TextInput | null>(null);
-  const phoneRef    = useRef<TextInput | null>(null);
+  const emailRef    = useRef<{ focus(): void } | null>(null);
+  const passwordRef = useRef<{ focus(): void } | null>(null);
+  const phoneRef    = useRef<{ focus(): void } | null>(null);
 
   const onChangeName     = useCallback((v: string) => handleChange('name',     v), [handleChange]);
   const onChangeEmail    = useCallback((v: string) => handleChange('email',    v), [handleChange]);
@@ -129,13 +129,11 @@ const UserForm: React.FC<Props> = ({
       </FormField>
 
       {/* ── Role selector ── */}
-      <FormField fieldId="role">
-        <RoleSelector
-          value={fields.role}
-          onChange={(v) => handleChange('role', v)}
-          t={t}
-        />
-      </FormField>
+      <RoleSelector
+        value={fields.role}
+        onChange={(v) => handleChange('role', v)}
+        t={t}
+      />
 
       {/* ── Linked stats (edit mode only) ── */}
       {item && (

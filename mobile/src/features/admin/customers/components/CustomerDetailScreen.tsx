@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Linking, Platform, Clipboard, Share } from 'react-native';
+import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '@/src/shared/utils/dateUtils';
@@ -55,6 +56,66 @@ function openInMaps(latitude: number, longitude: number, name?: string): void {
   });
 }
 
+// ── Haversine distance ────────────────────────────────────────────────────────
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R  = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) return `~${Math.round(km * 1000)} m`;
+  return `~${km.toFixed(1)} km`;
+}
+
+// ── useCurrentDistance — one-time GPS fetch, returns formatted distance ───────
+
+function useCurrentDistance(
+  targetLat: number | null | undefined,
+  targetLng: number | null | undefined,
+) {
+  const [distance, setDistance] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (targetLat == null || targetLng == null) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Use cached permission — don't prompt if not already granted
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted' || cancelled) return;
+
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        } as any);
+
+        if (cancelled) return;
+
+        const km = haversineKm(
+          pos.coords.latitude, pos.coords.longitude,
+          targetLat, targetLng,
+        );
+        setDistance(formatDistance(km));
+      } catch {
+        // Silently skip — distance is optional UI
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [targetLat, targetLng]);
+
+  return distance;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const CustomerDetailScreen: React.FC<Props> = ({
@@ -75,6 +136,28 @@ const CustomerDetailScreen: React.FC<Props> = ({
   const textPri    = c.text.primary;
   const textSec    = c.text.secondary;
   const labelColor = c.text.muted;
+
+  // ── Copy coordinates ───────────────────────────────────────────────────────
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCoords = useCallback((lat: number, lng: number) => {
+    const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    Clipboard.setString(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, []);
+
+  // ── Share location ─────────────────────────────────────────────────────────
+  const handleShareLocation = useCallback((lat: number, lng: number, name?: string) => {
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    const message = name
+      ? `${name}\n${mapsUrl}`
+      : mapsUrl;
+    Share.share({ message, url: mapsUrl });
+  }, []);
+
+  // ── Distance from current location ────────────────────────────────────────
+  const distance = useCurrentDistance(customer?.latitude, customer?.longitude);
 
   const status = customer
     ? ((customer.subscriptionStatus as SubscriptionStatus | undefined) ?? getCustomerStatus(customer))
@@ -176,21 +259,60 @@ const CustomerDetailScreen: React.FC<Props> = ({
                 latitude={customer.latitude}
                 longitude={customer.longitude}
                 customerName={customer.name}
+                subscriptionStatus={status}
                 style={{ borderWidth: 1, borderColor: border }}
               />
-              <Pressable
-                onPress={() => openInMaps(customer.latitude!, customer.longitude!, customer.name)}
-                style={({ pressed }) => [
-                  styles.openMapsBtn,
-                  { backgroundColor: pressed ? '#1d4ed8' : '#2563eb' },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t('customers.location.openInMaps')}
-              >
-                <Text style={styles.openMapsBtnText}>
-                  🗺️  {t('customers.location.openInMaps')}
-                </Text>
-              </Pressable>
+              {/* ── Distance chip ── */}
+              {distance && (
+                <View style={styles.distanceChip}>
+                  <Text style={styles.distanceText}>📍  {distance} {t('customers.location.away')}</Text>
+                </View>
+              )}
+
+              {/* ── Location action buttons ── */}
+              <View style={styles.locationBtnRow}>
+                <Pressable
+                  onPress={() => openInMaps(customer.latitude!, customer.longitude!, customer.name)}
+                  style={({ pressed }) => [
+                    styles.locationBtn,
+                    { backgroundColor: pressed ? '#1d4ed8' : '#2563eb' },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('customers.location.openInMaps')}
+                >
+                  <Text style={styles.locationBtnText}>
+                    🗺️  {t('customers.location.openInMaps')}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleCopyCoords(customer.latitude!, customer.longitude!)}
+                  style={({ pressed }) => [
+                    styles.locationBtn,
+                    { backgroundColor: copied ? '#16a34a' : pressed ? '#334155' : '#475569' },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('customers.location.copyCoords')}
+                >
+                  <Text style={styles.locationBtnText}>
+                    {copied ? `✅  ${t('customers.location.copied')}` : `📋  ${t('customers.location.copyCoords')}`}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleShareLocation(customer.latitude!, customer.longitude!, customer.name)}
+                  style={({ pressed }) => [
+                    styles.locationBtn,
+                    { backgroundColor: pressed ? '#0e7490' : '#0891b2' },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('customers.location.share')}
+                >
+                  <Text style={styles.locationBtnText}>
+                    📤  {t('customers.location.share')}
+                  </Text>
+                </Pressable>
+              </View>
             </>
           ) : (
             <View style={[styles.noLocationCard, { backgroundColor: cardBg, borderColor: border }]}>
@@ -334,20 +456,38 @@ const styles = StyleSheet.create({
   },
   noLocationText: { fontSize: 13, fontStyle: 'italic' },
 
-  // Open in Maps button
-  openMapsBtn: {
+  // Location action buttons
+  locationBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  locationBtn: {
+    flex: 1,
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 6,
   },
-  openMapsBtnText: {
+  locationBtnText: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+
+  // Distance chip
+  distanceChip: {
+    alignSelf: 'center',
+    backgroundColor: '#0f172a',
+    borderRadius: 99,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  distanceText: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
 

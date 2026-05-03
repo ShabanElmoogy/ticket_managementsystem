@@ -33,7 +33,7 @@ export const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
 export function getUserColumns(t: TFunction): ColDef<User>[] {
   return [
     {
-      field: 'name', headerName: t('users.columns.name'), flex: 1, sortable: true,
+      field: 'name', headerName: t('users.columns.name'), sortable: true,
     },
     {
       field: 'email', headerName: t('users.columns.email'), width: 170, sortable: true,

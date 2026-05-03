@@ -14,7 +14,7 @@ const TicketsScreen: React.FC = () => {
   const isDark = useIsDark();
 
   const columns: ColDef<Ticket>[] = [
-    { field: 'title',    headerName: t('tickets.title'),    flex: 1,    sortable: true },
+    { field: 'title',    headerName: t('tickets.title'),    sortable: true },
     {
       field: 'status',   headerName: t('common.status'),   width: 130, align: 'center',
       renderCell: (row) => <AppBadge label={row.status}   variant="status"   size="small" />,

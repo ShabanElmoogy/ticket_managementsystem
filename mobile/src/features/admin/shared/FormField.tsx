@@ -5,7 +5,7 @@ import { useFormScroll } from './FormScrollContext';
 let fieldCounter = 0;
 
 interface FormFieldProps {
-  children:  React.ReactNode;
+  children?:  React.ReactNode;
   fieldId?:  string;
 }
 

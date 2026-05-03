@@ -108,7 +108,7 @@ export function useUserForm({ item, onSave, onClose }: Args): UseUserFormReturn 
 
     try {
       const data = result.data;
-      const payload: CreateUserData = {
+      const payload = {
         name:  data.name,
         email: data.email,
         // On edit: omit password entirely when blank — backend treats absence as "no change"
@@ -116,7 +116,7 @@ export function useUserForm({ item, onSave, onClose }: Args): UseUserFormReturn 
         ...(data.password ? { password: data.password } : isEdit ? {} : { password: '' }),
         phone: data.phone || undefined,
         role:  data.role,
-      };
+      } as CreateUserData;
       await onSave(payload);
       setIsDirty(false);
       toast.success(isEdit ? t('users.messages.updated') : t('users.messages.created'));

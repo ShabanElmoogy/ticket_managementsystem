@@ -42,7 +42,7 @@ const UsersScreen: React.FC = () => {
         pendingForceTarget.current = null;
       }
     });
-    return unsub;
+    return () => { unsub(); };
   }, []);
 
   // ── Error handler for feature-level errors ─────────────────────────────────

@@ -72,7 +72,7 @@ const TenantsScreen: React.FC = () => {
   const { handleError } = useErrorHandler();
 
   const columns: ColDef<Tenant>[] = [
-    { field: 'name', headerName: t('tenants.columns.name'), flex: 1,   sortable: true },
+    { field: 'name', headerName: t('tenants.columns.name'), sortable: true },
     { field: 'slug', headerName: t('tenants.columns.slug'), width: 140, sortable: true },
     {
       field: 'subscriptionStatus', headerName: t('tenants.columns.status'), width: 110, align: 'center',

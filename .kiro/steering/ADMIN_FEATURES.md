@@ -353,6 +353,9 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 - Controlled via a single `<Controller name="latitude">` that also drives `longitude` via `form.setValue`
 - `doSave` converts form values to `number | null` before sending: `Number(data.latitude)` / `Number(data.longitude)`
 - Sends `null` for both when no pin is placed
+- Includes an **address search bar** (map mode only) — uses Nominatim/OpenStreetMap (`https://nominatim.openstreetmap.org/search`) with no API key required; `expo-location`'s `geocodeAsync` is **not** used for forward geocoding (it requires a paid Google Maps key on Android)
+- Includes **reverse geocoding** via `expo-location`'s `reverseGeocodeAsync` — called after pin placement, drag, GPS fix, or address search; result is passed to the parent via `onAddressSuggested(address)` prop; suppressed when `hasExistingAddress={true}`
+- Includes **near-me suggestions** — when the map loads with no pin set and location permission is already granted, `LocationPicker` silently fetches up to 4 nearby landmarks from Nominatim using a bounding-box query and renders them as tappable chips above the map; selecting a chip places the pin, triggers reverse geocoding, and animates the map to that location; chips are hidden after selection or once a pin is placed; errors are silently swallowed (suggestions are optional UI)
 
 **Maintenance type selector** (3 options, no "Inactive"):
 - Monthly Subscription → shows Start + End date pickers
@@ -397,19 +400,137 @@ const lat = data.latitude  != null && data.latitude  !== '' ? Number(data.latitu
 const lng = data.longitude != null && data.longitude !== '' ? Number(data.longitude) : null;
 ```
 
-### Detail Screen Layout
+#### Address search — Nominatim (no API key)
+
+`LocationPicker` includes an address search bar that calls Nominatim/OpenStreetMap directly. **Do not use `expo-location`'s `geocodeAsync`** for forward geocoding — it delegates to the platform's geocoder (Google Maps on Android) which requires a paid API key in production.
+
+```ts
+const url =
+  `https://nominatim.openstreetmap.org/search` +
+  `?q=${encodeURIComponent(query)}&format=json&limit=1`;
+
+const res  = await fetch(url, {
+  headers: { 'Accept-Language': 'en', 'User-Agent': 'TicketFlowApp/1.0' },
+});
+const data: Array<{ lat: string; lon: string }> = await res.json();
+
+const latitude  = parseFloat(data[0].lat);
+const longitude = parseFloat(data[0].lon);
+```
+
+**Rules:**
+- Always include `User-Agent` header — Nominatim's usage policy requires it
+- `Accept-Language: en` returns English place names regardless of device locale
+- `limit=1` — only the top result is used; the picker places the pin and animates the map to it
+- Reverse geocoding (pin → address) still uses `expo-location`'s `reverseGeocodeAsync` — this is fine because it uses the device's on-device geocoder, not a network API key
+
+#### Near-me suggestions — Nominatim bounding-box query
+
+When `LocationPicker` mounts with no pin set and location permission is already granted, it silently fetches up to 4 nearby landmarks using a Nominatim bounding-box search. This runs **once** (guarded by a `useRef` flag) and is entirely passive — it never requests permission.
+
+```ts
+const url =
+  `https://nominatim.openstreetmap.org/search` +
+  `?q=landmark&format=json&limit=5` +
+  `&viewbox=${longitude - 0.05},${latitude + 0.05},${longitude + 0.05},${latitude - 0.05}` +
+  `&bounded=1`;
+
+const res = await fetch(url, {
+  headers: { 'Accept-Language': 'en', 'User-Agent': 'TicketFlowApp/1.0' },
+});
+const data: Array<{ display_name: string; lat: string; lon: string }> = await res.json();
+
+const places = data.slice(0, 4).map((p) => ({
+  name: p.display_name.split(',')[0].trim(),  // first segment only
+  lat:  parseFloat(p.lat),
+  lon:  parseFloat(p.lon),
+}));
+```
+
+**Rules:**
+- Guard with a `useRef(false)` flag — fetch runs at most once per component mount
+- Only runs when `mapAvailable && !value && !disabled` — never when a pin is already set
+- Call `getForegroundPermissionsAsync()` — never `requestForegroundPermissionsAsync()` — so no permission dialog is triggered
+- Errors are silently swallowed — suggestions are optional UI
+- After selection: call `onChange(coords)`, trigger `reverseGeocode`, animate map, and clear the chips array (`setNearMePlaces([])`)
+- Chips use `c.surface.secondary` background + `c.border.primary` border; pressed state uses `c.interactive.primaryPressed + '22'`
+
+
 
 1. **Hero card** — status-colored accent bar, initials avatar, name, company, status badge, quick contact row
 2. **Stats row** — ticket count (blue) + linked applications (green)
 3. **Contact card** — email, phone, company, address, created (with emoji icons)
 4. **Location section** — positioned between contact card and subscription card:
-   - When `latitude`/`longitude` are non-null: renders `CustomerLocationMap` (read-only, 200dp height) followed by a blue "Open in Maps" `Pressable` button that calls `openInMaps()` helper
+   - When `latitude`/`longitude` are non-null: renders `CustomerLocationMap` (collapsed thumbnail, 200dp height), then optionally a **distance chip**, then a three-button row:
+     - 🗺️ **"Open in Maps"** (blue) — calls `openInMaps()` helper; uses `Linking.canOpenURL` → native maps app (iOS: `maps://`, Android: `geo:`) with fallback to web maps
+     - 📋 **"Copy Coordinates"** (slate) — copies `"lat, lng"` (6 decimal places) to clipboard via `Clipboard.setString()`; button turns green with a ✅ checkmark for 1.5 s after copying (`useState` + `setTimeout`)
+     - 📤 **"Share"** (cyan) — calls `Share.share({ message, url })` with a Google Maps URL; includes customer name in the message when available
+   - **Distance chip** — shown between the map and the button row when the device's GPS position is already known (permission previously granted). Displays `"📍  ~X.X km away"` or `"📍  ~XXX m away"`. Uses `useCurrentDistance()` hook — silently skipped if permission not granted or GPS fails.
    - When no location: renders a "No location set" placeholder card
-   - `openInMaps()` uses `Linking.canOpenURL` → native maps app (iOS: `maps://`, Android: `geo:`) with fallback to web maps if native app unavailable
 5. **Subscription card** — type, start date, end date (3-state color: green/amber/red)
 6. **Linked applications card** — app name + version badge
 
+#### `CustomerLocationMap` — collapsed / expanded pattern
+
+`CustomerLocationMap` renders in two modes controlled by internal `useState`:
+
+- **Collapsed** (default) — a static 200dp thumbnail with `scrollEnabled={false}`, `zoomEnabled={false}`, `pointerEvents="none"` on the `MapView`, and a semi-transparent `"🔍 Tap to expand"` pill overlay at the bottom. Tapping anywhere on the thumbnail opens the expanded modal.
+- **Expanded** — a full-screen `<Modal animationType="slide" statusBarTranslucent>` with `scrollEnabled`, `zoomEnabled`, `rotateEnabled`, `pitchEnabled` all enabled. A floating "✕ Done" button (`position: absolute`, `end: 16`, RTL-safe) dismisses the modal. A customer name label floats at the bottom when `customerName` is provided.
+
+The component does **not** handle "Open in Maps" — that responsibility stays in the parent detail screen's button row (see `openInMaps` helper below).
+
+#### Map type toggle
+
+`CustomerLocationMap` includes a **map type toggle button** (top-left corner, both collapsed and expanded modes). Tapping it cycles through `standard → satellite → hybrid` using a simple cycle helper:
+
+```ts
+type MapType = 'standard' | 'satellite' | 'hybrid';
+
+const MAP_TYPE_CYCLE: MapType[] = ['standard', 'satellite', 'hybrid'];
+const MAP_TYPE_ICON: Record<MapType, string> = {
+  standard:  '🗺️',
+  satellite: '🛰️',
+  hybrid:    '🌍',
+};
+
+function nextMapType(current: MapType): MapType {
+  const idx = MAP_TYPE_CYCLE.indexOf(current);
+  return MAP_TYPE_CYCLE[(idx + 1) % MAP_TYPE_CYCLE.length];
+}
+```
+
+The `mapType` state is shared between collapsed and expanded views — changing it in one mode persists when switching modes. The button uses `start: 8` (collapsed) / `start: 16` (expanded) for RTL-safe positioning.
+
+```tsx
+// Collapsed thumbnail — tap to expand
+<CustomerLocationMap
+  latitude={customer.latitude}
+  longitude={customer.longitude}
+  customerName={customer.name}
+  subscriptionStatus={customer.subscriptionStatus}  // optional — shown in marker callout
+/>
+// No onPress prop needed — expand/collapse and map type are internal state
+```
+
+**`subscriptionStatus` prop** — optional. When provided, the marker renders a `<Callout tooltip>` bubble (from `react-native-maps`) that shows the customer name and a colored subscription status badge when the pin is tapped. The callout uses the same `STATUS_CFG` color tokens as the rest of the customers feature:
+
+```ts
+const STATUS_CFG: Record<SubscriptionStatus, { color: string; bg: string; icon: string; label: string }> = {
+  ACTIVE:        { color: '#16a34a', bg: '#f0fdf4', icon: '✅', label: 'Active'        },
+  TRIAL:         { color: '#7c3aed', bg: '#f5f3ff', icon: '🔬', label: 'Trial'         },
+  EXPIRED:       { color: '#dc2626', bg: '#fef2f2', icon: '⚠️', label: 'Expired'       },
+  INACTIVE:      { color: '#6b7280', bg: '#f9fafb', icon: '⏸️', label: 'Inactive'      },
+  PAY_AS_YOU_GO: { color: '#0284c7', bg: '#f0f9ff', icon: '💳', label: 'Pay As You Go' },
+};
+```
+
+The `pinColor` on the `<Marker>` is also driven by `cfg.color` — so the pin color matches the subscription status. When `subscriptionStatus` is omitted, it defaults to `'INACTIVE'` (gray pin, no callout rendered if `customerName` is also absent).
+
+**Modal-safety note:** `CustomerLocationMap` calls `useTranslation()` internally (for the expand hint, Done button, and map type toggle labels). This is safe because `useTranslation()` reads from the i18next context which is available inside `<Modal>` trees (unlike Zustand/React context providers). Colors remain hardcoded (`rgba(0,0,0,0.55)` etc.) — no `useThemeColors()` call.
+
 #### `openInMaps` helper pattern
+
+`openInMaps` lives in the **parent detail screen**, not inside `CustomerLocationMap`. It is called from the "Open in Maps" button in the three-button row below the map thumbnail.
 
 ```ts
 function openInMaps(latitude: number, longitude: number, name?: string): void {
@@ -431,6 +552,86 @@ function openInMaps(latitude: number, longitude: number, name?: string): void {
 ```
 
 Use `Linking.canOpenURL` before `openURL` — always provide a web fallback for devices without a native maps app installed.
+
+#### `useCurrentDistance` hook — passive GPS distance
+
+Shows how far the operator is from the customer without prompting for permission. Uses only the **already-granted** permission — never requests it.
+
+```ts
+function useCurrentDistance(
+  targetLat: number | null | undefined,
+  targetLng: number | null | undefined,
+): string | null {
+  const [distance, setDistance] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (targetLat == null || targetLng == null) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Check permission — do NOT request it here
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted' || cancelled) return;
+
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        } as any);
+        if (cancelled) return;
+
+        const km = haversineKm(
+          pos.coords.latitude, pos.coords.longitude,
+          targetLat, targetLng,
+        );
+        setDistance(formatDistance(km));
+      } catch {
+        // Silently skip — distance is optional UI
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [targetLat, targetLng]);
+
+  return distance;
+}
+```
+
+**Rules:**
+- Call `getForegroundPermissionsAsync()` — never `requestForegroundPermissionsAsync()` — so the detail screen never triggers a permission dialog
+- Errors are silently swallowed — the distance chip is purely additive UI; its absence never breaks the screen
+- Use a `cancelled` flag to prevent state updates after unmount
+- `formatDistance(km)` returns `"~XXX m"` for distances under 1 km, `"~X.X km"` otherwise
+
+```ts
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R  = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) return `~${Math.round(km * 1000)} m`;
+  return `~${km.toFixed(1)} km`;
+}
+```
+
+#### Share location pattern
+
+```ts
+const handleShareLocation = useCallback((lat: number, lng: number, name?: string) => {
+  const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+  const message = name ? `${name}\n${mapsUrl}` : mapsUrl;
+  Share.share({ message, url: mapsUrl });
+}, []);
+```
+
+Uses React Native's built-in `Share` API — no extra dependencies. `url` is iOS-only (ignored on Android); `message` carries the full content on both platforms.
 
 ### Locale Keys
 
@@ -465,6 +666,22 @@ Use `Linking.canOpenURL` before `openURL` — always provide a web fallback for 
 "customers.location.gpsError"      → "Could not get current location. Please try again."
 "customers.location.mapUnavailable"→ "Map unavailable. Enter coordinates manually."
 "customers.location.openInMaps"    → "Open in Maps"
+"customers.location.copyCoords"    → "Copy Coordinates"
+"customers.location.copied"        → "Copied!"
+"customers.location.share"         → "Share"
+"customers.location.away"          → "away"
+"customers.location.tapToExpand"   → "Tap to expand"
+"customers.location.expandMap"     → "Expand map"
+"customers.location.expandMapHint" → "Opens full-screen map view"
+"customers.location.done"          → "Done"
+"customers.location.toggleMapType" → "Toggle map type"
+"customers.location.tapToPin"      → "Tap to pin location"
+"customers.location.searchPlaceholder" → "Search address…"
+"customers.location.searchBtn"     → "Search"
+"customers.location.searchNoResults" → "No results found for that address"
+"customers.location.searchError"   → "Address search failed. Please try again."
+"customers.location.geocoding"     → "Looking up address…"
+"customers.location.nearMe"        → "Nearby"
 ```
 
 ---

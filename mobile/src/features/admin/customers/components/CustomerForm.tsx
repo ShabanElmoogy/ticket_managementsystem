@@ -12,6 +12,7 @@ import ChipSelector   from '@/src/shared/components/forms/ChipSelector';
 import { AppTextInput, AppFormField } from '@/src/shared/components';
 import AppDatePicker  from '@/src/shared/components/forms/AppDatePicker';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
+import { useToast } from '@/src/shared/hooks/useToast';
 import { networkEvents } from '@/src/services/api/networkEvents';
 import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types/index';
@@ -28,6 +29,7 @@ const CustomerForm: React.FC<Props> = ({
   item, onClose, onSave, submitting, mode = 'page',
 }) => {
   const { t }  = useTranslation();
+  const toast  = useToast();
 
   // Track whether the last error was a duplicate — so Cancel on the
   // NetworkErrorDialog closes the form (Dismiss behaviour).
@@ -221,6 +223,13 @@ const CustomerForm: React.FC<Props> = ({
                   onChange(coords?.latitude ?? null);
                   form.setValue('longitude', coords?.longitude ?? null);
                 }}
+                onAddressSuggested={(address) => {
+                  // Only auto-fill if address field is currently empty
+                  if (!form.getValues('address')) {
+                    form.setValue('address', address, { shouldDirty: true });
+                  }
+                }}
+                hasExistingAddress={!!form.watch('address')}
               />
             );
           }}
