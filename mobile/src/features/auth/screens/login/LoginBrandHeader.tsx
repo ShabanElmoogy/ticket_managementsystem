@@ -3,12 +3,12 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Animated } = require('react-native') as { Animated: any };
 import { useTranslation } from 'react-i18next';
-import { useThemeColors, useIsDark } from '@/src/constants/theme';
+import { useThemeColors, useIsDark, Palette } from '@/src/constants/theme';
 
 export interface LoginBrandHeaderProps {
-  isRtl:           boolean;
+  isRtl:             boolean;
   onToggleDirection: () => void;
-  onToggleTheme:   () => void;
+  onToggleTheme:     () => void;
 }
 
 const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
@@ -20,157 +20,316 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
 
   const pills = [t('auth.featureDashboard'), t('auth.featureKanban'), t('auth.featureAlerts')];
 
-  const pulse = useRef(new Animated.Value(1)).current;
+  // ── Animation refs ──────────────────────────────────────────────────────────
+  const pulse1  = useRef(new Animated.Value(1)).current;
+  const pulse2  = useRef(new Animated.Value(1.18)).current;
+  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(14)).current;
+
   useEffect(() => {
-    const anim = Animated.loop(
+    Animated.parallel([
+      Animated.timing(fadeIn,  { toValue: 1, duration: 520, useNativeDriver: true }),
+      Animated.timing(slideUp, { toValue: 0, duration: 520, useNativeDriver: true }),
+    ]).start();
+
+    const anim1 = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.3, duration: 2000, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1,   duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse1, { toValue: 1.38, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse1, { toValue: 1,    duration: 2000, useNativeDriver: true }),
       ]),
     );
-    anim.start();
-    return () => anim.stop();
-  }, [pulse]);
+    const anim2 = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse2, { toValue: 1,    duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse2, { toValue: 1.38, duration: 2000, useNativeDriver: true }),
+      ]),
+    );
+    anim1.start();
+    anim2.start();
+    return () => { anim1.stop(); anim2.stop(); };
+  }, [pulse1, pulse2, fadeIn, slideUp]);
+
+  // Split "TicketFlow Pro" → base + accent " Pro"
+  const appName  = t('auth.appName');
+  const PRO_PART = ' Pro';
+  const baseName = appName.endsWith(PRO_PART) ? appName.slice(0, -PRO_PART.length) : appName;
+  const hasPro   = appName.endsWith(PRO_PART);
+
+  // Control button helpers — keep natural direction so RTL order is fine
+  // Target language shown (so user sees what they'd switch TO)
+  const langLabel = isRtl ? 'EN' : 'AR';
+  const themeIcon = isDark ? '☀️' : '🌙';
+  const themeLabel = isDark ? 'Light' : 'Dark';
 
   return (
-    <View style={styles.container}>
-      {/* Icon + name + controls row */}
+    <Animated.View
+      style={[
+        styles.container,
+        { opacity: fadeIn, transform: [{ translateY: slideUp }] },
+      ]}
+    >
+      {/* ── Brand row ─────────────────────────────────────────────────────── */}
       <View style={styles.brandRow}>
-        {/* Animated icon */}
+
+        {/* Animated icon — dual concentric glow */}
         <View style={styles.iconOuter}>
-          <Animated.View
-            style={[
-              styles.glowRing,
-              { backgroundColor: c.interactive.primary, transform: [{ scale: pulse }] },
-            ]}
-          />
-          <View style={[styles.iconWrap, { backgroundColor: c.interactive.primary, shadowColor: c.interactive.primary }]}>
+          <Animated.View style={[
+            styles.glowRingOuter,
+            { backgroundColor: c.interactive.primary, transform: [{ scale: pulse2 }] },
+          ]} />
+          <Animated.View style={[
+            styles.glowRingInner,
+            { backgroundColor: c.interactive.primary, transform: [{ scale: pulse1 }] },
+          ]} />
+          <View style={[
+            styles.iconWrap,
+            { backgroundColor: c.interactive.primary, shadowColor: c.interactive.primary },
+          ]}>
             <Text style={styles.iconEmoji}>🎫</Text>
           </View>
         </View>
 
         {/* App name + tagline */}
         <View style={styles.nameBlock}>
-          <Text style={[styles.appName, { color: c.text.primary }]}>{t('auth.appName')}</Text>
-          <Text style={[styles.appTagline, { color: c.text.secondary }]}>{t('auth.appTagline')}</Text>
+          <View style={styles.nameRow}>
+            <Text style={[styles.appNameBase, { color: c.text.primary }]}>{baseName}</Text>
+            {hasPro && (
+              <Text style={[styles.appNameAccent, { color: c.interactive.primary }]}>
+                {PRO_PART}
+              </Text>
+            )}
+          </View>
+          <View style={styles.taglineRow}>
+            <View style={[styles.taglineDot, { backgroundColor: c.interactive.primary }]} />
+            <Text style={[styles.appTagline, { color: c.text.secondary }]} numberOfLines={1}>
+              {t('auth.appTagline')}
+            </Text>
+          </View>
         </View>
 
-        {/* Direction + theme toggles */}
-        <View style={styles.controlsRow}>
+        {/* ── Control pills ──────────────────────────────────────────────── */}
+        {/*
+          Wrap in a View with explicit LTR direction so the two pill order
+          (lang | theme) stays consistent regardless of the app's RTL state.
+          The individual pill labels still respond to the app language.
+        */}
+        <View style={[styles.controlsRow, { direction: 'ltr' } as any]}>
+
+          {/* Language / direction pill */}
           <Pressable
             style={({ pressed }: { pressed: boolean }) => [
-              styles.controlBtn,
+              styles.ctrlPill,
               {
-                backgroundColor: pressed ? c.interactive.primary : c.surface.secondary,
-                borderColor:     c.border.primary,
+                backgroundColor: pressed
+                  ? c.interactive.primary
+                  : isDark ? c.surface.elevated : c.surface.tertiary,
+                borderColor: pressed
+                  ? c.interactive.primary
+                  : `${c.interactive.primary}50`,
+                shadowColor: c.interactive.primary,
               },
             ]}
             onPress={onToggleDirection}
             accessibilityRole="button"
-            accessibilityLabel={isRtl ? 'Switch to LTR' : 'Switch to RTL'}
+            accessibilityLabel={isRtl ? 'Switch to LTR (English)' : 'Switch to RTL (Arabic)'}
           >
-            <Text style={[styles.controlBtnText, { color: c.text.secondary }]}>
-              {isRtl ? 'EN' : 'AR'}
-            </Text>
+            {({ pressed }: { pressed: boolean }) => (
+              <>
+                <Text style={styles.ctrlPillIcon}>🌐</Text>
+                <Text style={[
+                  styles.ctrlPillText,
+                  { color: pressed ? Palette.white : c.text.primary },
+                ]}>
+                  {langLabel}
+                </Text>
+              </>
+            )}
           </Pressable>
 
+          {/* Theme toggle pill */}
           <Pressable
             style={({ pressed }: { pressed: boolean }) => [
-              styles.controlBtn,
+              styles.ctrlPill,
               {
-                backgroundColor: pressed ? c.interactive.primary : c.surface.secondary,
-                borderColor:     c.border.primary,
+                backgroundColor: pressed
+                  ? c.interactive.primary
+                  : isDark ? c.surface.elevated : c.surface.tertiary,
+                borderColor: pressed
+                  ? c.interactive.primary
+                  : `${c.interactive.primary}50`,
+                shadowColor: c.interactive.primary,
               },
             ]}
             onPress={onToggleTheme}
             accessibilityRole="button"
             accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            <Text style={styles.controlBtnIcon}>{isDark ? '☀️' : '🌙'}</Text>
+            {({ pressed }: { pressed: boolean }) => (
+              <>
+                <Text style={styles.ctrlPillIcon}>{themeIcon}</Text>
+                <Text style={[
+                  styles.ctrlPillText,
+                  { color: pressed ? Palette.white : c.text.primary },
+                ]}>
+                  {themeLabel}
+                </Text>
+              </>
+            )}
           </Pressable>
+
         </View>
       </View>
 
-      {/* Feature pills */}
+      {/* ── Feature pills ──────────────────────────────────────────────────── */}
       <View style={styles.pillRow}>
         {pills.map((f) => (
-          <View key={f} style={[styles.pill, { backgroundColor: c.surface.secondary, borderColor: c.interactive.primary }]}>
+          <View
+            key={f}
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isDark
+                  ? `${c.interactive.primary}1C`
+                  : `${c.interactive.primary}12`,
+                borderColor: `${c.interactive.primary}55`,
+              },
+            ]}
+          >
             <Text style={[styles.pillText, { color: c.interactive.primary }]}>{f}</Text>
           </View>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingTop:        20,
-    paddingBottom:     16,
+    paddingTop:        24,
+    paddingBottom:     18,
     alignItems:        'center',
   },
+
+  // ── Brand row
   brandRow: {
     flexDirection: 'row',
     alignItems:    'center',
-    gap:           14,
-    marginBottom:  12,
+    gap:           12,
+    marginBottom:  14,
     alignSelf:     'stretch',
   },
+
+  // ── Icon
   iconOuter: {
-    width:          52,
-    height:         52,
+    width:          62,
+    height:         62,
     alignItems:     'center',
     justifyContent: 'center',
   },
-  glowRing: {
+  glowRingOuter: {
     position:     'absolute',
-    width:        52,
-    height:       52,
-    borderRadius: 14,
+    width:        62,
+    height:       62,
+    borderRadius: 17,
+    opacity:      0.1,
+  },
+  glowRingInner: {
+    position:     'absolute',
+    width:        53,
+    height:       53,
+    borderRadius: 15,
     opacity:      0.2,
   },
   iconWrap: {
-    width:          44,
-    height:         44,
-    borderRadius:   12,
+    width:          46,
+    height:         46,
+    borderRadius:   13,
     alignItems:     'center',
     justifyContent: 'center',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  0.4,
-    shadowRadius:   10,
-    elevation:      8,
+    shadowOffset:   { width: 0, height: 6 },
+    shadowOpacity:  0.42,
+    shadowRadius:   12,
+    elevation:      10,
   },
-  iconEmoji:  { fontSize: 22 },
-  nameBlock:  { flex: 1 },
-  appName:    { fontSize: 20, fontWeight: '900', letterSpacing: -0.3, marginBottom: 2 },
-  appTagline: { fontSize: 12, lineHeight: 16 },
+  iconEmoji: { fontSize: 23 },
 
-  controlsRow: { flexDirection: 'row', gap: 6 },
-  controlBtn: {
-    width:          36,
-    height:         36,
-    borderRadius:   10,
-    borderWidth:    1,
-    alignItems:     'center',
-    justifyContent: 'center',
+  // ── Name block
+  nameBlock: { flex: 1 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems:    'baseline',
+    marginBottom:  3,
   },
-  controlBtnText: { fontSize: 11, fontWeight: '700' },
-  controlBtnIcon: { fontSize: 16 },
+  appNameBase: {
+    fontSize:      20,
+    fontWeight:    '900',
+    letterSpacing: -0.4,
+  },
+  appNameAccent: {
+    fontSize:      20,
+    fontWeight:    '900',
+    letterSpacing: -0.4,
+  },
+  taglineRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           5,
+  },
+  taglineDot: {
+    width:        4,
+    height:       4,
+    borderRadius: 2,
+  },
+  appTagline: {
+    fontSize:  11,
+    lineHeight: 15,
+    flex:       1,
+  },
 
+  // ── Control pills
+  controlsRow: {
+    flexDirection: 'row',
+    gap:           5,
+  },
+  ctrlPill: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
+    paddingHorizontal: 9,
+    paddingVertical:   6,
+    borderRadius:      20,
+    borderWidth:       1,
+    shadowOffset:      { width: 0, height: 1 },
+    shadowOpacity:     0.10,
+    shadowRadius:      3,
+    elevation:         1,
+  },
+  ctrlPillIcon: { fontSize: 13 },
+  ctrlPillText: {
+    fontSize:   11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+
+  // ── Feature pills
   pillRow: {
     flexDirection:  'row',
-    gap:            6,
+    gap:            7,
     flexWrap:       'wrap',
     justifyContent: 'center',
   },
   pill: {
-    borderRadius:      16,
-    paddingHorizontal: 10,
-    paddingVertical:   3,
+    borderRadius:      20,
+    paddingHorizontal: 12,
+    paddingVertical:   5,
     borderWidth:       1,
   },
-  pillText: { fontSize: 11, fontWeight: '600' },
+  pillText: {
+    fontSize:      11,
+    fontWeight:    '600',
+    letterSpacing: 0.2,
+  },
 });
 
 export default LoginBrandHeader;

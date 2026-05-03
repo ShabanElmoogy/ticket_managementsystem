@@ -27,10 +27,11 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ MODAL RULE
  * ─────────────────────────────────────────────────────────────────────────────
- * Calls useThemeColors() and useIsDark() internally.
+ * Calls useThemeColors(), useIsDark(), useDirection() internally.
  * Pass `resolvedColors` when rendering inside a <Modal> to bypass context:
  *   const c = useThemeColors();
  *   <AppButton resolvedColors={c} variant="primary" onPress={fn}>Save</AppButton>
+ * When inside a Modal also pass isRtlOverride={isRtl} to preserve RTL text.
  */
 
 import React, { useState } from 'react';
@@ -39,6 +40,7 @@ import {
   type ViewStyle, type TextStyle,
 } from 'react-native';
 import { useThemeColors, useIsDark, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { useDirection } from '@/src/providers/DirectionProvider';
 import type { ThemeColors } from '@/src/constants/tokens';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -65,38 +67,40 @@ export interface AppButtonProps {
   labelStyle?:     TextStyle;
   /** Pass when rendering inside a <Modal> to bypass context issues */
   resolvedColors?: ThemeColors;
+  /** Pass when rendering inside a <Modal> where useDirection() is unavailable */
+  isRtlOverride?:  boolean;
 }
 
 // ── Size tokens ───────────────────────────────────────────────────────────────
 
-const SIZES: Record<AppButtonSize, { pv: number; ph: number; fs: number; minH: number; gap: number; r: number }> = {
-  small:  { pv: 9,  ph: 16, fs: FontSize.sm,   minH: 36, gap: 5, r: Radius.lg },
-  medium: { pv: 12, ph: 20, fs: FontSize.base,  minH: 44, gap: 6, r: Radius.xl },
-  large:  { pv: 15, ph: 24, fs: FontSize.md,    minH: 52, gap: 8, r: Radius.xl },
+const SIZES: Record<AppButtonSize, { pv: number; ph: number; fs: number; fw: string; minH: number; gap: number; r: number }> = {
+  small:  { pv: 9,  ph: 18, fs: FontSize.sm,   fw: FontWeight.semibold, minH: 36, gap: 5, r: Radius.xl },
+  medium: { pv: 12, ph: 22, fs: FontSize.base,  fw: FontWeight.bold,    minH: 44, gap: 6, r: Radius.xl },
+  large:  { pv: 15, ph: 26, fs: FontSize.md,    fw: FontWeight.bold,    minH: 52, gap: 8, r: Radius['2xl'] },
 };
 
 // ── Color resolver ────────────────────────────────────────────────────────────
 
 interface BtnColors { bg: string; text: string; border: string | null; shadow: string | null }
 
-function getColors(v: string, disabled: boolean, pressed: boolean, c: ThemeColors, isDark?: boolean): BtnColors {
+function getColors(v: string, disabled: boolean, pressed: boolean, c: ThemeColors): BtnColors {
   if (disabled) return { bg: c.interactive.disabled, text: c.text.muted, border: null, shadow: null };
 
   switch (v) {
     case 'primary':
-      return { bg: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg, text: c.buttons.primary.text, border: null, shadow: c.buttons.primary.bg };
+      return { bg: pressed ? c.buttons.primary.pressed  : c.buttons.primary.bg,  text: c.buttons.primary.text,  border: null,                      shadow: c.buttons.primary.bg  };
     case 'success':
-      return { bg: pressed ? c.buttons.success.pressed : c.buttons.success.bg, text: c.buttons.success.text, border: null, shadow: c.buttons.success.bg };
+      return { bg: pressed ? c.buttons.success.pressed  : c.buttons.success.bg,  text: c.buttons.success.text,  border: null,                      shadow: c.buttons.success.bg  };
     case 'danger':
-      return { bg: pressed ? c.buttons.danger.pressed  : c.buttons.danger.bg,  text: c.buttons.danger.text,  border: null, shadow: c.buttons.danger.bg  };
+      return { bg: pressed ? c.buttons.danger.pressed   : c.buttons.danger.bg,   text: c.buttons.danger.text,   border: null,                      shadow: c.buttons.danger.bg   };
     case 'secondary':
-      return { bg: pressed ? c.interactive.pressed : c.buttons.secondary.bg, text: c.buttons.secondary.text, border: c.buttons.secondary.border, shadow: null };
+      return { bg: pressed ? c.interactive.pressed      : c.buttons.secondary.bg, text: c.buttons.secondary.text, border: c.buttons.secondary.border, shadow: null                };
     case 'outline':
       return { bg: pressed ? c.buttons.outline.border + '18' : 'transparent', text: c.buttons.outline.text, border: c.buttons.outline.border, shadow: null };
     case 'ghost':
       return { bg: pressed ? c.buttons.ghost.text + '14' : 'transparent', text: c.buttons.ghost.text, border: null, shadow: null };
     default:
-      return { bg: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg, text: c.buttons.primary.text, border: null, shadow: c.buttons.primary.bg };
+      return { bg: pressed ? c.buttons.primary.pressed  : c.buttons.primary.bg,  text: c.buttons.primary.text,  border: null,                      shadow: c.buttons.primary.bg  };
   }
 }
 
@@ -116,12 +120,14 @@ const AppButton = ({
   style,
   labelStyle,
   resolvedColors,
+  isRtlOverride,
 }: AppButtonProps) => {
-  const hookColors = useThemeColors();
-  const isDark     = useIsDark();
-  const c          = resolvedColors ?? hookColors;
+  const hookColors    = useThemeColors();
+  const isDark        = useIsDark();
+  const { isRtl: dirIsRtl } = useDirection();
+  const c             = resolvedColors ?? hookColors;
+  const isRtl         = isRtlOverride ?? dirIsRtl;
 
-  // Track pressed state manually so children can react to it
   const [pressed, setPressed] = useState(false);
 
   const sz         = SIZES[size];
@@ -134,7 +140,6 @@ const AppButton = ({
           : variant === 'text'      ? 'ghost'
           : variant;
 
-  // Resolve colors once — used for both container and text
   const colors    = getColors(v, isDisabled, pressed, c);
   const hasShadow = (v === 'primary' || v === 'danger' || v === 'success') && !isDisabled;
 
@@ -156,30 +161,59 @@ const AppButton = ({
           backgroundColor:   colors.bg,
           borderWidth:       colors.border ? 1.5 : 0,
           borderColor:       colors.border ?? 'transparent',
-          opacity:           isDisabled ? 0.45 : pressed ? 0.88 : 1,
+          opacity:           isDisabled ? 0.5 : pressed ? 0.9 : 1,
           width:             fullWidth ? '100%' : undefined,
+          transform:         [{ scale: pressed && !isDisabled ? 0.985 : 1 }],
         },
         hasShadow && colors.shadow && {
           shadowColor:   colors.shadow,
           shadowOffset:  { width: 0, height: size === 'large' ? 5 : 3 },
-          shadowOpacity: isDark ? 0.5 : 0.3,
-          shadowRadius:  size === 'large' ? 10 : 6,
-          elevation:     size === 'large' ? 6 : 4,
+          shadowOpacity: isDark ? 0.55 : 0.32,
+          shadowRadius:  size === 'large' ? 12 : 7,
+          elevation:     size === 'large' ? 7 : 4,
         },
         style,
       ]}
     >
+      {/* Loading spinner — sits at the inline-start side */}
       {loading && (
-        <ActivityIndicator size="small" color={colors.text} style={{ marginEnd: sz.gap }} />
+        <ActivityIndicator
+          size="small"
+          color={colors.text}
+          style={{ marginEnd: sz.gap }}
+        />
       )}
+
+      {/* Left icon — flip margin direction for RTL so gap is always between icon and text */}
       {!loading && leftIcon && (
-        <View style={{ marginEnd: sz.gap }}>{leftIcon}</View>
+        <View style={isRtl ? { marginStart: sz.gap } : { marginEnd: sz.gap }}>
+          {leftIcon}
+        </View>
       )}
-      <Text style={[styles.label, { fontSize: sz.fs, color: colors.text }, labelStyle]} numberOfLines={1}>
+
+      <Text
+        style={[
+          styles.label,
+          {
+            fontSize:         sz.fs,
+            fontWeight:       sz.fw as TextStyle['fontWeight'],
+            color:            colors.text,
+            // RTL: remove letter-spacing (breaks Arabic shaping) + set writing direction
+            letterSpacing:    isRtl ? 0 : 0.3,
+            writingDirection: isRtl ? 'rtl' : 'ltr',
+          },
+          labelStyle,
+        ]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
+
+      {/* Right icon */}
       {!loading && rightIcon && (
-        <View style={{ marginStart: sz.gap }}>{rightIcon}</View>
+        <View style={isRtl ? { marginEnd: sz.gap } : { marginStart: sz.gap }}>
+          {rightIcon}
+        </View>
       )}
     </Pressable>
   );
@@ -195,10 +229,8 @@ const styles = StyleSheet.create({
     overflow:       'hidden',
   },
   label: {
-    fontWeight:         FontWeight.semibold,
     textAlign:          'center',
     includeFontPadding: false,
-    letterSpacing:      0.2,
   },
 });
 
