@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
-import { AppScreenHeader, AppDataTable, ConfirmDeleteDialog, DataCard, AppSearchInput, type ColDef } from '@/src/shared/components';
+import { AppScreenHeader, AppDataTable, ConfirmDeleteDialog, DataCard, AppTextInput, type ColDef } from '@/src/shared/components';
 import { useToast } from '@/src/shared/hooks/useToast';
 import { useUiStore } from '@/src/stores/uiStore';
 import { usePaginationStore } from '@/src/stores/paginationStore';
@@ -284,7 +284,8 @@ function AdminCrudScreen<T extends { id: string }>({
   return (
     <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
-        title={title} isDark={isDark}
+        title={title} 
+        isDark={isDark}
         view={view} onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}
         addLabel={addLabel ?? `Add ${itemType}`}
@@ -294,8 +295,16 @@ function AdminCrudScreen<T extends { id: string }>({
         onRefresh={onRefresh} refreshLabel={refreshLabel} refreshingLabel={refreshingLabel}
       />
 
-      <View style={{ marginTop: 8, marginBottom: 4 }}>
-        <AppSearchInput value={search} onChange={handleSearchChange} placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`} />
+      <View style={{ marginTop: 8, marginBottom: 8 , marginHorizontal: 10}}>
+        <AppTextInput
+          fieldType="search"
+          value={search}
+          onChangeText={handleSearchChange}
+          placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}…`}
+          showClearButton
+          onClear={() => handleSearchChange('')}
+          containerStyle={{ marginBottom: 0 }}
+        />
       </View>
 
       <View style={{ flex: 1, marginHorizontal: 12, marginBottom: 12 }}>

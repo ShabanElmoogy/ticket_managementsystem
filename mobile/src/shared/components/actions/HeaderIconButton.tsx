@@ -108,8 +108,6 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
                   : c.surface.elevated;
 
   const textColor = isDisabled          ? c.text.muted
-                  : variant === 'add'    ? '#15803d'   // green-700
-                  : variant === 'export' ? '#b91c1c'   // red-700
                   : c.text.secondary;
 
   // ── Display values ─────────────────────────────────────────────────────────

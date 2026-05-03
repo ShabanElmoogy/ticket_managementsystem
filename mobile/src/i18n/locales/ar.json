@@ -76,7 +76,7 @@
     "required": "{{field}} مطلوب",
     "minLength": "{{field}} يجب أن يكون {{min}} أحرف على الأقل",
     "requiredFieldTitle": "حقل مطلوب",
-    "requiredFieldMessage": "يجب ملء \"{{field}}\" قبل المتابعة."
+    "requiredFieldMessage": "يجب ملء \"{{field}}\" قبل المتابعة.",
     "maxLength": "{{field}} يجب أن لا يتجاوز {{max}} حرفاً",
     "invalidEmail": "البريد الإلكتروني غير صالح",
     "endAfterStart": "تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء"

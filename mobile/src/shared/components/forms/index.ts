@@ -10,8 +10,6 @@ export type { AppFormProps }        from './AppForm';
 export { default as AppFormField }  from './AppFormField';
 export type { AppFormFieldProps }   from './AppFormField';
 
-export { default as AppSearchInput } from './AppSearchInput';
-
 export { default as AppBadge }      from './AppBadge';
 export type { AppBadgeProps, AppBadgeVariant } from './AppBadge';
 
@@ -28,9 +26,6 @@ export type { ChipRowsProps }       from './ChipRows';
 
 export { default as ChipTiles }     from './ChipTiles';
 export type { ChipTilesProps }      from './ChipTiles';
-
-export { default as ChipTitle }     from './ChipTitle';
-export type { ChipTitleProps }      from './ChipTitle';
 
 export type { ChipOption }          from './ChipOption';
 

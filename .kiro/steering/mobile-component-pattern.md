@@ -121,6 +121,8 @@ Keep this table updated whenever a component is added or its usage changes.
 | `AppFormField` | `forms/AppFormField.tsx` | ✅ Yes (`useFormContext`, `useFormFocus`) | ❌ No — screens only | `CustomerForm` (all text input fields) |
 | `FormFocusContext` | `forms/FormFocusContext.tsx` | ❌ No (context only — `useRef`, `useCallback`) | ✅ Yes | `AppForm` (provides `FormFocusProvider`), `AppFormField` (calls `useFormFocus`) |
 | `SegmentedControl` | `forms/SegmentedControl.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `LanguageSwitcher` |
+| `AppScreenHeader` | `layout/AppScreenHeader.tsx` | ✅ Yes (`useTranslation`) | ❌ No — screens only | `AdminCrudScreen`, `TicketsScreen`, `ReportsHeader` |
+| `HeaderActionGroup` | `layout/HeaderActionGroup.tsx` | ✅ Yes (`useTranslation`) | ❌ No — screens only | `AppScreenHeader` |
 | `HeaderIconButton` | `actions/HeaderIconButton.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `HeaderActionGroup` |
 | `DataCard` | `data/DataCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AdminCrudScreen`, `ReportCard` |
 | `CompactListRow` | `data/CompactListRow.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportCompactRow` |

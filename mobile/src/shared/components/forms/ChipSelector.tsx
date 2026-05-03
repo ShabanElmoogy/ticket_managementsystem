@@ -12,7 +12,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠️ MODAL RULE
  * ─────────────────────────────────────────────────────────────────────────────
- * Delegates to ChipRows / ChipTiles which call useThemeColors() internally.
+ * Calls useThemeColors() internally (for label color).
  * Do NOT use inside a <Modal> — screens only.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -54,8 +54,8 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, type ViewStyle } from 'react-native';
-import ChipTitle from './ChipTitle';
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
+import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 import ChipRows  from './ChipRows';
 import ChipTiles from './ChipTiles';
 import type { ChipOption } from './ChipOption';
@@ -77,9 +77,15 @@ export interface ChipSelectorProps<T extends string = string> {
 function ChipSelector<T extends string = string>({
   options, value, onChange, label, disabled = false, layout = 'rows', style,
 }: ChipSelectorProps<T>) {
+  const c = useThemeColors();
+
   return (
     <View style={[styles.wrapper, style]}>
-      {label && <ChipTitle title={label} />}
+      {label && (
+        <Text style={[styles.label, { color: c.text.secondary }]}>
+          {label}
+        </Text>
+      )}
       {layout === 'tiles'
         ? <ChipTiles options={options} value={value} onChange={onChange} disabled={disabled} />
         : <ChipRows  options={options} value={value} onChange={onChange} disabled={disabled} />
@@ -91,6 +97,12 @@ function ChipSelector<T extends string = string>({
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 16,
+  },
+  label: {
+    fontSize:      FontSize.sm,
+    fontWeight:    FontWeight.semibold,
+    marginBottom:  8,
+    letterSpacing: 0.1,
   },
 });
 

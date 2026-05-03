@@ -4,7 +4,7 @@
  * Subfolders:
  *   display/    — Avatar, Badge, StatCard, SectionHeader, etc.
  *   feedback/   — AppEmptyState, ErrorBoundary
- *   forms/      — AppTextInput, AppButton, AppSearchInput, AppBadge
+ *   forms/      — AppTextInput, AppButton, AppBadge
  *   dialogs/    — ConfirmDeleteDialog, ForceDeleteConfirmDialog, AlertDialog
  *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
  *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, HeaderActionGroup

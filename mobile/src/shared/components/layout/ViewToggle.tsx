@@ -19,17 +19,22 @@ interface Props {
 const ViewToggle: React.FC<Props> = ({ current, onChange }) => {
   const c = useThemeColors();
   return (
-    <View style={{
-      flexDirection: 'row', borderRadius: Radius.md, overflow: 'hidden',
-      borderWidth: 1, borderColor: c.border.secondary,
-    }}>
+    <View
+      style={{
+        flexDirection: 'row', borderRadius: Radius.md, overflow: 'hidden',
+        borderWidth: 1, borderColor: c.border.secondary,
+      }}
+      accessibilityRole="radiogroup"
+    >
       {VIEW_OPTIONS.map(({ view, icon, label }) => {
         const active = current === view;
         return (
           <Pressable
             key={view}
             onPress={() => onChange(view)}
+            accessibilityRole="radio"
             accessibilityLabel={label}
+            accessibilityState={{ selected: active }}
             style={{
               paddingHorizontal: 10, paddingVertical: 6,
               alignItems: 'center', justifyContent: 'center',

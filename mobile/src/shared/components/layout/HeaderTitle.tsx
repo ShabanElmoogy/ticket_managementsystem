@@ -1,54 +1,74 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/src/constants/theme';
 
 export interface HeaderTitleProps {
-  title: string;
   subtitle?: string;
   /** Numeric or string badge shown next to the title */
-  badge?: number | string;
-  /** @deprecated — component reads theme internally via useThemeColors() */
-  isDark?: boolean;
+  badge?:    number | string;
 }
 
 /**
  * Centered title block used inside screen headers.
  * Renders: title + optional badge chip + optional subtitle line.
  */
-const HeaderTitle: React.FC<HeaderTitleProps> = ({
-  title, subtitle, badge,
-}) => {
+const HeaderTitle: React.FC<HeaderTitleProps> = ({  subtitle, badge }) => {
   const c = useThemeColors();
 
   return (
-    <View style={{ flex: 1, alignItems: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: 18, fontWeight: '700', color: c.text.primary }}
-        >
-          {title}
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.titleRow}>
         {badge !== undefined && (
-          <View style={{
-            backgroundColor: c.interactive.primary + '22',
-            borderWidth: 1,
-            borderColor: c.interactive.primary + '44',
-            borderRadius: 999,
-            paddingHorizontal: 8,
-            paddingVertical: 2,
-          }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.interactive.primary }}>{badge}</Text>
+          <View style={[
+            styles.badge,
+            {
+              backgroundColor: c.interactive.primary + '22',
+              borderColor:     c.interactive.primary + '44',
+            },
+          ]}>
+            <Text style={[styles.badgeText, { color: c.interactive.primary }]}>
+              {badge}
+            </Text>
           </View>
         )}
       </View>
       {subtitle && (
-        <Text style={{ fontSize: 12, color: c.text.secondary, marginTop: 2 }}>
+        <Text style={[styles.subtitle, { color: c.text.secondary }]}>
           {subtitle}
         </Text>
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex:       1,
+    alignItems: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+  },
+  title: {
+    fontSize:   18,
+    fontWeight: '700',
+  },
+  badge: {
+    borderWidth:       1,
+    borderRadius:      999,
+    paddingHorizontal: 8,
+    paddingVertical:   2,
+  },
+  badgeText: {
+    fontSize:   12,
+    fontWeight: '600',
+  },
+  subtitle: {
+    fontSize:  12,
+    marginTop: 2,
+  },
+});
 
 export default HeaderTitle;
