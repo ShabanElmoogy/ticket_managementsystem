@@ -1,26 +1,45 @@
 /**
  * AppForm — React Hook Form wrapper with FormProvider + scroll-to-error.
  *
- * Provides:
- *   - FormProvider (RHF context for useFormContext / Controller)
- *   - FormFocusProvider (field registration + scroll-to-error)
- *   - ScrollView with ref forwarding
- *   - onFocusRef callback so parent can trigger focusFirst on submit error
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WHERE IT IS USED
+ * ─────────────────────────────────────────────────────────────────────────────
+ * - AdminFormPage (features/admin/shared/AdminFormPage.tsx)
+ *   When a `form` prop is passed, renders AppForm instead of a plain ScrollView.
+ *   Exposes `focusFirst` via `onFocusRef` so AdminFormPage can scroll-to-error
+ *   on submit failure.
  *
- * Used by AdminFormPage when a `form` prop is passed.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PROVIDES
+ * ─────────────────────────────────────────────────────────────────────────────
+ * - FormProvider (RHF context for useFormContext / Controller)
+ * - FormFocusProvider (field registration + scroll-to-error)
+ * - ScrollView with ref forwarding
+ * - onFocusRef callback so parent can trigger focusFirst on submit error
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * USAGE EXAMPLE
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   const focusFirstError = useRef<(names: string[]) => void>();
+ *   <AppForm form={form} onFocusRef={(fn) => { focusFirstError.current = fn; }}>
+ *     <AppFormField name="email" ... />
+ *   </AppForm>
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ✅ MODAL SAFE — no theme/i18n hooks. useFormFocus is a context utility (useRef/useCallback only).
  */
 
 import React, { useRef } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, type ViewStyle } from 'react-native';
 import { FormProvider, type UseFormReturn, type FieldValues } from 'react-hook-form';
 import { FormFocusProvider, useFormFocus } from './FormFocusContext';
 
 export interface AppFormProps<T extends FieldValues> {
   form:                    UseFormReturn<T>;
   children?:               React.ReactNode;
-  scrollRef?:              React.RefObject<any>;
-  style?:                  object;
-  contentContainerStyle?:  object;
+  scrollRef?:              React.RefObject<InstanceType<typeof ScrollView>>;
+  style?:                  ViewStyle;
+  contentContainerStyle?:  ViewStyle;
   /** Called with focusFirst so parent can scroll-to-error on submit failure */
   onFocusRef?:             (fn: (names: string[]) => void) => void;
 }
@@ -30,10 +49,10 @@ export interface AppFormProps<T extends FieldValues> {
 function AppFormInner({
   scrollRef, children, style, contentContainerStyle, onFocusRef,
 }: {
-  scrollRef:              React.RefObject<any>;
+  scrollRef:              React.RefObject<InstanceType<typeof ScrollView>>;
   children?:              React.ReactNode;
-  style?:                 object;
-  contentContainerStyle?: object;
+  style?:                 ViewStyle;
+  contentContainerStyle?: ViewStyle;
   onFocusRef?:            (fn: (names: string[]) => void) => void;
 }) {
   const { focusFirst } = useFormFocus();
@@ -49,7 +68,7 @@ function AppFormInner({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       style={style}
-      contentContainerStyle={contentContainerStyle ?? { padding: 16, paddingBottom: 32 }}
+      contentContainerStyle={contentContainerStyle ?? styles.contentContainer}
     >
       {children}
     </ScrollView>
@@ -81,3 +100,10 @@ function AppForm<T extends FieldValues>({
 }
 
 export default AppForm;
+
+const styles = StyleSheet.create({
+  contentContainer: {
+    padding:        16,
+    paddingBottom:  32,
+  },
+});

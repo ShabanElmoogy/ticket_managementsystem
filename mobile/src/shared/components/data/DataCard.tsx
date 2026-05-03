@@ -132,7 +132,7 @@ function DataCard<T extends { id: string }>({
           keyExtractor={(item: any) => item.id}
           contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }}
           ListHeaderComponent={headerExtras ? <View>{headerExtras}</View> : undefined}
-          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListEmptyComponent={<AppEmptyState fill icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
           ListFooterComponent={paginationBar}
           refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
           showsVerticalScrollIndicator={false}
@@ -148,7 +148,7 @@ function DataCard<T extends { id: string }>({
           keyExtractor={(item: any) => item.id}
           contentContainerStyle={{ paddingBottom: 24 }}
           ListHeaderComponent={headerExtras ? <View>{headerExtras}</View> : undefined}
-          ListEmptyComponent={<AppEmptyState icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
+          ListEmptyComponent={<AppEmptyState fill icon={emptyIcon} message={emptyMsg} subtitle={emptySub} />}
           ListFooterComponent={paginationBar}
           refreshControl={onRefresh ? <RefreshControl refreshing={loading} onRefresh={onRefresh} /> : undefined}
           showsVerticalScrollIndicator={false}

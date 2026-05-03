@@ -231,8 +231,8 @@ const CustomerForm: React.FC<Props> = ({
       {/* Linked stats (edit mode) */}
       {item && (
         <View style={styles.statsRow}>
-          <StatCard value={linkedTickets}      label={t('customers.columns.tickets')}     color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
-          <StatCard value={linkedApplications} label={t('customers.detail.applications')} color="#065f46" bg="#f0fdf4" border="#bbf7d0" />
+          <LinkedStatCard value={linkedTickets}      label={t('customers.columns.tickets')}     color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
+          <LinkedStatCard value={linkedApplications} label={t('customers.detail.applications')} color="#065f46" bg="#f0fdf4" border="#bbf7d0" />
         </View>
       )}
     </>
@@ -267,9 +267,11 @@ const CustomerForm: React.FC<Props> = ({
   );
 };
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
+// ── Linked stat card (edit mode only) ────────────────────────────────────────
+// Distinct from the shared StatCard — shows a large value + label with
+// explicit bg/border colors passed by the caller.
 
-const StatCard: React.FC<{ value: number; label: string; color: string; bg: string; border: string }> = ({
+const LinkedStatCard: React.FC<{ value: number; label: string; color: string; bg: string; border: string }> = ({
   value, label, color, bg, border,
 }) => (
   <View style={[styles.statCard, { backgroundColor: bg, borderColor: border }]}>

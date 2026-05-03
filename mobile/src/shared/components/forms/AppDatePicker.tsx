@@ -18,7 +18,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * WHERE IT IS USED
  * ─────────────────────────────────────────────────────────────────────────────
- *   CustomerForm — subscriptionStartDate, subscriptionEndDate
+ *   CustomerForm (features/admin/customers/components/CustomerForm.tsx)
+ *   — subscriptionStartDate, subscriptionEndDate
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * USAGE
@@ -35,7 +36,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, Pressable, Platform, StyleSheet, type ViewStyle } from 'react-native';
+import { View, Text, Pressable, Platform, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useDirection } from '@/src/providers/DirectionProvider';
@@ -43,30 +44,34 @@ import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/th
 import { formatDate } from '@/src/shared/utils/dateUtils';
 
 interface AppDatePickerProps {
-  label?:          string;
-  value:           string;           // ISO date: 'YYYY-MM-DD' or ''
-  onChange:        (iso: string) => void;
-  placeholder?:    string;
-  error?:          string;
-  required?:       boolean;
-  minDate?:        Date;
-  maxDate?:        Date;
-  containerStyle?: ViewStyle;
+  label?:        string;
+  value:         string;           // ISO date: 'YYYY-MM-DD' or ''
+  onChange:      (iso: string) => void;
+  placeholder?:  string;
+  error?:        string;
+  required?:     boolean;
+  disabled?:     boolean;
+  minDate?:      Date;
+  maxDate?:      Date;
+  style?:        ViewStyle;
+  labelStyle?:   TextStyle;
 }
 
 const AppDatePicker: React.FC<AppDatePickerProps> = ({
   label, value, onChange,
   placeholder, error,
   required = false,
+  disabled = false,
   minDate, maxDate,
-  containerStyle,
+  style,
+  labelStyle,
 }) => {
   const [show, setShow] = useState(false);
   const { isRtl }       = useDirection();
   const { t }           = useTranslation();
   const c               = useThemeColors();
 
-  const resolvedPlaceholder = placeholder ?? t('customers.form.datePlaceholder');
+  const resolvedPlaceholder = placeholder ?? t('common.selectDate');
 
   // Parse stored ISO string to Date for the picker
   const dateValue = value ? new Date(value) : new Date();
@@ -85,16 +90,16 @@ const AppDatePicker: React.FC<AppDatePickerProps> = ({
   const labelColor  = error ? c.intent.error : c.text.secondary;
 
   return (
-    <View style={[{ marginBottom: 12 }, containerStyle]}>
+    <View style={[{ marginBottom: 12, opacity: disabled ? 0.45 : 1 }, style]}>
       {/* Label */}
       {label && (
-        <Text style={{
-          fontSize:   FontSize.sm,
-          fontWeight: FontWeight.semibold,
+        <Text style={[{
+          fontSize:     FontSize.sm,
+          fontWeight:   FontWeight.semibold,
           marginBottom: 6,
-          color:      labelColor,
-          textAlign:  isRtl ? 'right' : 'left',
-        }}>
+          color:        labelColor,
+          textAlign:    isRtl ? 'right' : 'left',
+        }, labelStyle]}>
           {label}
           {required && <Text style={{ color: c.intent.error }}> *</Text>}
         </Text>
@@ -102,9 +107,10 @@ const AppDatePicker: React.FC<AppDatePickerProps> = ({
 
       {/* Trigger row */}
       <Pressable
-        onPress={() => setShow(true)}
+        onPress={() => !disabled && setShow(true)}
         accessibilityRole="button"
         accessibilityLabel={label ?? resolvedPlaceholder}
+        disabled={disabled}
         style={[styles.field, { borderColor, backgroundColor: c.surface.primary }]}
       >
         <Text style={{ fontSize: FontSize.xl, marginHorizontal: 10 }}>📅</Text>

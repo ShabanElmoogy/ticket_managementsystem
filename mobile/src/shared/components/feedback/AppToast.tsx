@@ -1,20 +1,46 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { BaseToastProps } from 'react-native-toast-message';
-import { Palette, Colors } from '@/src/constants/tokens';
-import { useUiStore } from '@/src/stores/uiStore';
-import { useColorScheme } from 'react-native';
+import { Palette } from '@/src/constants/tokens';
+import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
 
-// ── Resolve colors outside hook — safe for toast config ──────────────────────
-
-function useToastColors() {
-  const colorMode   = useUiStore((s) => s.colorMode);
-  const systemScheme = useColorScheme();
-  const isDark = colorMode === 'dark' ? true
-               : colorMode === 'light' ? false
-               : systemScheme === 'dark';
-  return isDark ? Colors.light : Colors.dark;
-}
+/**
+ * AppToast
+ *
+ * Custom toast renderer for `react-native-toast-message`.
+ * Provides `success`, `error`, `info`, and `warning` variants.
+ *
+ * ## Setup
+ * Pass `toastConfig` to the `<Toast />` component in the root layout:
+ * ```tsx
+ * // app/_layout.tsx
+ * import Toast from 'react-native-toast-message';
+ * import { toastConfig } from '@/src/shared/components/feedback/AppToast';
+ *
+ * <Toast config={toastConfig} />
+ * ```
+ *
+ * ## Usage
+ * ```ts
+ * import Toast from 'react-native-toast-message';
+ *
+ * Toast.show({ type: 'success', text1: 'Saved!', text2: 'Customer updated.' });
+ * Toast.show({ type: 'error',   text1: 'Failed', text2: 'Could not save.' });
+ * Toast.show({ type: 'info',    text1: 'Note',   text2: 'No changes made.' });
+ * Toast.show({ type: 'warning', text1: 'Warning', text2: 'Session expiring.' });
+ * ```
+ *
+ * Or use the `useToast()` hook from `@/src/shared/hooks/useToast`.
+ *
+ * ## Layout
+ * ```
+ * ┌▌──────────────────────────────────────┐
+ * │  [icon]  text1 (bold)                 │
+ * │          text2 (muted)                │
+ * └───────────────────────────────────────┘
+ *  ▌ = colored left border
+ * ```
+ */
 
 // ── Toast item ────────────────────────────────────────────────────────────────
 
@@ -24,13 +50,22 @@ interface ToastItemProps extends BaseToastProps {
 }
 
 const ToastItem: React.FC<ToastItemProps> = ({
-  text1, text2, accentColor, icon, onPress,
+  text1,
+  text2,
+  accentColor,
+  icon,
+  onPress,
 }) => {
-  const c = useToastColors();
+  const c = useThemeColors();
+
+  // Build accessible label from available text
+  const a11yLabel = [text1, text2].filter(Boolean).join('. ');
 
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="alert"
+      accessibilityLabel={a11yLabel}
       style={[
         styles.container,
         {
@@ -48,12 +83,18 @@ const ToastItem: React.FC<ToastItemProps> = ({
       {/* Text */}
       <View style={styles.textWrap}>
         {!!text1 && (
-          <Text style={[styles.text1, { color: c.text.primary }]} numberOfLines={2}>
+          <Text
+            numberOfLines={2}
+            style={[styles.text1, { color: c.text.primary }]}
+          >
             {text1}
           </Text>
         )}
         {!!text2 && (
-          <Text style={[styles.text2, { color: c.text.secondary }]} numberOfLines={2}>
+          <Text
+            numberOfLines={2}
+            style={[styles.text2, { color: c.text.secondary }]}
+          >
             {text2}
           </Text>
         )}
@@ -62,17 +103,21 @@ const ToastItem: React.FC<ToastItemProps> = ({
   );
 };
 
-// ── Toast config — pass to <Toast config={toastConfig} /> in root layout ──────
+// ── Toast config ──────────────────────────────────────────────────────────────
+// Pass to <Toast config={toastConfig} /> in the root layout.
 
 export const toastConfig = {
   success: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.green500} icon="✅" />
+    <ToastItem {...props} accentColor={Palette.green500}  icon="✅" />
   ),
   error: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.red500}   icon="❌" />
+    <ToastItem {...props} accentColor={Palette.red500}    icon="❌" />
   ),
   info: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.blue500}  icon="ℹ️" />
+    <ToastItem {...props} accentColor={Palette.blue500}   icon="ℹ️" />
+  ),
+  warning: (props: BaseToastProps) => (
+    <ToastItem {...props} accentColor={Palette.amber500}  icon="⚠️" />
   ),
 };
 
@@ -103,6 +148,12 @@ const styles = StyleSheet.create({
   },
   iconText: { fontSize: 18 },
   textWrap: { flex: 1 },
-  text1:    { fontSize: 14, fontWeight: '700' },
-  text2:    { fontSize: 12, marginTop: 2 },
+  text1: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  text2: {
+    fontSize:  FontSize.xs,
+    marginTop: 2,
+  },
 });

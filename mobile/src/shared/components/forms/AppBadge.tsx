@@ -41,16 +41,13 @@
  * <AppBadge label="EXPIRED" color="#ef4444" size="medium" />
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ⚠️  MODAL RULE
- * ─────────────────────────────────────────────────────────────────────────────
- * This component calls useThemeColors() internally.
- * Do NOT use inside a <Modal> — pass resolved colors via the `color` prop instead.
+ * ✅ MODAL SAFE — no hooks. Colors resolved from static token maps.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import React from 'react';
-import { View, Text, type ViewStyle } from 'react-native';
-import { StatusColors, PriorityColors, useThemeColors, FontWeight, Radius, FontSize } from '@/src/constants/theme';
+import { View, Text, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
+import { StatusColors, PriorityColors, FontWeight, Radius, FontSize, Palette } from '@/src/constants/tokens';
 
 // Re-export color maps so callers can resolve colors without importing tokens directly
 export const STATUS_COLORS: Record<string, string>   = { ...StatusColors };
@@ -60,58 +57,68 @@ export type AppBadgeVariant = 'status' | 'priority' | 'role' | 'custom';
 
 export interface AppBadgeProps {
   /** The text shown inside the badge. Underscores are replaced with spaces. */
-  label:    string;
+  label:       string;
   /** Controls automatic color resolution. Default: 'custom' (requires `color` prop). */
-  variant?: AppBadgeVariant;
+  variant?:    AppBadgeVariant;
   /** Explicit accent color — overrides variant auto-resolution. */
-  color?:   string;
+  color?:      string;
   /** Container style override. */
-  style?:   ViewStyle;
+  style?:      ViewStyle;
+  /** Text style override. */
+  labelStyle?: TextStyle;
   /** 'small' (default) = compact inline chip. 'medium' = slightly larger. */
-  size?:    'small' | 'medium';
+  size?:       'small' | 'medium';
+  /** Dims the badge to 45% opacity. */
+  disabled?:   boolean;
 }
+
+const FALLBACK = Palette.gray400;
 
 const AppBadge: React.FC<AppBadgeProps> = ({
   label,
-  variant = 'custom',
+  variant  = 'custom',
   color,
   style,
-  size = 'small',
+  labelStyle,
+  size     = 'small',
+  disabled = false,
 }) => {
-  const c = useThemeColors();
-
-  // Resolve accent color: explicit prop → variant map → fallback muted
   const accent =
     color ??
-    (variant === 'status'   ? (StatusColors[label]   ?? c.text.muted) :
-     variant === 'priority' ? (PriorityColors[label] ?? c.text.muted) :
-     c.text.muted);
+    (variant === 'status'   ? (StatusColors[label]   ?? FALLBACK) :
+     variant === 'priority' ? (PriorityColors[label] ?? FALLBACK) :
+     FALLBACK);
 
-  const padding  = size === 'small'
-    ? { paddingHorizontal: 8,  paddingVertical: 2 }
-    : { paddingHorizontal: 12, paddingVertical: 4 };
-
-  const fontSize = size === 'small' ? FontSize.xs : FontSize.sm;
+  const isSmall  = size === 'small';
+  const fontSize = isSmall ? FontSize.xs : FontSize.sm;
 
   return (
     <View
       style={[
+        styles.base,
         {
-          borderRadius:    Radius.full,
-          alignSelf:       'flex-start',
-          borderWidth:     1,
-          backgroundColor: `${accent}22`,  // 13% opacity fill
-          borderColor:     `${accent}66`,  // 40% opacity border
-          ...padding,
+          paddingHorizontal: isSmall ? 8  : 12,
+          paddingVertical:   isSmall ? 2  : 4,
+          backgroundColor:   `${accent}22`,
+          borderColor:       `${accent}66`,
+          opacity:           disabled ? 0.45 : 1,
         },
         style,
       ]}
     >
-      <Text style={{ fontWeight: FontWeight.bold, fontSize, color: accent }}>
+      <Text style={[{ fontWeight: FontWeight.bold, fontSize, color: accent }, labelStyle]}>
         {label.replace(/_/g, ' ')}
       </Text>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  base: {
+    borderRadius: Radius.full,
+    alignSelf:    'flex-start',
+    borderWidth:  1,
+  },
+});
 
 export default AppBadge;

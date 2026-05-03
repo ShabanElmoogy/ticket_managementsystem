@@ -1,21 +1,42 @@
 /**
  * AppButton — theme-aware button for screens and modals.
  *
- * VARIANTS: primary | secondary | outline | ghost | danger | success
- * SIZES:    small | medium | large
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WHERE IT IS USED
+ * ─────────────────────────────────────────────────────────────────────────────
+ * - AdminFormPage (features/admin/shared/AdminFormPage.tsx) — footer Save/Cancel
+ * - AdminFormModal (features/admin/shared/AdminFormModal.tsx) — Submit button
+ * - AppEmptyState (shared/components/feedback/AppEmptyState.tsx) — action CTA
+ * - Settings panels — any screen-level CTA
  *
- * ⚠️ MODAL RULE: calls useThemeColors() internally.
- * Pass `resolvedColors` when rendering inside a <Modal>:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * VARIANTS
+ * ─────────────────────────────────────────────────────────────────────────────
+ * primary | secondary | outline | ghost | danger | success
+ * Legacy aliases: contained → primary, outlined → outline, text → ghost
+ *
+ * SIZES: small | medium | large
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * USAGE EXAMPLES
+ * ─────────────────────────────────────────────────────────────────────────────
+ * <AppButton variant="primary" onPress={handleSave}>Save</AppButton>
+ * <AppButton variant="danger"  size="small" onPress={handleDelete}>Delete</AppButton>
+ * <AppButton variant="outline" fullWidth onPress={handleCancel}>Cancel</AppButton>
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠️ MODAL RULE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Calls useThemeColors() and useIsDark() internally.
+ * Pass `resolvedColors` when rendering inside a <Modal> to bypass context:
  *   const c = useThemeColors();
  *   <AppButton resolvedColors={c} variant="primary" onPress={fn}>Save</AppButton>
- *
- * USED IN: AdminFormPage footer, settings panels, any screen-level CTA.
  */
 
 import React, { useState } from 'react';
 import {
   ActivityIndicator, Pressable, StyleSheet, Text, View,
-  type ViewStyle,
+  type ViewStyle, type TextStyle,
 } from 'react-native';
 import { useThemeColors, useIsDark, Radius, FontSize, FontWeight } from '@/src/constants/theme';
 import type { ThemeColors } from '@/src/constants/tokens';
@@ -40,6 +61,8 @@ export interface AppButtonProps {
   leftIcon?:       React.ReactNode;
   rightIcon?:      React.ReactNode;
   style?:          ViewStyle;
+  /** Text style override for the button label. */
+  labelStyle?:     TextStyle;
   /** Pass when rendering inside a <Modal> to bypass context issues */
   resolvedColors?: ThemeColors;
 }
@@ -56,7 +79,7 @@ const SIZES: Record<AppButtonSize, { pv: number; ph: number; fs: number; minH: n
 
 interface BtnColors { bg: string; text: string; border: string | null; shadow: string | null }
 
-function getColors(v: string, disabled: boolean, pressed: boolean, c: ThemeColors, isDark: boolean): BtnColors {
+function getColors(v: string, disabled: boolean, pressed: boolean, c: ThemeColors, isDark?: boolean): BtnColors {
   if (disabled) return { bg: c.interactive.disabled, text: c.text.muted, border: null, shadow: null };
 
   switch (v) {
@@ -91,6 +114,7 @@ const AppButton = ({
   leftIcon,
   rightIcon,
   style,
+  labelStyle,
   resolvedColors,
 }: AppButtonProps) => {
   const hookColors = useThemeColors();
@@ -111,7 +135,7 @@ const AppButton = ({
           : variant;
 
   // Resolve colors once — used for both container and text
-  const colors    = getColors(v, isDisabled, pressed, c, isDark);
+  const colors    = getColors(v, isDisabled, pressed, c);
   const hasShadow = (v === 'primary' || v === 'danger' || v === 'success') && !isDisabled;
 
   return (
@@ -132,7 +156,7 @@ const AppButton = ({
           backgroundColor:   colors.bg,
           borderWidth:       colors.border ? 1.5 : 0,
           borderColor:       colors.border ?? 'transparent',
-          opacity:           isDisabled ? 0.52 : pressed ? 0.88 : 1,
+          opacity:           isDisabled ? 0.45 : pressed ? 0.88 : 1,
           width:             fullWidth ? '100%' : undefined,
         },
         hasShadow && colors.shadow && {
@@ -151,7 +175,7 @@ const AppButton = ({
       {!loading && leftIcon && (
         <View style={{ marginEnd: sz.gap }}>{leftIcon}</View>
       )}
-      <Text style={[styles.label, { fontSize: sz.fs, color: colors.text }]} numberOfLines={1}>
+      <Text style={[styles.label, { fontSize: sz.fs, color: colors.text }, labelStyle]} numberOfLines={1}>
         {label}
       </Text>
       {!loading && rightIcon && (

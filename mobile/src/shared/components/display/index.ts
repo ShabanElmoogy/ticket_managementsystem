@@ -7,14 +7,16 @@ export type { BadgeProps } from './Badge';
 export { default as InitialAvatar } from './InitialAvatar';
 
 export { default as StatBadge } from './StatBadge';
+export type { StatBadgeProps } from './StatBadge';
 
 export { default as CountBadge } from './CountBadge';
 export type { CountBadgeProps } from './CountBadge';
 
 export { default as StatCard } from './StatCard';
-export type { StatItem } from './StatCard';
+export type { StatItem, StatCardProps } from './StatCard';
 
 export { default as SectionHeader } from './SectionHeader';
+export type { SectionHeaderProps } from './SectionHeader';
 
 export { default as ErrorBanner } from './ErrorBanner';
 export type { ErrorBannerProps } from './ErrorBanner';

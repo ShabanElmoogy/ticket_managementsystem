@@ -7,7 +7,7 @@ import { ticketTemplatesApi, ticketTemplatesKeys, type TicketTemplatePayload } f
 import { AppTextInput, AppBadge } from '@/src/shared/components';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { useErrorHandler } from '@/src/shared/hooks/useErrorHandler';
-import type { TicketTemplate } from '@/src/services/api/types';
+import type { TicketTemplate } from '@/src/services/api/types/index';
 import type { ColDef } from '@/src/shared/components';
 
 // ── Inline form ───────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ const TemplatesScreen: React.FC = () => {
   const { handleError } = useErrorHandler();
 
   const columns: ColDef<TicketTemplate>[] = [
-    { field: 'name',           headerName: t('templates.columns.name'),           flex: 1,   sortable: true  },
+    { field: 'name',           headerName: t('templates.columns.name'),           sortable: true  },
     { field: 'description',    headerName: t('templates.columns.description'),    width: 200, sortable: false },
     {
       field: 'priority', headerName: t('templates.columns.priority'), width: 100, align: 'center',
