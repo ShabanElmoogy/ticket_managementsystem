@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { NavItem as NavItemType } from '@/src/components/layout/header/navItems';
+import type { NavItemConfig as NavItemType } from '@/src/components/layout/header/navItems';
 import { NavItem } from '@/src/shared/components';
 
 interface Props {

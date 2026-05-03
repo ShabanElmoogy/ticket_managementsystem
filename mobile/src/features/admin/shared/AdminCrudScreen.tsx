@@ -284,7 +284,6 @@ function AdminCrudScreen<T extends { id: string }>({
   return (
     <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
-        title={title} 
         isDark={isDark}
         view={view} onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}

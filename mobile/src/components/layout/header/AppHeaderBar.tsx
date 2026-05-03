@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
 import { useThemeColors, FontWeight } from '@/src/constants/theme';
@@ -13,7 +14,8 @@ const AppHeaderBar: React.FC = () => {
   const { unreadCount } = useUiStore();
   const { open, setOpen, setHeaderHeight } = useDrawer();
   const router = useRouter();
-  const c = useThemeColors();
+  const c      = useThemeColors();
+  const { t }  = useTranslation();
 
   if (!user) return null;
 
@@ -42,6 +44,7 @@ const AppHeaderBar: React.FC = () => {
         {/* Notification bell */}
         <IconButton
           icon="🔔"
+          accessibilityLabel={t('nav.notifications')}
           badgeCount={unreadCount}
           onPress={() => router.push('/(app)/notifications' as any)}
         />
@@ -61,6 +64,7 @@ const AppHeaderBar: React.FC = () => {
         {/* Hamburger */}
         <IconButton
           icon={open ? '✕' : '☰'}
+          accessibilityLabel={open ? t('common.close') : t('nav.menu')}
           iconSize={18}
           onPress={() => setOpen(!open)}
         />

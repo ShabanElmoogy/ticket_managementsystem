@@ -38,9 +38,7 @@ const TicketsScreen: React.FC = () => {
     <FeatureErrorBoundary featureName="Tickets">
       <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
         <AppScreenHeader
-          title={t('tickets.title')}
           badge={tickets.length}
-          isDark={isDark}
           onRefresh={refetch}
           refreshLabel={t('common.refresh')}
           refreshingLabel={t('common.refreshing')}

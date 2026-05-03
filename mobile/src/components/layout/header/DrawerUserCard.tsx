@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { getRoleColor } from '@/src/components/layout/header/navItems';
-import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
+import { changeLanguage } from '@/src/i18n';
 import { useThemeColors, useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
 import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
 
@@ -13,8 +14,9 @@ interface Props {
 }
 
 const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) => {
-  const [switching, setSwitching] = useState(false);
-  const currentLang = getCurrentLanguage();
+  const { i18n }    = useTranslation();
+  const [switching, setSwitching] = React.useState(false);
+  const currentLang = i18n.language;
   const isDark      = useIsDark();
   const c           = useThemeColors();
 

@@ -1,47 +1,63 @@
+/**
+ * ViewToggle — 3-option segmented control for switching between table / grid / compact views.
+ *
+ * @usedIn AppScreenHeader (via `view` + `onViewChange` props)
+ * @variants table | grid | compact
+ * @modalSafe ❌ No — calls useThemeColors() and useTranslation() internally; screens only
+ *
+ * @example
+ * <ViewToggle current={view} onChange={setView} />
+ */
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useThemeColors, FontSize, Radius } from '@/src/constants/theme';
 import type { AdminView } from '@/src/stores/uiStore';
 
-const VIEW_OPTIONS: { view: AdminView; icon: string; label: string }[] = [
-  { view: 'table',   icon: '⊞', label: 'Table'   },
-  { view: 'grid',    icon: '▦', label: 'Grid'    },
-  { view: 'compact', icon: '☰', label: 'Compact' },
-];
-
-interface Props {
-  current:  AdminView;
-  onChange: (v: AdminView) => void;
-  /** @deprecated — component reads theme internally via useThemeColors() */
-  isDark?:  boolean;
+interface ViewOption {
+  view:    AdminView;
+  icon:    string;
+  labelKey: string;
 }
 
-const ViewToggle: React.FC<Props> = ({ current, onChange }) => {
-  const c = useThemeColors();
+const VIEW_OPTIONS: ViewOption[] = [
+  { view: 'table',   icon: '⊞', labelKey: 'common.viewTable'   },
+  { view: 'grid',    icon: '▦', labelKey: 'common.viewGrid'    },
+  { view: 'compact', icon: '☰', labelKey: 'common.viewCompact' },
+];
+
+export interface ViewToggleProps {
+  current:  AdminView;
+  onChange: (v: AdminView) => void;
+}
+
+const ViewToggle: React.FC<ViewToggleProps> = ({ current, onChange }) => {
+  const c      = useThemeColors();
+  const { t }  = useTranslation();
+
   return (
     <View
-      style={{
-        flexDirection: 'row', borderRadius: Radius.md, overflow: 'hidden',
-        borderWidth: 1, borderColor: c.border.secondary,
-      }}
+      style={[styles.track, { borderColor: c.border.secondary }]}
       accessibilityRole="radiogroup"
     >
-      {VIEW_OPTIONS.map(({ view, icon, label }) => {
+      {VIEW_OPTIONS.map(({ view, icon, labelKey }) => {
         const active = current === view;
         return (
           <Pressable
             key={view}
             onPress={() => onChange(view)}
             accessibilityRole="radio"
-            accessibilityLabel={label}
+            accessibilityLabel={t(labelKey)}
             accessibilityState={{ selected: active }}
-            style={{
-              paddingHorizontal: 10, paddingVertical: 6,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: active ? c.interactive.primary : c.surface.primary,
-            }}
+            style={[
+              styles.option,
+              { backgroundColor: active ? c.interactive.primary : c.surface.primary },
+            ]}
           >
-            <Text style={{ fontSize: FontSize.md, color: active ? c.text.inverse : c.text.secondary }}>
+            <Text
+              style={[styles.icon, { color: active ? c.text.inverse : c.text.secondary }]}
+              accessibilityElementsHidden
+            >
               {icon}
             </Text>
           </Pressable>
@@ -50,5 +66,23 @@ const ViewToggle: React.FC<Props> = ({ current, onChange }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  track: {
+    flexDirection: 'row',
+    borderRadius:  Radius.md,
+    overflow:      'hidden',
+    borderWidth:   1,
+  },
+  option: {
+    paddingHorizontal: 10,
+    paddingVertical:   6,
+    alignItems:        'center',
+    justifyContent:    'center',
+  },
+  icon: {
+    fontSize: FontSize.md,
+  },
+});
 
 export default ViewToggle;

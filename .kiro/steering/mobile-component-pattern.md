@@ -121,9 +121,15 @@ Keep this table updated whenever a component is added or its usage changes.
 | `AppFormField` | `forms/AppFormField.tsx` | ✅ Yes (`useFormContext`, `useFormFocus`) | ❌ No — screens only | `CustomerForm` (all text input fields) |
 | `FormFocusContext` | `forms/FormFocusContext.tsx` | ❌ No (context only — `useRef`, `useCallback`) | ✅ Yes | `AppForm` (provides `FormFocusProvider`), `AppFormField` (calls `useFormFocus`) |
 | `SegmentedControl` | `forms/SegmentedControl.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `LanguageSwitcher` |
+| `LanguageSwitcher` | `navigation/LanguageSwitcher.tsx` | ✅ Yes (`useTranslation` via `i18n`) | ❌ No — screens only | Login screen, Profile screen |
+| `ToggleButton` | `navigation/ToggleButton.tsx` | ❌ No | ✅ Yes | Not yet used — available for pill-button rows |
 | `AppScreenHeader` | `layout/AppScreenHeader.tsx` | ✅ Yes (`useTranslation`) | ❌ No — screens only | `AdminCrudScreen`, `TicketsScreen`, `ReportsHeader` |
+| `HeaderTitle` | `layout/HeaderTitle.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AppScreenHeader` — renders optional badge chip + optional subtitle; title text is rendered directly by `AppScreenHeader` |
 | `HeaderActionGroup` | `layout/HeaderActionGroup.tsx` | ✅ Yes (`useTranslation`) | ❌ No — screens only | `AppScreenHeader` |
+| `VerticalDivider` | `layout/VerticalDivider.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `HeaderActionGroup` |
+| `ViewToggle` | `layout/ViewToggle.tsx` | ✅ Yes (`useThemeColors`, `useTranslation`) | ❌ No — screens only | `AppScreenHeader` |
 | `HeaderIconButton` | `actions/HeaderIconButton.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `HeaderActionGroup` |
+| `PanelCard` | `layout/PanelCard.tsx` | ✅ Yes (`useThemeColors`, `useTranslation`) | ❌ No — screens only | Expandable option panels inside dialogs or bottom sheets |
 | `DataCard` | `data/DataCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AdminCrudScreen`, `ReportCard` |
 | `CompactListRow` | `data/CompactListRow.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportCompactRow` |
 | `AppDataTable` | `data/AppDataTable.tsx` | ✅ Yes (`useThemeColors`, `useWindowDimensions`) | ❌ No — screens only | `AdminCrudScreen` |
@@ -135,6 +141,11 @@ Keep this table updated whenever a component is added or its usage changes.
 | `StatCard` | `display/StatCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportGridCard.tsx` — grid view card for report rows |
 | `AppEmptyState` | `feedback/AppEmptyState.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before any `<Modal>` renders | `DataCard` (`ListEmptyComponent` for grid and compact views), `ReportCard` |
 | `AppToast` | `feedback/AppToast.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — root layout only | `app/_layout.tsx` via `<Toast config={toastConfig} />` |
+| `BottomNavItem` | `navigation/BottomNavItem.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AppBottomNav` |
+| `NavItem` | `navigation/NavItem.tsx` | ❌ No | ✅ Yes | `DrawerNavList` |
+| `IconButton` | `navigation/IconButton.tsx` | ❌ No | ✅ Yes | `AppHeaderBar` |
+| `HapticTab` | `platform/HapticTab.tsx` | ❌ No | ✅ Yes | Bottom tab navigator via `tabBarButton` screen option |
+| `IconSymbol` (iOS) | `platform/IconSymbol.ios.tsx` | ❌ No | ✅ Yes | Any component needing an icon on iOS — Metro auto-selects over `IconSymbol.tsx` |
 
 ---
 

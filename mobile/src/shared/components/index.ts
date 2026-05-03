@@ -7,7 +7,7 @@
  *   forms/      — AppTextInput, AppButton, AppBadge
  *   dialogs/    — ConfirmDeleteDialog, ForceDeleteConfirmDialog, AlertDialog
  *   navigation/ — NavItem, BottomNavItem, IconButton, ToggleButton
- *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, HeaderActionGroup
+ *   layout/     — AppScreenHeader, ViewToggle, VerticalDivider, PanelCard
  *   data/       — AppDataTable, DataCard, CompactListRow, PaginatedView, FilterChipGroup
  *   actions/    — HeaderIconButton (add/export/refresh/neutral), DialogButton
  *   platform/   — HapticTab, IconSymbol

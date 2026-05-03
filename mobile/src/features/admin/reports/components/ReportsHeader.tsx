@@ -3,7 +3,6 @@ import { AppScreenHeader } from '@/src/shared/components';
 import type { AdminView } from '@/src/stores/uiStore';
 
 interface Props {
-  isDark: boolean;
   view: AdminView;
   onViewChange: (v: AdminView) => void;
   loading: boolean;
@@ -18,13 +17,11 @@ interface Props {
  * Shows: ViewToggle | [title] | Refresh | Export PDF
  */
 const ReportsHeader: React.FC<Props> = ({
-  isDark, view, onViewChange,
+  view, onViewChange,
   loading, exporting, isEmpty,
   onExport, onRefresh,
 }) => (
   <AppScreenHeader
-    title="Reports"
-    isDark={isDark}
     view={view}
     onViewChange={onViewChange}
     loading={loading}

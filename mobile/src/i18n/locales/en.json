@@ -15,7 +15,8 @@
     "applications": "Applications",
     "users": "Users",
     "customers": "Customers",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "menu": "Menu"
   },
   "common": {
     "loading": "Loading...",
@@ -48,6 +49,9 @@
     "increment": "Increase value",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
+    "viewTable": "Table view",
+    "viewGrid": "Grid view",
+    "viewCompact": "Compact view",
     "filter": "Filter",
     "actions": "Actions",
     "name": "Name",

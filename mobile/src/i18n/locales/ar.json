@@ -15,7 +15,8 @@
     "applications": "التطبيقات",
     "users": "المستخدمون",
     "customers": "العملاء",
-    "tasks": "المهام"
+    "tasks": "المهام",
+    "menu": "القائمة"
   },
   "common": {
     "loading": "جاري التحميل...",
@@ -43,6 +44,9 @@
     "increment": "زيادة القيمة",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
+    "viewTable": "عرض الجدول",
+    "viewGrid": "عرض الشبكة",
+    "viewCompact": "العرض المضغوط",
     "filter": "تصفية",
     "actions": "الإجراءات",
     "name": "الاسم",

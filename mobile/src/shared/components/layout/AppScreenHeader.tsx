@@ -3,7 +3,7 @@
  *
  * Standard screen-level header used across all admin screens.
  *
- * Layout: [ViewToggle | leftActions] — [Title + badge] — [Refresh | Export | Add]
+ * Layout: [ViewToggle | leftActions] — [badge + subtitle] — [Refresh | Export | Add]
  *
  * Each section only renders when the relevant props are provided.
  *
@@ -19,16 +19,15 @@
  *   Use only in screen-level components, never inside a <Modal> tree.
  */
 import React from 'react';
-import { View, StyleSheet, type ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useThemeColors } from '@/src/constants/theme';
 import ViewToggle from './ViewToggle';
-import HeaderTitle from './HeaderTitle';
 import HeaderActionGroup from './HeaderActionGroup';
 import type { AdminView } from '@/src/stores/uiStore';
 
 export interface AppScreenHeaderProps {
   // ── Identity ──────────────────────────────────────────────────────────────
-  title:     string;
   subtitle?: string;
   badge?:    number | string;
 
@@ -69,7 +68,7 @@ export interface AppScreenHeaderProps {
  * Each section only renders when the relevant props are provided.
  */
 const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
-  title, subtitle, badge,
+  subtitle, badge,
   view, onViewChange, leftActions,
   onAdd, addLabel, loading = false,
   onExport, exporting = false, exportDisabled = false, exportLabel, exportingLabel,
@@ -77,6 +76,7 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
   rightActions, style,
 }) => {
   const { t } = useTranslation();
+  const c     = useThemeColors();
 
   return (
     <View style={[styles.container, style]}>
@@ -89,8 +89,26 @@ const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
         }
       </View>
 
-      {/* Center — Title */}
-      <HeaderTitle subtitle={subtitle} badge={badge} />
+      {/* Center — badge + subtitle */}
+      {(badge !== undefined || subtitle) && (
+        <View style={styles.center}>
+          {badge !== undefined && (
+            <View style={[styles.badge, {
+              backgroundColor: c.interactive.primary + '22',
+              borderColor:     c.interactive.primary + '44',
+            }]}>
+              <Text style={[styles.badgeText, { color: c.interactive.primary }]}>
+                {badge}
+              </Text>
+            </View>
+          )}
+          {subtitle && (
+            <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Right — Refresh | Export PDF | | Add */}
       <HeaderActionGroup
@@ -124,6 +142,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems:    'center',
     minWidth:      80,
+  },
+  center: {
+    flex:       1,
+    alignItems: 'center',
+  },
+  badge: {
+    borderWidth:       1,
+    borderRadius:      999,
+    paddingHorizontal: 8,
+    paddingVertical:   2,
+  },
+  badgeText: {
+    fontSize:   12,
+    fontWeight: '600',
+  },
+  subtitle: {
+    fontSize:  12,
+    marginTop: 2,
   },
 });
 

@@ -1,10 +1,16 @@
+// ── Public components ─────────────────────────────────────────────────────────
 export { default as AppScreenHeader } from './AppScreenHeader';
-export { default as ViewToggle } from './ViewToggle';
-export { default as VerticalDivider } from './VerticalDivider';
-export { default as HeaderTitle } from './HeaderTitle';
-export { default as HeaderActionGroup } from './HeaderActionGroup';
-export type { HeaderTitleProps } from './HeaderTitle';
-export type { HeaderActionGroupProps } from './HeaderActionGroup';
+export type { AppScreenHeaderProps }  from './AppScreenHeader';
 
-export { default as PanelCard } from './PanelCard';
-export type { PanelCardProps } from './PanelCard';
+export { default as ViewToggle }      from './ViewToggle';
+export type { ViewToggleProps }       from './ViewToggle';
+
+export { default as VerticalDivider } from './VerticalDivider';
+export type { VerticalDividerProps }  from './VerticalDivider';
+
+export { default as PanelCard }       from './PanelCard';
+export type { PanelCardProps }        from './PanelCard';
+
+// ── Internal — used only by AppScreenHeader, not part of the public API ───────
+// HeaderTitle, HeaderActionGroup, ViewToggle internals are not exported.
+// Import directly from their files if needed for testing or extension.

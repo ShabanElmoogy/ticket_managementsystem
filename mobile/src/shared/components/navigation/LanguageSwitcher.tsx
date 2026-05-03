@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage } from '@/src/i18n';
 import SegmentedControl from '../forms/SegmentedControl';
 
 const LANGUAGE_OPTIONS = [
@@ -7,21 +8,21 @@ const LANGUAGE_OPTIONS = [
   { value: 'ar', label: 'عربي' },
 ];
 
-interface Props {
-  /** @deprecated — SegmentedControl reads theme internally via useThemeColors() */
-  isDark?: boolean;
-}
-
 /**
  * LanguageSwitcher — EN / عربي segmented control.
  * Thin wrapper around SegmentedControl that wires i18n logic.
+ *
+ * Reactive: re-renders when language changes via useTranslation().
+ *
+ * @hooks useTranslation (reads i18n.language for the active segment)
+ * @modal-safe ❌ No — uses useTranslation hook; render in screens only, not inside <Modal>
+ * @used-in Login screen, Profile screen
  */
-const LanguageSwitcher: React.FC<Props> = () => {
+const LanguageSwitcher: React.FC = () => {
+  const { i18n } = useTranslation();
   const [switching, setSwitching] = useState(false);
-  const current = getCurrentLanguage();
 
   const handleChange = async (lng: string) => {
-    if (switching) return;
     setSwitching(true);
     try {
       await changeLanguage(lng as 'en' | 'ar');
@@ -33,7 +34,7 @@ const LanguageSwitcher: React.FC<Props> = () => {
   return (
     <SegmentedControl
       options={LANGUAGE_OPTIONS}
-      value={current}
+      value={i18n.language}
       onChange={handleChange}
       loading={switching}
     />

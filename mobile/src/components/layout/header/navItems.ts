@@ -1,4 +1,4 @@
-export interface NavItem {
+export interface NavItemConfig {
   labelKey: string;  // i18n key instead of hardcoded label
   icon: string;
   route: string;
@@ -7,7 +7,7 @@ export interface NavItem {
   dividerBefore?: boolean;
 }
 
-export const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItemConfig[] = [
   { labelKey: 'nav.dashboard',        icon: '📊', route: '/'                },
   { labelKey: 'nav.tickets',          icon: '🎫', route: '/tickets'         },
   { labelKey: 'nav.kanbanBoard',      icon: '🗂️', route: '/kanban'          },
