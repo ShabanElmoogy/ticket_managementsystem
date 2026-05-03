@@ -4,9 +4,10 @@ import { Platform } from 'react-native';
 interface Options {
   /**
    * Delay in ms before attempting focus.
-   * - iOS: 50ms is usually enough
-   * - Android: 300ms needed to clear IME + layout pass
-   * Default: platform-appropriate value
+   * Defaults to a platform-appropriate value:
+   *   - iOS:     50ms  (layout pass is fast)
+   *   - Android: 300ms (IME + layout pass needs more time)
+   * Add inModal:true for an extra 250ms when inside a Modal.
    */
   delay?: number;
 
@@ -19,46 +20,48 @@ interface Options {
 
   /**
    * Only focus when this condition is true.
-   * Useful for "focus only when creating, not editing".
+   * Useful for "focus only when creating, not editing":
+   *   useFocusInput({ enabled: item === null })
    * Default: true
    */
   enabled?: boolean;
 }
 
+interface Focusable {
+  focus(): void;
+}
+
 /**
- * useFocusInput — production-ready auto-focus for TextInput.
+ * useFocusInput — auto-focus a TextInput after mount.
  *
  * Handles:
- *   - Timing issues (waits for native view mount + interactions to settle)
- *   - Modal animation delay
- *   - Android IME delay
- *   - Cleanup on unmount (prevents focus on unmounted component)
+ *   - Platform timing differences (Android IME delay vs iOS)
+ *   - Modal animation delay (inModal: true)
+ *   - Cleanup on unmount (never focuses an unmounted component)
+ *   - Single focus per mount (won't re-focus on re-renders)
  *
- * Usage:
+ * @example
+ *   // Basic
  *   const ref = useFocusInput();
- *   <TextInput ref={ref} ... />
+ *   <TextInput ref={ref} />
  *
- *   // In a modal (add inModal: true):
+ *   // Inside a Modal
  *   const ref = useFocusInput({ inModal: true });
  *
- *   // Only focus when creating (not editing):
- *   const ref = useFocusInput({ inModal: true, enabled: item === null });
+ *   // Only when creating (not editing)
+ *   const ref = useFocusInput({ enabled: item === null });
  */
 export function useFocusInput(options: Options = {}) {
-  const {
-    delay,
-    inModal = false,
-    enabled = true,
-  } = options;
+  const { delay, inModal = false, enabled = true } = options;
 
-  const ref       = useRef<any>(null);  // Generic ref for any focusable component
-  const mounted   = useRef(true);       // guards against focus after unmount
-  const attempted = useRef(false);      // focus only once per mount
+  const ref       = useRef<Focusable | null>(null);
+  const mounted   = useRef(true);
+  const attempted = useRef(false);
 
-  // Compute delay: modal needs extra time for slide animation
+  // Platform-appropriate delay, with extra time for modal slide animation
   const resolvedDelay = delay ?? (
     inModal
-      ? (Platform.OS === 'android' ? 400 : 300)
+      ? (Platform.OS === 'android' ? 450 : 350)
       : (Platform.OS === 'android' ? 300 : 50)
   );
 
@@ -67,26 +70,23 @@ export function useFocusInput(options: Options = {}) {
     attempted.current = true;
 
     const timer = setTimeout(() => {
-      if (mounted.current && ref.current && typeof ref.current.focus === 'function') {
+      if (mounted.current && ref.current) {
         ref.current.focus();
       }
     }, resolvedDelay);
 
-    return timer;
+    return () => clearTimeout(timer);
   }, [enabled, resolvedDelay]);
 
   useEffect(() => {
     mounted.current   = true;
     attempted.current = false;
 
-    // Use setTimeout as fallback when InteractionManager is not available
-    const timer = setTimeout(() => {
-      focus();
-    }, 50); // Small delay to ensure component is mounted
+    const cleanup = focus();
 
     return () => {
       mounted.current = false;
-      clearTimeout(timer);
+      cleanup?.();
     };
   }, [focus]);
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useEntityData, type EntityConfig } from './useEntityData';
+import { useEntityData, type EntityConfig, type PaginatedResponse } from './useEntityData';
 import { useToast } from './useToast';
 import { getErrorMessage as extractErrorMessage } from '@/src/shared/utils/httpUtils';
 
@@ -15,7 +15,6 @@ export interface UIState<T> {
   dialogOpen:   boolean;
   editingItem:  T | null;
   submitting:   boolean;
-  snackbar:     { open: boolean; message: string; severity: 'success' | 'error' };
   deleteDialog: { open: boolean; item: T | null };
 }
 
@@ -31,7 +30,7 @@ export interface AdminFeatureConfig<T, CreateT> extends EntityConfig<T, CreateT>
 export interface AdminFeatureReturn<T, CreateT> {
   entities: T[];
   loading:  boolean;
-  apiMeta:  import('./useEntityData').PaginatedResponse<T>['pagination'] | null;
+  apiMeta:  PaginatedResponse<T>['pagination'] | null;
   refetch:  () => void;
 
   create: (data: CreateT) => Promise<T>;
@@ -45,13 +44,9 @@ export interface AdminFeatureReturn<T, CreateT> {
   closeDeleteDialog: () => void;
   setSubmitting:     (v: boolean) => void;
 
-  showSnackbar:  (message: string, severity: 'success' | 'error') => void;
-  closeSnackbar: () => void;
-
   messages: MessagesConfig;
 
   handleError: (error: unknown, fallback: string) => string;
-  logError:    (operation: string, error: unknown) => void;
 
   handleSubmit: (
     values: CreateT,
@@ -83,36 +78,27 @@ export function useAdminFeature<T extends object, CreateT>(
     dialogOpen:   false,
     editingItem:  null,
     submitting:   false,
-    snackbar:     { open: false, message: '', severity: 'success' },
     deleteDialog: { open: false, item: null },
   });
 
   const openDialog = useCallback((item?: T) => {
-    setUI((prev: UIState<T>) => ({ ...prev, dialogOpen: true, editingItem: item ?? null }));
+    setUI((prev) => ({ ...prev, dialogOpen: true, editingItem: item ?? null }));
   }, []);
 
   const closeDialog = useCallback(() => {
-    setUI((prev: UIState<T>) => ({ ...prev, dialogOpen: false, editingItem: null }));
+    setUI((prev) => ({ ...prev, dialogOpen: false, editingItem: null }));
   }, []);
 
   const openDeleteDialog = useCallback((item: T) => {
-    setUI((prev: UIState<T>) => ({ ...prev, deleteDialog: { open: true, item } }));
+    setUI((prev) => ({ ...prev, deleteDialog: { open: true, item } }));
   }, []);
 
   const closeDeleteDialog = useCallback(() => {
-    setUI((prev: UIState<T>) => ({ ...prev, deleteDialog: { open: false, item: null } }));
+    setUI((prev) => ({ ...prev, deleteDialog: { open: false, item: null } }));
   }, []);
 
   const setSubmitting = useCallback((submitting: boolean) => {
-    setUI((prev: UIState<T>) => ({ ...prev, submitting }));
-  }, []);
-
-  const showSnackbar = useCallback((message: string, severity: 'success' | 'error') => {
-    setUI((prev: UIState<T>) => ({ ...prev, snackbar: { open: true, message, severity } }));
-  }, []);
-
-  const closeSnackbar = useCallback(() => {
-    setUI((prev: UIState<T>) => ({ ...prev, snackbar: { ...prev.snackbar, open: false } }));
+    setUI((prev) => ({ ...prev, submitting }));
   }, []);
 
   const handleError = useCallback(
@@ -120,58 +106,49 @@ export function useAdminFeature<T extends object, CreateT>(
     []
   );
 
-  const logError = useCallback((operation: string, error: unknown) => {
-    console.error(`${operation} failed:`, error);
-  }, []);
-
   const handleSubmit = useCallback(
     async (values: CreateT, options?: { onSuccess?: () => void }) => {
-      setSubmitting(true);
+      setUI((prev) => ({ ...prev, submitting: true }));
       try {
         if (ui.editingItem) {
           const id = (ui.editingItem as Record<string, unknown>).id as string;
           await update(id, values);
-          showSnackbar(config.messages.success.updated, 'success');
           toast.success(config.messages.success.updated);
         } else {
           await create(values);
-          showSnackbar(config.messages.success.created, 'success');
           toast.success(config.messages.success.created);
         }
-        closeDialog();
+        setUI((prev) => ({ ...prev, submitting: false, dialogOpen: false, editingItem: null }));
         options?.onSuccess?.();
       } catch (error) {
-        const msg = ui.editingItem
+        const fallback = ui.editingItem
           ? config.messages.error.update
           : config.messages.error.create;
-        showSnackbar(handleError(error, msg), 'error');
-        toast.error(handleError(error, msg));
-        logError(ui.editingItem ? 'Update' : 'Create', error);
-      } finally {
-        setSubmitting(false);
+        const msg = getErrorMessage(error, fallback);
+        toast.error(msg);
+        if (__DEV__) console.error(`${ui.editingItem ? 'Update' : 'Create'} failed:`, error);
+        setUI((prev) => ({ ...prev, submitting: false }));
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ui.editingItem, create, update]
+    [ui.editingItem, create, update, config.messages, toast]
   );
 
   const handleDeleteConfirm = useCallback(
     async (getId: (item: T) => string, options?: { onSuccess?: () => void }) => {
       if (!ui.deleteDialog.item) return;
+      const item = ui.deleteDialog.item;
       try {
-        await remove(getId(ui.deleteDialog.item));
-        showSnackbar(config.messages.success.deleted, 'success');
+        await remove(getId(item));
         toast.success(config.messages.success.deleted);
-        closeDeleteDialog();
+        setUI((prev) => ({ ...prev, deleteDialog: { open: false, item: null } }));
         options?.onSuccess?.();
       } catch (error) {
-        showSnackbar(handleError(error, config.messages.error.delete), 'error');
-        toast.error(handleError(error, config.messages.error.delete));
-        logError('Delete', error);
+        const msg = getErrorMessage(error, config.messages.error.delete);
+        toast.error(msg);
+        if (__DEV__) console.error('Delete failed:', error);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ui.deleteDialog.item, remove]
+    [ui.deleteDialog.item, remove, config.messages, toast]
   );
 
   return {
@@ -188,11 +165,8 @@ export function useAdminFeature<T extends object, CreateT>(
     openDeleteDialog,
     closeDeleteDialog,
     setSubmitting,
-    showSnackbar,
-    closeSnackbar,
     messages: config.messages,
     handleError,
-    logError,
     handleSubmit,
     handleDeleteConfirm,
   };

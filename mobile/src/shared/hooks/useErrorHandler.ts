@@ -1,172 +1,136 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from './useToast';
+import {
+  getErrorMessage,
+  isNetworkError,
+  isUnauthorizedError,
+  isForbiddenError,
+  isServerError,
+} from '@/src/shared/utils/httpUtils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ErrorContext {
-  feature?: string;
+  feature?:   string;
   operation?: string;
-  userId?: string;
-  metadata?: Record<string, unknown>;
+  userId?:    string;
+  metadata?:  Record<string, unknown>;
 }
 
 export interface ErrorHandlerOptions {
-  showToast?: boolean;
+  showToast?:    boolean;
   logToConsole?: boolean;
-  reportToCrashlytics?: boolean;
+  /** Whether to forward to the crash reporting service */
+  shouldReport?: boolean;
   fallbackMessage?: string;
+}
+
+export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+export interface ClassifiedError {
+  message:      string;
+  severity:     ErrorSeverity;
+  isRetryable:  boolean;
+  shouldReport: boolean;
+  /**
+   * i18n key for network/auth/server errors, or the actual message for
+   * validation errors (where the server message is already user-friendly).
+   */
+  userMessageKey: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Error Classification
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
-
-export interface ClassifiedError {
-  message: string;
-  severity: ErrorSeverity;
-  isRetryable: boolean;
-  shouldReport: boolean;
-  userMessage: string;
-}
-
-function classifyError(error: unknown, context?: ErrorContext): ClassifiedError {
-  // Network errors
+function classifyError(error: unknown): ClassifiedError {
   if (isNetworkError(error)) {
     return {
-      message: getErrorMessage(error),
-      severity: 'medium',
-      isRetryable: true,
-      shouldReport: false,
-      userMessage: 'errors.network.message',
+      message:        getErrorMessage(error),
+      severity:       'medium',
+      isRetryable:    true,
+      shouldReport:   false,
+      userMessageKey: 'errors.network.message',
     };
   }
 
-  // Authentication errors
-  if (isAuthError(error)) {
+  if (isUnauthorizedError(error) || isForbiddenError(error)) {
     return {
-      message: getErrorMessage(error),
-      severity: 'high',
-      isRetryable: false,
-      shouldReport: false,
-      userMessage: 'errors.auth.message',
+      message:        getErrorMessage(error),
+      severity:       'high',
+      isRetryable:    false,
+      shouldReport:   false,
+      userMessageKey: 'errors.auth.message',
     };
   }
 
-  // Validation errors
+  // 400 / 422 — validation: use the server's message directly
   if (isValidationError(error)) {
+    const msg = getErrorMessage(error);
     return {
-      message: getErrorMessage(error),
-      severity: 'low',
-      isRetryable: false,
-      shouldReport: false,
-      userMessage: getErrorMessage(error), // Use actual validation message
+      message:        msg,
+      severity:       'low',
+      isRetryable:    false,
+      shouldReport:   false,
+      userMessageKey: msg,
     };
   }
 
-  // Server errors
   if (isServerError(error)) {
     return {
-      message: getErrorMessage(error),
-      severity: 'high',
-      isRetryable: true,
-      shouldReport: true,
-      userMessage: 'errors.server.message',
+      message:        getErrorMessage(error),
+      severity:       'high',
+      isRetryable:    true,
+      shouldReport:   true,
+      userMessageKey: 'errors.server.message',
     };
   }
 
-  // JavaScript errors (likely bugs)
   if (error instanceof Error) {
     return {
-      message: error.message,
-      severity: 'critical',
-      isRetryable: false,
-      shouldReport: true,
-      userMessage: 'errors.unexpected.message',
+      message:        error.message,
+      severity:       'critical',
+      isRetryable:    false,
+      shouldReport:   true,
+      userMessageKey: 'errors.unexpected.message',
     };
   }
 
-  // Unknown errors
   return {
-    message: String(error),
-    severity: 'medium',
-    isRetryable: false,
-    shouldReport: true,
-    userMessage: 'errors.unknown.message',
+    message:        String(error),
+    severity:       'medium',
+    isRetryable:    false,
+    shouldReport:   true,
+    userMessageKey: 'errors.unknown.message',
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Error Type Guards
+// Local type guard — not in httpUtils (400/422 are business logic errors)
 // ─────────────────────────────────────────────────────────────────────────────
-
-function isNetworkError(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null) {
-    const e = error as Record<string, unknown>;
-    return (
-      e.code === 'NETWORK_ERROR' ||
-      e.code === 'ECONNABORTED' ||
-      e.code === 'ERR_NETWORK' ||
-      e.message === 'Network Error' ||
-      e.status === 0
-    );
-  }
-  return false;
-}
-
-function isAuthError(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null) {
-    const e = error as Record<string, unknown>;
-    return e.status === 401 || e.status === 403;
-  }
-  return false;
-}
 
 function isValidationError(error: unknown): boolean {
   if (typeof error === 'object' && error !== null) {
-    const e = error as Record<string, unknown>;
-    return e.status === 400 || e.status === 422;
+    const status = (error as Record<string, unknown>).status;
+    return status === 400 || status === 422;
   }
   return false;
 }
 
-function isServerError(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null) {
-    const e = error as Record<string, unknown>;
-    const status = e.status as number;
-    return status >= 500 && status < 600;
-  }
-  return false;
-}
-
-function getErrorMessage(error: unknown): string {
-  if (typeof error === 'string') return error;
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'object' && error !== null) {
-    const e = error as Record<string, unknown>;
-    return String(e.message || e.error || 'Unknown error');
-  }
-  return 'Unknown error';
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Error Reporting (placeholder for crash reporting service)
+// Error Reporting (placeholder — wire to Sentry/Crashlytics when ready)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function reportError(
+function reportErrorToService(
   error: unknown,
   context: ErrorContext,
-  classified: ClassifiedError
+  classified: ClassifiedError,
 ): void {
-  if (!classified.shouldReport) return;
-
-  // In development, just log to console
   if (__DEV__) {
-    console.error('Error reported:', {
+    console.error('[ErrorHandler] Reportable error:', {
       error,
       context,
       classified,
@@ -175,23 +139,11 @@ function reportError(
     return;
   }
 
-  // In production, send to crash reporting service
-  // Example: Sentry, Bugsnag, Firebase Crashlytics, etc.
-  try {
-    // Sentry.captureException(error, {
-    //   tags: {
-    //     feature: context.feature,
-    //     operation: context.operation,
-    //     severity: classified.severity,
-    //   },
-    //   extra: {
-    //     context,
-    //     classified,
-    //   },
-    // });
-  } catch (reportingError) {
-    console.error('Failed to report error:', reportingError);
-  }
+  // TODO: wire to crash reporting service
+  // Sentry.captureException(error, {
+  //   tags: { feature: context.feature, operation: context.operation },
+  //   extra: { context, classified },
+  // });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,27 +151,26 @@ function reportError(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useErrorHandler() {
-  const { t } = useTranslation();
-  const toast = useToast();
+  const { t }  = useTranslation();
+  const toast  = useToast();
 
   const handleError = useCallback(
     (
-      error: unknown,
+      error:   unknown,
       context?: ErrorContext,
-      options: ErrorHandlerOptions = {}
+      options: ErrorHandlerOptions = {},
     ) => {
       const {
-        showToast = true,
+        showToast    = true,
         logToConsole = true,
-        reportToCrashlytics = true,
+        shouldReport = true,
         fallbackMessage,
       } = options;
 
-      const classified = classifyError(error, context);
+      const classified = classifyError(error);
 
-      // Log to console in development
       if (logToConsole && __DEV__) {
-        console.error('Error handled:', {
+        console.error('[ErrorHandler]', {
           error,
           context,
           classified,
@@ -227,11 +178,10 @@ export function useErrorHandler() {
         });
       }
 
-      // Show user-friendly toast
       if (showToast) {
-        const userMessage = 
-          fallbackMessage || 
-          t(classified.userMessage) || 
+        const userMessage =
+          fallbackMessage ||
+          t(classified.userMessageKey) ||
           classified.message;
 
         if (classified.severity === 'critical' || classified.severity === 'high') {
@@ -241,9 +191,8 @@ export function useErrorHandler() {
         }
       }
 
-      // Report to crash reporting service
-      if (reportToCrashlytics && classified.shouldReport) {
-        reportError(error, context || {}, classified);
+      if (shouldReport && classified.shouldReport) {
+        reportErrorToService(error, context ?? {}, classified);
       }
 
       return classified;
@@ -254,8 +203,8 @@ export function useErrorHandler() {
   const handleAsyncError = useCallback(
     async (
       asyncOperation: () => Promise<void>,
-      context?: ErrorContext,
-      options?: ErrorHandlerOptions
+      context?:       ErrorContext,
+      options?:       ErrorHandlerOptions,
     ) => {
       try {
         await asyncOperation();
@@ -267,9 +216,8 @@ export function useErrorHandler() {
   );
 
   const createErrorHandler = useCallback(
-    (context: ErrorContext, options?: ErrorHandlerOptions) => {
-      return (error: unknown) => handleError(error, context, options);
-    },
+    (context: ErrorContext, options?: ErrorHandlerOptions) =>
+      (error: unknown) => handleError(error, context, options),
     [handleError]
   );
 

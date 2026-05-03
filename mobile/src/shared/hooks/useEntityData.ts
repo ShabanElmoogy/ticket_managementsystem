@@ -1,8 +1,16 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
-import { tokenManager } from '../../services/api/tokenManager';
 import { usePaginationStore } from '../../stores/paginationStore';
+
+// ── Stale time constants ──────────────────────────────────────────────────────
+
+/** SERVER mode: short stale time — each page is a distinct cache entry */
+const SERVER_STALE_MS = 60  * 1000; // 1 minute
+/** CLIENT mode: longer stale time — full dataset fetched once */
+const CLIENT_STALE_MS = 30  * 1000; // 30 seconds
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -17,20 +25,20 @@ export interface PaginatedResponse<T> {
 }
 
 export interface EntityDataReturn<T, CreateT> {
-  entities:    T[];
-  loading:     boolean;
+  entities: T[];
+  loading:  boolean;
   /** Only populated in SERVER mode with pagination params */
-  apiMeta:     PaginatedResponse<T>['pagination'] | null;
-  create:  (data: CreateT) => Promise<T>;
-  update:  (id: string | number, data: CreateT) => Promise<T>;
-  remove:  (id: string | number) => Promise<void>;
-  refetch: () => void;
+  apiMeta:  PaginatedResponse<T>['pagination'] | null;
+  create:   (data: CreateT) => Promise<T>;
+  update:   (id: string | number, data: CreateT) => Promise<T>;
+  remove:   (id: string | number) => Promise<void>;
+  refetch:  () => void;
 }
 
 export interface EntityConfig<T, CreateT> {
-  queryKey: readonly string[] | (() => readonly string[]);
+  queryKey: readonly string[];
   api: {
-    /** Called with { page, limit } in SERVER mode, empty object in CLIENT mode */
+    /** Called with { page, limit } in SERVER mode, { limit } in CLIENT mode */
     getAll:  (params?: Record<string, string>) => Promise<T[] | PaginatedResponse<T>>;
     create:  (data: CreateT) => Promise<T>;
     update:  (id: string, data: CreateT) => Promise<T>;
@@ -46,97 +54,97 @@ export interface EntityConfig<T, CreateT> {
 
 function unwrap<T>(result: T[] | PaginatedResponse<T>): {
   entities: T[];
-  meta: PaginatedResponse<T>['pagination'] | null;
+  meta:     PaginatedResponse<T>['pagination'] | null;
 } {
-  if (Array.isArray(result)) return { entities: result, meta: null };
-  if (result && typeof result === 'object' && 'data' in result && Array.isArray((result as any).data)) {
-    return { entities: (result as PaginatedResponse<T>).data, meta: (result as PaginatedResponse<T>).pagination };
+  if (Array.isArray(result)) {
+    return { entities: result, meta: null };
+  }
+  if (result && typeof result === 'object' && 'data' in result && Array.isArray(result.data)) {
+    return { entities: result.data, meta: result.pagination };
   }
   return { entities: result as unknown as T[], meta: null };
 }
 
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 export function useEntityData<T, CreateT>(
   config: EntityConfig<T, CreateT>
 ): EntityDataReturn<T, CreateT> {
-  const { token }      = useAuthStore();
-  const queryClient    = useQueryClient();
-  const paginationMode = usePaginationStore((s) => s.paginationMode);
-  const effectiveSize  = usePaginationStore((s) => s.getEffectivePageSize());
-  const maxClientRecs  = usePaginationStore((s) => s.maxClientRecords);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const queryClient     = useQueryClient();
+  const paginationMode  = usePaginationStore((s) => s.paginationMode);
+  const effectiveSize   = usePaginationStore((s) => s.getEffectivePageSize());
+  const maxClientRecs   = usePaginationStore((s) => s.maxClientRecords);
 
-  const resolvedKey =
-    typeof config.queryKey === 'function' ? config.queryKey() : config.queryKey;
-
-  // In SERVER mode include page + limit in the query key so each page is cached separately.
-  // In CLIENT mode fetch everything once (no page params).
   const page  = config.page  ?? 1;
   const limit = config.limit ?? effectiveSize;
 
+  // In SERVER mode include page + limit in the query key so each page is cached separately.
+  // In CLIENT mode fetch everything once (no page params in key).
   const queryKey = paginationMode === 'SERVER'
-    ? [...resolvedKey, 'page', String(page), 'limit', String(limit)]
-    : resolvedKey;
+    ? [...config.queryKey, 'page', String(page), 'limit', String(limit)]
+    : config.queryKey;
 
   const queryParams: Record<string, string> = paginationMode === 'SERVER'
     ? { page: String(page), limit: String(limit) }
-    : { limit: String(maxClientRecs) };  // CLIENT: fetch all up to cap
+    : { limit: String(maxClientRecs) };
 
   const { data: raw, isLoading: loading, refetch } = useQuery({
     queryKey,
-    queryFn:   () => config.api.getAll(queryParams),
-    enabled:   !!token && !!tokenManager.getToken(),
-    staleTime: paginationMode === 'SERVER' ? 60 * 1000 : 30 * 1000,
-    // SERVER mode: don't keep previous page data visible while loading next page
-    placeholderData: paginationMode === 'SERVER' ? undefined : (prev: any) => prev,
+    queryFn:  () => config.api.getAll(queryParams),
+    enabled:  isAuthenticated,
+    staleTime: paginationMode === 'SERVER' ? SERVER_STALE_MS : CLIENT_STALE_MS,
+    // SERVER mode: don't show previous page while loading next
+    // CLIENT mode: keep previous data visible during background refresh
+    placeholderData: paginationMode === 'SERVER'
+      ? undefined
+      : (prev: T[] | PaginatedResponse<T> | undefined) => prev,
   });
 
-  const { entities, meta: apiMeta } = raw ? unwrap<T>(raw as any) : { entities: [] as T[], meta: null };
+  const { entities, meta: apiMeta } = raw
+    ? unwrap<T>(raw as T[] | PaginatedResponse<T>)
+    : { entities: [] as T[], meta: null };
 
   // ── Mutations — always invalidate the base key (clears all pages) ──────────
 
   const createMutation = useMutation({
     mutationFn: config.api.create,
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: resolvedKey });
-    },
+    onSettled:  () => queryClient.invalidateQueries({ queryKey: config.queryKey }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: CreateT }) =>
       config.api.update(id, data),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: resolvedKey });
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: config.queryKey }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: config.api.delete,
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: resolvedKey });
-    },
+    onSettled:  () => queryClient.invalidateQueries({ queryKey: config.queryKey }),
   });
 
   const create = useCallback(
     async (data: CreateT) => {
-      if (!token) throw new Error('No authentication token');
+      if (!isAuthenticated) throw new Error('Cannot create: user is not authenticated');
       return createMutation.mutateAsync(data);
     },
-    [token, createMutation]
+    [isAuthenticated, createMutation]
   );
 
   const update = useCallback(
     async (id: string | number, data: CreateT) => {
-      if (!token) throw new Error('No authentication token');
+      if (!isAuthenticated) throw new Error('Cannot update: user is not authenticated');
       return updateMutation.mutateAsync({ id: String(id), data });
     },
-    [token, updateMutation]
+    [isAuthenticated, updateMutation]
   );
 
   const remove = useCallback(
     async (id: string | number) => {
-      if (!token) throw new Error('No authentication token');
+      if (!isAuthenticated) throw new Error('Cannot delete: user is not authenticated');
       await deleteMutation.mutateAsync(String(id));
     },
-    [token, deleteMutation]
+    [isAuthenticated, deleteMutation]
   );
 
   return {
@@ -146,6 +154,6 @@ export function useEntityData<T, CreateT>(
     create,
     update,
     remove,
-    refetch: () => refetch(),
+    refetch,
   };
 }
