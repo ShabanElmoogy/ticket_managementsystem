@@ -11,6 +11,8 @@ export interface Customer {
   address?: string;
   description?: string;
   company?: string;
+  latitude: number | null;
+  longitude: number | null;
   maintenanceType?: MaintenanceType | null;
   subscriptionStartDate?: string | null;
   subscriptionEndDate?: string | null;
@@ -37,6 +39,8 @@ export interface CreateCustomerData {
   address?: string;
   description?: string;
   applicationIds?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
   maintenanceType?: MaintenanceType | null;
   subscriptionStartDate?: string | Date | null;
   subscriptionEndDate?: string | Date | null;

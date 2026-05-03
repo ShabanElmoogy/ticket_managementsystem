@@ -7,6 +7,7 @@ import { useThemeColors } from '@/src/constants/theme';
 import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
 import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
 import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
+import CustomerLocationMap from './CustomerLocationMap';
 import { customersApi, customersKeys } from '../api/customers';
 import { getCustomerStatus, type SubscriptionStatus } from '../components/customerColumns';
 import { PAGINATION } from '@/src/constants/api';
@@ -149,6 +150,22 @@ const CustomerDetailScreen: React.FC<Props> = ({
             ]}
           />
 
+          {/* ── Location map ── */}
+          {customer.latitude != null && customer.longitude != null ? (
+            <CustomerLocationMap
+              latitude={customer.latitude}
+              longitude={customer.longitude}
+              customerName={customer.name}
+              style={{ borderWidth: 1, borderColor: border }}
+            />
+          ) : (
+            <View style={[styles.noLocationCard, { backgroundColor: cardBg, borderColor: border }]}>
+              <Text style={[styles.noLocationText, { color: textSec }]}>
+                {t('customers.location.noLocation')}
+              </Text>
+            </View>
+          )}
+
           {/* ── Subscription ── */}
           {customer.maintenanceType && (
             <DetailInfoCard
@@ -183,15 +200,15 @@ const CustomerDetailScreen: React.FC<Props> = ({
                   📱  {t('customers.detail.applications')}
                 </Text>
                 <View style={styles.appsBadge}>
-                  <Text style={styles.appsBadgeText}>{customer.applications.length}</Text>
+                  <Text style={styles.appsBadgeText}>{customer.applications!.length}</Text>
                 </View>
               </View>
-              {customer.applications.map((ca: any, i: number) => (
+              {customer.applications!.map((ca: any, i: number) => (
                 <View
                   key={ca.id}
                   style={[
                     styles.appRow,
-                    i < customer.applications.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
+                    i < customer.applications!.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
                   ]}
                 >
                   <View style={styles.appIcon}>
@@ -275,6 +292,13 @@ const styles = StyleSheet.create({
     borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
   },
   versionText: { color: '#1d4ed8', fontSize: 11, fontWeight: '600' },
+
+  // No-location placeholder
+  noLocationCard: {
+    borderRadius: 12, borderWidth: 1, padding: 16,
+    alignItems: 'center', justifyContent: 'center', minHeight: 60,
+  },
+  noLocationText: { fontSize: 13, fontStyle: 'italic' },
 });
 
 export default CustomerDetailScreen;

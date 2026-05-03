@@ -676,6 +676,265 @@
       ]
     },
     {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Customer (no location)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('customerId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+1234567890\",\n  \"company\": \"Test Corp\",\n  \"address\": \"123 Main St\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Create Customer (with location) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('customerId', json.id);",
+                  "pm.test('Response has latitude', () => pm.expect(json.latitude).to.be.a('number'));",
+                  "pm.test('Response has longitude', () => pm.expect(json.longitude).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Located Customer\",\n  \"email\": \"located@example.com\",\n  \"phone\": \"+1234567890\",\n  \"company\": \"Geo Corp\",\n  \"address\": \"456 Map Ave\",\n  \"latitude\": 24.7136,\n  \"longitude\": 46.6753\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Create Customer (invalid — out-of-range latitude) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for out-of-range latitude', () => pm.expect(pm.response.code).to.equal(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad Lat Customer\",\n  \"email\": \"badlat@example.com\",\n  \"latitude\": 91.0,\n  \"longitude\": 46.6753\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Create Customer (invalid — partial coordinates) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for partial coordinates', () => pm.expect(pm.response.code).to.equal(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Partial Coords Customer\",\n  \"email\": \"partial@example.com\",\n  \"latitude\": 24.7136\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Update Customer (with location) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Response has latitude', () => pm.expect(json.latitude).to.be.a('number'));",
+                  "pm.test('Response has longitude', () => pm.expect(json.longitude).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Customer\",\n  \"email\": \"updated@example.com\",\n  \"latitude\": 25.2048,\n  \"longitude\": 55.2708\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer (clear location) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('latitude is null after clear', () => pm.expect(json.latitude).to.be.null);",
+                  "pm.test('longitude is null after clear', () => pm.expect(json.longitude).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": null,\n  \"longitude\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Assign Application to Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/assign-application",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "assign-application"]
+            }
+          }
+        },
+        {
+          "name": "Remove Application from Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "applications", "{{applicationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Applications",
       "item": [
         {

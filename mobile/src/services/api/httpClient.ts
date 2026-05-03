@@ -5,11 +5,11 @@ import { authEvents } from './authEvents';
 import { circuitBreaker } from './circuitBreaker';
 import { requestDeduplicator } from './requestDeduplicator';
 import { HTTP_STATUS } from '@/src/constants/api';
-import type { ApiError } from './types';
-import { ERROR_REASON_MAP } from './types';
+import type { ApiError } from './httpTypes';
+import { ERROR_REASON_MAP } from './httpTypes';
 
 // Re-export so existing consumers of `import type { ApiError } from './httpClient'` keep working
-export type { ApiError } from './types';
+export type { ApiError } from './httpTypes';
 
 // Extend config type to carry our retry flags
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {

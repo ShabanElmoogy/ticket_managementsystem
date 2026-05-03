@@ -171,7 +171,26 @@
     "sections": {
       "basicInfo":    "Basic Info",
       "company":      "Company",
+      "location":     "Location",
       "subscription": "Subscription"
+    },
+    "location": {
+      "title":            "Location",
+      "noLocation":       "No location set",
+      "useMyLocation":    "Use My Location",
+      "clearLocation":    "Clear Location",
+      "latitude":         "Latitude",
+      "longitude":        "Longitude",
+      "latPlaceholder":   "e.g. 24.7136",
+      "lngPlaceholder":   "e.g. 46.6753",
+      "latRange":         "Latitude must be between -90 and 90",
+      "lngRange":         "Longitude must be between -180 and 180",
+      "bothOrNeither":    "Both latitude and longitude must be provided together",
+      "permissionDenied": "Location permission denied. Open Settings to grant access.",
+      "openSettings":     "Open Settings",
+      "gpsError":         "Could not get current location. Please try again.",
+      "mapUnavailable":   "Map unavailable. Enter coordinates manually.",
+      "openInMaps":       "Open in Maps"
     },
     "columns": {
       "name": "Name",

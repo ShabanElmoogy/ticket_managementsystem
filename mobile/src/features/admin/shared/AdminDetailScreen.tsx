@@ -13,7 +13,7 @@ export interface AdminDetailScreenProps {
   onClose:       () => void;
   onEdit:        () => void;
   onDelete:      () => void;
-  children:      any;
+  children?:     React.ReactNode;
 }
 
 const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({

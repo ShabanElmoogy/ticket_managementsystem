@@ -142,6 +142,8 @@ export async function createCustomer(tenantId, body) {
     maintenanceType,
     subscriptionStartDate,
     subscriptionEndDate,
+    latitude,
+    longitude,
   } = body;
 
   const duplicate = await repo.findCustomerByEmail(email, tenantId);
@@ -157,6 +159,8 @@ export async function createCustomer(tenantId, body) {
     maintenanceType:       maintenanceType ?? null,
     subscriptionStartDate: subscriptionStartDate ? new Date(subscriptionStartDate) : null,
     subscriptionEndDate:   subscriptionEndDate   ? new Date(subscriptionEndDate)   : null,
+    latitude:              latitude  ?? null,
+    longitude:             longitude ?? null,
   });
 
   if (applicationIds.length > 0) {
@@ -177,6 +181,8 @@ export async function updateCustomer(id, tenantId, body) {
     maintenanceType,
     subscriptionStartDate,
     subscriptionEndDate,
+    latitude,
+    longitude,
   } = body;
 
   const existing = await repo.findCustomerById(id, tenantId);
@@ -200,6 +206,8 @@ export async function updateCustomer(id, tenantId, body) {
     data.subscriptionStartDate = subscriptionStartDate ? new Date(subscriptionStartDate) : null;
   if (subscriptionEndDate !== undefined)
     data.subscriptionEndDate   = subscriptionEndDate   ? new Date(subscriptionEndDate)   : null;
+  if (latitude  !== undefined) data.latitude  = latitude  ?? null;
+  if (longitude !== undefined) data.longitude = longitude ?? null;
 
   const customer = await repo.updateCustomerById(id, tenantId, data);
 

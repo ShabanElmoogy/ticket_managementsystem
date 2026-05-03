@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, pgEnum, doublePrecision } from 'drizzle-orm/pg-core';
 import { tenants } from '../tenants/tenants.schema.js';
 
 export const maintenanceTypeEnum = pgEnum('maintenance_type', [
@@ -18,6 +18,8 @@ export const customers = pgTable('customers', {
   maintenanceType: maintenanceTypeEnum('maintenance_type'),
   subscriptionStartDate: timestamp('subscription_start_date'),
   subscriptionEndDate: timestamp('subscription_end_date'),
+  latitude: doublePrecision('latitude'),
+  longitude: doublePrecision('longitude'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow()
 });

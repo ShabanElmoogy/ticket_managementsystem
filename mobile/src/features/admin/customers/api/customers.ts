@@ -1,6 +1,6 @@
 import { BaseApiService } from '@/src/services/api/base';
 import { API, QUERY_KEYS } from '@/src/constants/api';
-import type { Customer, CreateCustomerData, CustomerApplication } from '@/src/services/api/types';
+import type { Customer, CreateCustomerData, CustomerApplication } from '@/src/services/api/types/index';
 
 export class CustomersApiService extends BaseApiService {
   getCustomers      = (params?: Record<string, string>)                     => this.get<Customer[]>(API.CUSTOMERS.LIST, { params });

@@ -21,6 +21,8 @@ const CUSTOMER_COLUMNS = {
   phone:                 customers.phone,
   company:               customers.company,
   address:               customers.address,
+  latitude:              customers.latitude,
+  longitude:             customers.longitude,
   maintenanceType:       customers.maintenanceType,
   subscriptionStartDate: customers.subscriptionStartDate,
   subscriptionEndDate:   customers.subscriptionEndDate,

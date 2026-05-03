@@ -9,7 +9,7 @@
 
 import type { ErrorReason } from '@/src/components/NetworkErrorDialog/types';
 import { getErrorCode, getErrorMessage } from '@/src/shared/utils/httpUtils';
-import { ERROR_REASON_MAP } from './types';
+import { ERROR_REASON_MAP } from './httpTypes';
 
 // ── Known backend error codes ─────────────────────────────────────────────────
 

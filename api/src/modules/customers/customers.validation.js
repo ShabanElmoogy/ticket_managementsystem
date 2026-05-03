@@ -13,6 +13,19 @@ export const createCustomerSchema = z.object({
   maintenanceType,
   subscriptionStartDate: dateString,
   subscriptionEndDate:   dateString,
+  latitude:              z.number().min(-90).max(90).nullable().optional(),
+  longitude:             z.number().min(-180).max(180).nullable().optional(),
+}).superRefine((data, ctx) => {
+  const hasLat = data.latitude != null;
+  const hasLng = data.longitude != null;
+  if (hasLat !== hasLng) {
+    const missing = hasLat ? 'longitude' : 'latitude';
+    ctx.addIssue({
+      code: 'custom',
+      path: [missing],
+      message: `${missing} is required when the other coordinate is provided`,
+    });
+  }
 });
 
 export const updateCustomerSchema = z.object({
@@ -25,6 +38,19 @@ export const updateCustomerSchema = z.object({
   maintenanceType,
   subscriptionStartDate: dateString,
   subscriptionEndDate:   dateString,
+  latitude:              z.number().min(-90).max(90).nullable().optional(),
+  longitude:             z.number().min(-180).max(180).nullable().optional(),
+}).superRefine((data, ctx) => {
+  const hasLat = data.latitude != null;
+  const hasLng = data.longitude != null;
+  if (hasLat !== hasLng) {
+    const missing = hasLat ? 'longitude' : 'latitude';
+    ctx.addIssue({
+      code: 'custom',
+      path: [missing],
+      message: `${missing} is required when the other coordinate is provided`,
+    });
+  }
 });
 
 export const assignApplicationSchema = z.object({

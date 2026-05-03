@@ -1,6 +1,6 @@
 {
-  "id": "e9fb3f83-97eb-4798-8aca-e5390cfe739b",
-  "prevId": "fd464edd-7842-4a07-91ce-df347f208a86",
+  "id": "b7a17ae6-1740-4517-8b44-20021ba64451",
+  "prevId": "e9fb3f83-97eb-4798-8aca-e5390cfe739b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -659,6 +659,18 @@
         "subscription_end_date": {
           "name": "subscription_end_date",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": false
         },

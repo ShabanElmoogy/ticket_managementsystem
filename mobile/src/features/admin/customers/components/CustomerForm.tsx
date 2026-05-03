@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import LocationPicker from './LocationPicker';
 import { FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
@@ -13,7 +14,7 @@ import AppDatePicker  from '@/src/shared/components/forms/AppDatePicker';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
 import { useToast } from '@/src/shared/hooks/useToast';
 import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
-import type { Customer, CreateCustomerData } from '@/src/services/api/types';
+import type { Customer, CreateCustomerData } from '@/src/services/api/types/index';
 
 interface Props {
   item:       Customer | null;
@@ -48,6 +49,8 @@ const CustomerForm: React.FC<Props> = ({
       maintenanceType:       (item?.maintenanceType as MaintenanceType | null) ?? null,
       subscriptionStartDate: toDateStr(item?.subscriptionStartDate),
       subscriptionEndDate:   toDateStr(item?.subscriptionEndDate),
+      latitude:              item?.latitude  ?? null,
+      longitude:             item?.longitude ?? null,
     },
   });
 
@@ -65,6 +68,8 @@ const CustomerForm: React.FC<Props> = ({
   // ── Submit — pass doSave directly, AdminFormPage wraps with form.handleSubmit ──
   const doSave = async (data: any) => {
     try {
+      const lat = data.latitude  != null && data.latitude  !== '' ? Number(data.latitude)  : null;
+      const lng = data.longitude != null && data.longitude !== '' ? Number(data.longitude) : null;
       await onSave({
         name:                  data.name,
         email:                 data.email,
@@ -74,6 +79,8 @@ const CustomerForm: React.FC<Props> = ({
         maintenanceType:       data.maintenanceType       ?? undefined,
         subscriptionStartDate: data.subscriptionStartDate ?? undefined,
         subscriptionEndDate:   data.subscriptionEndDate   ?? undefined,
+        latitude:              lat,
+        longitude:             lng,
       } as CreateCustomerData);
       toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
@@ -168,6 +175,36 @@ const CustomerForm: React.FC<Props> = ({
             blurOnSubmit
           />
         </AppFormField>
+      </FormSection>
+
+      {/* Location — collapsible, starts collapsed when no location set */}
+      <FormSection
+        title={t('customers.sections.location')}
+        icon="📍"
+        collapsible
+        defaultCollapsed={!item?.latitude}
+        hasError={!!(errors.latitude || errors.longitude)}
+      >
+        <Controller
+          name="latitude"
+          control={control}
+          render={({ field: { value, onChange } }) => {
+            const lngValue = form.getValues('longitude');
+            const pickerValue =
+              value != null && lngValue != null
+                ? { latitude: Number(value), longitude: Number(lngValue) }
+                : null;
+            return (
+              <LocationPicker
+                value={pickerValue}
+                onChange={(coords) => {
+                  onChange(coords?.latitude ?? null);
+                  form.setValue('longitude', coords?.longitude ?? null);
+                }}
+              />
+            );
+          }}
+        />
       </FormSection>
 
       {/* Subscription */}

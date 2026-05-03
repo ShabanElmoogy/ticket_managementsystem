@@ -60,7 +60,7 @@ export interface AppFormFieldProps<T extends FieldValues> {
   /** RHF control object from useForm() */
   control:    Control<T>;
   /** The input component to render — must accept value, onChangeText, error props */
-  children:   React.ReactElement<Record<string, unknown>>;
+  children?:  React.ReactElement<any>;
   /** Optional value transformer applied before calling RHF onChange */
   transform?: (v: string) => string;
   /** Container style override — use for margin adjustments between fields */
@@ -81,7 +81,7 @@ function AppFormField<T extends FieldValues>({
   // Read from children.props inside the effect — avoids re-running when
   // children identity changes due to inline JSX re-creation.
   useEffect(() => {
-    const childInputRef = (children.props as Record<string, unknown>)?.inputRef as FocusableRef | undefined;
+    const childInputRef = (children?.props as Record<string, unknown>)?.inputRef as FocusableRef | undefined;
     if (childInputRef) registerRef(String(name), childInputRef);
     return () => unregisterField(String(name));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,7 +93,7 @@ function AppFormField<T extends FieldValues>({
   const wrappedNextRef = useRef<{ current: { focus(): void } } | undefined>(undefined);
 
   useEffect(() => {
-    const originalNextRef = (children.props as Record<string, unknown>)?.nextRef as FocusableRef | undefined;
+    const originalNextRef = (children?.props as Record<string, unknown>)?.nextRef as FocusableRef | undefined;
     if (!originalNextRef) {
       wrappedNextRef.current = undefined;
       return;
@@ -108,7 +108,7 @@ function AppFormField<T extends FieldValues>({
     } else {
       wrappedNextRef.current.current.focus = focusFn;
     }
-  }, [name, trigger, children.props]);
+  }, [name, trigger, children?.props]);
 
   return (
     <View

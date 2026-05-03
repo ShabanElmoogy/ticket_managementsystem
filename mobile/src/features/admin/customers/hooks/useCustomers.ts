@@ -4,7 +4,7 @@ import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { customersApi, customersKeys } from '@/src/features/admin/customers/api/customers';
 import { exportCustomerPdf } from '@/src/features/admin/customers/utils/exportCustomerPdf';
 import { getCustomerColumns } from '@/src/features/admin/customers/components/customerColumns';
-import type { Customer, CreateCustomerData } from '@/src/services/api/types';
+import type { Customer, CreateCustomerData } from '@/src/services/api/types/index';
 
 export function useCustomers() {
   const { t } = useTranslation();

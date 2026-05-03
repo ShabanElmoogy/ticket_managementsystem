@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { formatDate } from '@/src/shared/utils/dateUtils';
-import type { Customer } from '@/src/services/api/types';
+import type { Customer } from '@/src/services/api/types/index';
 import type { ColDef } from '@/src/shared/components/data/AppDataTable';
 import type { TFunction } from 'i18next';
 
@@ -66,9 +66,7 @@ const StatusBadge: React.FC<{ status: SubscriptionStatus }> = ({ status }) => {
 export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
   return [
     // Name — primary identifier
-    {
-      field: 'name', headerName: t('customers.columns.name'), flex: 1, sortable: true,
-    },
+    { field: 'name', headerName: t('customers.columns.name'), sortable: true },
 
     // Email — shown in table and used in PDF export
     {

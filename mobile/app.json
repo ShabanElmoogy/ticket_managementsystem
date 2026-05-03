@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to record the customer's address."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +24,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.mobile",
-      "softwareKeyboardLayoutMode": "adjustNothing"
+      "softwareKeyboardLayoutMode": "adjustNothing",
+      "permissions": ["ACCESS_FINE_LOCATION"]
     },
     "web": {
       "output": "static",
@@ -42,7 +46,10 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      ["expo-location", {
+        "locationWhenInUsePermission": "This app uses your location to record the customer's address."
+      }]
     ],
     "experiments": {
       "typedRoutes": true,

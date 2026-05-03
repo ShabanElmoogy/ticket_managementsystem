@@ -30,6 +30,8 @@ export const createCustomerFormSchema = (t: TFunction) =>
     address: z.string().trim()
       .max(255, t('validation.maxLength', { field: t('customers.form.address'), max: 255 }))
       .optional().or(z.literal('')),
+    latitude:  z.coerce.number().min(-90,  t('customers.location.latRange')).max(90,  t('customers.location.latRange')).nullable().optional(),
+    longitude: z.coerce.number().min(-180, t('customers.location.lngRange')).max(180, t('customers.location.lngRange')).nullable().optional(),
 
     // Optional maintenance
     maintenanceType: z.enum(MAINTENANCE_TYPES).nullable().optional(),
@@ -68,6 +70,18 @@ export const createCustomerFormSchema = (t: TFunction) =>
     {
       message: t('validation.endAfterStart'),
       path: ['subscriptionEndDate'],
+    },
+  )
+  // Latitude and longitude must both be provided or both be absent
+  .refine(
+    (d) => {
+      const hasLat = d.latitude != null;
+      const hasLng = d.longitude != null;
+      return hasLat === hasLng;
+    },
+    {
+      message: t('customers.location.bothOrNeither'),
+      path: ['longitude'],
     },
   );
 
