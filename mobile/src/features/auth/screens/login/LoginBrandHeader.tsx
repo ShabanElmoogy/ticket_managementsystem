@@ -6,41 +6,41 @@ import { useTranslation } from 'react-i18next';
 import { useThemeColors, useIsDark, Palette } from '@/src/constants/theme';
 
 export interface LoginBrandHeaderProps {
-  isRtl:             boolean;
+  isRtl: boolean;
   onToggleDirection: () => void;
-  onToggleTheme:     () => void;
+  onToggleTheme: () => void;
 }
 
 const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
   isRtl, onToggleDirection, onToggleTheme,
 }) => {
-  const c      = useThemeColors();
+  const c = useThemeColors();
   const isDark = useIsDark();
-  const { t }  = useTranslation();
+  const { t } = useTranslation();
 
   const pills = [t('auth.featureDashboard'), t('auth.featureKanban'), t('auth.featureAlerts')];
 
   // ── Animation refs ──────────────────────────────────────────────────────────
-  const pulse1  = useRef(new Animated.Value(1)).current;
-  const pulse2  = useRef(new Animated.Value(1.18)).current;
-  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const pulse1 = useRef(new Animated.Value(1)).current;
+  const pulse2 = useRef(new Animated.Value(1.18)).current;
+  const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(14)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn,  { toValue: 1, duration: 520, useNativeDriver: true }),
+      Animated.timing(fadeIn, { toValue: 1, duration: 520, useNativeDriver: true }),
       Animated.timing(slideUp, { toValue: 0, duration: 520, useNativeDriver: true }),
     ]).start();
 
     const anim1 = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse1, { toValue: 1.38, duration: 2000, useNativeDriver: true }),
-        Animated.timing(pulse1, { toValue: 1,    duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse1, { toValue: 1, duration: 2000, useNativeDriver: true }),
       ]),
     );
     const anim2 = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse2, { toValue: 1,    duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse2, { toValue: 1, duration: 2000, useNativeDriver: true }),
         Animated.timing(pulse2, { toValue: 1.38, duration: 2000, useNativeDriver: true }),
       ]),
     );
@@ -50,10 +50,10 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
   }, [pulse1, pulse2, fadeIn, slideUp]);
 
   // Split "TicketFlow Pro" → base + accent " Pro"
-  const appName  = t('auth.appName');
+  const appName = t('auth.appName');
   const PRO_PART = ' Pro';
   const baseName = appName.endsWith(PRO_PART) ? appName.slice(0, -PRO_PART.length) : appName;
-  const hasPro   = appName.endsWith(PRO_PART);
+  const hasPro = appName.endsWith(PRO_PART);
 
   // Control button helpers — keep natural direction so RTL order is fine
   // Target language shown (so user sees what they'd switch TO)
@@ -89,7 +89,7 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
           </View>
         </View>
 
-        {/* App name + tagline */}
+        {/* App name */}
         <View style={styles.nameBlock}>
           <View style={styles.nameRow}>
             <Text style={[styles.appNameBase, { color: c.text.primary }]}>{baseName}</Text>
@@ -98,12 +98,6 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
                 {PRO_PART}
               </Text>
             )}
-          </View>
-          <View style={styles.taglineRow}>
-            <View style={[styles.taglineDot, { backgroundColor: c.interactive.primary }]} />
-            <Text style={[styles.appTagline, { color: c.text.secondary }]} numberOfLines={1}>
-              {t('auth.appTagline')}
-            </Text>
           </View>
         </View>
 
@@ -138,7 +132,7 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
                 <Text style={styles.ctrlPillIcon}>🌐</Text>
                 <Text style={[
                   styles.ctrlPillText,
-                  { color: pressed ? Palette.white : c.text.primary },
+                  { color: pressed ? Palette.white : c.text.primary, marginLeft: 5 },
                 ]}>
                   {langLabel}
                 </Text>
@@ -206,129 +200,117 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingTop:        24,
-    paddingBottom:     18,
-    alignItems:        'center',
+    paddingTop: 24,
+    paddingBottom: 18,
+    alignItems: 'center',
   },
 
   // ── Brand row
   brandRow: {
     flexDirection: 'row',
-    alignItems:    'center',
-    gap:           12,
-    marginBottom:  14,
-    alignSelf:     'stretch',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+    alignSelf: 'stretch',
   },
 
   // ── Icon
   iconOuter: {
-    width:          62,
-    height:         62,
-    alignItems:     'center',
+    width: 50,
+    height: 50,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   glowRingOuter: {
-    position:     'absolute',
-    width:        62,
-    height:       62,
+    position: 'absolute',
+    width: 50,
+    height: 50,
     borderRadius: 17,
-    opacity:      0.1,
+    opacity: 0.1,
   },
   glowRingInner: {
-    position:     'absolute',
-    width:        53,
-    height:       53,
+    position: 'absolute',
+    width: 53,
+    height: 53,
     borderRadius: 15,
-    opacity:      0.2,
+    opacity: 0.2,
   },
   iconWrap: {
-    width:          46,
-    height:         46,
-    borderRadius:   13,
-    alignItems:     'center',
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset:   { width: 0, height: 6 },
-    shadowOpacity:  0.42,
-    shadowRadius:   12,
-    elevation:      10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.42,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  iconEmoji: { fontSize: 23 },
+  iconEmoji: { fontSize: 20 },
 
   // ── Name block
   nameBlock: { flex: 1 },
   nameRow: {
     flexDirection: 'row',
-    alignItems:    'baseline',
-    marginBottom:  3,
+    alignItems: 'baseline',
+    marginBottom: 3,
   },
   appNameBase: {
-    fontSize:      20,
-    fontWeight:    '900',
+    fontSize: 20,
+    fontWeight: '900',
     letterSpacing: -0.4,
   },
   appNameAccent: {
-    fontSize:      20,
-    fontWeight:    '900',
+    fontSize: 20,
+    fontWeight: '900',
     letterSpacing: -0.4,
-  },
-  taglineRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           5,
-  },
-  taglineDot: {
-    width:        4,
-    height:       4,
-    borderRadius: 2,
-  },
-  appTagline: {
-    fontSize:  11,
-    lineHeight: 15,
-    flex:       1,
   },
 
   // ── Control pills
   controlsRow: {
     flexDirection: 'row',
-    gap:           5,
+    gap: 15,
   },
   ctrlPill: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               4,
-    paddingHorizontal: 9,
-    paddingVertical:   6,
-    borderRadius:      20,
-    borderWidth:       1,
-    shadowOffset:      { width: 0, height: 1 },
-    shadowOpacity:     0.10,
-    shadowRadius:      3,
-    elevation:         1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.10,
+    shadowRadius: 3,
+    elevation: 1
   },
-  ctrlPillIcon: { fontSize: 13 },
+  ctrlPillIcon: { fontSize: 22 },
   ctrlPillText: {
-    fontSize:   11,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
+    mar: 'center'
   },
 
   // ── Feature pills
   pillRow: {
-    flexDirection:  'row',
-    gap:            7,
-    flexWrap:       'wrap',
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
     justifyContent: 'center',
   },
   pill: {
-    borderRadius:      20,
+    borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical:   5,
-    borderWidth:       1,
+    paddingVertical: 5,
+    borderWidth: 1,
+    marginTop : 4
   },
   pillText: {
-    fontSize:      11,
-    fontWeight:    '600',
-    letterSpacing: 0.2,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.2
   },
 });
 
