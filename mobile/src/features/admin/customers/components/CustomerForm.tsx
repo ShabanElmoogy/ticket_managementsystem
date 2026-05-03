@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
@@ -12,7 +12,7 @@ import ChipSelector   from '@/src/shared/components/forms/ChipSelector';
 import { AppTextInput, AppFormField } from '@/src/shared/components';
 import AppDatePicker  from '@/src/shared/components/forms/AppDatePicker';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
-import { useToast } from '@/src/shared/hooks/useToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
 import { createCustomerFormSchema, type MaintenanceType } from '../schemas/customerSchema';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types/index';
 
@@ -28,7 +28,21 @@ const CustomerForm: React.FC<Props> = ({
   item, onClose, onSave, submitting, mode = 'page',
 }) => {
   const { t }  = useTranslation();
-  const toast  = useToast();
+
+  // Track whether the last error was a duplicate — so Cancel on the
+  // NetworkErrorDialog closes the form (Dismiss behaviour).
+  const isDuplicateError = useRef(false);
+
+  useEffect(() => {
+    // When user presses Cancel on NetworkErrorDialog after a duplicate error → close form
+    const unsub = networkEvents.onOkPress(() => {
+      if (isDuplicateError.current) {
+        isDuplicateError.current = false;
+        onClose();
+      }
+    });
+    return unsub;
+  }, [onClose]);
 
   // ── RHF setup ──────────────────────────────────────────────────────────────
   const toDateStr = (v: unknown): string => {
@@ -84,8 +98,14 @@ const CustomerForm: React.FC<Props> = ({
       } as CreateCustomerData);
       toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
-    } catch {
-      toast.error(item ? t('customers.messages.errorUpdate') : t('customers.messages.errorCreate'));
+    } catch (err: any) {
+      // NetworkErrorDialog handles all API errors automatically via httpClient interceptor.
+      // For duplicate email specifically, flag it so the Cancel button closes the form.
+      const serverMsg: string =
+        err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
+      if (serverMsg.toLowerCase().includes('already exists')) {
+        isDuplicateError.current = true;
+      }
     }
   };
 

@@ -99,7 +99,8 @@
     "confirmAction": "Confirm Action",
     "actionDeletesRelatedData": "This action will also delete related data and cannot be undone.",
     "typeToConfirmPrefix": "Type",
-    "typeToConfirmSuffix": "to confirm"
+    "typeToConfirmSuffix": "to confirm",
+    "dismiss": "Dismiss"
   },
   "validation": {
     "required": "{{field}} is required",
@@ -248,6 +249,10 @@
       "activeCustomers": "Active",
       "expiredCustomers": "Expired",
       "activeRate": "Active Rate"
+    },
+    "duplicateEmail": {
+      "title": "Email Already Exists",
+      "message": "A customer with this email address already exists. Press OK to fix the email, or Dismiss to cancel."
     }
   },
   "users": {

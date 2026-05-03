@@ -140,7 +140,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `StatBadge` | `display/StatBadge.tsx` | ❌ No | ✅ Yes | `StatCard` |
 | `StatCard` | `display/StatCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportGridCard.tsx` — grid view card for report rows |
 | `AppEmptyState` | `feedback/AppEmptyState.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before any `<Modal>` renders | `DataCard` (`ListEmptyComponent` for grid and compact views), `ReportCard` |
-| `AppToast` | `feedback/AppToast.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — root layout only | `app/_layout.tsx` via `<Toast config={toastConfig} />` |
+| `AppToast` | `feedback/AppToast.tsx` | ✅ Yes (`useIsDark`) | ❌ No — root layout only | `app/_layout.tsx` via `<Toast config={toastConfig} />` |
 | `BottomNavItem` | `navigation/BottomNavItem.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AppBottomNav` |
 | `NavItem` | `navigation/NavItem.tsx` | ❌ No | ✅ Yes | `DrawerNavList` |
 | `IconButton` | `navigation/IconButton.tsx` | ❌ No | ✅ Yes | `AppHeaderBar` |

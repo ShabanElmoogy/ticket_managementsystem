@@ -348,6 +348,12 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 
 **Optional contact:** Phone · Company · Address (multiline)
 
+**Location** (collapsible, starts collapsed when no location set):
+- `LocationPicker` component — map-based coordinate picker
+- Controlled via a single `<Controller name="latitude">` that also drives `longitude` via `form.setValue`
+- `doSave` converts form values to `number | null` before sending: `Number(data.latitude)` / `Number(data.longitude)`
+- Sends `null` for both when no pin is placed
+
 **Maintenance type selector** (3 options, no "Inactive"):
 - Monthly Subscription → shows Start + End date pickers
 - Free Trial → shows Start + End date pickers
@@ -358,19 +364,80 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 
 **Edit mode:** linked stats (tickets + applications)
 
+#### Location field wiring pattern
+
+`LocationPicker` exposes a single `value / onChange` interface. In `CustomerForm`, a single `Controller` on `latitude` drives both fields:
+
+```tsx
+<Controller
+  name="latitude"
+  control={control}
+  render={({ field: { value, onChange } }) => {
+    const lngValue = form.getValues('longitude');
+    const pickerValue =
+      value != null && lngValue != null
+        ? { latitude: Number(value), longitude: Number(lngValue) }
+        : null;
+    return (
+      <LocationPicker
+        value={pickerValue}
+        onChange={(coords) => {
+          onChange(coords?.latitude ?? null);
+          form.setValue('longitude', coords?.longitude ?? null);
+        }}
+      />
+    );
+  }}
+/>
+```
+
+Coordinate serialization in `doSave`:
+```ts
+const lat = data.latitude  != null && data.latitude  !== '' ? Number(data.latitude)  : null;
+const lng = data.longitude != null && data.longitude !== '' ? Number(data.longitude) : null;
+```
+
 ### Detail Screen Layout
 
 1. **Hero card** — status-colored accent bar, initials avatar, name, company, status badge, quick contact row
 2. **Stats row** — ticket count (blue) + linked applications (green)
 3. **Contact card** — email, phone, company, address, created (with emoji icons)
-4. **Subscription card** — type, start date, end date (3-state color: green/amber/red)
-5. **Linked applications card** — app name + version badge
+4. **Location section** — positioned between contact card and subscription card:
+   - When `latitude`/`longitude` are non-null: renders `CustomerLocationMap` (read-only, 200dp height) followed by a blue "Open in Maps" `Pressable` button that calls `openInMaps()` helper
+   - When no location: renders a "No location set" placeholder card
+   - `openInMaps()` uses `Linking.canOpenURL` → native maps app (iOS: `maps://`, Android: `geo:`) with fallback to web maps if native app unavailable
+5. **Subscription card** — type, start date, end date (3-state color: green/amber/red)
+6. **Linked applications card** — app name + version badge
+
+#### `openInMaps` helper pattern
+
+```ts
+function openInMaps(latitude: number, longitude: number, name?: string): void {
+  const label = encodeURIComponent(name ?? '');
+  const url = Platform.OS === 'ios'
+    ? `maps://0,0?q=${latitude},${longitude}`
+    : `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`;
+
+  Linking.canOpenURL(url).then((canOpen) => {
+    if (canOpen) {
+      Linking.openURL(url);
+    } else if (Platform.OS === 'ios') {
+      Linking.openURL(`https://maps.apple.com/?q=${latitude},${longitude}`);
+    } else {
+      Linking.openURL(`https://www.google.com/maps?q=${latitude},${longitude}`);
+    }
+  });
+}
+```
+
+Use `Linking.canOpenURL` before `openURL` — always provide a web fallback for devices without a native maps app installed.
 
 ### Locale Keys
 
 ```json
 "customers.sections.basicInfo"     → "Basic Info"
 "customers.sections.company"       → "Company"
+"customers.sections.location"      → "Location"
 "customers.sections.subscription"  → "Subscription"
 "customers.maintenance.monthly"    → "Monthly Subscription"
 "customers.maintenance.trial"      → "Free Trial"
@@ -382,6 +449,22 @@ const color = daysLeft < 0    ? '#dc2626'  // expired — red
 "customers.pdf.activeCustomers"    → "Active / Trial"
 "customers.pdf.expiredCustomers"   → "Expired"
 "customers.pdf.activeRate"         → "Active Rate"
+"customers.location.title"         → "Location"
+"customers.location.noLocation"    → "No location set"
+"customers.location.useMyLocation" → "Use My Location"
+"customers.location.clearLocation" → "Clear Location"
+"customers.location.latitude"      → "Latitude"
+"customers.location.longitude"     → "Longitude"
+"customers.location.latPlaceholder"→ "e.g. 24.7136"
+"customers.location.lngPlaceholder"→ "e.g. 46.6753"
+"customers.location.latRange"      → "Latitude must be between -90 and 90"
+"customers.location.lngRange"      → "Longitude must be between -180 and 180"
+"customers.location.bothOrNeither" → "Both latitude and longitude must be provided together"
+"customers.location.permissionDenied" → "Location permission denied. Open Settings to grant access."
+"customers.location.openSettings"  → "Open Settings"
+"customers.location.gpsError"      → "Could not get current location. Please try again."
+"customers.location.mapUnavailable"→ "Map unavailable. Enter coordinates manually."
+"customers.location.openInMaps"    → "Open in Maps"
 ```
 
 ---
@@ -1315,22 +1398,25 @@ Use descriptive `operation` values for different actions:
 
 ### Form save operations
 
-Wrap form save logic with try/catch and structured error handling:
+The `httpClient` interceptor automatically surfaces all API errors via the global `NetworkErrorDialog`. Form `doSave` handlers should use an **empty catch block** — do not re-handle API errors with `toast.error()` or custom dialogs, as the interceptor already handles them:
 
 ```ts
-onSave={async (data: CreateEntityData) => {
+const doSave = async (data: any) => {
   try {
-    if (item) await f.update(item.id, data);
-    else      await f.create(data);
+    await onSave({ ...data } as CreateEntityData);
+    toast.success(item ? t('feature.messages.updated') : t('feature.messages.created'));
     onClose();
-  } catch (error) {
-    handleError(error, { 
-      feature: 'customers', 
-      operation: item ? 'update' : 'create' 
-    });
+  } catch {
+    // NetworkErrorDialog handles all API errors automatically via httpClient interceptor
   }
-}}
+};
 ```
+
+**Rules:**
+- Never call `toast.error()` in a form save catch block — the interceptor already shows the error
+- Never show a custom dialog for specific API errors (e.g. duplicate email) — let the global dialog handle it
+- The success toast and `onClose()` are only called when `onSave` resolves without throwing
+- `FeatureErrorBoundary` + `useErrorHandler` are still used for non-form async operations (fetch, export, delete)
 
 ---
 
@@ -1340,9 +1426,9 @@ onSave={async (data: CreateEntityData) => {
 - [ ] Import `FeatureErrorBoundary` and `useErrorHandler`
 - [ ] Wrap all view states with `FeatureErrorBoundary`
 - [ ] Implement `handleFeatureError` for boundary errors
-- [ ] Use structured `handleError(error, { feature, operation })` in async operations
-- [ ] Replace generic `toast.error()` with structured error handling
-- [ ] Wrap form save operations with try/catch and structured error handling
+- [ ] Use structured `handleError(error, { feature, operation })` in non-form async operations (fetch, export, delete)
+- [ ] Form `doSave` uses empty catch — `NetworkErrorDialog` handles API errors automatically
+- [ ] No `toast.error()` in form save catch blocks
 
 ### Files
 - [ ] `api/<feature>.ts` — service + singleton + query keys + `getOne`

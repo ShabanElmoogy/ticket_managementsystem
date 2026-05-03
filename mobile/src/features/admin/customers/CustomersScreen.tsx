@@ -89,13 +89,8 @@ const CustomersScreen: React.FC = () => {
           submitting={false}
           mode="page"
           onSave={async (data: CreateCustomerData) => {
-            try {
-              await f.update(editingFromDetail.id, data);
-              setEditingFromDetail(null);
-              setSelectedId(editingFromDetail.id); // return to detail after save
-            } catch (error) {
-              handleError(error, { feature: 'customers', operation: 'update' });
-            }
+            await f.update(editingFromDetail.id, data);
+            // onClose() is called by CustomerForm after success — navigates back to detail
           }}
         />
       </FeatureErrorBoundary>
@@ -135,16 +130,8 @@ const CustomersScreen: React.FC = () => {
             submitting={f.ui.submitting}
             mode="page"
             onSave={async (data: CreateCustomerData) => {
-              try {
-                if (item) await f.update(item.id, data);
-                else      await f.create(data);
-                onClose();
-              } catch (error) {
-                handleError(error, { 
-                  feature: 'customers', 
-                  operation: item ? 'update' : 'create' 
-                });
-              }
+              if (item) await f.update(item.id, data);
+              else      await f.create(data);
             }}
           />
         )}

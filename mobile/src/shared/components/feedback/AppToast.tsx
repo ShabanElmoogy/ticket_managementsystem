@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { BaseToastProps } from 'react-native-toast-message';
-import { Palette } from '@/src/constants/tokens';
-import { useThemeColors, FontSize, FontWeight } from '@/src/constants/theme';
+import { Palette, Colors } from '@/src/constants/tokens';
+import { useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
 
 /**
  * AppToast
@@ -56,7 +56,9 @@ const ToastItem: React.FC<ToastItemProps> = ({
   icon,
   onPress,
 }) => {
-  const c = useThemeColors();
+  // Inverted: toast is dark when app is light, light when app is dark
+  const isDark = useIsDark();
+  const c = isDark ? Colors.light : Colors.dark;
 
   // Build accessible label from available text
   const a11yLabel = [text1, text2].filter(Boolean).join('. ');

@@ -99,7 +99,8 @@
     "confirmAction": "تأكيد الإجراء",
     "actionDeletesRelatedData": "سيؤدي هذا الإجراء أيضاً إلى حذف البيانات المرتبطة ولا يمكن التراجع عنه.",
     "typeToConfirmPrefix": "اكتب",
-    "typeToConfirmSuffix": "للتأكيد"
+    "typeToConfirmSuffix": "للتأكيد",
+    "dismiss": "رفض"
   },
   "validation": {
     "required": "{{field}} مطلوب",
@@ -221,6 +222,10 @@
       "activeCustomers": "نشط",
       "expiredCustomers": "منتهي",
       "activeRate": "معدل النشاط"
+    },
+    "duplicateEmail": {
+      "title": "البريد الإلكتروني مستخدم",
+      "message": "يوجد عميل بهذا البريد الإلكتروني بالفعل. اضغط حسناً لتصحيح البريد، أو رفض للإلغاء."
     }
   },
   "users": {

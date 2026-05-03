@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '@/src/shared/utils/dateUtils';
@@ -35,6 +35,25 @@ const MAINTENANCE_LABELS: Record<string, string> = {
   FREE_TRIAL:           'Free Trial',
   PAY_AS_YOU_GO:        'Pay As You Go',
 };
+
+// ── Open in Maps helper ───────────────────────────────────────────────────────
+
+function openInMaps(latitude: number, longitude: number, name?: string): void {
+  const label = encodeURIComponent(name ?? '');
+  const url = Platform.OS === 'ios'
+    ? `maps://0,0?q=${latitude},${longitude}`
+    : `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`;
+
+  Linking.canOpenURL(url).then((canOpen) => {
+    if (canOpen) {
+      Linking.openURL(url);
+    } else if (Platform.OS === 'ios') {
+      Linking.openURL(`https://maps.apple.com/?q=${latitude},${longitude}`);
+    } else {
+      Linking.openURL(`https://www.google.com/maps?q=${latitude},${longitude}`);
+    }
+  });
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -152,12 +171,27 @@ const CustomerDetailScreen: React.FC<Props> = ({
 
           {/* ── Location map ── */}
           {customer.latitude != null && customer.longitude != null ? (
-            <CustomerLocationMap
-              latitude={customer.latitude}
-              longitude={customer.longitude}
-              customerName={customer.name}
-              style={{ borderWidth: 1, borderColor: border }}
-            />
+            <>
+              <CustomerLocationMap
+                latitude={customer.latitude}
+                longitude={customer.longitude}
+                customerName={customer.name}
+                style={{ borderWidth: 1, borderColor: border }}
+              />
+              <Pressable
+                onPress={() => openInMaps(customer.latitude!, customer.longitude!, customer.name)}
+                style={({ pressed }) => [
+                  styles.openMapsBtn,
+                  { backgroundColor: pressed ? '#1d4ed8' : '#2563eb' },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={t('customers.location.openInMaps')}
+              >
+                <Text style={styles.openMapsBtnText}>
+                  🗺️  {t('customers.location.openInMaps')}
+                </Text>
+              </Pressable>
+            </>
           ) : (
             <View style={[styles.noLocationCard, { backgroundColor: cardBg, borderColor: border }]}>
               <Text style={[styles.noLocationText, { color: textSec }]}>
@@ -299,6 +333,22 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', minHeight: 60,
   },
   noLocationText: { fontSize: 13, fontStyle: 'italic' },
+
+  // Open in Maps button
+  openMapsBtn: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  openMapsBtnText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
 });
 
 export default CustomerDetailScreen;
