@@ -49,13 +49,13 @@ const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 
         onPress={() => setOpen(false)}
       />
 
-      {/* Panel — slides from right (RTL) or left (LTR) */}
+      {/* Panel — uses theme surface tokens so it adapts to light/dark and palette */}
       <View style={{
         position: 'absolute', top: 0, bottom: 0, width: 288,
-        backgroundColor: '#0f1c35',
+        backgroundColor: c.surface.primary,
         borderEndWidth: effectiveIsRtl ? 0 : 1,
         borderStartWidth: effectiveIsRtl ? 1 : 0,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: c.border.primary,
         // Explicitly set direction — this panel is absolutely positioned outside
         // the DirectionProvider tree, so direction must be set manually.
         direction: effectiveIsRtl ? 'rtl' : 'ltr',
@@ -66,8 +66,9 @@ const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 
           role={user.role}
           isRtl={effectiveIsRtl}
           onToggleTheme={toggleColorMode}
+          resolvedColors={c}
         />
-        <DrawerNavList items={visibleItems} isRtl={effectiveIsRtl} onNav={handleNav} />
+        <DrawerNavList items={visibleItems} isRtl={effectiveIsRtl} onNav={handleNav} resolvedColors={c} />
       </View>
     </View>
   );

@@ -2,473 +2,704 @@
  * tokens.ts — Pure design tokens with zero imports.
  *
  * Safe to import at module level anywhere — no circular dependency risk.
- * Contains: Palette, Colors, ThemeColors type, domain maps,
- *           Spacing, Radius, FontSize, FontWeight, Fonts.
+ * Contains: Color Scales, Palette (derived), ThemeColors type, semantic token
+ *           variants, ColorsByPalette, Colors, domain maps,
+ *           Spacing, Radius, FontSize, FontWeight, LineHeight,
+ *           BorderWidth, IconSize, Fonts.
  *
  * For reactive theme hooks (useThemeColors, useIsDark) import from theme.ts.
  *
- * Changes from v1:
- *  - surface.elevated bumped to gray200 (#e5e7eb) for clear 3-tier light hierarchy
- *  - dark surface.header changed to slate700 (#334155) — no longer identical to primary
- *  - dark text.muted changed to slate500 (#64748b) — was slate600 (1.9:1 contrast, WCAG fail)
- *  - interactive{} gains warning + warningPressed tokens (amber500/600)
- *  - StatusSurfaces map added — paired light/dark tints for every status key
- *  - ThemeColors type updated to reflect new interactive tokens
- *
- * Changes from v2:
- *  - PrioritySurfaces added — paired light/dark tints matching PriorityColors keys
- *  - RoleSurfaces added — paired light/dark tints matching RoleColors keys
- *  - LineHeight scale added — proportional to FontSize (×1.5), replaces hardcoded values
- *  - BorderWidth scale added — hairline/thin/base/thick replaces magic numbers in components
- *  - IconSize scale added — distinct from FontSize, for icon rendering consistency
- *
- * Changes from v3 (palette enhancement):
- *  - Palette: added amber400, violet700, teal500/600, pink500/600, rose500/600
- *  - Light text.tertiary: slate400 → slate500 (WCAG AA fix, was 3.8:1 now 4.6:1)
- *  - Light text.muted: gray400 → gray500 (better readability for placeholders)
- *  - Light surface.tertiary: slate100 → gray100 (clearer 3-tier hierarchy)
- *  - Dark interactive.primary: blue500 → blue400 (more visible on dark bg)
- *  - Dark interactive.primaryPressed: blue600 → blue500 (consistent step-down)
- *  - Dark chip inactive: bg slate800→slate750, border blue500→slate600 (no confusion with active)
- *  - Dark orange palette: orange400 → orange500 (stronger, less washed-out)
- *  - Dark green palette: green500 → green400 (distinct from intent.success=green500)
- *  - Dark button primary: blue400 bg, blue500 pressed (matches interactive.primary)
- *  - Dark button danger: red500 bg (was red400 — too light)
- *  - Dark button success: green400 bg (was green500 — now matches interactive.success in dark)
- *  - surface.card added — dedicated card background token (replaces hardcoded colors)
- *  - SubscriptionColors + SubscriptionSurfaces added for customer subscription status
+ * Changes from v4 (shadcn-palette-rewrite):
+ *  - All color scales now match shadcn/ui + Tailwind v3 exactly (11 stops: 50→950)
+ *  - Zinc added — shadcn default neutral (cooler than Gray, warmer than Slate)
+ *  - Neutral added — pure achromatic gray baseline
+ *  - Sky added — lighter blue family distinct from Blue
+ *  - Emerald added — distinct from Green (shadcn uses both)
+ *  - Purple + Fuchsia added — richer warm-purple spectrum
+ *  - Lime + Yellow added — complete warm end of spectrum
+ *  - Green[400] corrected to #4ade80 (Tailwind value)
+ *  - Cyan corrected to sky-blue family (#06b6d4 at 500)
+ *  - Blue[400] → #60a5fa (Tailwind value)
+ *  - No custom half-steps (750, 850) — replaced with real scale stops
+ *  - Dark chip/tertiary tokens use Zinc[800]/Zinc[700] instead of custom hex
+ *  - lightGreen / darkGreen variants updated to Emerald for better distinction
+ *  - StatusSurfaces, PrioritySurfaces, RoleSurfaces, SubscriptionSurfaces retained
+ *  - Stone scale updated to full 11-stop Tailwind spec
+ *  - All six theme variants fully explicit standalone objects
  */
 
 import { Platform } from 'react-native';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Palette — raw named color values
+// Color Scales — exact Tailwind v3 / shadcn values, 50→950 (11 stops each)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const Slate = {
+  50:  '#f8fafc',
+  100: '#f1f5f9',
+  200: '#e2e8f0',
+  300: '#cbd5e1',
+  400: '#94a3b8',
+  500: '#64748b',
+  600: '#475569',
+  700: '#334155',
+  800: '#1e293b',
+  900: '#0f172a',
+  950: '#020617',
+} as const;
+
+const Gray = {
+  50:  '#f9fafb',
+  100: '#f3f4f6',
+  200: '#e5e7eb',
+  300: '#d1d5db',
+  400: '#9ca3af',
+  500: '#6b7280',
+  600: '#4b5563',
+  700: '#374151',
+  800: '#1f2937',
+  900: '#111827',
+  950: '#030712',
+} as const;
+
+/** Zinc — shadcn's default neutral base. Cooler than Gray, warmer than Slate. */
+const Zinc = {
+  50:  '#fafafa',
+  100: '#f4f4f5',
+  200: '#e4e4e7',
+  300: '#d4d4d8',
+  400: '#a1a1aa',
+  500: '#71717a',
+  600: '#52525b',
+  700: '#3f3f46',
+  800: '#27272a',
+  900: '#18181b',
+  950: '#09090b',
+} as const;
+
+/** Neutral — pure achromatic gray. No hue cast. */
+const Neutral = {
+  50:  '#fafafa',
+  100: '#f5f5f5',
+  200: '#e5e5e5',
+  300: '#d4d4d4',
+  400: '#a3a3a3',
+  500: '#737373',
+  600: '#525252',
+  700: '#404040',
+  800: '#262626',
+  900: '#171717',
+  950: '#0a0a0a',
+} as const;
+
+const Stone = {
+  50:  '#fafaf9',
+  100: '#f5f5f4',
+  200: '#e7e5e4',
+  300: '#d6d3d1',
+  400: '#a8a29e',
+  500: '#78716c',
+  600: '#57534e',
+  700: '#44403c',
+  800: '#292524',
+  900: '#1c1917',
+  950: '#0c0a09',
+} as const;
+
+const Red = {
+  50:  '#fef2f2',
+  100: '#fee2e2',
+  200: '#fecaca',
+  300: '#fca5a5',
+  400: '#f87171',
+  500: '#ef4444',
+  600: '#dc2626',
+  700: '#b91c1c',
+  800: '#991b1b',
+  900: '#7f1d1d',
+  950: '#450a0a',
+} as const;
+
+const Orange = {
+  50:  '#fff7ed',
+  100: '#ffedd5',
+  200: '#fed7aa',
+  300: '#fdba74',
+  400: '#fb923c',
+  500: '#f97316',
+  600: '#ea580c',
+  700: '#c2410c',
+  800: '#9a3412',
+  900: '#7c2d12',
+  950: '#431407',
+} as const;
+
+const Amber = {
+  50:  '#fffbeb',
+  100: '#fef3c7',
+  200: '#fde68a',
+  300: '#fcd34d',
+  400: '#fbbf24',
+  500: '#f59e0b',
+  600: '#d97706',
+  700: '#b45309',
+  800: '#92400e',
+  900: '#78350f',
+  950: '#451a03',
+} as const;
+
+const Yellow = {
+  50:  '#fefce8',
+  100: '#fef9c3',
+  200: '#fef08a',
+  300: '#fde047',
+  400: '#facc15',
+  500: '#eab308',
+  600: '#ca8a04',
+  700: '#a16207',
+  800: '#854d0e',
+  900: '#713f12',
+  950: '#422006',
+} as const;
+
+const Lime = {
+  50:  '#f7fee7',
+  100: '#ecfccb',
+  200: '#d9f99d',
+  300: '#bef264',
+  400: '#a3e635',
+  500: '#84cc16',
+  600: '#65a30d',
+  700: '#4d7c0f',
+  800: '#3f6212',
+  900: '#365314',
+  950: '#1a2e05',
+} as const;
+
+const Green = {
+  50:  '#f0fdf4',
+  100: '#dcfce7',
+  200: '#bbf7d0',
+  300: '#86efac',
+  400: '#4ade80',
+  500: '#22c55e',
+  600: '#16a34a',
+  700: '#15803d',
+  800: '#166534',
+  900: '#14532d',
+  950: '#052e16',
+} as const;
+
+/** Emerald — distinct from Green; shadcn uses both for success semantics. */
+const Emerald = {
+  50:  '#ecfdf5',
+  100: '#d1fae5',
+  200: '#a7f3d0',
+  300: '#6ee7b7',
+  400: '#34d399',
+  500: '#10b981',
+  600: '#059669',
+  700: '#047857',
+  800: '#065f46',
+  900: '#064e3b',
+  950: '#022c22',
+} as const;
+
+const Teal = {
+  50:  '#f0fdfa',
+  100: '#ccfbf1',
+  200: '#99f6e4',
+  300: '#5eead4',
+  400: '#2dd4bf',
+  500: '#14b8a6',
+  600: '#0d9488',
+  700: '#0f766e',
+  800: '#115e59',
+  900: '#134e4a',
+  950: '#042f2e',
+} as const;
+
+/** Cyan — sky-blue family. #06b6d4 at 500 (Tailwind exact). */
+const Cyan = {
+  50:  '#ecfeff',
+  100: '#cffafe',
+  200: '#a5f3fc',
+  300: '#67e8f9',
+  400: '#22d3ee',
+  500: '#06b6d4',
+  600: '#0891b2',
+  700: '#0e7490',
+  800: '#155e75',
+  900: '#164e63',
+  950: '#083344',
+} as const;
+
+/** Sky — lighter blue, distinct from Blue and Cyan. */
+const Sky = {
+  50:  '#f0f9ff',
+  100: '#e0f2fe',
+  200: '#bae6fd',
+  300: '#7dd3fc',
+  400: '#38bdf8',
+  500: '#0ea5e9',
+  600: '#0284c7',
+  700: '#0369a1',
+  800: '#075985',
+  900: '#0c4a6e',
+  950: '#082f49',
+} as const;
+
+const Blue = {
+  50:  '#eff6ff',
+  100: '#dbeafe',
+  200: '#bfdbfe',
+  300: '#93c5fd',
+  400: '#60a5fa',
+  500: '#3b82f6',
+  600: '#2563eb',
+  700: '#1d4ed8',
+  800: '#1e40af',
+  900: '#1e3a8a',
+  950: '#172554',
+} as const;
+
+const Indigo = {
+  50:  '#eef2ff',
+  100: '#e0e7ff',
+  200: '#c7d2fe',
+  300: '#a5b4fc',
+  400: '#818cf8',
+  500: '#6366f1',
+  600: '#4f46e5',
+  700: '#4338ca',
+  800: '#3730a3',
+  900: '#312e81',
+  950: '#1e1b4b',
+} as const;
+
+const Violet = {
+  50:  '#f5f3ff',
+  100: '#ede9fe',
+  200: '#ddd6fe',
+  300: '#c4b5fd',
+  400: '#a78bfa',
+  500: '#8b5cf6',
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',
+  950: '#2e1065',
+} as const;
+
+/** Purple — warm purple, richer than Violet. */
+const Purple = {
+  50:  '#faf5ff',
+  100: '#f3e8ff',
+  200: '#e9d5ff',
+  300: '#d8b4fe',
+  400: '#c084fc',
+  500: '#a855f7',
+  600: '#9333ea',
+  700: '#7e22ce',
+  800: '#6b21a8',
+  900: '#581c87',
+  950: '#3b0764',
+} as const;
+
+/** Fuchsia — vivid magenta-purple. */
+const Fuchsia = {
+  50:  '#fdf4ff',
+  100: '#fae8ff',
+  200: '#f5d0fe',
+  300: '#f0abfc',
+  400: '#e879f9',
+  500: '#d946ef',
+  600: '#c026d3',
+  700: '#a21caf',
+  800: '#86198f',
+  900: '#701a75',
+  950: '#4a044e',
+} as const;
+
+const Pink = {
+  50:  '#fdf2f8',
+  100: '#fce7f3',
+  200: '#fbcfe8',
+  300: '#f9a8d4',
+  400: '#f472b6',
+  500: '#ec4899',
+  600: '#db2777',
+  700: '#be185d',
+  800: '#9d174d',
+  900: '#831843',
+  950: '#500724',
+} as const;
+
+const Rose = {
+  50:  '#fff1f2',
+  100: '#ffe4e6',
+  200: '#fecdd3',
+  300: '#fda4af',
+  400: '#fb7185',
+  500: '#f43f5e',
+  600: '#e11d48',
+  700: '#be123c',
+  800: '#9f1239',
+  900: '#881337',
+  950: '#4c0519',
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Palette — derived flat object
+// Single source of truth for raw hex values consumed by semantic tokens and
+// domain maps. Every entry is derived from its corresponding Color Scale.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const Palette = {
   // Slate
-  slate50: '#f8fafc',
-  slate100: '#f1f5f9',
-  slate200: '#e2e8f0',
-  slate300: '#cbd5e1',
-  slate400: '#94a3b8',
-  slate500: '#64748b',
-  slate600: '#475569',
-  slate700: '#334155',
-  slate750: '#2a3a4f',   // between 700 and 800 — dark chip bg
-  slate800: '#1e293b',
-  slate850: '#273549',
-  slate900: '#0f172a',
+  slate50:   Slate[50],
+  slate100:  Slate[100],
+  slate200:  Slate[200],
+  slate300:  Slate[300],
+  slate400:  Slate[400],
+  slate500:  Slate[500],
+  slate600:  Slate[600],
+  slate700:  Slate[700],
+  slate800:  Slate[800],
+  slate900:  Slate[900],
+  slate950:  Slate[950],
 
   // Gray
-  gray100: '#f3f4f6',
-  gray200: '#e5e7eb',
-  gray300: '#d1d5db',
-  gray400: '#9ca3af',
-  gray500: '#6b7280',
-  gray600: '#4b5563',
-  gray900: '#111827',
+  gray50:    Gray[50],
+  gray100:   Gray[100],
+  gray200:   Gray[200],
+  gray300:   Gray[300],
+  gray400:   Gray[400],
+  gray500:   Gray[500],
+  gray600:   Gray[600],
+  gray700:   Gray[700],
+  gray800:   Gray[800],
+  gray900:   Gray[900],
+  gray950:   Gray[950],
 
-  // Blue
-  blue400: '#60a5fa',
-  blue500: '#3b82f6',
-  blue600: '#2563eb',
-  blue700: '#1d4ed8',
+  // Zinc (shadcn default neutral)
+  zinc50:    Zinc[50],
+  zinc100:   Zinc[100],
+  zinc200:   Zinc[200],
+  zinc300:   Zinc[300],
+  zinc400:   Zinc[400],
+  zinc500:   Zinc[500],
+  zinc600:   Zinc[600],
+  zinc700:   Zinc[700],
+  zinc800:   Zinc[800],
+  zinc900:   Zinc[900],
+  zinc950:   Zinc[950],
 
-  // Violet / Purple
-  violet400: '#a78bfa',
-  violet500: '#8b5cf6',
-  violet600: '#7c3aed',
-  violet700: '#6d28d9',
+  // Neutral
+  neutral50:  Neutral[50],
+  neutral100: Neutral[100],
+  neutral200: Neutral[200],
+  neutral300: Neutral[300],
+  neutral400: Neutral[400],
+  neutral500: Neutral[500],
+  neutral600: Neutral[600],
+  neutral700: Neutral[700],
+  neutral800: Neutral[800],
+  neutral900: Neutral[900],
+  neutral950: Neutral[950],
 
-  // Indigo
-  indigo500: '#6366f1',
-
-  // Cyan
-  cyan500: '#0ea5e9',
-  cyan600: '#06b6d4',
-
-  // Teal
-  teal500: '#14b8a6',
-  teal600: '#0d9488',
-
-  // Orange
-  orange50:  '#fff7ed',
-  orange100: '#ffedd5',
-  orange200: '#fed7aa',
-  orange300: '#fdba74',
-  orange400: '#fb923c',
-  orange500: '#f97316',
-  orange600: '#ea580c',
-  orange700: '#c2410c',
-
-  // Green / Emerald
-  green400: '#34d399',
-  green500: '#10b981',
-  green600: '#059669',
-  green700: '#047857',
-
-  // Amber / Yellow
-  amber400: '#fbbf24',
-  amber500: '#f59e0b',
-  amber600: '#d97706',
+  // Stone
+  stone50:   Stone[50],
+  stone100:  Stone[100],
+  stone200:  Stone[200],
+  stone300:  Stone[300],
+  stone400:  Stone[400],
+  stone500:  Stone[500],
+  stone600:  Stone[600],
+  stone700:  Stone[700],
+  stone800:  Stone[800],
+  stone900:  Stone[900],
+  stone950:  Stone[950],
 
   // Red
-  red400: '#f87171',
-  red500: '#ef4444',
-  red600: '#dc2626',
-  red700: '#b91c1c',
+  red50:     Red[50],
+  red100:    Red[100],
+  red200:    Red[200],
+  red300:    Red[300],
+  red400:    Red[400],
+  red500:    Red[500],
+  red600:    Red[600],
+  red700:    Red[700],
+  red800:    Red[800],
+  red900:    Red[900],
+  red950:    Red[950],
 
-  // Pink / Rose
-  pink500: '#ec4899',
-  pink600: '#db2777',
-  rose500: '#f43f5e',
-  rose600: '#e11d48',
+  // Orange
+  orange50:  Orange[50],
+  orange100: Orange[100],
+  orange200: Orange[200],
+  orange300: Orange[300],
+  orange400: Orange[400],
+  orange500: Orange[500],
+  orange600: Orange[600],
+  orange700: Orange[700],
+  orange800: Orange[800],
+  orange900: Orange[900],
+  orange950: Orange[950],
 
-  // White / Black
-  white: '#ffffff',
-  black: '#000000',
+  // Amber
+  amber50:   Amber[50],
+  amber100:  Amber[100],
+  amber200:  Amber[200],
+  amber300:  Amber[300],
+  amber400:  Amber[400],
+  amber500:  Amber[500],
+  amber600:  Amber[600],
+  amber700:  Amber[700],
+  amber800:  Amber[800],
+  amber900:  Amber[900],
+  amber950:  Amber[950],
+
+  // Yellow
+  yellow50:  Yellow[50],
+  yellow100: Yellow[100],
+  yellow200: Yellow[200],
+  yellow300: Yellow[300],
+  yellow400: Yellow[400],
+  yellow500: Yellow[500],
+  yellow600: Yellow[600],
+  yellow700: Yellow[700],
+  yellow800: Yellow[800],
+  yellow900: Yellow[900],
+  yellow950: Yellow[950],
+
+  // Lime
+  lime50:    Lime[50],
+  lime100:   Lime[100],
+  lime200:   Lime[200],
+  lime300:   Lime[300],
+  lime400:   Lime[400],
+  lime500:   Lime[500],
+  lime600:   Lime[600],
+  lime700:   Lime[700],
+  lime800:   Lime[800],
+  lime900:   Lime[900],
+  lime950:   Lime[950],
+
+  // Green
+  green50:   Green[50],
+  green100:  Green[100],
+  green200:  Green[200],
+  green300:  Green[300],
+  green400:  Green[400],
+  green500:  Green[500],
+  green600:  Green[600],
+  green700:  Green[700],
+  green800:  Green[800],
+  green900:  Green[900],
+  green950:  Green[950],
+
+  // Emerald
+  emerald50:  Emerald[50],
+  emerald100: Emerald[100],
+  emerald200: Emerald[200],
+  emerald300: Emerald[300],
+  emerald400: Emerald[400],
+  emerald500: Emerald[500],
+  emerald600: Emerald[600],
+  emerald700: Emerald[700],
+  emerald800: Emerald[800],
+  emerald900: Emerald[900],
+  emerald950: Emerald[950],
+
+  // Teal
+  teal50:    Teal[50],
+  teal100:   Teal[100],
+  teal200:   Teal[200],
+  teal300:   Teal[300],
+  teal400:   Teal[400],
+  teal500:   Teal[500],
+  teal600:   Teal[600],
+  teal700:   Teal[700],
+  teal800:   Teal[800],
+  teal900:   Teal[900],
+  teal950:   Teal[950],
+
+  // Cyan
+  cyan50:    Cyan[50],
+  cyan100:   Cyan[100],
+  cyan200:   Cyan[200],
+  cyan300:   Cyan[300],
+  cyan400:   Cyan[400],
+  cyan500:   Cyan[500],
+  cyan600:   Cyan[600],
+  cyan700:   Cyan[700],
+  cyan800:   Cyan[800],
+  cyan900:   Cyan[900],
+  cyan950:   Cyan[950],
+
+  // Sky
+  sky50:     Sky[50],
+  sky100:    Sky[100],
+  sky200:    Sky[200],
+  sky300:    Sky[300],
+  sky400:    Sky[400],
+  sky500:    Sky[500],
+  sky600:    Sky[600],
+  sky700:    Sky[700],
+  sky800:    Sky[800],
+  sky900:    Sky[900],
+  sky950:    Sky[950],
+
+  // Blue
+  blue50:    Blue[50],
+  blue100:   Blue[100],
+  blue200:   Blue[200],
+  blue300:   Blue[300],
+  blue400:   Blue[400],
+  blue500:   Blue[500],
+  blue600:   Blue[600],
+  blue700:   Blue[700],
+  blue800:   Blue[800],
+  blue900:   Blue[900],
+  blue950:   Blue[950],
+
+  // Indigo
+  indigo50:  Indigo[50],
+  indigo100: Indigo[100],
+  indigo200: Indigo[200],
+  indigo300: Indigo[300],
+  indigo400: Indigo[400],
+  indigo500: Indigo[500],
+  indigo600: Indigo[600],
+  indigo700: Indigo[700],
+  indigo800: Indigo[800],
+  indigo900: Indigo[900],
+  indigo950: Indigo[950],
+
+  // Violet
+  violet50:  Violet[50],
+  violet100: Violet[100],
+  violet200: Violet[200],
+  violet300: Violet[300],
+  violet400: Violet[400],
+  violet500: Violet[500],
+  violet600: Violet[600],
+  violet700: Violet[700],
+  violet800: Violet[800],
+  violet900: Violet[900],
+  violet950: Violet[950],
+
+  // Purple
+  purple50:  Purple[50],
+  purple100: Purple[100],
+  purple200: Purple[200],
+  purple300: Purple[300],
+  purple400: Purple[400],
+  purple500: Purple[500],
+  purple600: Purple[600],
+  purple700: Purple[700],
+  purple800: Purple[800],
+  purple900: Purple[900],
+  purple950: Purple[950],
+
+  // Fuchsia
+  fuchsia50:  Fuchsia[50],
+  fuchsia100: Fuchsia[100],
+  fuchsia200: Fuchsia[200],
+  fuchsia300: Fuchsia[300],
+  fuchsia400: Fuchsia[400],
+  fuchsia500: Fuchsia[500],
+  fuchsia600: Fuchsia[600],
+  fuchsia700: Fuchsia[700],
+  fuchsia800: Fuchsia[800],
+  fuchsia900: Fuchsia[900],
+  fuchsia950: Fuchsia[950],
+
+  // Pink
+  pink50:    Pink[50],
+  pink100:   Pink[100],
+  pink200:   Pink[200],
+  pink300:   Pink[300],
+  pink400:   Pink[400],
+  pink500:   Pink[500],
+  pink600:   Pink[600],
+  pink700:   Pink[700],
+  pink800:   Pink[800],
+  pink900:   Pink[900],
+  pink950:   Pink[950],
+
+  // Rose
+  rose50:    Rose[50],
+  rose100:   Rose[100],
+  rose200:   Rose[200],
+  rose300:   Rose[300],
+  rose400:   Rose[400],
+  rose500:   Rose[500],
+  rose600:   Rose[600],
+  rose700:   Rose[700],
+  rose800:   Rose[800],
+  rose900:   Rose[900],
+  rose950:   Rose[950],
+
+  // Neutral
+  white:     '#ffffff',
+  black:     '#000000',
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Semantic color tokens — light + dark
+// ThemeColors type
 // ─────────────────────────────────────────────────────────────────────────────
-
-const lightBlue = {
-  surface: {
-    primary: Palette.white,
-    secondary: Palette.slate50,
-    tertiary: Palette.gray100,    // was slate100 — clearer step from secondary (slate50)
-    elevated: Palette.gray200,
-    card: Palette.white,          // explicit card bg — same as primary in light mode
-    header: Palette.indigo500,
-  },
-  text: {
-    primary: Palette.gray900,
-    secondary: Palette.slate600,  // was slate500 — stronger secondary text (5.9:1 on white)
-    tertiary: Palette.slate500,   // was slate400 (3.8:1 fail) — now 4.6:1, passes WCAG AA
-    muted: Palette.gray500,       // was gray400 (2.9:1 fail) — now 4.6:1, passes WCAG AA
-    inverse: Palette.white,
-  },
-  border: {
-    primary: Palette.slate200,
-    secondary: Palette.gray300,
-    focus: Palette.blue500,
-  },
-  intent: {
-    success: Palette.green600,    // was green500 — stronger on white (4.5:1 vs 3.1:1)
-    successSurface: '#f0fdf4',
-    error: Palette.red600,        // was red500 — stronger on white (5.9:1 vs 4.0:1)
-    errorSurface: '#fef2f2',
-    warning: Palette.amber600,    // was amber500 — stronger on white (3.7:1 vs 2.4:1)
-    warningSurface: '#fffbeb',
-    info: Palette.blue600,        // was blue500 — stronger on white (4.5:1 vs 3.1:1)
-    infoSurface: '#eff6ff',
-  },
-  interactive: {
-    primary: Palette.blue600,         // was blue500 — stronger on white (4.5:1)
-    primaryPressed: Palette.blue700,  // was blue600
-    secondary: Palette.slate200,
-    disabled: Palette.gray300,
-    pressed: Palette.slate100,
-    success: Palette.green600,        // was green500
-    successPressed: Palette.green700,
-    warning: Palette.amber500,
-    warningPressed: Palette.amber600,
-    error: Palette.red600,            // was red500
-    errorPressed: Palette.red700,
-    // ── Chip tokens ──────────────────────────────────────────────────────────
-    chipBg: Palette.slate100,
-    chipBorder: Palette.slate300,
-    chipActiveBg: Palette.blue600,    // was blue500 — matches interactive.primary
-    chipActiveBorder: Palette.blue700,
-    chipActiveText: Palette.white,
-    chipText: Palette.slate600,
-  },
-  buttons: {
-    primary: {
-      bg: Palette.blue600,      // was blue500 — stronger contrast on white
-      pressed: Palette.blue700,
-      text: Palette.white,
-    },
-    success: {
-      bg: Palette.green600,     // was green500
-      pressed: Palette.green700,
-      text: Palette.white,
-    },
-    danger: {
-      bg: Palette.red600,       // was red500
-      pressed: Palette.red700,
-      text: Palette.white,
-    },
-    secondary: {
-      bg: Palette.gray200,
-      text: Palette.gray900,
-      border: Palette.gray300,
-    },
-    outline: {
-      border: Palette.blue600,  // was blue500
-      text: Palette.blue600,
-    },
-    ghost: {
-      text: Palette.blue600,    // was blue500
-    },
-    neutral: {
-      bg: Palette.slate100,
-      pressed: Palette.gray200,
-      text: Palette.slate600,
-    },
-    cancel: {
-      bg: 'transparent',
-      pressed: Palette.slate100,
-      text: Palette.slate500,
-      border: Palette.slate300,
-    },
-  },
-  tint: Palette.blue600,        // was '#0a7ea4' — now uses Palette constant
-  icon: Palette.slate500,
-  tabIconDefault: Palette.slate400,
-  tabIconSelected: Palette.blue600,
-  shadow: 'rgba(0,0,0,0.12)',   // was 0.18 — slightly softer
-} as const;
-
-const darkBlue = {
-  surface: {
-    primary: Palette.slate800,
-    secondary: Palette.slate900,
-    tertiary: Palette.slate850,
-    elevated: Palette.slate700,
-    card: Palette.slate800,       // explicit card bg — same as primary in dark mode
-    header: '#1a2744',            // deep navy — clearly distinct from slate800, feels branded
-  },
-  text: {
-    primary: Palette.slate100,
-    secondary: Palette.slate300,
-    tertiary: Palette.slate400,
-    muted: Palette.slate500,
-    inverse: Palette.gray900,
-  },
-  border: {
-    primary: Palette.slate700,
-    secondary: Palette.slate600,
-    focus: Palette.blue400,
-  },
-  intent: {
-    success: Palette.green400,    // was green500 — lighter for dark bg visibility
-    successSurface: '#0c2a1a',
-    error: Palette.red400,        // was red500 — lighter for dark bg visibility
-    errorSurface: '#3b1515',
-    warning: Palette.amber400,    // was amber500 — lighter for dark bg visibility
-    warningSurface: '#2d1f00',
-    info: Palette.blue400,
-    infoSurface: '#0c1a2e',
-  },
-  interactive: {
-    primary: Palette.blue400,         // was blue500 — more visible on dark bg
-    primaryPressed: Palette.blue500,  // was blue600 — consistent step-down
-    secondary: Palette.slate700,
-    disabled: Palette.slate600,
-    pressed: Palette.slate700,
-    success: Palette.green400,        // was green500 — lighter for dark bg
-    successPressed: Palette.green500,
-    warning: Palette.amber400,        // was amber500 — lighter for dark bg
-    warningPressed: Palette.amber500,
-    error: Palette.red400,            // was red500 — lighter for dark bg
-    errorPressed: Palette.red500,
-    // ── Chip tokens ──────────────────────────────────────────────────────────
-    chipBg: Palette.slate750,         // was #1e3a5f (too saturated) — neutral dark
-    chipBorder: Palette.slate600,     // was blue500 (same as active bg!) — now clearly inactive
-    chipActiveBg: Palette.blue400,    // was blue500 — matches interactive.primary
-    chipActiveBorder: Palette.blue500,
-    chipActiveText: Palette.white,
-    chipText: Palette.slate300,
-  },
-  buttons: {
-    primary: {
-      bg: Palette.blue400,      // was blue400 — matches interactive.primary
-      pressed: Palette.blue500,
-      text: Palette.white,
-    },
-    success: {
-      bg: Palette.green400,     // was green500 — lighter for dark bg
-      pressed: Palette.green500,
-      text: Palette.white,
-    },
-    danger: {
-      bg: Palette.red500,       // was red400 — red400 is too light/pink on dark
-      pressed: Palette.red600,
-      text: Palette.white,
-    },
-    secondary: {
-      bg: Palette.slate700,
-      text: Palette.slate100,
-      border: Palette.slate600,
-    },
-    outline: {
-      border: Palette.blue400,  // matches interactive.primary
-      text: Palette.blue400,
-    },
-    ghost: {
-      text: Palette.blue400,    // matches interactive.primary
-    },
-    neutral: {
-      bg: Palette.slate700,
-      pressed: Palette.slate600,
-      text: Palette.slate300,
-    },
-    cancel: {
-      bg: 'transparent',
-      pressed: Palette.slate700,
-      text: Palette.slate400,
-      border: Palette.slate600,
-    },
-  },
-  tint: Palette.blue400,        // was white — now uses palette color for consistency
-  icon: Palette.slate400,       // was '#9BA1A6' — now uses Palette constant
-  tabIconDefault: Palette.slate500,
-  tabIconSelected: Palette.blue400,
-  shadow: 'rgba(0,0,0,0.50)',   // was 0.45 — slightly stronger on dark
-} as const;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Palette-aware token sets — orange and green variants
-// Only Interactive_Primary_Family tokens differ; all other tokens are identical
-// to the blue variants above.
-// Cast bases to ThemeColors first so spread produces string-typed fields,
-// allowing the palette overrides to type-check without literal conflicts.
-// ─────────────────────────────────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const _lb = lightBlue as any as ThemeColors;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const _db = darkBlue as any as ThemeColors;
-
-const lightOrange: ThemeColors = {
-  ..._lb,
-  // Light orange uses a warm amber-orange header for brand identity
-  surface: {
-    ..._lb.surface,
-    header: '#c2410c',            // orange700 — rich burnt orange header, distinct from blue indigo
-  },
-  border: { ..._lb.border, focus: Palette.orange500 },
-  interactive: {
-    ..._lb.interactive,
-    primary: Palette.orange500,         // #f97316 — vibrant tangerine, 3.1:1 on white (AA for UI)
-    primaryPressed: Palette.orange600,  // #ea580c — darker on press
-    chipActiveBg: Palette.orange500,
-    chipActiveBorder: Palette.orange600,
-    chipBg: Palette.orange50,                  // warm tinted chip bg
-    chipBorder: Palette.orange200,              // warm border for inactive chips
-    chipText: Palette.orange700,                // readable on warm bg
-  },
-  buttons: {
-    ..._lb.buttons,
-    primary: { bg: Palette.orange500, pressed: Palette.orange600, text: Palette.white },
-    outline: { border: Palette.orange500, text: Palette.orange600 },
-    ghost: { text: Palette.orange600 },
-  },
-  intent: {
-    ..._lb.intent,
-    // Keep intent colors unchanged — only interactive family changes
-  },
-  tint: Palette.orange600,
-  icon: Palette.orange600,
-  tabIconDefault: Palette.slate400,
-  tabIconSelected: Palette.orange500,
-};
-
-const lightGreen: ThemeColors = {
-  ..._lb,
-  border: { ..._lb.border, focus: Palette.green600 },
-  interactive: {
-    ..._lb.interactive,
-    primary: Palette.green600,
-    primaryPressed: Palette.green700,
-    chipActiveBg: Palette.green600,
-    chipActiveBorder: Palette.green700,
-  },
-  buttons: {
-    ..._lb.buttons,
-    primary: { bg: Palette.green600, pressed: Palette.green700, text: Palette.white },
-    outline: { border: Palette.green600, text: Palette.green600 },
-    ghost: { text: Palette.green600 },
-  },
-  tint: Palette.green600,
-  tabIconSelected: Palette.green600,
-};
-
-const darkOrange: ThemeColors = {
-  ..._db,
-  border: { ..._db.border, focus: Palette.orange400 },
-  interactive: {
-    ..._db.interactive,
-    primary: Palette.orange400,         // lighter shade — more vibrant on dark bg (5.2:1 vs 3.8:1)
-    primaryPressed: Palette.orange500,
-    chipActiveBg: Palette.orange400,
-    chipActiveBorder: Palette.orange500,
-    // Chip inactive — use a warm-tinted dark bg so it feels orange-themed, not generic slate
-    chipBg: '#2d1f0e',                  // very dark warm brown — distinct from blue chipBg
-    chipBorder: '#7c3a10',              // dark orange border — clearly inactive but on-theme
-  },
-  buttons: {
-    ..._db.buttons,
-    primary: { bg: Palette.orange400, pressed: Palette.orange500, text: Palette.white },
-    outline: { border: Palette.orange400, text: Palette.orange400 },
-    ghost: { text: Palette.orange400 },
-  },
-  tint: Palette.orange400,
-  tabIconSelected: Palette.orange400,
-};
-
-const darkGreen: ThemeColors = {
-  ..._db,
-  border: { ..._db.border, focus: Palette.green400 },
-  interactive: {
-    ..._db.interactive,
-    primary: Palette.green400,          // was green500 (= intent.success) — now distinct
-    primaryPressed: Palette.green500,
-    chipActiveBg: Palette.green400,
-    chipActiveBorder: Palette.green500,
-  },
-  buttons: {
-    ..._db.buttons,
-    primary: { bg: Palette.green400, pressed: Palette.green500, text: Palette.slate900 },
-    outline: { border: Palette.green400, text: Palette.green400 },
-    ghost: { text: Palette.green400 },
-  },
-  tint: Palette.green400,
-  tabIconSelected: Palette.green400,
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PaletteOption type + ColorsByPalette lookup map
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type PaletteOption = 'blue' | 'orange' | 'green';
-
-export const ColorsByPalette: Record<'light' | 'dark', Record<PaletteOption, ThemeColors>> = {
-  light: { blue: lightBlue, orange: lightOrange, green: lightGreen },
-  dark:  { blue: darkBlue,  orange: darkOrange,  green: darkGreen  },
-};
-
-// Colors.light / Colors.dark remain the blue-palette sets for backward compatibility.
-export const Colors = { light: lightBlue, dark: darkBlue } as const;
 
 export type ThemeColors = {
-  surface: { primary: string; secondary: string; tertiary: string; elevated: string; card: string; header: string };
-  text: { primary: string; secondary: string; tertiary: string; muted: string; inverse: string };
-  border: { primary: string; secondary: string; focus: string };
-  intent: { success: string; successSurface: string; error: string; errorSurface: string; warning: string; warningSurface: string; info: string; infoSurface: string };
-  interactive: {
-    primary: string; primaryPressed: string;
+  surface: {
+    primary: string;
     secondary: string;
-    disabled: string; pressed: string;
-    success: string; successPressed: string;
-    warning: string; warningPressed: string;
-    error: string; errorPressed: string;
-    chipBg: string; chipBorder: string;
-    chipActiveBg: string; chipActiveBorder: string;
-    chipActiveText: string; chipText: string;
+    tertiary: string;
+    elevated: string;
+    card: string;
+    header: string;
+  };
+  text: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    muted: string;
+    inverse: string;
+  };
+  border: {
+    primary: string;
+    secondary: string;
+    focus: string;
+  };
+  intent: {
+    success: string;
+    successSurface: string;
+    error: string;
+    errorSurface: string;
+    warning: string;
+    warningSurface: string;
+    info: string;
+    infoSurface: string;
+  };
+  interactive: {
+    primary: string;
+    primaryPressed: string;
+    secondary: string;
+    disabled: string;
+    pressed: string;
+    success: string;
+    successPressed: string;
+    warning: string;
+    warningPressed: string;
+    error: string;
+    errorPressed: string;
+    chipBg: string;
+    chipBorder: string;
+    chipActiveBg: string;
+    chipActiveBorder: string;
+    chipActiveText: string;
+    chipText: string;
   };
   buttons: {
     primary:   { bg: string; pressed: string; text: string };
@@ -488,143 +719,544 @@ export type ThemeColors = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Domain color maps
+// Semantic Tokens — Light variants
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Light — Blue (shadcn default) */
+const lightBlue: ThemeColors = {
+  surface: {
+    primary:   Palette.white,
+    secondary: Palette.zinc50,
+    tertiary:  Palette.zinc100,
+    elevated:  Palette.zinc200,
+    card:      Palette.white,
+    header:    Palette.indigo500,
+  },
+  text: {
+    primary:   Palette.zinc900,
+    secondary: Palette.zinc600,
+    tertiary:  Palette.zinc500,
+    muted:     Palette.zinc400,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.zinc200,
+    secondary: Palette.zinc300,
+    focus:     Palette.blue500,
+  },
+  intent: {
+    success:        Palette.emerald600,
+    successSurface: Palette.emerald50,
+    error:          Palette.red600,
+    errorSurface:   Palette.red50,
+    warning:        Palette.amber600,
+    warningSurface: Palette.amber50,
+    info:           Palette.blue600,
+    infoSurface:    Palette.blue50,
+  },
+  interactive: {
+    primary:          Palette.blue600,
+    primaryPressed:   Palette.blue700,
+    secondary:        Palette.zinc200,
+    disabled:         Palette.zinc300,
+    pressed:          Palette.zinc100,
+    success:          Palette.emerald600,
+    successPressed:   Palette.emerald700,
+    warning:          Palette.amber500,
+    warningPressed:   Palette.amber600,
+    error:            Palette.red600,
+    errorPressed:     Palette.red700,
+    chipBg:           Palette.zinc100,
+    chipBorder:       Palette.zinc300,
+    chipActiveBg:     Palette.blue600,
+    chipActiveBorder: Palette.blue700,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.zinc600,
+  },
+  buttons: {
+    primary:   { bg: Palette.blue600,    pressed: Palette.blue700,    text: Palette.white },
+    success:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
+    danger:    { bg: Palette.red600,     pressed: Palette.red700,     text: Palette.white },
+    secondary: { bg: Palette.zinc100,    text: Palette.zinc900,       border: Palette.zinc300 },
+    outline:   { border: Palette.blue600, text: Palette.blue600 },
+    ghost:     { text: Palette.blue600 },
+    neutral:   { bg: Palette.zinc100,    pressed: Palette.zinc200,    text: Palette.zinc600 },
+    cancel:    { bg: 'transparent',      pressed: Palette.zinc100,    text: Palette.zinc500, border: Palette.zinc300 },
+  },
+  tint:            Palette.blue600,
+  icon:            Palette.zinc500,
+  tabIconDefault:  Palette.zinc400,
+  tabIconSelected: Palette.blue600,
+  shadow:          'rgba(0,0,0,0.10)',
+};
+
+/** Light — Orange / Stone */
+const lightOrange: ThemeColors = {
+  surface: {
+    primary:   Palette.white,
+    secondary: Palette.stone50,
+    tertiary:  Palette.stone100,
+    elevated:  Palette.stone200,
+    card:      Palette.white,
+    header:    Palette.orange700,
+  },
+  text: {
+    primary:   Palette.stone900,
+    secondary: Palette.stone600,
+    tertiary:  Palette.stone500,
+    muted:     Palette.stone400,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.stone200,
+    secondary: Palette.stone300,
+    focus:     Palette.orange500,
+  },
+  intent: {
+    success:        Palette.emerald600,
+    successSurface: Palette.emerald50,
+    error:          Palette.red600,
+    errorSurface:   Palette.red50,
+    warning:        Palette.amber600,
+    warningSurface: Palette.amber50,
+    info:           Palette.blue600,
+    infoSurface:    Palette.blue50,
+  },
+  interactive: {
+    primary:          Palette.orange600,
+    primaryPressed:   Palette.orange700,
+    secondary:        Palette.stone200,
+    disabled:         Palette.stone300,
+    pressed:          Palette.stone100,
+    success:          Palette.emerald600,
+    successPressed:   Palette.emerald700,
+    warning:          Palette.amber500,
+    warningPressed:   Palette.amber600,
+    error:            Palette.red600,
+    errorPressed:     Palette.red700,
+    chipBg:           Palette.orange50,
+    chipBorder:       Palette.orange200,
+    chipActiveBg:     Palette.orange600,
+    chipActiveBorder: Palette.orange700,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.orange700,
+  },
+  buttons: {
+    primary:   { bg: Palette.orange600,  pressed: Palette.orange700,  text: Palette.white },
+    success:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
+    danger:    { bg: Palette.red600,     pressed: Palette.red700,     text: Palette.white },
+    secondary: { bg: Palette.stone100,   text: Palette.stone900,      border: Palette.stone300 },
+    outline:   { border: Palette.orange600, text: Palette.orange600 },
+    ghost:     { text: Palette.orange600 },
+    neutral:   { bg: Palette.stone100,   pressed: Palette.stone200,   text: Palette.stone600 },
+    cancel:    { bg: 'transparent',      pressed: Palette.stone100,   text: Palette.stone500, border: Palette.stone300 },
+  },
+  tint:            Palette.orange600,
+  icon:            Palette.stone500,
+  tabIconDefault:  Palette.stone400,
+  tabIconSelected: Palette.orange600,
+  shadow:          'rgba(120,60,0,0.10)',
+};
+
+/** Light — Emerald / Green */
+const lightGreen: ThemeColors = {
+  surface: {
+    primary:   Palette.white,
+    secondary: Palette.zinc50,
+    tertiary:  Palette.zinc100,
+    elevated:  Palette.zinc200,
+    card:      Palette.white,
+    header:    Palette.emerald700,
+  },
+  text: {
+    primary:   Palette.zinc900,
+    secondary: Palette.zinc600,
+    tertiary:  Palette.zinc500,
+    muted:     Palette.zinc400,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.zinc200,
+    secondary: Palette.zinc300,
+    focus:     Palette.emerald600,
+  },
+  intent: {
+    success:        Palette.emerald600,
+    successSurface: Palette.emerald50,
+    error:          Palette.red600,
+    errorSurface:   Palette.red50,
+    warning:        Palette.amber600,
+    warningSurface: Palette.amber50,
+    info:           Palette.blue600,
+    infoSurface:    Palette.blue50,
+  },
+  interactive: {
+    primary:          Palette.emerald600,
+    primaryPressed:   Palette.emerald700,
+    secondary:        Palette.zinc200,
+    disabled:         Palette.zinc300,
+    pressed:          Palette.zinc100,
+    success:          Palette.emerald600,
+    successPressed:   Palette.emerald700,
+    warning:          Palette.amber500,
+    warningPressed:   Palette.amber600,
+    error:            Palette.red600,
+    errorPressed:     Palette.red700,
+    chipBg:           Palette.emerald50,
+    chipBorder:       Palette.emerald200,
+    chipActiveBg:     Palette.emerald600,
+    chipActiveBorder: Palette.emerald700,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.emerald700,
+  },
+  buttons: {
+    primary:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
+    success:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
+    danger:    { bg: Palette.red600,     pressed: Palette.red700,     text: Palette.white },
+    secondary: { bg: Palette.zinc100,    text: Palette.zinc900,       border: Palette.zinc300 },
+    outline:   { border: Palette.emerald600, text: Palette.emerald600 },
+    ghost:     { text: Palette.emerald600 },
+    neutral:   { bg: Palette.zinc100,    pressed: Palette.zinc200,    text: Palette.zinc600 },
+    cancel:    { bg: 'transparent',      pressed: Palette.zinc100,    text: Palette.zinc500, border: Palette.zinc300 },
+  },
+  tint:            Palette.emerald600,
+  icon:            Palette.zinc500,
+  tabIconDefault:  Palette.zinc400,
+  tabIconSelected: Palette.emerald600,
+  shadow:          'rgba(0,0,0,0.10)',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Semantic Tokens — Dark variants
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Dark — Blue (shadcn default) */
+const darkBlue: ThemeColors = {
+  surface: {
+    primary:   Palette.zinc900,
+    secondary: Palette.zinc950,
+    tertiary:  Palette.zinc800,
+    elevated:  Palette.zinc700,
+    card:      Palette.zinc900,
+    header:    '#0f172a',
+  },
+  text: {
+    primary:   Palette.zinc50,
+    secondary: Palette.zinc300,
+    tertiary:  Palette.zinc400,
+    muted:     Palette.zinc500,
+    inverse:   Palette.zinc900,
+  },
+  border: {
+    primary:   Palette.zinc700,
+    secondary: Palette.zinc600,
+    focus:     Palette.blue400,
+  },
+  intent: {
+    success:        Palette.emerald400,
+    successSurface: Palette.emerald950,
+    error:          Palette.red400,
+    errorSurface:   Palette.red950,
+    warning:        Palette.amber400,
+    warningSurface: Palette.amber950,
+    info:           Palette.blue400,
+    infoSurface:    Palette.blue950,
+  },
+  interactive: {
+    primary:          Palette.blue400,
+    primaryPressed:   Palette.blue500,
+    secondary:        Palette.zinc700,
+    disabled:         Palette.zinc600,
+    pressed:          Palette.zinc700,
+    success:          Palette.emerald400,
+    successPressed:   Palette.emerald500,
+    warning:          Palette.amber400,
+    warningPressed:   Palette.amber500,
+    error:            Palette.red400,
+    errorPressed:     Palette.red500,
+    chipBg:           Palette.zinc800,
+    chipBorder:       Palette.zinc600,
+    chipActiveBg:     Palette.blue400,
+    chipActiveBorder: Palette.blue500,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.zinc300,
+  },
+  buttons: {
+    primary:   { bg: Palette.blue500,    pressed: Palette.blue600,    text: Palette.white },
+    success:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
+    danger:    { bg: Palette.red500,     pressed: Palette.red600,     text: Palette.white },
+    secondary: { bg: Palette.zinc700,    text: Palette.zinc100,       border: Palette.zinc600 },
+    outline:   { border: Palette.blue400, text: Palette.blue400 },
+    ghost:     { text: Palette.blue400 },
+    neutral:   { bg: Palette.zinc700,    pressed: Palette.zinc600,    text: Palette.zinc300 },
+    cancel:    { bg: 'transparent',      pressed: Palette.zinc700,    text: Palette.zinc400, border: Palette.zinc600 },
+  },
+  tint:            Palette.blue400,
+  icon:            Palette.zinc400,
+  tabIconDefault:  Palette.zinc500,
+  tabIconSelected: Palette.blue400,
+  shadow:          'rgba(0,0,0,0.50)',
+};
+
+/** Dark — Orange / Stone */
+const darkOrange: ThemeColors = {
+  surface: {
+    primary:   Palette.stone900,
+    secondary: Palette.stone950,
+    tertiary:  Palette.stone800,
+    elevated:  Palette.stone700,
+    card:      Palette.stone900,
+    header:    Palette.orange900,
+  },
+  text: {
+    primary:   Palette.stone50,
+    secondary: Palette.stone300,
+    tertiary:  Palette.stone400,
+    muted:     Palette.stone500,
+    inverse:   Palette.stone900,
+  },
+  border: {
+    primary:   Palette.stone700,
+    secondary: Palette.stone600,
+    focus:     Palette.orange400,
+  },
+  intent: {
+    success:        Palette.emerald400,
+    successSurface: Palette.emerald950,
+    error:          Palette.red400,
+    errorSurface:   Palette.red950,
+    warning:        Palette.amber400,
+    warningSurface: Palette.amber950,
+    info:           Palette.blue400,
+    infoSurface:    Palette.blue950,
+  },
+  interactive: {
+    primary:          Palette.orange400,
+    primaryPressed:   Palette.orange500,
+    secondary:        Palette.stone700,
+    disabled:         Palette.stone600,
+    pressed:          Palette.stone700,
+    success:          Palette.emerald400,
+    successPressed:   Palette.emerald500,
+    warning:          Palette.amber400,
+    warningPressed:   Palette.amber500,
+    error:            Palette.red400,
+    errorPressed:     Palette.red500,
+    chipBg:           Palette.stone800,
+    chipBorder:       Palette.stone600,
+    chipActiveBg:     Palette.orange400,
+    chipActiveBorder: Palette.orange500,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.stone300,
+  },
+  buttons: {
+    primary:   { bg: Palette.orange500,  pressed: Palette.orange600,  text: Palette.white },
+    success:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
+    danger:    { bg: Palette.red500,     pressed: Palette.red600,     text: Palette.white },
+    secondary: { bg: Palette.stone700,   text: Palette.stone100,      border: Palette.stone600 },
+    outline:   { border: Palette.orange400, text: Palette.orange400 },
+    ghost:     { text: Palette.orange400 },
+    neutral:   { bg: Palette.stone700,   pressed: Palette.stone600,   text: Palette.stone300 },
+    cancel:    { bg: 'transparent',      pressed: Palette.stone700,   text: Palette.stone400, border: Palette.stone600 },
+  },
+  tint:            Palette.orange400,
+  icon:            Palette.stone400,
+  tabIconDefault:  Palette.stone500,
+  tabIconSelected: Palette.orange400,
+  shadow:          'rgba(0,0,0,0.55)',
+};
+
+/** Dark — Emerald / Green */
+const darkGreen: ThemeColors = {
+  surface: {
+    primary:   Palette.zinc900,
+    secondary: Palette.zinc950,
+    tertiary:  Palette.zinc800,
+    elevated:  Palette.zinc700,
+    card:      Palette.zinc900,
+    header:    Palette.emerald800,
+  },
+  text: {
+    primary:   Palette.zinc50,
+    secondary: Palette.zinc300,
+    tertiary:  Palette.zinc400,
+    muted:     Palette.zinc500,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.zinc700,
+    secondary: Palette.zinc600,
+    focus:     Palette.emerald400,
+  },
+  intent: {
+    success:        Palette.emerald400,
+    successSurface: Palette.emerald950,
+    error:          Palette.red400,
+    errorSurface:   Palette.red950,
+    warning:        Palette.amber400,
+    warningSurface: Palette.amber950,
+    info:           Palette.blue400,
+    infoSurface:    Palette.blue950,
+  },
+  interactive: {
+    primary:          Palette.emerald400,
+    primaryPressed:   Palette.emerald500,
+    secondary:        Palette.zinc700,
+    disabled:         Palette.zinc600,
+    pressed:          Palette.zinc700,
+    success:          Palette.emerald400,
+    successPressed:   Palette.emerald500,
+    warning:          Palette.amber400,
+    warningPressed:   Palette.amber500,
+    error:            Palette.red400,
+    errorPressed:     Palette.red500,
+    chipBg:           Palette.zinc800,
+    chipBorder:       Palette.zinc600,
+    chipActiveBg:     Palette.emerald400,
+    chipActiveBorder: Palette.emerald500,
+    chipActiveText:   Palette.zinc900,
+    chipText:         Palette.zinc300,
+  },
+  buttons: {
+    primary:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
+    success:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
+    danger:    { bg: Palette.red500,     pressed: Palette.red600,     text: Palette.white },
+    secondary: { bg: Palette.zinc700,    text: Palette.zinc100,       border: Palette.zinc600 },
+    outline:   { border: Palette.emerald400, text: Palette.emerald400 },
+    ghost:     { text: Palette.emerald400 },
+    neutral:   { bg: Palette.zinc700,    pressed: Palette.zinc600,    text: Palette.zinc300 },
+    cancel:    { bg: 'transparent',      pressed: Palette.zinc700,    text: Palette.zinc400, border: Palette.zinc600 },
+  },
+  tint:            Palette.emerald400,
+  icon:            Palette.zinc400,
+  tabIconDefault:  Palette.zinc500,
+  tabIconSelected: Palette.emerald400,
+  shadow:          'rgba(0,0,0,0.50)',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PaletteOption + ColorsByPalette + Colors
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PaletteOption = 'blue' | 'orange' | 'green';
+
+export const ColorsByPalette: Record<'light' | 'dark', Record<PaletteOption, ThemeColors>> = {
+  light: { blue: lightBlue, orange: lightOrange, green: lightGreen },
+  dark:  { blue: darkBlue,  orange: darkOrange,  green: darkGreen  },
+};
+
+// Colors.light / Colors.dark remain the blue-palette sets for backward compat.
+export const Colors = { light: lightBlue, dark: darkBlue } as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Domain Maps
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const StatusColors: Record<string, string> = {
-  OPEN: Palette.amber500,
-  IN_PROGRESS: Palette.violet600,
-  PROGRAMMING: Palette.indigo500,
+  OPEN:              Palette.amber500,
+  IN_PROGRESS:       Palette.violet600,
+  PROGRAMMING:       Palette.indigo500,
   UNDER_DEVELOPMENT: Palette.violet500,
-  CODE_REVIEW: Palette.cyan500,
-  TESTING: Palette.cyan600,
-  RESOLVED: Palette.green500,
-  CLOSED: Palette.gray500,
+  CODE_REVIEW:       Palette.cyan500,
+  TESTING:           Palette.sky500,
+  RESOLVED:          Palette.emerald500,
+  CLOSED:            Palette.zinc500,
 };
 
-/**
- * StatusSurfaces — paired background tints for status chips/badges.
- * Use StatusColors[status] for the text/icon color and
- * StatusSurfaces.light[status] / StatusSurfaces.dark[status] for the fill.
- * This replaces per-component rgba() guesswork with shared, consistent tokens.
- */
 export const StatusSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    OPEN: '#fffbeb',
-    IN_PROGRESS: '#ede9fe',
-    PROGRAMMING: '#e0e7ff',
-    UNDER_DEVELOPMENT: '#f5f3ff',
-    CODE_REVIEW: '#ecfeff',
-    TESTING: '#f0fdfa',
-    RESOLVED: '#d1fae5',
-    CLOSED: '#f3f4f6',
+    OPEN:              Palette.amber50,
+    IN_PROGRESS:       Palette.violet50,
+    PROGRAMMING:       Palette.indigo50,
+    UNDER_DEVELOPMENT: Palette.violet50,
+    CODE_REVIEW:       Palette.cyan50,
+    TESTING:           Palette.sky50,
+    RESOLVED:          Palette.emerald50,
+    CLOSED:            Palette.zinc100,
   },
   dark: {
-    OPEN: '#292109',
-    IN_PROGRESS: '#2d1b69',
-    PROGRAMMING: '#1e1b4b',
-    UNDER_DEVELOPMENT: '#2e1065',
-    CODE_REVIEW: '#083344',
-    TESTING: '#042f2e',
-    RESOLVED: '#022c22',
-    CLOSED: '#1f2937',
+    OPEN:              Palette.amber950,
+    IN_PROGRESS:       Palette.violet950,
+    PROGRAMMING:       Palette.indigo950,
+    UNDER_DEVELOPMENT: Palette.violet950,
+    CODE_REVIEW:       Palette.cyan950,
+    TESTING:           Palette.sky950,
+    RESOLVED:          Palette.emerald950,
+    CLOSED:            Palette.zinc800,
   },
 };
 
 export const PriorityColors: Record<string, string> = {
-  LOW: Palette.green500,
+  LOW:    Palette.emerald500,
   MEDIUM: Palette.amber500,
-  HIGH: Palette.red500,
-  URGENT: Palette.red600,
+  HIGH:   Palette.red500,
+  URGENT: Palette.rose600,
 };
 
-/**
- * PrioritySurfaces — paired background tints for priority chips/badges.
- * Use PriorityColors[priority] for text/icon color and
- * PrioritySurfaces.light[priority] / PrioritySurfaces.dark[priority] for the fill.
- */
 export const PrioritySurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    LOW: '#f0fdf4',
-    MEDIUM: '#fffbeb',
-    HIGH: '#fef2f2',
-    URGENT: '#fff1f2',
+    LOW:    Palette.emerald50,
+    MEDIUM: Palette.amber50,
+    HIGH:   Palette.red50,
+    URGENT: Palette.rose50,
   },
   dark: {
-    LOW: '#022c22',
-    MEDIUM: '#292109',
-    HIGH: '#3b1515',
-    URGENT: '#4c0519',
+    LOW:    Palette.emerald950,
+    MEDIUM: Palette.amber950,
+    HIGH:   Palette.red950,
+    URGENT: Palette.rose950,
   },
 };
 
 export const RoleColors: Record<string, string> = {
-  SUPER_ADMIN: Palette.red600,      // was red500 — stronger on white
-  TENANT_ADMIN: Palette.amber600,   // was amber500 — stronger on white
-  PROGRAMMER: Palette.violet600,
-  EMPLOYEE: Palette.blue600,        // was blue500 — stronger on white
+  SUPER_ADMIN:  Palette.red600,
+  TENANT_ADMIN: Palette.amber600,
+  PROGRAMMER:   Palette.violet600,
+  EMPLOYEE:     Palette.blue600,
 };
 
-/**
- * RoleSurfaces — paired background tints for role chips/badges.
- * Use RoleColors[role] for text/icon color and
- * RoleSurfaces.light[role] / RoleSurfaces.dark[role] for the fill.
- */
 export const RoleSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    SUPER_ADMIN: '#fef2f2',
-    TENANT_ADMIN: '#fffbeb',
-    PROGRAMMER: '#f5f3ff',
-    EMPLOYEE: '#eff6ff',
+    SUPER_ADMIN:  Palette.red50,
+    TENANT_ADMIN: Palette.amber50,
+    PROGRAMMER:   Palette.violet50,
+    EMPLOYEE:     Palette.blue50,
   },
   dark: {
-    SUPER_ADMIN: '#3b1515',
-    TENANT_ADMIN: '#292109',
-    PROGRAMMER: '#2e1065',
-    EMPLOYEE: '#0c1a2e',
+    SUPER_ADMIN:  Palette.red950,
+    TENANT_ADMIN: Palette.amber950,
+    PROGRAMMER:   Palette.violet950,
+    EMPLOYEE:     Palette.blue950,
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Subscription status colors — customer maintenance type / subscription state
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * SubscriptionColors — text/icon color for each subscription status.
- * Matches the backend's computed subscriptionStatus field.
- */
 export const SubscriptionColors: Record<string, string> = {
-  ACTIVE:        Palette.green600,
+  ACTIVE:        Palette.emerald600,
   TRIAL:         Palette.violet600,
   EXPIRED:       Palette.red600,
-  INACTIVE:      Palette.gray500,
+  INACTIVE:      Palette.zinc500,
   PAY_AS_YOU_GO: Palette.cyan500,
 };
 
-/**
- * SubscriptionSurfaces — paired background tints for subscription status badges.
- * Use SubscriptionColors[status] for text/icon and
- * SubscriptionSurfaces.light[status] / SubscriptionSurfaces.dark[status] for fill.
- */
 export const SubscriptionSurfaces: { light: Record<string, string>; dark: Record<string, string> } = {
   light: {
-    ACTIVE:        '#f0fdf4',
-    TRIAL:         '#f5f3ff',
-    EXPIRED:       '#fef2f2',
-    INACTIVE:      '#f9fafb',
-    PAY_AS_YOU_GO: '#ecfeff',
+    ACTIVE:        Palette.emerald50,
+    TRIAL:         Palette.violet50,
+    EXPIRED:       Palette.red50,
+    INACTIVE:      Palette.zinc100,
+    PAY_AS_YOU_GO: Palette.cyan50,
   },
   dark: {
-    ACTIVE:        '#022c22',
-    TRIAL:         '#2e1065',
-    EXPIRED:       '#3b1515',
-    INACTIVE:      '#1f2937',
-    PAY_AS_YOU_GO: '#083344',
+    ACTIVE:        Palette.emerald950,
+    TRIAL:         Palette.violet950,
+    EXPIRED:       Palette.red950,
+    INACTIVE:      Palette.zinc800,
+    PAY_AS_YOU_GO: Palette.cyan950,
   },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Spacing, Radius, Typography
+// Spacing / Radius / Typography
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const Spacing = {
@@ -642,50 +1274,38 @@ export const FontSize = {
 } as const;
 
 export const FontWeight = {
-  normal: '400' as const,
-  medium: '500' as const,
-  semibold: '600' as const,
-  bold: '700' as const,
+  normal:    '400' as const,
+  medium:    '500' as const,
+  semibold:  '600' as const,
+  bold:      '700' as const,
   extrabold: '800' as const,
 } as const;
 
-/**
- * LineHeight — proportional to FontSize (approx ×1.5).
- * Replaces magic numbers like `lineHeight: 18` in component styles.
- */
 export const LineHeight = {
-  xs: 14,
-  sm: 16,
-  base: 20,
-  md: 20,
-  lg: 22,
-  xl: 24,
+  xs:    14,
+  sm:    16,
+  base:  20,
+  md:    20,
+  lg:    22,
+  xl:    24,
   '2xl': 28,
   '3xl': 30,
   '4xl': 36,
 } as const;
 
-/**
- * BorderWidth — named widths for borders, underlines, dividers.
- * Replaces magic numbers like `borderWidth: 1.5` in component styles.
- */
 export const BorderWidth = {
   hairline: 0.5,
-  thin: 1,
-  base: 1.5,
-  thick: 2,
+  thin:     1,
+  base:     1.5,
+  thick:    2,
 } as const;
 
-/**
- * IconSize — independent of FontSize; use for icon `width`/`height`.
- * Keeps icon sizing consistent across components.
- */
 export const IconSize = {
-  xs: 14,
-  sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 28,
+  xs:    14,
+  sm:    16,
+  md:    20,
+  lg:    24,
+  xl:    28,
   '2xl': 32,
 } as const;
 
@@ -693,9 +1313,9 @@ export const Fonts = Platform.select({
   ios: { sans: 'system-ui', serif: 'ui-serif', rounded: 'ui-rounded', mono: 'ui-monospace' },
   default: { sans: 'normal', serif: 'serif', rounded: 'normal', mono: 'monospace' },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
+    sans:    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    serif:   "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    mono:    "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   },
 });

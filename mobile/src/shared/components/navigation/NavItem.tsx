@@ -5,8 +5,10 @@ import { FontSize, FontWeight } from '@/src/constants/theme';
 export interface NavItemProps {
   icon:           string;
   label:          string;
-  /** Text + icon color — defaults to white (designed for dark drawer backgrounds) */
+  /** Text + icon color. Pass `c.text.primary` from the parent for theme-aware color. */
   color?:         string;
+  /** Divider line color. Pass `c.border.primary` from the parent for theme-aware color. */
+  dividerColor?:  string;
   /** Show a horizontal divider above this item */
   dividerBefore?: boolean;
   onPress?:       () => void;
@@ -15,21 +17,29 @@ export interface NavItemProps {
 /**
  * NavItem — a single row in a navigation drawer.
  *
- * RTL: inherits direction from DirectionProvider — no manual isRtl needed.
- * Designed for dark drawer backgrounds (default color is white).
+ * Modal-safe: no hooks. All colors resolved by the parent and passed as props.
+ * RTL: inherits direction from the parent View's `direction` style.
+ *
+ * Usage:
+ *   <NavItem icon="🏠" label="Home" color={c.text.primary} dividerColor={c.border.primary} onPress={...} />
  */
 const NavItem: React.FC<NavItemProps> = ({
-  icon, label,
-  color         = '#ffffff',
+  icon,
+  label,
+  color         = '#18181b',
+  dividerColor  = 'rgba(0,0,0,0.10)',
   dividerBefore = false,
   onPress,
 }) => (
   <>
-    {dividerBefore && <View style={styles.divider} />}
+    {dividerBefore && (
+      <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+    )}
     <Pressable
       style={styles.container}
       onPress={onPress}
       disabled={!onPress}
+      android_ripple={{ color: 'rgba(0,0,0,0.08)', borderless: false }}
       accessibilityRole="menuitem"
       accessibilityLabel={label}
     >
@@ -48,8 +58,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical:   4,
     height:           1,
-    // Semi-transparent white — designed for dark drawer backgrounds
-    backgroundColor:  'rgba(255,255,255,0.2)',
   },
   container: {
     flexDirection:     'row',

@@ -6,16 +6,15 @@ import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
 import { useThemeColors, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
-import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { Avatar, IconButton } from '@/src/shared/components';
 
 const AppHeaderBar: React.FC = () => {
-  const { user } = useAuthStore();
-  const { unreadCount } = useUiStore();
+  const { user }                           = useAuthStore();
+  const { unreadCount }                    = useUiStore();
   const { open, setOpen, setHeaderHeight } = useDrawer();
-  const router = useRouter();
-  const c      = useThemeColors();
-  const { t }  = useTranslation();
+  const router                             = useRouter();
+  const c                                  = useThemeColors();
+  const { t }                              = useTranslation();
 
   if (!user) return null;
 
@@ -26,17 +25,25 @@ const AppHeaderBar: React.FC = () => {
         paddingTop: 8, paddingBottom: 12, paddingHorizontal: 16,
         backgroundColor: c.surface.header, gap: 8,
       }}
-      onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      onLayout={(e: { nativeEvent: { layout: { height: number } } }) =>
+        setHeaderHeight(e.nativeEvent.layout.height)
+      }
     >
       {/* Logo */}
       <Pressable
         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
         onPress={() => router.push('/(app)' as any)}
       >
-        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{
+          width: 32, height: 32, borderRadius: 8,
+          backgroundColor: 'rgba(255,255,255,0.18)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
           <Text style={{ fontSize: 16 }}>🎫</Text>
         </View>
-        <Text style={{ color: c.text.inverse, fontWeight: FontWeight.bold, fontSize: 18 }}>TicketFlow</Text>
+        <Text style={{ color: c.text.inverse, fontWeight: FontWeight.bold, fontSize: 18 }}>
+          TicketFlow
+        </Text>
       </Pressable>
 
       {/* Right actions */}
@@ -49,14 +56,18 @@ const AppHeaderBar: React.FC = () => {
           onPress={() => router.push('/(app)/notifications' as any)}
         />
 
-        {/* User avatar */}
+        {/* User avatar — palette-aware color, matches drawer avatar */}
         <Pressable
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 8,
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6,
+          }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
           <Avatar
             text={user.name}
-            backgroundColor={getRoleColor(user.role)}
+            backgroundColor={c.interactive.primary}
             size={28}
           />
         </Pressable>

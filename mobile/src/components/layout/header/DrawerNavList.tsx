@@ -2,15 +2,17 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { NavItemConfig as NavItemType } from '@/src/components/layout/header/navItems';
+import type { ThemeColors } from '@/src/constants/tokens';
 import NavItem from '@/src/shared/components/navigation/NavItem';
 
 interface Props {
-  items: NavItemType[];
-  isRtl: boolean;
-  onNav: (route: string) => void;
+  items:          NavItemType[];
+  isRtl:          boolean;
+  onNav:          (route: string) => void;
+  resolvedColors: ThemeColors;
 }
 
-const DrawerNavList: React.FC<Props> = ({ items, isRtl, onNav }) => {
+const DrawerNavList: React.FC<Props> = ({ items, isRtl, onNav, resolvedColors: c }) => {
   const { t } = useTranslation();
 
   return (
@@ -20,8 +22,9 @@ const DrawerNavList: React.FC<Props> = ({ items, isRtl, onNav }) => {
           <NavItem
             icon={item.icon}
             label={t(item.labelKey)}
-            color={item.color}
+            color={item.color ?? c.text.primary}
             dividerBefore={item.dividerBefore}
+            dividerColor={c.border.primary}
             onPress={() => onNav(item.route)}
           />
         </View>

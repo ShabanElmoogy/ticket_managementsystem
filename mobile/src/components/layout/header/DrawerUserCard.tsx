@@ -1,19 +1,20 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { changeLanguage } from '@/src/i18n';
 import { useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
+import type { ThemeColors } from '@/src/constants/tokens';
 import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
 
 interface Props {
-  name: string;
-  role: string;
-  isRtl: boolean;
-  onToggleTheme: () => void;
+  name:           string;
+  role:           string;
+  isRtl:          boolean;
+  onToggleTheme:  () => void;
+  resolvedColors: ThemeColors;
 }
 
-const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) => {
+const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme, resolvedColors: c }) => {
   const { i18n }    = useTranslation();
   const [switching, setSwitching] = React.useState(false);
   const currentLang = i18n.language;
@@ -33,18 +34,19 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
   return (
     <View style={{
       paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12,
-      borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.12)',
+      borderBottomWidth: 1,
+      borderBottomColor: c.border.primary,
     }}>
       {/* Avatar + name row */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <Avatar
           text={name}
-          backgroundColor={getRoleColor(role)}
+          backgroundColor={c.interactive.primary}
           size={44}
         />
         <View style={{ flex: 1 }}>
           <Text style={{
-            color: '#ffffff',
+            color: c.text.primary,
             fontWeight: FontWeight.bold,
             fontSize: FontSize.md,
             textAlign: isRtl ? 'right' : 'left',
@@ -53,8 +55,8 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
           </Text>
           <Badge
             label={role.replace('_', ' ')}
-            backgroundColor={`${getRoleColor(role)}55`}
-            textColor={'#ffffff'}
+            backgroundColor={`${c.tint}22`}
+            textColor={c.tint}
             style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', marginTop: 4 }}
           />
         </View>
@@ -65,15 +67,15 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
         <ToggleButton
           icon={isDark ? '☀️' : '🌙'}
           label={isDark ? 'Light' : 'Dark'}
-          backgroundColor='rgba(255,255,255,0.14)'
-          textColor='#ffffff'
+          backgroundColor={c.surface.elevated}
+          textColor={c.text.primary}
           onPress={onToggleTheme}
         />
         <ToggleButton
           label={currentLang === 'en' ? 'عربي' : 'EN'}
           loading={switching}
-          backgroundColor='rgba(255,255,255,0.14)'
-          textColor='#ffffff'
+          backgroundColor={c.surface.elevated}
+          textColor={c.text.primary}
           onPress={handleLanguageSwitch}
         />
       </View>
