@@ -11,7 +11,7 @@
 
 import { useColorScheme } from 'react-native';
 import { useUiStore } from '@/src/stores/uiStore';
-import { Colors, type ThemeColors } from './tokens';
+import { Colors, ColorsByPalette, type ThemeColors, type PaletteOption } from './tokens';
 
 // Re-export everything from tokens so existing `import ... from './theme'` keep working
 export * from './tokens';
@@ -21,15 +21,22 @@ export * from './tokens';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useThemeColors(): ThemeColors {
-  const colorMode    = useUiStore((s) => s.colorMode);
-  const systemScheme = useColorScheme();
+  const colorMode     = useUiStore((s) => s.colorMode);
+  const paletteOption = useUiStore((s) => s.paletteOption);
+  const systemScheme  = useColorScheme();
 
   const isDark =
     colorMode === 'dark'   ? true  :
     colorMode === 'light'  ? false :
     systemScheme === 'dark';
 
-  return isDark ? Colors.dark : Colors.light;
+  // Guard against invalid paletteOption values (e.g. from corrupted AsyncStorage)
+  const safeOption: PaletteOption =
+    (paletteOption === 'blue' || paletteOption === 'orange' || paletteOption === 'green')
+      ? paletteOption
+      : 'blue';
+
+  return ColorsByPalette[isDark ? 'dark' : 'light'][safeOption];
 }
 
 export function useIsDark(): boolean {

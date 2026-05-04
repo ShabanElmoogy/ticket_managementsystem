@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { networkEvents } from '@/src/services/api/networkEvents';
 import { useThemeColors } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 import { AlertDialog, DialogButton } from '@/src/shared/components';
 import ErrorExtraBanner from './components/ErrorExtraBanner';
 import SharePanel       from './components/SharePanel';
@@ -85,7 +86,7 @@ const NetworkErrorDialog: React.FC = () => {
     return () => { unsubNetwork(); unsubApi(); unsubSuccess(); };
   }, [dismiss, t]);
 
-  const accentColor = retrying ? '#10b981' : statusColor(error?.status);
+  const accentColor = retrying ? Palette.green500 : statusColor(error?.status);
   const icon        = retrying ? '🔄'      : statusIcon(error?.status);
 
   // "Understood" for associated_data (signals a follow-up dialog is coming),

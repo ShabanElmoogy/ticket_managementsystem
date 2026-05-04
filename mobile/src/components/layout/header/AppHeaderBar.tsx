@@ -33,10 +33,10 @@ const AppHeaderBar: React.FC = () => {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
         onPress={() => router.push('/(app)' as any)}
       >
-        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: c.text.primary, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 16 }}>🎫</Text>
         </View>
-        <Text style={{ color: c.text.primary, fontWeight: FontWeight.bold, fontSize: 18 }}>TicketFlow</Text>
+        <Text style={{ color: c.text.inverse, fontWeight: FontWeight.bold, fontSize: 18 }}>TicketFlow</Text>
       </Pressable>
 
       {/* Right actions */}
@@ -51,7 +51,7 @@ const AppHeaderBar: React.FC = () => {
 
         {/* User avatar */}
         <Pressable
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
           <Avatar

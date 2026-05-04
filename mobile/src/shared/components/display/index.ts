@@ -35,3 +35,6 @@ export type { InfoCardProps, InfoCardSection } from './InfoCard';
 
 export { default as CalloutBox, CALLOUT_CONFIGS } from './CalloutBox';
 export type { CalloutBoxProps, CalloutConfig } from './CalloutBox';
+
+export { default as PaletteSelector } from './PaletteSelector';
+export type { PaletteSelectorProps } from './PaletteSelector';

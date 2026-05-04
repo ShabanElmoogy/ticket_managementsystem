@@ -1,3 +1,5 @@
+import { Palette } from '@/src/constants/tokens';
+
 export interface NavItemConfig {
   labelKey: string;  // i18n key instead of hardcoded label
   icon: string;
@@ -18,14 +20,19 @@ export const NAV_ITEMS: NavItemConfig[] = [
   { labelKey: 'nav.adminPanel',       icon: '⚙️', route: '/admin',           roles: ['TENANT_ADMIN', 'SUPER_ADMIN'] },
   { labelKey: 'nav.profile',          icon: '👤', route: '/profile',         dividerBefore: true },
   { labelKey: 'nav.deviceInfo',       icon: '📱', route: '/device-info',     dividerBefore: true },
-  { labelKey: 'nav.logout',           icon: '🚪', route: '__logout__',       color: '#ef4444', dividerBefore: true },
+  { labelKey: 'nav.logout',           icon: '🚪', route: '__logout__',       color: Palette.red600, dividerBefore: true },
 ];
 
 export const getInitials = (name: string) =>
   name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
-export const getRoleColor = (role?: string) => {
-  if (role === 'TENANT_ADMIN' || role === 'SUPER_ADMIN') return '#ef4444';
-  if (role === 'PROGRAMMER') return '#8b5cf6';
-  return '#10b981';
+/**
+ * Returns a role-appropriate avatar background color.
+ * Uses Palette constants — no hardcoded hex strings.
+ */
+export const getRoleColor = (role?: string): string => {
+  if (role === 'SUPER_ADMIN')  return Palette.red600;
+  if (role === 'TENANT_ADMIN') return Palette.amber600;
+  if (role === 'PROGRAMMER')   return Palette.violet600;
+  return Palette.green600;  // EMPLOYEE default
 };

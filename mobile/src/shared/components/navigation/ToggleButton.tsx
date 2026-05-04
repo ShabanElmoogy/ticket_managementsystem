@@ -10,8 +10,7 @@ export interface ToggleButtonProps {
    * Designed for dark backgrounds. Pass an explicit color on light backgrounds.
    */
   backgroundColor?: string;
-  textColor?:       string;
-  loading?:         boolean;
+  textColor?:       string;  loading?:         boolean;
   disabled?:        boolean;
   onPress?:         () => void;
   /**
@@ -31,8 +30,8 @@ export interface ToggleButtonProps {
  */
 const ToggleButton: React.FC<ToggleButtonProps> = ({
   icon, label,
-  backgroundColor = 'rgba(255,255,255,0.1)',
-  textColor       = '#ffffff',
+  backgroundColor = 'rgba(255,255,255,0.14)',  // was 0.1 — more visible on dark bg
+  textColor       = '#e2e8f0',                 // slate200 — softer than pure white
   loading         = false,
   disabled        = false,
   onPress,
@@ -74,7 +73,9 @@ const styles = StyleSheet.create({
     justifyContent:  'center',
     gap:             4,
     borderRadius:    Radius.md,
-    paddingVertical: 8,
+    paddingVertical: 9,
+    borderWidth:     1,
+    borderColor:     'rgba(255,255,255,0.18)',
   },
   disabled: {
     opacity: 0.45,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { InlineBanner, CodeBlock } from '@/src/shared/components';
+import { Palette } from '@/src/constants/tokens';
 import type { ErrorState } from '../types';
 
 interface Props {
@@ -19,7 +20,7 @@ const ErrorExtraBanner: React.FC<Props> = ({ error, retrying }) => {
       <InlineBanner
         icon="🔄"
         message="Connection restored — saving your data…"
-        color="#10b981"
+        color={Palette.green500}
       />
     );
   }
@@ -29,7 +30,7 @@ const ErrorExtraBanner: React.FC<Props> = ({ error, retrying }) => {
       <InlineBanner
         icon="⚠️"
         message={`${error.count} requests failed simultaneously`}
-        color="#ef4444"
+        color={Palette.red600}
       />
     );
   }

@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { getRoleColor } from '@/src/components/layout/header/navItems';
 import { changeLanguage } from '@/src/i18n';
-import { useThemeColors, useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
+import { useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
 import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
 
 interface Props {
@@ -18,11 +18,6 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
   const [switching, setSwitching] = React.useState(false);
   const currentLang = i18n.language;
   const isDark      = useIsDark();
-  const c           = useThemeColors();
-
-  // The drawer panel sits on a brand-colored background (indigo/slate),
-  // so we use white-at-opacity for the divider — not a theme surface border.
-  const dividerColor = 'rgba(255,255,255,0.15)';
 
   const handleLanguageSwitch = async () => {
     if (switching) return;
@@ -38,7 +33,7 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
   return (
     <View style={{
       paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12,
-      borderBottomWidth: 1, borderBottomColor: dividerColor,
+      borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.12)',
     }}>
       {/* Avatar + name row */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -49,32 +44,36 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme }) =
         />
         <View style={{ flex: 1 }}>
           <Text style={{
-            color: c.text.inverse,
-            fontWeight: FontWeight.semibold,
+            color: '#ffffff',
+            fontWeight: FontWeight.bold,
             fontSize: FontSize.md,
             textAlign: isRtl ? 'right' : 'left',
           }}>
             {name}
           </Text>
           <Badge
-            label={role}
-            backgroundColor={`${getRoleColor(role)}44`}
-            textColor={c.text.inverse}
-            style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', marginTop: 2 }}
+            label={role.replace('_', ' ')}
+            backgroundColor={`${getRoleColor(role)}55`}
+            textColor={'#ffffff'}
+            style={{ alignSelf: isRtl ? 'flex-end' : 'flex-start', marginTop: 4 }}
           />
         </View>
       </View>
 
-      {/* Theme + language toggles — white-on-color style, intentional */}
+      {/* Theme + language toggles */}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <ToggleButton
           icon={isDark ? '☀️' : '🌙'}
           label={isDark ? 'Light' : 'Dark'}
+          backgroundColor='rgba(255,255,255,0.14)'
+          textColor='#ffffff'
           onPress={onToggleTheme}
         />
         <ToggleButton
           label={currentLang === 'en' ? 'عربي' : 'EN'}
           loading={switching}
+          backgroundColor='rgba(255,255,255,0.14)'
+          textColor='#ffffff'
           onPress={handleLanguageSwitch}
         />
       </View>

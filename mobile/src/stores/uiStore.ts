@@ -2,12 +2,16 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appearance } from 'react-native';
+import type { PaletteOption } from '@/src/constants/tokens';
 
 export type TicketView = 'list' | 'grid' | 'compact';
 export type Direction  = 'ltr' | 'rtl';
 export type ColorMode  = 'light' | 'dark' | 'system';
 
 export type AdminView = 'table' | 'grid' | 'compact';
+
+// Re-export PaletteOption for convenience
+export type { PaletteOption };
 
 interface UiState {
   ticketView: TicketView;
@@ -23,6 +27,9 @@ interface UiState {
 
   direction: Direction;
   setDirection: (dir: Direction) => void;
+
+  paletteOption: PaletteOption;
+  setPaletteOption: (option: PaletteOption) => void;
 
   unreadCount: number;
   setUnreadCount: (count: number) => void;
@@ -60,6 +67,9 @@ export const useUiStore = create<UiState>()(
       direction: 'ltr',
       setDirection: (direction) => set({ direction }),
 
+      paletteOption: 'blue',
+      setPaletteOption: (paletteOption) => set({ paletteOption }),
+
       unreadCount: 0,
       setUnreadCount: (unreadCount) => set({ unreadCount }),
       incrementUnread: () => set((s) => ({ unreadCount: s.unreadCount + 1 })),
@@ -72,6 +82,7 @@ export const useUiStore = create<UiState>()(
         ticketView: state.ticketView,
         adminViews: state.adminViews,
         colorMode:  state.colorMode,
+        paletteOption: state.paletteOption,
         // direction is NOT persisted — always derived from language at boot
       }),
       onRehydrateStorage: () => (state) => {

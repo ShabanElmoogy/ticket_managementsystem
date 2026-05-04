@@ -45,16 +45,22 @@ const AppDrawerOverlay: React.FC<{ safeAreaTop?: number }> = ({ safeAreaTop = 0 
     } as any}>
       {/* Backdrop */}
       <Pressable
-        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)' }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)' }}
         onPress={() => setOpen(false)}
       />
 
       {/* Panel — slides from right (RTL) or left (LTR) */}
       <View style={{
         position: 'absolute', top: 0, bottom: 0, width: 288,
-        backgroundColor: c.surface.header,
+        backgroundColor: '#0f1c35',
+        borderEndWidth: effectiveIsRtl ? 0 : 1,
+        borderStartWidth: effectiveIsRtl ? 1 : 0,
+        borderColor: 'rgba(255,255,255,0.08)',
+        // Explicitly set direction — this panel is absolutely positioned outside
+        // the DirectionProvider tree, so direction must be set manually.
+        direction: effectiveIsRtl ? 'rtl' : 'ltr',
         ...(effectiveIsRtl ? { right: 0 } : { left: 0 }),
-      }}>
+      } as any}>
         <DrawerUserCard
           name={user.name}
           role={user.role}

@@ -15,11 +15,11 @@ export function statusLabel(status: number): string {
 }
 
 export function statusColor(status?: number): string {
-  if (!status)                                  return Palette.red500;
+  if (!status)                                  return Palette.red600;   // network error — use stronger shade
   if (status >= 500)                            return Palette.red600;
-  if (status === HTTP_STATUS.FORBIDDEN)         return Palette.amber500;
-  if (status === HTTP_STATUS.TOO_MANY_REQUESTS) return Palette.violet500;
-  return Palette.red500;
+  if (status === HTTP_STATUS.FORBIDDEN)         return Palette.amber600;
+  if (status === HTTP_STATUS.TOO_MANY_REQUESTS) return Palette.violet600;
+  return Palette.red600;
 }
 
 export function statusIcon(status?: number): string {
@@ -38,9 +38,13 @@ export function darken(hex: string): string {
     [Palette.red500]:    Palette.red600,
     [Palette.red600]:    Palette.red700,
     [Palette.blue500]:   Palette.blue600,
+    [Palette.blue600]:   Palette.blue700,
     [Palette.amber500]:  Palette.amber600,
+    [Palette.amber600]:  Palette.amber600,  // already dark
     [Palette.green500]:  Palette.green600,
+    [Palette.green600]:  Palette.green700,
     [Palette.violet500]: Palette.violet600,
+    [Palette.violet600]: Palette.violet700,
   };
   return map[hex] ?? hex;
 }
