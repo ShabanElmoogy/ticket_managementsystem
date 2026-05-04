@@ -78,7 +78,7 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
   const [visitSearch,   setVisitSearch]   = useState('');
   const [statusFilter,  setStatusFilter]  = useState<VisitStatus | 'ALL'>('ALL');
   const [viewMode,      setViewMode]      = useState<ViewMode>('table');
-  const [mapCollapsed,  setMapCollapsed]  = useState(false);
+  const [mapCollapsed,  setMapCollapsed]  = useState(true);
   const mapRef = useRef<any>(null);
 
   //  Data 
@@ -217,12 +217,14 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
       {/* Customer info card + stats + toolbar + filters */}
       {selectedCustomer ? (
         <>
-          <CustomerInfoCard
-            customer={selectedCustomer}
-            onLogVisit={handleLogVisit}
-            logVisitLabel={t('visits.logVisit')}
-          />
-          <VisitStatsRow stats={stats} />
+          {!mapCollapsed ? (
+            <CustomerInfoCard
+              customer={selectedCustomer}
+              onLogVisit={handleLogVisit}
+              logVisitLabel={t('visits.logVisit')}
+            />
+          ) : null}
+          {!mapCollapsed ? <VisitStatsRow stats={stats} /> : null}
           <VisitToolbar
             search={visitSearch}
             onSearchChange={setVisitSearch}
@@ -278,7 +280,7 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
   ), [
     c, t, filteredCustomers,
     selectedId, selectedCustomer, stats, visitSearch, viewMode, statusFilter,
-    visits, displayedVisits, visitsLoading,
+    visits, displayedVisits, visitsLoading, mapCollapsed,
     handleSelectCustomer, handleLogVisit, setVisitSearch,
     setViewMode, setStatusFilter,
   ]);

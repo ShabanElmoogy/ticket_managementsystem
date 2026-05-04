@@ -379,7 +379,7 @@ components/visits/
 
 **Why this structure:** the `StyleSheet` must be defined before any sub-component that references it. Extracting to `visits.styles.ts` eliminates "used before defined" issues when components are split across files. All sub-components import the same `s` object — no duplication.
 
-**`CustomerInfoCard`** — renders the selected customer's info at the top of the visits list. Displays avatar (initials), name, company, subscription status badge, and a distance chip when GPS permission is already granted. Contact meta row shows email, phone, address, and coordinates (5 decimal places) when present. The distance chip uses `useCurrentDistance()` — the same passive GPS hook documented in the detail screen section — and appears inline next to the status badge. Distance chip styling: dark slate background (`#0f172a`) with `#334155` border.
+**`CustomerInfoCard`** — renders the selected customer's info at the top of the visits list. Displays avatar (initials), name, company, subscription status badge, and a distance chip when GPS permission is already granted. Contact meta row shows email, phone, address, and coordinates (5 decimal places) when present. The distance chip uses `useCurrentDistance()` — the same passive GPS hook documented in the detail screen section — and appears inline next to the status badge. Distance chip styling: `Palette.slate900` background (`#0f172a`), `Palette.slate700` border (`#334155`), `Palette.slate50` text (`#f8fafc`). The Log Visit button (`AppButton variant="primary" size="small"`) always renders and receives `resolvedColors={c}` for Modal safety.
 
 **`VisitMapPanel` props:**
 
