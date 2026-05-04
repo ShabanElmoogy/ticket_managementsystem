@@ -262,6 +262,64 @@ features/admin/<feature>/
 
 ---
 
+## Dashboard Feature
+
+### `AdminStatCard` props
+
+```tsx
+<AdminStatCard
+  title={t('adminDashboard.totalCustomers')}
+  value={stats.totalCustomers}
+  icon="people"           // IoniconName — NOT an emoji string
+  color={Palette.blue500} // Palette constant — NOT raw hex
+  cardWidth={cardWidth}   // computed from useWindowDimensions()
+/>
+```
+
+### `AdminOverviewCard` props
+
+```tsx
+<AdminOverviewCard
+  title={t('customers.title')}
+  icon="people"              // IoniconName — NOT an emoji string
+  iconColor={Palette.blue500} // Palette constant — NOT raw hex
+  total={stats.totalCustomers}
+  active={stats.activeCustomers}
+  activeLabel={t('common.active')}
+  metricLabel={t('adminDashboard.resolutionRate')} // optional
+/>
+```
+
+**Breaking change from earlier version:** `icon` was previously an emoji string (e.g. `'👥'`). It is now `IoniconName` from `@expo/vector-icons`. Always pass an Ionicons name string and a separate `iconColor` prop.
+
+### Config array pattern
+
+Both stat cards and overview cards use module-level config arrays with `getValue` / `getTotal` / `getActive` functions. Colors use `Palette.*` constants — never raw hex:
+
+```ts
+import { Palette } from '@/src/constants/tokens';
+import type { IoniconName } from '@/src/components/layout/header/navItems';
+
+const STAT_CARDS: StatCardConfig[] = [
+  { titleKey: 'adminDashboard.totalCustomers', getValue: (s) => s.totalCustomers, icon: 'people', color: Palette.blue500 },
+  // ...
+];
+
+const OVERVIEW_CARDS: OverviewConfig[] = [
+  {
+    titleKey:       'customers.title',
+    icon:           'people',
+    iconColor:      Palette.blue500,
+    getTotal:       (s) => s.totalCustomers,
+    getActive:      (s) => s.activeCustomers,
+    activeLabelKey: 'common.active',
+  },
+  // ...
+];
+```
+
+---
+
 ## Customers Feature
 
 ### Improvements applied
@@ -325,6 +383,8 @@ const { visits, isLoading, refetch, createVisit, updateVisit, deleteVisit,
 - Used by `CustomerVisitsScreen` and `VisitHistoryCard`
 
 **Visit Map shortcut bar** — `CustomersScreen` renders a sticky bar above `AdminCrudScreen` in the list view with a single "🗺️ Map" button that sets `showVisits(true)` and renders `CustomerVisitsScreen` as a fourth view state. Locale key: `t('visits.mapButton')`.
+
+**`CustomerVisitsScreen` header** — uses `Pressable` + `Ionicons` (not `AppButton`) for the back button and map toggle. The map toggle shows `t('visits.showMap')` / `t('visits.hideMap')` depending on `mapCollapsed` state, with `Ionicons name="map-outline"` icon. Active state uses `c.interactive.primary + '18'` background and `c.interactive.primary` border/text; inactive uses `c.surface.elevated` background and `c.border.primary` border.
 
 ```tsx
 // Pattern — shortcut bar above AdminCrudScreen
@@ -829,6 +889,8 @@ Uses React Native's built-in `Share` API — no extra dependencies. `url` is iOS
 "customers.location.nearMe"        → "Nearby"
 "customers.duplicateEmail.title"   → "Email Already Exists"
 "customers.duplicateEmail.message" → "A customer with this email address already exists"
+"visits.showMap"                   → "Show Map"
+"visits.hideMap"                   → "Hide Map"
 ```
 
 ---

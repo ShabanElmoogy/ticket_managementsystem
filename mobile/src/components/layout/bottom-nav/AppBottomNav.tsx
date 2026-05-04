@@ -4,15 +4,21 @@ import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useThemeColors } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
 import { BottomNavItem } from '@/src/shared/components';
 import { TABS } from './tabItems';
 
 const AppBottomNav: React.FC = () => {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const c        = useThemeColors();
-  const insets   = useSafeAreaInsets();
-  const { t }    = useTranslation();
+  const router        = useRouter();
+  const pathname      = usePathname();
+  const c             = useThemeColors();
+  const paletteOption = useUiStore((s) => s.paletteOption);
+  const insets        = useSafeAreaInsets();
+  const { t }         = useTranslation();
+
+  // Blue palette: use per-tab accent colors for a colorful multi-hue look.
+  // Orange / Green palettes: use c.tint so active tabs always match the palette.
+  const useTabColors = paletteOption === 'blue';
 
   return (
     <View style={{
@@ -36,7 +42,7 @@ const AppBottomNav: React.FC = () => {
             activeIcon={tab.activeIcon}
             label={t(tab.labelKey)}
             isActive={isActive}
-            accentColor={tab.accentColor}
+            accentColor={useTabColors ? tab.accentColor : c.tint}
             onPress={() => router.push(tab.route as any)}
           />
         );

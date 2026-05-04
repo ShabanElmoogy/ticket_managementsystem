@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import s from './visits.styles';
 import { SUB_CFG, getSubStatus } from './visits.types';
@@ -45,11 +46,11 @@ const VisitMapPanel: React.FC<Props> = ({
         onPress={() => onToggleCollapse(false)}
         style={[s.mapShowBar, { backgroundColor: c.surface.primary, borderBottomColor: c.border.primary }]}
       >
-        <Text style={{ fontSize: 16 }}>🗺️</Text>
+        <Ionicons name="map-outline" size={16} color={c.interactive.primary} />
         <Text style={[s.mapToggleText, { color: c.interactive.primary, flex: 1 }]}>
           Show map ({customers.length} customers)
         </Text>
-        <Text style={{ color: c.text.muted, fontSize: 12 }}>▼</Text>
+        <Ionicons name="chevron-down-outline" size={14} color={c.text.muted} />
       </Pressable>
     );
   }
@@ -58,7 +59,7 @@ const VisitMapPanel: React.FC<Props> = ({
     <View style={[s.mapWrapper, { height: mapHeight }]}>
       {Platform.OS === 'web' ? (
         <View style={[s.mapFallback, { height: mapHeight, backgroundColor: c.surface.tertiary }]}>
-          <Text style={{ fontSize: 28 }}>🗺️</Text>
+          <Ionicons name="map-outline" size={36} color={c.text.muted} />
           <Text style={[s.mapFallbackText, { color: c.text.secondary }]}>
             Map not available on web
           </Text>
@@ -122,7 +123,8 @@ const VisitMapPanel: React.FC<Props> = ({
         onPress={() => onToggleCollapse(true)}
         style={[s.mapToggleBtn, { backgroundColor: c.surface.primary + 'ee', borderColor: c.border.primary }]}
       >
-        <Text style={[s.mapToggleText, { color: c.text.secondary }]}>▲ Hide map</Text>
+        <Ionicons name="chevron-up-outline" size={12} color={c.text.secondary} />
+        <Text style={[s.mapToggleText, { color: c.text.secondary }]}> Hide map</Text>
       </Pressable>
     </View>
   );

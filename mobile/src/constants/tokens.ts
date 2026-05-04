@@ -1006,14 +1006,14 @@ const darkOrange: ThemeColors = {
     tertiary:  Palette.stone800,
     elevated:  Palette.stone700,
     card:      Palette.stone900,
-    header:    Palette.orange900,
+    header:    Palette.orange700,
   },
   text: {
     primary:   Palette.stone50,
     secondary: Palette.stone300,
     tertiary:  Palette.stone400,
     muted:     Palette.stone500,
-    inverse:   Palette.stone900,
+    inverse:   Palette.white,
   },
   border: {
     primary:   Palette.stone700,

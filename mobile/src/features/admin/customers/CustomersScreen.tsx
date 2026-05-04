@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen        from '@/src/features/admin/shared/AdminCrudScreen';
@@ -118,21 +119,47 @@ const CustomersScreen: React.FC = () => {
     <FeatureErrorBoundary featureName="Customers" onError={handleFeatureError}>
       <View style={{ flex: 1 }}>
         {/* Visit Map shortcut bar */}
-        <View style={{ backgroundColor: c.surface.primary, borderBottomWidth: 1, borderBottomColor: c.border.primary, paddingHorizontal: 12, paddingVertical: 8 }}>
+        <View style={{
+          backgroundColor:  c.surface.primary,
+          borderBottomWidth: 1,
+          borderBottomColor: c.border.primary,
+          paddingHorizontal: 12,
+          paddingVertical:   10,
+          flexDirection:     'row',
+          alignItems:        'center',
+          justifyContent:    'space-between',
+        }}>
+          {/* Left label */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="location-outline" size={14} color={c.text.muted} />
+            <Text style={{ fontSize: 12, color: c.text.muted, fontWeight: '500' }}>
+              {t('customers.title')}
+            </Text>
+          </View>
+
+          {/* Map button — pill style */}
           <Pressable
             onPress={() => setShowVisits(true)}
             style={({ pressed }) => ({
-              flexDirection: 'row', alignItems: 'center', gap: 8,
-              paddingHorizontal: 14, paddingVertical: 9,
-              borderRadius: 10, borderWidth: 1,
-              backgroundColor: pressed ? '#1d4ed8' : '#2563eb',
-              borderColor: '#1d4ed8',
-              alignSelf: 'flex-start',
+              flexDirection:     'row',
+              alignItems:        'center',
+              gap:               6,
+              paddingHorizontal: 16,
+              paddingVertical:   8,
+              borderRadius:      99,
+              backgroundColor:   pressed
+                ? c.interactive.primaryPressed
+                : c.interactive.primary,
+              shadowColor:       c.interactive.primary,
+              shadowOffset:      { width: 0, height: 2 },
+              shadowOpacity:     0.30,
+              shadowRadius:      6,
+              elevation:         4,
             })}
             accessibilityRole="button"
           >
-            <Text style={{ fontSize: 16 }}>🗺️</Text>
-            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+            <Ionicons name="map" size={15} color={c.text.inverse} />
+            <Text style={{ color: c.text.inverse, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>
               {t('visits.mapButton')}
             </Text>
           </Pressable>

@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Linking, Platform, Clipboard, Share } from 'react-native';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '@/src/shared/utils/dateUtils';
 import { useThemeColors } from '@/src/constants/theme';
+import { Palette, SubscriptionColors, SubscriptionSurfaces } from '@/src/constants/tokens';
 import AdminDetailScreen from '@/src/features/admin/shared/AdminDetailScreen';
 import DetailInfoCard    from '@/src/features/admin/shared/DetailInfoCard';
 import DetailStatRow     from '@/src/features/admin/shared/DetailStatRow';
@@ -21,14 +23,14 @@ interface Props {
   queryEnabled?: boolean;
 }
 
-// ── Status config ─────────────────────────────────────────────────────────────
+// ── Status config — uses Palette tokens ──────────────────────────────────────
 
 const STATUS_CFG: Record<SubscriptionStatus, { color: string; bg: string; label: string; icon: string }> = {
-  ACTIVE:        { color: '#16a34a', bg: '#f0fdf4', label: 'Active',        icon: '✅' },
-  TRIAL:         { color: '#7c3aed', bg: '#f5f3ff', label: 'Trial',         icon: '🔬' },
-  EXPIRED:       { color: '#dc2626', bg: '#fef2f2', label: 'Expired',       icon: '⚠️' },
-  INACTIVE:      { color: '#6b7280', bg: '#f9fafb', label: 'Inactive',      icon: '⏸️' },
-  PAY_AS_YOU_GO: { color: '#0284c7', bg: '#f0f9ff', label: 'Pay As You Go', icon: '💳' },
+  ACTIVE:        { color: Palette.green600,  bg: SubscriptionSurfaces.light.ACTIVE,        label: 'Active',        icon: '✅' },
+  TRIAL:         { color: Palette.violet600, bg: SubscriptionSurfaces.light.TRIAL,         label: 'Trial',         icon: '🔬' },
+  EXPIRED:       { color: Palette.red600,    bg: SubscriptionSurfaces.light.EXPIRED,       label: 'Expired',       icon: '⚠️' },
+  INACTIVE:      { color: Palette.gray500,   bg: SubscriptionSurfaces.light.INACTIVE,      label: 'Inactive',      icon: '⏸️' },
+  PAY_AS_YOU_GO: { color: Palette.cyan600,   bg: SubscriptionSurfaces.light.PAY_AS_YOU_GO, label: 'Pay As You Go', icon: '💳' },
 };
 
 const MAINTENANCE_LABELS: Record<string, string> = {
@@ -37,82 +39,51 @@ const MAINTENANCE_LABELS: Record<string, string> = {
   PAY_AS_YOU_GO:        'Pay As You Go',
 };
 
-// ── Open in Maps helper ───────────────────────────────────────────────────────
+// ── Open in Maps ──────────────────────────────────────────────────────────────
 
 function openInMaps(latitude: number, longitude: number, name?: string): void {
   const label = encodeURIComponent(name ?? '');
   const url = Platform.OS === 'ios'
     ? `maps://0,0?q=${latitude},${longitude}`
     : `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`;
-
   Linking.canOpenURL(url).then((canOpen) => {
-    if (canOpen) {
-      Linking.openURL(url);
-    } else if (Platform.OS === 'ios') {
-      Linking.openURL(`https://maps.apple.com/?q=${latitude},${longitude}`);
-    } else {
-      Linking.openURL(`https://www.google.com/maps?q=${latitude},${longitude}`);
-    }
+    if (canOpen) { Linking.openURL(url); }
+    else if (Platform.OS === 'ios') { Linking.openURL(`https://maps.apple.com/?q=${latitude},${longitude}`); }
+    else { Linking.openURL(`https://www.google.com/maps?q=${latitude},${longitude}`); }
   });
 }
 
 // ── Haversine distance ────────────────────────────────────────────────────────
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R  = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function formatDistance(km: number): string {
-  if (km < 1) return `~${Math.round(km * 1000)} m`;
-  return `~${km.toFixed(1)} km`;
+  return km < 1 ? `~${Math.round(km * 1000)} m` : `~${km.toFixed(1)} km`;
 }
 
-// ── useCurrentDistance — one-time GPS fetch, returns formatted distance ───────
-
-function useCurrentDistance(
-  targetLat: number | null | undefined,
-  targetLng: number | null | undefined,
-) {
+function useCurrentDistance(targetLat?: number | null, targetLng?: number | null) {
   const [distance, setDistance] = useState<string | null>(null);
-
   useEffect(() => {
     if (targetLat == null || targetLng == null) return;
-
     let cancelled = false;
-
     (async () => {
       try {
-        // Use cached permission — don't prompt if not already granted
         const { status } = await Location.getForegroundPermissionsAsync();
         if (status !== 'granted' || cancelled) return;
-
-        const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        } as any);
-
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced } as any);
         if (cancelled) return;
-
-        const km = haversineKm(
-          pos.coords.latitude, pos.coords.longitude,
-          targetLat, targetLng,
-        );
-        setDistance(formatDistance(km));
-      } catch {
-        // Silently skip — distance is optional UI
-      }
+        setDistance(formatDistance(haversineKm(pos.coords.latitude, pos.coords.longitude, targetLat, targetLng)));
+      } catch { /* optional UI */ }
     })();
-
     return () => { cancelled = true; };
   }, [targetLat, targetLng]);
-
   return distance;
 }
 
@@ -121,8 +92,8 @@ function useCurrentDistance(
 const CustomerDetailScreen: React.FC<Props> = ({
   customerId, onClose, onEdit, onDelete, queryEnabled = true,
 }) => {
-  const { t }  = useTranslation();
-  const c      = useThemeColors();
+  const { t } = useTranslation();
+  const c     = useThemeColors();
 
   const { data: customer, isLoading } = useQuery({
     queryKey: customersKeys.detail(customerId),
@@ -131,40 +102,26 @@ const CustomerDetailScreen: React.FC<Props> = ({
     enabled:  queryEnabled,
   });
 
-  const border     = c.border.primary;
-  const cardBg     = c.surface.primary;
-  const textPri    = c.text.primary;
-  const textSec    = c.text.secondary;
-  const labelColor = c.text.muted;
-
-  // ── Copy coordinates ───────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false);
 
   const handleCopyCoords = useCallback((lat: number, lng: number) => {
-    const text = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    Clipboard.setString(text);
+    Clipboard.setString(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }, []);
 
-  // ── Share location ─────────────────────────────────────────────────────────
   const handleShareLocation = useCallback((lat: number, lng: number, name?: string) => {
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-    const message = name
-      ? `${name}\n${mapsUrl}`
-      : mapsUrl;
-    Share.share({ message, url: mapsUrl });
+    Share.share({ message: name ? `${name}\n${mapsUrl}` : mapsUrl, url: mapsUrl });
   }, []);
 
-  // ── Distance from current location ────────────────────────────────────────
   const distance = useCurrentDistance(customer?.latitude, customer?.longitude);
 
-  const status = customer
+  const status    = customer
     ? ((customer.subscriptionStatus as SubscriptionStatus | undefined) ?? getCustomerStatus(customer))
     : 'INACTIVE';
   const statusCfg = STATUS_CFG[status];
 
-  // Initials avatar
   const initials = customer?.name
     ? customer.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
     : '?';
@@ -183,47 +140,42 @@ const CustomerDetailScreen: React.FC<Props> = ({
       {customer && (
         <>
           {/* ── Hero card ── */}
-          <View style={[styles.heroCard, { backgroundColor: cardBg, borderColor: border }]}>
-            {/* Status accent bar */}
+          <View style={[styles.heroCard, { backgroundColor: c.surface.primary, borderColor: c.border.primary }]}>
             <View style={[styles.accentBar, { backgroundColor: statusCfg.color }]} />
-
             <View style={styles.heroBody}>
-              {/* Avatar + name + status */}
               <View style={styles.heroTop}>
                 <View style={[styles.avatar, { backgroundColor: statusCfg.color + '22' }]}>
                   <Text style={[styles.avatarText, { color: statusCfg.color }]}>{initials}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[styles.heroName, { color: textPri }]} numberOfLines={2}>
+                  <Text style={[styles.heroName, { color: c.text.primary }]} numberOfLines={2}>
                     {customer.name}
                   </Text>
                   {customer.company && (
-                    <Text style={[styles.heroCompany, { color: textSec }]} numberOfLines={1}>
+                    <Text style={[styles.heroCompany, { color: c.text.secondary }]} numberOfLines={1}>
                       🏢  {customer.company}
                     </Text>
                   )}
                 </View>
-                {/* Status badge */}
                 <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg, borderColor: statusCfg.color + '44' }]}>
                   <Text style={{ fontSize: 12 }}>{statusCfg.icon}</Text>
                   <Text style={[styles.statusLabel, { color: statusCfg.color }]}>{statusCfg.label}</Text>
                 </View>
               </View>
 
-              {/* Quick contact row */}
-              <View style={[styles.contactRow, { borderTopColor: border }]}>
+              <View style={[styles.contactRow, { borderTopColor: c.border.primary }]}>
                 {customer.email && (
                   <View style={styles.contactItem}>
-                    <Text style={styles.contactIcon}>✉️</Text>
-                    <Text style={[styles.contactText, { color: textSec }]} numberOfLines={1}>
+                    <Ionicons name="mail-outline" size={13} color={c.text.muted} />
+                    <Text style={[styles.contactText, { color: c.text.secondary }]} numberOfLines={1}>
                       {customer.email}
                     </Text>
                   </View>
                 )}
                 {customer.phone && (
                   <View style={styles.contactItem}>
-                    <Text style={styles.contactIcon}>📞</Text>
-                    <Text style={[styles.contactText, { color: textSec }]} numberOfLines={1}>
+                    <Ionicons name="call-outline" size={13} color={c.text.muted} />
+                    <Text style={[styles.contactText, { color: c.text.secondary }]} numberOfLines={1}>
                       {customer.phone}
                     </Text>
                   </View>
@@ -235,8 +187,8 @@ const CustomerDetailScreen: React.FC<Props> = ({
           {/* ── Stats row ── */}
           <DetailStatRow
             stats={[
-              { value: customer._count?.tickets ?? 0,      label: t('customers.columns.tickets'),      color: '#1d4ed8', bgColor: '#eff6ff' },
-              { value: customer.applications?.length ?? 0, label: t('customers.detail.applications'),  color: '#065f46', bgColor: '#f0fdf4' },
+              { value: customer._count?.tickets ?? 0,      label: t('customers.columns.tickets'),     color: Palette.blue700,    bgColor: Palette.blue50   },
+              { value: customer.applications?.length ?? 0, label: t('customers.detail.applications'), color: Palette.emerald700, bgColor: Palette.emerald50 },
             ]}
           />
 
@@ -244,10 +196,10 @@ const CustomerDetailScreen: React.FC<Props> = ({
           <DetailInfoCard
             title={t('customers.detail.contact') ?? 'Contact'}
             fields={[
-              { icon: '✉️', label: t('customers.columns.email'),  value: customer.email },
-              { icon: '📞', label: t('customers.columns.phone'),  value: customer.phone },
-              { icon: '🏢', label: t('customers.detail.company'), value: customer.company },
-              { icon: '📍', label: t('customers.detail.address'), value: customer.address },
+              { icon: '✉️', label: t('customers.columns.email'),   value: customer.email },
+              { icon: '📞', label: t('customers.columns.phone'),   value: customer.phone },
+              { icon: '🏢', label: t('customers.detail.company'),  value: customer.company },
+              { icon: '📍', label: t('customers.detail.address'),  value: customer.address },
               { icon: '📅', label: t('customers.columns.created'), value: formatDate(customer.createdAt) },
             ]}
           />
@@ -260,63 +212,66 @@ const CustomerDetailScreen: React.FC<Props> = ({
                 longitude={customer.longitude}
                 customerName={customer.name}
                 subscriptionStatus={status}
-                style={{ borderWidth: 1, borderColor: border }}
+                style={{ borderWidth: 1, borderColor: c.border.primary }}
               />
-              {/* ── Distance chip ── */}
+
               {distance && (
-                <View style={styles.distanceChip}>
-                  <Text style={styles.distanceText}>📍  {distance} {t('customers.location.away')}</Text>
+                <View style={[styles.distanceChip, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
+                  <Ionicons name="location-outline" size={14} color={c.text.secondary} />
+                  <Text style={[styles.distanceText, { color: c.text.secondary }]}>
+                    {distance} {t('customers.location.away')}
+                  </Text>
                 </View>
               )}
 
-              {/* ── Location action buttons ── */}
               <View style={styles.locationBtnRow}>
+                {/* Open in Maps */}
                 <Pressable
                   onPress={() => openInMaps(customer.latitude!, customer.longitude!, customer.name)}
-                  style={({ pressed }) => [
-                    styles.locationBtn,
-                    { backgroundColor: pressed ? '#1d4ed8' : '#2563eb' },
-                  ]}
+                  style={({ pressed }) => [styles.locationBtn, { backgroundColor: pressed ? c.interactive.primaryPressed : c.interactive.primary }]}
                   accessibilityRole="button"
-                  accessibilityLabel={t('customers.location.openInMaps')}
                 >
-                  <Text style={styles.locationBtnText}>
-                    🗺️  {t('customers.location.openInMaps')}
-                  </Text>
+                  <Ionicons name="map-outline" size={16} color={Palette.white} />
+                  <Text style={styles.locationBtnText}>{t('customers.location.openInMaps')}</Text>
                 </Pressable>
 
+                {/* Copy coords */}
                 <Pressable
                   onPress={() => handleCopyCoords(customer.latitude!, customer.longitude!)}
-                  style={({ pressed }) => [
-                    styles.locationBtn,
-                    { backgroundColor: copied ? '#16a34a' : pressed ? '#334155' : '#475569' },
-                  ]}
+                  style={({ pressed }) => [styles.locationBtn, {
+                    backgroundColor: copied
+                      ? c.intent.success
+                      : pressed ? c.interactive.pressed : c.surface.elevated,
+                    borderWidth: 1,
+                    borderColor: c.border.primary,
+                  }]}
                   accessibilityRole="button"
-                  accessibilityLabel={t('customers.location.copyCoords')}
                 >
-                  <Text style={styles.locationBtnText}>
-                    {copied ? `✅  ${t('customers.location.copied')}` : `📋  ${t('customers.location.copyCoords')}`}
+                  <Ionicons name={copied ? 'checkmark-outline' : 'copy-outline'} size={16} color={copied ? Palette.white : c.text.primary} />
+                  <Text style={[styles.locationBtnText, { color: copied ? Palette.white : c.text.primary }]}>
+                    {copied ? t('customers.location.copied') : t('customers.location.copyCoords')}
                   </Text>
                 </Pressable>
 
+                {/* Share */}
                 <Pressable
                   onPress={() => handleShareLocation(customer.latitude!, customer.longitude!, customer.name)}
-                  style={({ pressed }) => [
-                    styles.locationBtn,
-                    { backgroundColor: pressed ? '#0e7490' : '#0891b2' },
-                  ]}
+                  style={({ pressed }) => [styles.locationBtn, {
+                    backgroundColor: pressed ? c.interactive.pressed : c.surface.elevated,
+                    borderWidth: 1,
+                    borderColor: c.border.primary,
+                  }]}
                   accessibilityRole="button"
-                  accessibilityLabel={t('customers.location.share')}
                 >
-                  <Text style={styles.locationBtnText}>
-                    📤  {t('customers.location.share')}
-                  </Text>
+                  <Ionicons name="share-outline" size={16} color={c.text.primary} />
+                  <Text style={[styles.locationBtnText, { color: c.text.primary }]}>{t('customers.location.share')}</Text>
                 </Pressable>
               </View>
             </>
           ) : (
-            <View style={[styles.noLocationCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[styles.noLocationText, { color: textSec }]}>
+            <View style={[styles.noLocationCard, { backgroundColor: c.surface.primary, borderColor: c.border.primary }]}>
+              <Ionicons name="location-outline" size={20} color={c.text.muted} />
+              <Text style={[styles.noLocationText, { color: c.text.secondary }]}>
                 {t('customers.location.noLocation')}
               </Text>
             </View>
@@ -336,13 +291,8 @@ const CustomerDetailScreen: React.FC<Props> = ({
                   const daysLeft = end ? Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
                   const isExpired = daysLeft !== null && daysLeft < 0;
                   const isSoon    = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
-                  const color     = isExpired ? '#dc2626' : isSoon ? '#d97706' : undefined;
-                  return {
-                    icon: '⏹️',
-                    label: t('customers.detail.subscriptionEnd'),
-                    value: endDate ? formatDate(endDate) : null,
-                    valueColor: color,
-                  };
+                  const color     = isExpired ? Palette.red600 : isSoon ? Palette.amber600 : undefined;
+                  return { icon: '⏹️', label: t('customers.detail.subscriptionEnd'), value: endDate ? formatDate(endDate) : null, valueColor: color };
                 })(),
               ]}
             />
@@ -350,13 +300,18 @@ const CustomerDetailScreen: React.FC<Props> = ({
 
           {/* ── Linked applications ── */}
           {!!customer.applications?.length && (
-            <View style={[styles.appsCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <View style={[styles.appsTitleRow, { borderBottomColor: border }]}>
-                <Text style={[styles.appsTitle, { color: labelColor }]}>
-                  📱  {t('customers.detail.applications')}
-                </Text>
-                <View style={styles.appsBadge}>
-                  <Text style={styles.appsBadgeText}>{customer.applications!.length}</Text>
+            <View style={[styles.appsCard, { backgroundColor: c.surface.primary, borderColor: c.border.primary }]}>
+              <View style={[styles.appsTitleRow, { borderBottomColor: c.border.primary }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="phone-portrait-outline" size={14} color={c.text.muted} />
+                  <Text style={[styles.appsTitle, { color: c.text.muted }]}>
+                    {t('customers.detail.applications')}
+                  </Text>
+                </View>
+                <View style={[styles.appsBadge, { backgroundColor: c.interactive.primary + '20' }]}>
+                  <Text style={[styles.appsBadgeText, { color: c.interactive.primary }]}>
+                    {customer.applications!.length}
+                  </Text>
                 </View>
               </View>
               {customer.applications!.map((ca: any, i: number) => (
@@ -364,18 +319,20 @@ const CustomerDetailScreen: React.FC<Props> = ({
                   key={ca.id}
                   style={[
                     styles.appRow,
-                    i < customer.applications!.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
+                    i < customer.applications!.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border.secondary },
                   ]}
                 >
-                  <View style={styles.appIcon}>
-                    <Text style={{ fontSize: 14 }}>📦</Text>
+                  <View style={[styles.appIcon, { backgroundColor: c.surface.tertiary }]}>
+                    <Ionicons name="cube-outline" size={16} color={c.text.secondary} />
                   </View>
-                  <Text style={[styles.appName, { color: textPri }]} numberOfLines={1}>
+                  <Text style={[styles.appName, { color: c.text.primary }]} numberOfLines={1}>
                     {ca.application?.name ?? ca.applicationId}
                   </Text>
                   {ca.application?.version && (
-                    <View style={styles.versionBadge}>
-                      <Text style={styles.versionText}>{ca.application.version}</Text>
+                    <View style={[styles.versionBadge, { backgroundColor: c.intent.infoSurface, borderColor: c.interactive.primary + '44' }]}>
+                      <Text style={[styles.versionText, { color: c.interactive.primary }]}>
+                        {ca.application.version}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -388,107 +345,41 @@ const CustomerDetailScreen: React.FC<Props> = ({
   );
 };
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  // Hero card
-  heroCard: {
-    borderRadius: 14, borderWidth: 1, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
-  },
-  accentBar: { height: 4 },
-  heroBody:  { padding: 16 },
-  heroTop:   { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
-  avatar: {
-    width: 52, height: 52, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  avatarText:   { fontSize: 18, fontWeight: '800' },
-  heroName:     { fontSize: 18, fontWeight: '800', lineHeight: 24 },
-  heroCompany:  { fontSize: 12, marginTop: 3 },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1,
-    flexShrink: 0,
-  },
+  heroCard:    { borderRadius: 14, borderWidth: 1, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  accentBar:   { height: 4 },
+  heroBody:    { padding: 16 },
+  heroTop:     { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  avatar:      { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  avatarText:  { fontSize: 18, fontWeight: '800' },
+  heroName:    { fontSize: 18, fontWeight: '800', lineHeight: 24 },
+  heroCompany: { fontSize: 12, marginTop: 3 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, flexShrink: 0 },
   statusLabel: { fontSize: 11, fontWeight: '700' },
-  contactRow: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 12,
-    paddingTop: 12, borderTopWidth: 1,
-  },
+  contactRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingTop: 12, borderTopWidth: 1 },
   contactItem: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
-  contactIcon: { fontSize: 13 },
   contactText: { fontSize: 12, flexShrink: 1 },
 
-  // Apps card
-  appsCard: {
-    borderRadius: 14, borderWidth: 1, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
-  },
-  appsTitleRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1,
-  },
+  appsCard:      { borderRadius: 14, borderWidth: 1, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  appsTitleRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1 },
   appsTitle:     { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  appsBadge:     { backgroundColor: '#3b82f620', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
-  appsBadgeText: { fontSize: 11, fontWeight: '700', color: '#3b82f6' },
-  appRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  appIcon: {
-    width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center',
-  },
-  appName:      { flex: 1, fontSize: 13, fontWeight: '600' },
-  versionBadge: {
-    backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
-    borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
-  },
-  versionText: { color: '#1d4ed8', fontSize: 11, fontWeight: '600' },
+  appsBadge:     { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
+  appsBadgeText: { fontSize: 11, fontWeight: '700' },
+  appRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
+  appIcon:       { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  appName:       { flex: 1, fontSize: 13, fontWeight: '600' },
+  versionBadge:  { borderWidth: 1, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  versionText:   { fontSize: 11, fontWeight: '600' },
 
-  // No-location placeholder
-  noLocationCard: {
-    borderRadius: 12, borderWidth: 1, padding: 16,
-    alignItems: 'center', justifyContent: 'center', minHeight: 60,
-  },
+  noLocationCard: { borderRadius: 12, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 60 },
   noLocationText: { fontSize: 13, fontStyle: 'italic' },
 
-  // Location action buttons
-  locationBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  locationBtn: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
+  locationBtnRow: { flexDirection: 'row', gap: 8 },
+  locationBtn:    { flex: 1, borderRadius: 12, paddingVertical: 11, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
+  locationBtnText:{ fontSize: 12, fontWeight: '700' },
 
-  // Distance chip
-  distanceChip: {
-    alignSelf: 'center',
-    backgroundColor: '#0f172a',
-    borderRadius: 99,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  distanceText: {
-    color: '#f8fafc',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
+  distanceChip: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1 },
+  distanceText: { fontSize: 13, fontWeight: '600' },
 });
 
 export default CustomerDetailScreen;

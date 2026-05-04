@@ -140,7 +140,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `StatBadge` | `display/StatBadge.tsx` | ❌ No | ✅ Yes | `StatCard` |
 | `StatCard` | `display/StatCard.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `ReportGridCard.tsx` — grid view card for report rows |
 | `PaletteSelector` | `display/PaletteSelector.tsx` | ✅ Yes (`useUiStore`) | ⚠️ Pass `resolvedColors` prop — `useUiStore` is Zustand (global, safe in Modals); does NOT call `useThemeColors()` | `profile.tsx` |
-| `AppEmptyState` | `feedback/AppEmptyState.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before any `<Modal>` renders | `DataCard` (`ListEmptyComponent` for grid and compact views), `ReportCard` |
+| `AppEmptyState` | `feedback/AppEmptyState.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before any `<Modal>` renders | `DataCard` (`ListEmptyComponent` for grid and compact views), `ReportCard`, `CustomerVisitsScreen` |
 | `AppToast` | `feedback/AppToast.tsx` | ✅ Yes (`useIsDark`) | ❌ No — root layout only | `app/_layout.tsx` via `<Toast config={toastConfig} />` |
 | `BottomNavItem` | `navigation/BottomNavItem.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AppBottomNav` |
 | `NavItem` | `navigation/NavItem.tsx` | ❌ No | ✅ Yes | `DrawerNavList` — requires `iconBg` (badge bg color) and `iconColor` (icon color) props; all colors resolved by parent |
@@ -166,6 +166,48 @@ Keep this table updated whenever a component is added or its usage changes.
 3. `TemplatesScreen` — priority column
 
 **⚠️ Modal rule:** `AppBadge` is Modal-safe — it has no hooks. Colors are resolved from static `StatusColors` / `PriorityColors` token maps. You can render it directly inside a `<Modal>` without any extra steps.
+
+---
+
+## AppEmptyState — component note
+
+`AppEmptyState` (`mobile/src/shared/components/feedback/AppEmptyState.tsx`) is a centered placeholder for empty lists and screens.
+
+**Icon options (mutually exclusive — `ionicon` takes priority):**
+- `ionicon` + `ioniconColor` + `ioniconSize` — renders an Ionicons icon inside a tinted circular badge. **Preferred for new code.**
+- `icon` (emoji string) — legacy fallback, shown only when `ionicon` is not set
+
+**Action button:**
+- `actionLabel` + `onAction` — renders a primary `AppButton`
+- `actionIcon` — optional `IoniconName` shown inside the action button (white icon, 16px)
+- The button receives `resolvedColors={c}` automatically — Modal-safe
+
+**Current usages:**
+1. `DataCard` — `ListEmptyComponent` for grid and compact views
+2. `ReportCard` — empty state when report has no rows
+3. `CustomerVisitsScreen` — empty state when no visits exist
+
+**⚠️ Modal rule:** `AppEmptyState` is Modal-safe — `useThemeColors()` is called at the component level (before any `<Modal>` renders). The `resolvedColors` prop is passed internally to `AppButton`, so callers do not need to pass it.
+
+```tsx
+// ✅ Ionicons icon (preferred)
+<AppEmptyState
+  ionicon="calendar-outline"
+  ioniconColor={c.interactive.primary}
+  message={t('visits.emptyMessage')}
+  actionLabel={t('visits.logFirst')}
+  actionIcon="add-circle-outline"
+  onAction={handleLogVisit}
+  fill
+/>
+
+// ✅ Legacy emoji icon
+<AppEmptyState
+  icon="📭"
+  message={t('customers.emptyMessage')}
+  fill
+/>
+```
 
 ---
 

@@ -11,18 +11,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import * as Location from 'expo-location';
-import { useThemeColors, FontSize, Palette } from '@/src/constants/theme';
+import { useThemeColors, FontSize } from '@/src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 import AppButton from '@/src/shared/components/forms/AppButton';
 import s from './visits.styles';
 import { SUB_CFG, getSubStatus } from './visits.types';
 import type { Customer } from '@/src/services/api/types/index';
-
-// ── Distance chip colors — Palette constants, safe at module level ────────────
-const DISTANCE_BG     = Palette.slate900;
-const DISTANCE_BORDER = Palette.slate700;
-const DISTANCE_TEXT   = Palette.slate50;
-
-// ── Haversine ─────────────────────────────────────────────────────────────────
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R    = 6371;
@@ -119,9 +113,9 @@ const CustomerInfoCard: React.FC<Props> = ({ customer, onLogVisit, logVisitLabel
               </View>
               {/* Distance chip */}
               {distance ? (
-                <View style={[s.distanceChip, { backgroundColor: DISTANCE_BG, borderColor: DISTANCE_BORDER }]}>
-                  <Text style={s.distanceIcon}>📍</Text>
-                  <Text style={[s.distanceText, { color: DISTANCE_TEXT }]}>{distance}</Text>
+                <View style={[s.distanceChip, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
+                  <Ionicons name="location-outline" size={10} color={c.text.secondary} />
+                  <Text style={[s.distanceText, { color: c.text.secondary }]}>{distance}</Text>
                 </View>
               ) : null}
             </View>

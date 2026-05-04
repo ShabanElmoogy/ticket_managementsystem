@@ -6,12 +6,11 @@ import { AppBadge, AppScreenHeader, AppDataTable, type ColDef } from '@/src/shar
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useAuxData } from '@/src/shared/hooks/useAuxData';
 import type { Ticket } from '@/src/services/api/types';
-import { useThemeColors, useIsDark } from '@/src/constants/theme';
+import { useThemeColors } from '@/src/constants/theme';
 
 const TicketsScreen: React.FC = () => {
   const { t }  = useTranslation();
   const c      = useThemeColors();
-  const isDark = useIsDark();
 
   const columns: ColDef<Ticket>[] = [
     { field: 'title',    headerName: t('tickets.title'),    sortable: true },

@@ -36,7 +36,7 @@ const s = StyleSheet.create({
   mapFallbackText: { fontSize: FontSize.sm, textAlign: 'center', paddingHorizontal: 24, marginTop: 8 },
   mapBadge:        { position: 'absolute', top: 10, end: 10, borderRadius: 99, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
   mapBadgeText:    { fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
-  mapToggleBtn:    { position: 'absolute', bottom: 8, start: 8, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
+  mapToggleBtn:    { position: 'absolute', bottom: 8, start: 8, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 4 },
   mapToggleText:   { fontSize: FontSize.xs, fontWeight: '600' as const },
   mapShowBar:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1 },
   pin:             { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 10, shadowOffset: { width: 0, height: 2 } },
@@ -65,7 +65,7 @@ const s = StyleSheet.create({
   infoStatusRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' as const },
   distanceChip:   { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, borderWidth: 1 },
   distanceIcon:   { fontSize: 10 },
-  distanceText:   { fontSize: 11, fontWeight: '700' as const, color: '#f8fafc' },
+  distanceText:   { fontSize: 11, fontWeight: '700' as const },
   infoMeta:       { flexDirection: 'row', flexWrap: 'wrap' as const, gap: 12, paddingTop: 10, borderTopWidth: 1 },
   infoMetaItem:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
   infoMetaText:   { fontSize: FontSize.xs },
@@ -137,7 +137,7 @@ const s = StyleSheet.create({
   emptyBtnText: { color: '#fff', fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   // ── FAB ───────────────────────────────────────────────────────────────────────
-  fab:     { position: 'absolute', end: 16, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 6, shadowColor: '#1d4ed8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
+  fab:     { position: 'absolute', end: 16, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 6, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
   fabText: { color: '#fff', fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   // ── Log visit button ──────────────────────────────────────────────────────────

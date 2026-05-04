@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useThemeColors, useIsDark, FontSize, FontWeight, Radius } from '@/src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import { AppScreenHeader, AppDataTable, ConfirmDeleteDialog, DataCard, AppTextInput, type ColDef } from '@/src/shared/components';
 import { useToast } from '@/src/shared/hooks/useToast';
 import { useUiStore } from '@/src/stores/uiStore';
@@ -89,16 +90,16 @@ function AutoCard<T extends { id: string }>({
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
         {onView && (
           <Pressable onPress={onView} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface }}>
-            <Text style={{ fontSize: FontSize.sm }}>👁️</Text>
+            <Ionicons name="eye-outline" size={13} color={c.interactive.primary} />
             <Text style={{ fontSize: FontSize.xs, color: c.interactive.primary, fontWeight: FontWeight.semibold }}>View</Text>
           </Pressable>
         )}
         <Pressable onPress={onEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface }}>
-          <Text style={{ fontSize: FontSize.sm }}>✏️</Text>
+          <Ionicons name="create-outline" size={13} color={c.interactive.primary} />
           <Text style={{ fontSize: FontSize.xs, color: c.interactive.primary, fontWeight: FontWeight.semibold }}>Edit</Text>
         </Pressable>
         <Pressable onPress={onDel} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.sm, backgroundColor: c.intent.errorSurface }}>
-          <Text style={{ color: c.intent.error, fontSize: FontSize.sm }}>✕</Text>
+          <Ionicons name="trash-outline" size={13} color={c.intent.error} />
           <Text style={{ fontSize: FontSize.xs, color: c.intent.error, fontWeight: FontWeight.semibold }}>Delete</Text>
         </Pressable>
       </View>
@@ -148,14 +149,14 @@ function CompactRow<T extends { id: string }>({
       <View style={{ flexDirection: 'row', gap: 4, width: btnsWidth }}>
         {onView && (
           <Pressable onPress={onView} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: FontSize.base }}>👁️</Text>
+            <Ionicons name="eye-outline" size={15} color={c.interactive.primary} />
           </Pressable>
         )}
         <Pressable onPress={onEdit} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: FontSize.base }}>✏️</Text>
+          <Ionicons name="create-outline" size={15} color={c.interactive.primary} />
         </Pressable>
         <Pressable onPress={onDel} style={{ width: 30, height: 30, borderRadius: Radius.sm, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: c.intent.error, fontSize: FontSize.md, lineHeight: 16 }}>✕</Text>
+          <Ionicons name="trash-outline" size={15} color={c.intent.error} />
         </Pressable>
       </View>
     </View>
@@ -175,7 +176,6 @@ function AdminCrudScreen<T extends { id: string }>({
   apiTotal, onPageChange,
 }: AdminCrudScreenProps<T>) {
   const c      = useThemeColors();
-  const isDark = useIsDark();
   const { setAdminView } = useUiStore();
   const toast  = useToast();
   const view   = useUiStore((s) => s.adminViews[title] ?? 'table');
@@ -258,14 +258,14 @@ function AdminCrudScreen<T extends { id: string }>({
       <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
         {onRowPress && (
           <Pressable onPress={() => onRowPress(row)} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: FontSize.sm }}>👁️</Text>
+            <Ionicons name="eye-outline" size={14} color={c.interactive.primary} />
           </Pressable>
         )}
         <Pressable onPress={() => { setFormItem(row); setFormOpen(true); }} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.infoSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: FontSize.sm }}>✏️</Text>
+          <Ionicons name="create-outline" size={14} color={c.interactive.primary} />
         </Pressable>
         <Pressable onPress={() => setDeleteTarget(row)} style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.intent.errorSurface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: c.intent.error, fontSize: FontSize.base, lineHeight: 16 }}>✕</Text>
+          <Ionicons name="trash-outline" size={14} color={c.intent.error} />
         </Pressable>
       </View>
     ),
@@ -284,7 +284,6 @@ function AdminCrudScreen<T extends { id: string }>({
   return (
     <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
-        isDark={isDark}
         view={view} onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}
         addLabel={addLabel ?? `Add ${itemType}`}

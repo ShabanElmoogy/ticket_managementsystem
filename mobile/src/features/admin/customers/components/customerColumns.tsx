@@ -1,33 +1,31 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDate } from '@/src/shared/utils/dateUtils';
+import { Palette, SubscriptionColors, SubscriptionSurfaces } from '@/src/constants/tokens';
 import type { Customer } from '@/src/services/api/types/index';
 import type { ColDef } from '@/src/shared/components/data/AppDataTable';
 import type { TFunction } from 'i18next';
 
-// ── Subscription status logic (mirrors api/src/modules/customers/customers.controller.js) ──
+// ── Subscription status logic ─────────────────────────────────────────────────
 
 export type SubscriptionStatus = 'ACTIVE' | 'TRIAL' | 'EXPIRED' | 'INACTIVE' | 'PAY_AS_YOU_GO';
 
 export function getCustomerStatus(customer: Customer): SubscriptionStatus {
   const { maintenanceType, subscriptionStartDate, subscriptionEndDate } = customer;
   const now = new Date();
-
   if (!maintenanceType) return 'INACTIVE';
   if (maintenanceType === 'PAY_AS_YOU_GO') return 'PAY_AS_YOU_GO';
-
   if (maintenanceType === 'FREE_TRIAL') {
     if (!subscriptionStartDate || !subscriptionEndDate) return 'INACTIVE';
     return now >= new Date(subscriptionStartDate) && now <= new Date(subscriptionEndDate)
       ? 'TRIAL' : 'EXPIRED';
   }
-
   if (maintenanceType === 'MONTHLY_SUBSCRIPTION') {
     if (!subscriptionStartDate || !subscriptionEndDate) return 'INACTIVE';
     return now >= new Date(subscriptionStartDate) && now <= new Date(subscriptionEndDate)
       ? 'ACTIVE' : 'EXPIRED';
   }
-
   return 'INACTIVE';
 }
 
@@ -36,26 +34,26 @@ export function isCustomerActive(customer: Customer): boolean {
   return s === 'ACTIVE' || s === 'TRIAL';
 }
 
-// ── Status badge config ───────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<SubscriptionStatus, { color: string; bg: string; label: string }> = {
-  ACTIVE:          { color: '#16a34a', bg: '#f0fdf4', label: 'Active'       },
-  TRIAL:           { color: '#7c3aed', bg: '#f5f3ff', label: 'Trial'        },
-  EXPIRED:         { color: '#dc2626', bg: '#fef2f2', label: 'Expired'      },
-  INACTIVE:        { color: '#6b7280', bg: '#f9fafb', label: 'Inactive'     },
-  PAY_AS_YOU_GO:   { color: '#0284c7', bg: '#f0f9ff', label: 'Pay As You Go'},
-};
+// ── Status badge — uses SubscriptionColors/SubscriptionSurfaces from tokens ───
 
 const StatusBadge: React.FC<{ status: SubscriptionStatus }> = ({ status }) => {
-  const cfg = STATUS_CONFIG[status];
+  const color = SubscriptionColors[status] ?? Palette.gray500;
+  const bg    = SubscriptionSurfaces.light[status] ?? Palette.gray100;
+  const labels: Record<SubscriptionStatus, string> = {
+    ACTIVE:        'Active',
+    TRIAL:         'Trial',
+    EXPIRED:       'Expired',
+    INACTIVE:      'Inactive',
+    PAY_AS_YOU_GO: 'Pay/Go',
+  };
   return (
     <View style={{
       paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6,
-      backgroundColor: cfg.bg,
-      borderWidth: 1, borderColor: cfg.color + '44',
+      backgroundColor: bg,
+      borderWidth: 1, borderColor: color + '44',
     }}>
-      <Text style={{ fontSize: 10, fontWeight: '700', color: cfg.color }}>
-        {cfg.label}
+      <Text style={{ fontSize: 10, fontWeight: '700', color }}>
+        {labels[status]}
       </Text>
     </View>
   );
@@ -65,46 +63,40 @@ const StatusBadge: React.FC<{ status: SubscriptionStatus }> = ({ status }) => {
 
 export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
   return [
-    // Name — primary identifier
     { field: 'name', headerName: t('customers.columns.name'), sortable: true },
 
-    // Email — shown in table and used in PDF export
     {
       field: 'email', headerName: t('customers.columns.email'), width: 160, sortable: true,
       renderCell: (row) => (
-        <Text style={{ fontSize: 11, color: '#475569' }} numberOfLines={1}>
+        <Text style={{ fontSize: 11, color: Palette.slate500 }} numberOfLines={1}>
           {row.email || '—'}
         </Text>
       ),
     },
 
-    // Company — shown when available
     {
       field: 'company', headerName: t('customers.detail.company'), width: 120, sortable: true,
       renderCell: (row) => (
-        <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>
+        <Text style={{ fontSize: 12, color: Palette.gray500 }} numberOfLines={1}>
           {row.company || '—'}
         </Text>
       ),
     },
 
-    // Subscription status — computed from maintenanceType + dates
     {
       field: 'subscriptionStatus', headerName: t('customers.columns.status'), width: 120, align: 'center',
       renderCell: (row) => {
-        // Use server-provided status if available, otherwise compute client-side
         const status = (row.subscriptionStatus as SubscriptionStatus | undefined)
           ?? getCustomerStatus(row);
         return <StatusBadge status={status} />;
       },
     },
 
-    // Maintenance type — shows the contract type
     {
       field: 'maintenanceType', headerName: t('customers.detail.maintenanceType'), width: 130, align: 'center',
       renderCell: (row) => {
         if (!row.maintenanceType) return (
-          <Text style={{ fontSize: 11, color: '#9ca3af' }}>—</Text>
+          <Text style={{ fontSize: 11, color: Palette.gray400 }}>—</Text>
         );
         const labels: Record<string, string> = {
           MONTHLY_SUBSCRIPTION: 'Monthly',
@@ -112,27 +104,25 @@ export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
           PAY_AS_YOU_GO:        'Pay/Go',
         };
         return (
-          <Text style={{ fontSize: 11, color: '#374151', fontWeight: '600' }}>
+          <Text style={{ fontSize: 11, color: Palette.gray700, fontWeight: '600' }}>
             {labels[row.maintenanceType] ?? row.maintenanceType}
           </Text>
         );
       },
     },
 
-    // Subscription end date — most important date for active customers
     {
       field: 'subscriptionEndDate', headerName: t('customers.detail.subscriptionEnd'), width: 110, align: 'center',
       renderCell: (row) => {
         if (!row.subscriptionEndDate) return (
-          <Text style={{ fontSize: 11, color: '#9ca3af' }}>—</Text>
+          <Text style={{ fontSize: 11, color: Palette.gray400 }}>—</Text>
         );
         const end      = new Date(row.subscriptionEndDate);
         const now      = new Date();
         const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         const isExpired = daysLeft < 0;
-        const isSoon    = daysLeft >= 0 && daysLeft <= 30;  // expires within 30 days
-
-        const color = isExpired ? '#dc2626' : isSoon ? '#d97706' : '#16a34a';
+        const isSoon    = daysLeft >= 0 && daysLeft <= 30;
+        const color = isExpired ? Palette.red600 : isSoon ? Palette.amber600 : Palette.green600;
         return (
           <Text style={{ fontSize: 11, color, fontWeight: isExpired || isSoon ? '700' : '500' }}>
             {formatDate(row.subscriptionEndDate)}
@@ -141,15 +131,18 @@ export function getCustomerColumns(t: TFunction): ColDef<Customer>[] {
       },
     },
 
-    // Ticket count
     {
       field: '_count', headerName: t('customers.columns.tickets'), width: 70, align: 'center',
       valueGetter: (row) => row._count?.tickets ?? 0,
       renderCell: (row) => {
         const count = row._count?.tickets ?? 0;
         return (
-          <View style={{ backgroundColor: '#dbeafe', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, minWidth: 28, alignItems: 'center' }}>
-            <Text style={{ color: '#1d4ed8', fontSize: 11, fontWeight: '700' }}>{count}</Text>
+          <View style={{
+            backgroundColor: Palette.blue100,
+            borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2,
+            minWidth: 28, alignItems: 'center',
+          }}>
+            <Text style={{ color: Palette.blue700, fontSize: 11, fontWeight: '700' }}>{count}</Text>
           </View>
         );
       },

@@ -1,42 +1,57 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useThemeColors } from '@/src/constants/theme';
-import ApplicationsScreen from '@/src/features/admin/applications/ApplicationsScreen';
-import CustomersScreen from '@/src/features/admin/customers/CustomersScreen';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors, Radius, FontSize, FontWeight } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
+import { Palette } from '@/src/constants/tokens';
+import ApplicationsScreen  from '@/src/features/admin/applications/ApplicationsScreen';
+import CustomersScreen     from '@/src/features/admin/customers/CustomersScreen';
 import AdminDashboardScreen from '@/src/features/admin/dashboard/AdminDashboardScreen';
-import DocsScreen from '@/src/features/admin/docs/DocsScreen';
-import ReportsScreen from '@/src/features/admin/reports/ReportsScreen';
-import SettingsScreen from '@/src/features/admin/settings/SettingsScreen';
-import TemplatesScreen from '@/src/features/admin/templates/TemplatesScreen';
-import TenantsScreen from '@/src/features/admin/tenants/TenantsScreen';
-import TicketsScreen from '@/src/features/admin/tickets/TicketsScreen';
-import UsersScreen from '@/src/features/admin/users/UsersScreen';
-import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
-import { useAuthStore } from '@/src/stores/authStore';
+import DocsScreen          from '@/src/features/admin/docs/DocsScreen';
+import ReportsScreen       from '@/src/features/admin/reports/ReportsScreen';
+import SettingsScreen      from '@/src/features/admin/settings/SettingsScreen';
+import TemplatesScreen     from '@/src/features/admin/templates/TemplatesScreen';
+import TenantsScreen       from '@/src/features/admin/tenants/TenantsScreen';
+import TicketsScreen       from '@/src/features/admin/tickets/TicketsScreen';
+import UsersScreen         from '@/src/features/admin/users/UsersScreen';
+import { useAuthStore }    from '@/src/stores/authStore';
+import type { IoniconName } from '@/src/components/layout/header/navItems';
 
 // ── Menu config ───────────────────────────────────────────────────────────────
 
-interface MenuItem { id: string; label: string; icon: string; roles?: string[] }
+interface MenuItem {
+  id:      string;
+  label:   string;
+  icon:    IoniconName;
+  /** Badge background color for the icon */
+  color:   string;
+  roles?:  string[];
+}
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',    icon: '📊' },
-  { id: 'tickets',      label: 'Tickets',      icon: '🎫' },
-  { id: 'customers',    label: 'Customers',    icon: '👥' },
-  { id: 'applications', label: 'Applications', icon: '📱' },
-  { id: 'users',        label: 'Users',        icon: '👤' },
-  { id: 'templates',    label: 'Templates',    icon: '📋' },
-  { id: 'docs',         label: 'Docs',         icon: '📚' },
-  { id: 'reports',      label: 'Reports',      icon: '📊' },
-  { id: 'tenants',      label: 'Tenants',      icon: '🏢', roles: ['SUPER_ADMIN'] },
-  { id: 'settings',     label: 'Settings',     icon: '⚙️' },
+  { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',               color: Palette.blue500    },
+  { id: 'tickets',      label: 'Tickets',      icon: 'ticket',             color: Palette.violet500  },
+  { id: 'customers',    label: 'Customers',    icon: 'people',             color: Palette.teal500    },
+  { id: 'applications', label: 'Applications', icon: 'phone-portrait',     color: Palette.indigo500  },
+  { id: 'users',        label: 'Users',        icon: 'person',             color: Palette.cyan500    },
+  { id: 'templates',    label: 'Templates',    icon: 'document-text',      color: Palette.amber500   },
+  { id: 'docs',         label: 'Docs',         icon: 'library',            color: Palette.emerald500 },
+  { id: 'reports',      label: 'Reports',      icon: 'bar-chart',          color: Palette.orange500  },
+  { id: 'tenants',      label: 'Tenants',      icon: 'business',           color: Palette.rose500,   roles: ['SUPER_ADMIN'] },
+  { id: 'settings',     label: 'Settings',     icon: 'settings',           color: Palette.slate500   },
 ];
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
 
 function AdminPanel() {
-  const { user } = useAuthStore();
-  const c = useThemeColors();
+  const { user }    = useAuthStore();
+  const c           = useThemeColors();
+  const paletteOption = useUiStore((s) => s.paletteOption);
   const [selected, setSelected] = React.useState('dashboard');
+
+  // Blue palette: use per-item colors for a colorful multi-hue look.
+  // Orange / Green palettes: use c.tint so the active tab always matches the palette.
+  const useItemColors = paletteOption === 'blue';
 
   const visibleItems = MENU_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(user?.role ?? '')
@@ -58,48 +73,46 @@ function AdminPanel() {
     }
   };
 
-  const containerStyle = { flex: 1, backgroundColor: c.surface.secondary };
-  const tabBarStyle = { 
-    borderBottomWidth: 1, 
-    borderBottomColor: c.border.primary,
-    backgroundColor: c.surface.primary 
-  };
-
   return (
-    <View style={containerStyle}>
+    <View style={[styles.container, { backgroundColor: c.surface.secondary }]}>
       {/* Horizontal scrollable tab bar */}
-      <View style={tabBarStyle}>
+      <View style={[styles.tabBar, { borderBottomColor: c.border.primary, backgroundColor: c.surface.primary }]}>
         <ScrollView
-          horizontal 
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 8, gap: 4 }}
+          contentContainerStyle={styles.tabScroll}
         >
           {visibleItems.map((item) => {
-            const isActive = selected === item.id;
-            const tabButtonStyle = {
-              flexDirection: 'row' as const,
-              alignItems: 'center' as const,
-              gap: 6,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 8,
-              backgroundColor: isActive ? c.interactive.primary : c.surface.elevated,
-            };
-            const iconStyle = { fontSize: 14 };
-            const labelStyle = {
-              fontSize: 12,
-              fontWeight: '600' as const,
-              color: isActive ? c.text.inverse : c.text.secondary,
-            };
-            
+            const isActive    = selected === item.id;
+            const activeColor = useItemColors ? item.color : c.tint;
+
             return (
               <Pressable
                 key={item.id}
                 onPress={() => setSelected(item.id)}
-                style={tabButtonStyle}
+                style={[
+                  styles.tabBtn,
+                  {
+                    backgroundColor:   isActive ? activeColor + '18' : 'transparent',
+                    borderBottomWidth: isActive ? 2 : 0,
+                    borderBottomColor: isActive ? activeColor : 'transparent',
+                  },
+                ]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isActive }}
               >
-                <Text style={iconStyle}>{item.icon}</Text>
-                <Text style={labelStyle}>
+                <Ionicons
+                  name={item.icon}
+                  size={16}
+                  color={isActive ? activeColor : c.text.secondary}
+                />
+                <Text style={[
+                  styles.tabLabel,
+                  {
+                    color:      isActive ? activeColor : c.text.secondary,
+                    fontWeight: isActive ? FontWeight.semibold : FontWeight.normal,
+                  },
+                ]}>
                   {item.label}
                 </Text>
               </Pressable>
@@ -109,9 +122,38 @@ function AdminPanel() {
       </View>
 
       {/* Active screen */}
-      <View style={{ flex: 1 }}>{renderContent()}</View>
+      <View style={styles.content}>{renderContent()}</View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  tabBar: {
+    borderBottomWidth: 1,
+  },
+  tabScroll: {
+    paddingHorizontal: 8,
+    paddingTop:        8,
+    gap:               2,
+  },
+  tabBtn: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            6,
+    paddingHorizontal: 12,
+    paddingVertical:   9,
+    borderRadius:   Radius.md,
+    marginBottom:   4,
+  },
+  tabLabel: {
+    fontSize: FontSize.sm,
+  },
+  content: {
+    flex: 1,
+  },
+});
 
 export default AdminPanel;

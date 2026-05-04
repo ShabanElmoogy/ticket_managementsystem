@@ -27,12 +27,12 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeColors, FontSize, Spacing } from '@/src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { QUERY_KEYS, PAGINATION } from '@/src/constants/api';
 import { customersApi } from '../api/customers';
 import { useCustomerVisits } from '../hooks/useCustomerVisits';
 import { useAuthStore } from '@/src/stores/authStore';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
-import AppButton from '@/src/shared/components/forms/AppButton';
 import AppTextInput from '@/src/shared/components/forms/AppTextInput';
 import AppEmptyState from '@/src/shared/components/feedback/AppEmptyState';
 import SaveVisitModal from './SaveVisitModal';
@@ -255,15 +255,17 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
           {/* Loading / empty states */}
           {visitsLoading ? (
             <AppEmptyState
-              icon="⏳"
+              ionicon="hourglass-outline"
               message={t('common.loading')}
               style={s.center}
             />
           ) : !visitsLoading && displayedVisits.length === 0 ? (
             <AppEmptyState
-              icon="🗓️"
+              ionicon="calendar-outline"
+              ioniconColor={c.tint}
               message={visits.length === 0 ? t('visits.noVisitsYet') : t('visits.noVisitsMatch')}
               actionLabel={visits.length === 0 ? t('visits.logFirstVisit') : undefined}
+              actionIcon={visits.length === 0 ? 'add-circle-outline' : undefined}
               onAction={visits.length === 0 ? handleLogVisit : undefined}
               style={s.center}
             />
@@ -271,7 +273,8 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
         </>
       ) : (
         <AppEmptyState
-          icon="👆"
+          ionicon="finger-print"
+          ioniconColor={c.text.muted}
           message={t('visits.selectCustomer')}
           style={s.center}
         />
@@ -292,34 +295,44 @@ const CustomerVisitsScreen: React.FC<Props> = ({ onClose }) => {
 
         {/* Fixed header */}
         <View style={[s.header, { paddingTop: insets.top - 20, backgroundColor: c.surface.primary, borderBottomColor: c.border.primary }]}>
-          <AppButton
-            variant="ghost"
-            size="small"
+          <Pressable
             onPress={onClose}
-            resolvedColors={c}
             style={[s.backBtn, { backgroundColor: c.surface.tertiary }]}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
-            <Text style={{ color: c.text.secondary, fontSize: 20, lineHeight: 22 }}>←</Text>
-          </AppButton>
+            <Ionicons name="arrow-back-outline" size={20} color={c.text.secondary} />
+          </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: c.text.primary }]}>
-              🗺️  {t('visits.title')}
+              {t('visits.title')}
             </Text>
             <Text style={[s.headerSub, { color: c.text.muted }]}>
               {mappedCustomers.length} {t('visits.customersWithLocation')}
             </Text>
           </View>
 
-          {/* Map toggle — AppButton */}
-          <AppButton
-            variant={mapCollapsed ? 'secondary' : 'outline'}
-            size="small"
+          {/* Map toggle */}
+          <Pressable
             onPress={() => setMapCollapsed((v) => !v)}
-            resolvedColors={c}
-            leftIcon={<Text style={{ fontSize: 14 }}>🗺️</Text>}
+            style={[
+              s.mapToggleHeaderBtn,
+              {
+                backgroundColor: mapCollapsed ? c.surface.elevated : c.interactive.primary + '18',
+                borderColor:     mapCollapsed ? c.border.primary   : c.interactive.primary,
+              },
+            ]}
+            accessibilityRole="button"
           >
-            {mapCollapsed ? '▼' : '▲'}
-          </AppButton>
+            <Ionicons
+              name="map-outline"
+              size={15}
+              color={mapCollapsed ? c.text.secondary : c.interactive.primary}
+            />
+            <Text style={[s.mapToggleHeaderText, { color: mapCollapsed ? c.text.secondary : c.interactive.primary }]}>
+              {mapCollapsed ? t('visits.showMap') : t('visits.hideMap')}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Customer search + map — fixed above the scroll list, both hidden when collapsed */}

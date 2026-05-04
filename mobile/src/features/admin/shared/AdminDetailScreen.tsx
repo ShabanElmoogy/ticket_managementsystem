@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
@@ -29,7 +30,7 @@ const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: c.surface.primary, borderBottomColor: c.border.primary }]}>
         <Pressable onPress={onClose} style={[styles.backBtn, { backgroundColor: c.surface.tertiary }]} accessibilityRole="button" accessibilityLabel={t('common.back')}>
-          <Text style={{ color: c.text.secondary, fontSize: FontSize['2xl'], lineHeight: 22 }}>←</Text>
+          <Ionicons name="arrow-back-outline" size={20} color={c.text.secondary} />
         </Pressable>
 
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -38,11 +39,12 @@ const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({
         </View>
 
         <Pressable onPress={onEdit} style={[styles.editBtn, { backgroundColor: c.intent.infoSurface, borderColor: c.interactive.primary + '44' }]} accessibilityRole="button">
-          <Text style={[styles.editBtnText, { color: c.interactive.primary }]}>✏️  {t('common.edit')}</Text>
+          <Ionicons name="create-outline" size={14} color={c.interactive.primary} />
+          <Text style={[styles.editBtnText, { color: c.interactive.primary }]}>{t('common.edit')}</Text>
         </Pressable>
 
         <Pressable onPress={onDelete} style={[styles.deleteBtn, { backgroundColor: c.intent.errorSurface, borderColor: c.intent.error + '66' }]} accessibilityRole="button">
-          <Text style={{ fontSize: FontSize.xl }}>🗑️</Text>
+          <Ionicons name="trash-outline" size={16} color={c.intent.error} />
         </Pressable>
       </View>
 
@@ -54,7 +56,7 @@ const AdminDetailScreen: React.FC<AdminDetailScreenProps> = ({
         </View>
       ) : notFound ? (
         <View style={styles.center}>
-          <Text style={{ fontSize: 40, marginBottom: 12 }}>🔍</Text>
+          <Ionicons name="search-outline" size={40} color={c.text.muted} />
           <Text style={[styles.notFoundText, { color: c.text.secondary }]}>{notFoundText ?? 'Not found'}</Text>
         </View>
       ) : (
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
   backBtn:        { width: 36, height: 36, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   headerTitle:    { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   headerSubtitle: { fontSize: FontSize.sm, marginTop: 1 },
-  editBtn:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.md, borderWidth: 1, flexShrink: 0 },
+  editBtn:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.md, borderWidth: 1, flexShrink: 0 },
   editBtnText:    { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   deleteBtn:      { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1, flexShrink: 0 },
   center:         { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },

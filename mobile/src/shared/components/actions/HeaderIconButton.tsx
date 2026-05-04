@@ -2,28 +2,22 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { Animated, Easing } = require('react-native') as { Animated: any; Easing: any };
-import { Radius, FontSize, FontWeight, Spacing, LineHeight } from '@/src/constants/tokens';
+import { Ionicons } from '@expo/vector-icons';
+import { Radius, FontSize, FontWeight, Spacing } from '@/src/constants/tokens';
 import { useThemeColors } from '@/src/constants/theme';
+import type { IoniconName } from '@/src/components/layout/header/navItems';
 
 /**
  * HeaderIconButton — compact square button with icon above label.
  * Used in admin screen headers for Add / Export / Refresh / custom actions.
  *
  * Variants:
- *   add     — green tint bg, dark green text
- *   export  — red tint bg, dark red text
+ *   add     — success tint bg (theme-aware), success text
+ *   export  — error tint bg, error text
  *   refresh — neutral bg, spinning animation on press/loading
  *   neutral — neutral bg, secondary text (default)
  *
- * Usage locations: `HeaderActionGroup`
- *
  * ⚠️ Modal safety: NOT safe inside <Modal> — calls useThemeColors() internally.
- * Use only in screen-level headers, never inside a Modal tree.
- *
- * @example
- * <HeaderIconButton variant="add"     onPress={handleAdd}    label="Add Customer" />
- * <HeaderIconButton variant="export"  onPress={handleExport} loading={exporting} />
- * <HeaderIconButton variant="refresh" onPress={refetch}      loading={isLoading} />
  */
 
 export type HeaderIconButtonVariant = 'add' | 'export' | 'refresh' | 'neutral';
@@ -32,18 +26,17 @@ export interface HeaderIconButtonProps {
   onPress:       () => void;
   variant?:      HeaderIconButtonVariant;
   label?:        string;
-  icon?:         string;
+  icon?:         IoniconName;
   loading?:      boolean;
   disabled?:     boolean;
-  loadingIcon?:  string;
   loadingLabel?: string;
 }
 
-const DEFAULTS: Record<HeaderIconButtonVariant, { icon: string; label: string }> = {
-  add:     { icon: '➕',  label: 'Add'        },
-  export:  { icon: '📄',  label: 'Export PDF' },
-  refresh: { icon: '🔄',  label: 'Refresh'    },
-  neutral: { icon: '🔧',  label: 'Action'     },
+const DEFAULTS: Record<HeaderIconButtonVariant, { icon: IoniconName; label: string }> = {
+  add:     { icon: 'add-circle-outline', label: 'Add'        },
+  export:  { icon: 'document-outline',   label: 'Export PDF' },
+  refresh: { icon: 'refresh-outline',    label: 'Refresh'    },
+  neutral: { icon: 'ellipsis-horizontal',label: 'Action'     },
 };
 
 const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
@@ -51,7 +44,6 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
   variant      = 'neutral',
   loading      = false,
   disabled     = false,
-  loadingIcon  = '⏳',
   loadingLabel,
   icon,
   label,
@@ -96,31 +88,35 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
 
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
-  // ── Colors ────────────────────────────────────────────────────────────────
-  const bg        = isDisabled          ? c.surface.elevated
-                  : variant === 'add'    ? '#dcfce7'   // green-100
-                  : variant === 'export' ? '#fee2e2'   // red-100
-                  : c.surface.tertiary;
+  // ── Colors — fully theme-aware ────────────────────────────────────────────
+  const bg = isDisabled          ? c.surface.elevated
+           : variant === 'add'    ? c.intent.successSurface
+           : variant === 'export' ? c.intent.errorSurface
+           : c.surface.tertiary;
 
   const bgPressed = isDisabled          ? c.surface.elevated
-                  : variant === 'add'    ? '#bbf7d0'   // green-200
-                  : variant === 'export' ? '#fecaca'   // red-200
+                  : variant === 'add'    ? c.interactive.success + '40'
+                  : variant === 'export' ? c.interactive.error   + '40'
                   : c.surface.elevated;
 
-  const textColor = isDisabled          ? c.text.muted
+  const iconColor = isDisabled          ? c.text.muted
+                  : variant === 'add'    ? c.intent.success
+                  : variant === 'export' ? c.intent.error
                   : c.text.secondary;
+
+  const textColor = iconColor;
 
   // ── Display values ─────────────────────────────────────────────────────────
   const defaults     = DEFAULTS[variant];
-  const displayIcon  = loading ? loadingIcon : disabled ? '🚫' : (icon ?? defaults.icon);
+  const displayIcon  = loading ? 'hourglass-outline' : disabled ? 'ban-outline' : (icon ?? defaults.icon);
   const displayLabel = loading ? (loadingLabel ?? defaults.label) : (label ?? defaults.label);
 
   const iconNode = isRefresh ? (
     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-      <Text style={{ fontSize: FontSize.xl, lineHeight: LineHeight.xl }}>{displayIcon}</Text>
+      <Ionicons name={displayIcon} size={20} color={iconColor} />
     </Animated.View>
   ) : (
-    <Text style={{ fontSize: FontSize.xl, lineHeight: LineHeight.xl }}>{displayIcon}</Text>
+    <Ionicons name={displayIcon} size={20} color={iconColor} />
   );
 
   return (
@@ -143,7 +139,7 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
     >
       <View style={{ flexDirection: 'column', alignItems: 'center', gap: Spacing.xs }}>
         {iconNode}
-        <Text numberOfLines={1} style={{ fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, lineHeight: LineHeight.xs, color: textColor }}>
+        <Text numberOfLines={1} style={{ fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, color: textColor }}>
           {displayLabel}
         </Text>
       </View>
