@@ -94,11 +94,11 @@ const s = StyleSheet.create({
   tableHeader:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderBottomWidth: 1 },
   tableHeaderText: { fontSize: 10, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.4 },
   tableRow:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  tableColDate:    { width: 82 },
-  tableColStatus:  { width: 88 },
-  tableColBy:      { width: 76 },
+  tableColDate:    { width: 80 },
+  tableColStatus:  { width: 90, overflow: 'hidden' },
+  tableColBy:      { width: 72, overflow: 'hidden' },
   tableColNotes:   { flex: 1, paddingHorizontal: 6 },
-  tableColActions: { width: 64, flexDirection: 'row', gap: 4, justifyContent: 'flex-end' },
+  tableColActions: { width: 68, flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   tableText:       { fontSize: FontSize.sm, fontWeight: FontWeight.semibold },
   tableTextSm:     { fontSize: FontSize.xs },
 
@@ -125,7 +125,7 @@ const s = StyleSheet.create({
   compactActions: { flexDirection: 'row', gap: 4 },
 
   // ── Shared ────────────────────────────────────────────────────────────────────
-  badge:       { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
+  badge:       { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, alignSelf: 'flex-start' as const },
   badgeText:   { fontSize: 10, fontWeight: '700' as const },
   actionBtn:   { width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
 
@@ -144,12 +144,6 @@ const s = StyleSheet.create({
   logBtn:     { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
   logBtnText: { color: '#fff', fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
-  // ── Header map toggle button ──────────────────────────────────────────────────
-  mapToggleHeaderBtn:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
-  mapToggleHeaderText: { fontSize: 13, fontWeight: '700' as const },
-
-  // ── Fixed map zone (search + map, above FlatList) ─────────────────────────────
-  fixedMapZone: { borderBottomWidth: 1 },
 });
 
 export default s;

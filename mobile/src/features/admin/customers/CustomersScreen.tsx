@@ -140,7 +140,7 @@ const CustomersScreen: React.FC = () => {
           {/* Map button — pill style */}
           <Pressable
             onPress={() => setShowVisits(true)}
-            style={({ pressed }) => ({
+            style={({ pressed }: { pressed: boolean }) => ({
               flexDirection:     'row',
               alignItems:        'center',
               gap:               6,
@@ -150,16 +150,16 @@ const CustomersScreen: React.FC = () => {
               backgroundColor:   pressed
                 ? c.interactive.primaryPressed
                 : c.interactive.primary,
-              shadowColor:       c.interactive.primary,
+              shadowColor:       c.shadow,
               shadowOffset:      { width: 0, height: 2 },
-              shadowOpacity:     0.30,
+              shadowOpacity:     1,
               shadowRadius:      6,
               elevation:         4,
             })}
             accessibilityRole="button"
           >
-            <Ionicons name="map" size={15} color={c.text.inverse} />
-            <Text style={{ color: c.text.inverse, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>
+            <Ionicons name="map" size={15} color={c.text.primary} />
+            <Text style={{ color: c.text.primary, fontSize: 13, fontWeight: '700', letterSpacing: 0.2 }}>
               {t('visits.mapButton')}
             </Text>
           </Pressable>

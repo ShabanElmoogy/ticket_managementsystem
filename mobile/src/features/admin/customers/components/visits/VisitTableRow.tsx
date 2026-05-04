@@ -1,15 +1,14 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDate } from '@/src/shared/utils/dateUtils';
-import { FontSize } from '@/src/constants/theme';
-import AppButton from '@/src/shared/components/forms/AppButton';
 import s from './visits.styles';
 import VisitBadge from './VisitBadge';
 import type { VisitRowProps } from './visits.types';
 
 const VisitTableRow: React.FC<VisitRowProps> = ({ visit, userId, isAdmin, onEdit, onDelete, c }) => {
   const canAct = isAdmin || visit.userId === userId;
+
   return (
     <View style={[s.tableRow, { backgroundColor: c.surface.primary, borderBottomColor: c.border.primary }]}>
       <View style={s.tableColDate}>
@@ -17,41 +16,48 @@ const VisitTableRow: React.FC<VisitRowProps> = ({ visit, userId, isAdmin, onEdit
           {formatDate(visit.visitedAt)}
         </Text>
       </View>
+
       <View style={s.tableColStatus}>
         <VisitBadge status={visit.status} />
       </View>
+
       <View style={s.tableColBy}>
         <Text style={[s.tableTextSm, { color: c.text.secondary }]} numberOfLines={1}>
           {visit.user?.name ?? '—'}
         </Text>
       </View>
+
       <View style={s.tableColNotes}>
         <Text style={[s.tableTextSm, { color: c.text.muted }]} numberOfLines={2}>
           {visit.notes ?? '—'}
         </Text>
       </View>
+
       {canAct ? (
         <View style={s.tableColActions}>
-          <AppButton
-            variant="ghost"
-            size="small"
+          {/* Edit */}
+          <Pressable
             onPress={() => onEdit(visit)}
-            resolvedColors={c}
-            style={s.actionBtn}
+            style={[s.actionBtn, { backgroundColor: c.intent.infoSurface }]}
+            accessibilityRole="button"
+            accessibilityLabel="Edit visit"
           >
-            <Text style={{ fontSize: FontSize.sm }}>✏️</Text>
-          </AppButton>
-          <AppButton
-            variant="ghost"
-            size="small"
+            <Ionicons name="create-outline" size={15} color={c.interactive.primary} />
+          </Pressable>
+
+          {/* Delete */}
+          <Pressable
             onPress={() => onDelete(visit.id)}
-            resolvedColors={c}
             style={[s.actionBtn, { backgroundColor: c.intent.errorSurface }]}
+            accessibilityRole="button"
+            accessibilityLabel="Delete visit"
           >
-            <Text style={{ fontSize: FontSize.sm }}>🗑️</Text>
-          </AppButton>
+            <Ionicons name="trash-outline" size={15} color={c.intent.error} />
+          </Pressable>
         </View>
-      ) : <View style={s.tableColActions} />}
+      ) : (
+        <View style={s.tableColActions} />
+      )}
     </View>
   );
 };
