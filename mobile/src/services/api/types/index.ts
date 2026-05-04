@@ -11,3 +11,4 @@ export * from './epic';
 export * from './feature';
 export * from './notification';
 export * from './dashboard';
+export * from './visit';

@@ -297,6 +297,151 @@ assignApplication(customerId, applicationId)      // POST /customers/assign-appl
 removeApplication(customerId, applicationId)      // DELETE /customers/:id/applications/:id
 ```
 
+### Visits Sub-Feature
+
+Customer visits are managed via a dedicated API service and hook, scoped to a `customerId`.
+
+**API service** (`api/visits.ts`):
+
+```ts
+getVisits(customerId)                             // GET /customers/:id/visits
+getVisit(customerId, visitId)                     // GET /customers/:id/visits/:visitId
+createVisit(customerId, data)                     // POST /customers/:id/visits
+updateVisit(customerId, visitId, data)            // PUT /customers/:id/visits/:visitId
+deleteVisit(customerId, visitId)                  // DELETE /customers/:id/visits/:visitId
+```
+
+Query key: `QUERY_KEYS.CUSTOMERS.visits(customerId)` → `['customers', id, 'visits']`
+
+**Hook** (`hooks/useCustomerVisits.ts`):
+
+```ts
+const { visits, isLoading, refetch, createVisit, updateVisit, deleteVisit,
+        isCreating, isUpdating, isDeleting } = useCustomerVisits(customerId);
+```
+
+- `createVisit(data, successMsg)` / `updateVisit(visitId, data, successMsg)` / `deleteVisit(visitId, successMsg)` — each accepts a pre-translated success message string and returns `true` on success, `false` on failure (API errors are handled by the global `NetworkErrorDialog`)
+- `createVisit` also invalidates `QUERY_KEYS.CUSTOMERS.detail(customerId)` so the detail screen refreshes its visit count
+- Used by `CustomerVisitsScreen` and `VisitHistoryCard`
+
+**Visit Map shortcut bar** — `CustomersScreen` renders a sticky bar above `AdminCrudScreen` in the list view with a single "🗺️ Map" button that sets `showVisits(true)` and renders `CustomerVisitsScreen` as a fourth view state. Locale key: `t('visits.mapButton')`.
+
+```tsx
+// Pattern — shortcut bar above AdminCrudScreen
+<View style={{ backgroundColor: c.surface.primary, borderBottomWidth: 1, borderBottomColor: c.border.primary, paddingHorizontal: 12, paddingVertical: 8 }}>
+  <Pressable
+    onPress={() => setShowVisits(true)}
+    style={({ pressed }) => ({
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 14, paddingVertical: 9,
+      borderRadius: 10, borderWidth: 1,
+      backgroundColor: pressed ? '#1d4ed8' : '#2563eb',
+      borderColor: '#1d4ed8',
+      alignSelf: 'flex-start',
+    })}
+    accessibilityRole="button"
+  >
+    <Text style={{ fontSize: 16 }}>🗺️</Text>
+    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{t('visits.mapButton')}</Text>
+  </Pressable>
+</View>
+<AdminCrudScreen ... />
+```
+
+**Types** (`services/api/types/visit.ts`):
+
+```ts
+type VisitStatus = 'PLANNED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+
+interface CustomerVisit {
+  id; customerId; userId; status: VisitStatus;
+  visitedAt; notes; latitude; longitude; createdAt; updatedAt;
+  user?: { id; name } | null;
+}
+
+interface CreateVisitData { status?; visitedAt?; notes?; latitude?; longitude? }
+type UpdateVisitData = Partial<CreateVisitData>;
+```
+
+**`visits/` subfolder structure** — `CustomerVisitsScreen` is decomposed into a dedicated subfolder:
+
+```
+components/visits/
+├── visits.types.ts       ← shared types, config maps (SUB_CFG, VISIT_CFG, STATUS_FILTERS), pure helpers (getSubStatus, getVisitCfg), VisitRowProps interface, VisitStats interface
+├── visits.styles.ts      ← single StyleSheet exported as default `s` — all sub-components import from here
+├── CustomerInfoCard.tsx  ← selected customer avatar, name, status badge, distance chip, contact meta, Log Visit button
+├── VisitBadge.tsx        ← colored status pill (PLANNED / COMPLETED / CANCELLED / NO_SHOW)
+├── VisitTableRow.tsx     ← table view row
+├── VisitGridCard.tsx     ← grid view card
+├── VisitCompactRow.tsx   ← compact single-line row
+└── VisitMapPanel.tsx     ← collapsible map with customer pins
+```
+
+**Why this structure:** the `StyleSheet` must be defined before any sub-component that references it. Extracting to `visits.styles.ts` eliminates "used before defined" issues when components are split across files. All sub-components import the same `s` object — no duplication.
+
+**`CustomerInfoCard`** — renders the selected customer's info at the top of the visits list. Displays avatar (initials), name, company, subscription status badge, and a distance chip when GPS permission is already granted. Contact meta row shows email, phone, address, and coordinates (5 decimal places) when present. The distance chip uses `useCurrentDistance()` — the same passive GPS hook documented in the detail screen section — and appears inline next to the status badge. Distance chip styling: dark slate background (`#0f172a`) with `#334155` border.
+
+**`VisitMapPanel` props:**
+
+```tsx
+<VisitMapPanel
+  customers={filteredCustomers}       // only customers with lat/lng
+  selectedId={selectedId}
+  mapHeight={MAP_H}                   // Math.round(height * 0.30)
+  collapsed={mapCollapsed}
+  loading={customersLoading}
+  mapRef={mapRef}
+  initialRegion={initialRegion}
+  onSelectCustomer={handleSelectCustomer}
+  onToggleCollapse={setMapCollapsed}
+/>
+```
+
+- Collapsed state renders a pressable bar with customer count and ▼ chevron
+- Expanded state renders the full `MapView` with subscription-colored pins, a count badge (top-end), and a "▲ Hide map" button (bottom-start)
+- Web platform renders a fallback placeholder (no `react-native-maps` on web)
+- Pin color: selected → `cfg.color` bg + white text + scale 1.15; unselected → `cfg.bg` bg + `cfg.color` text
+
+**`VisitRowProps` interface** (shared by all three row components):
+
+```ts
+interface VisitRowProps {
+  visit:    CustomerVisit;
+  userId:   string;
+  isAdmin:  boolean;
+  onEdit:   (v: CustomerVisit) => void;
+  onDelete: (id: string) => void;
+  c:        ReturnType<typeof useThemeColors>;  // theme colors resolved by parent
+}
+```
+
+The parent (`CustomerVisitsScreen`) resolves `useThemeColors()` once and passes `c` down — row components do not call `useThemeColors()` themselves.
+
+**`SaveVisitModal`** — bottom-sheet modal for logging or editing a visit. Key features:
+
+- **Distance pill in header** — same dark slate styling (`#0f172a` bg, `#f8fafc` text) as `CustomerInfoCard`'s distance chip. Fetched once on open via `getForegroundPermissionsAsync()` (never prompts). Guarded by a `useRef(false)` flag so it only runs once per mount.
+- **Customer location mini-map** — 160dp tall, shown when `customer.latitude/longitude` are non-null and `Platform.OS !== 'web'`. Uses `react-native-maps` via lazy `require()` (same native-only pattern as other map components). Non-interactive (`scrollEnabled={false}`, `zoomEnabled={false}`, `pointerEvents="none"`). Shows two pins:
+  - Blue pin (`#2563eb`) — customer location
+  - Green pin (`#16a34a`) — current GPS position (only when `gpsCoords` is available from `useVisitForm`)
+- **Map region** — centered on the customer; `latitudeDelta`/`longitudeDelta` expand to fit both pins when GPS is available: `Math.abs(gpsCoords.lat - customer.lat) * 2.5 + 0.01`
+- **Legend overlay** — `position: 'absolute'`, `bottom: 8, start: 8` (RTL-safe), semi-transparent background (`c.surface.primary + 'ee'`). Shows customer name, "You" label (when GPS available), and distance.
+- **Date row** — inline layout: date value text + "🕐 Use current time" button in a single bordered row (replaces the previous stacked layout).
+- **GPS coordinates** — displayed to 5 decimal places (was 4).
+
+```tsx
+// Map region pattern — fits both pins
+const mapRegion = hasCustomerLocation ? {
+  latitude:       customer.latitude!,
+  longitude:      customer.longitude!,
+  latitudeDelta:  gpsCoords
+    ? Math.abs(gpsCoords.latitude  - customer.latitude!)  * 2.5 + 0.01
+    : 0.01,
+  longitudeDelta: gpsCoords
+    ? Math.abs(gpsCoords.longitude - customer.longitude!) * 2.5 + 0.01
+    : 0.01,
+} : null;
+```
+
 ### Subscription Status Logic
 
 Mirrors `api/src/modules/customers/customers.controller.js` exactly:

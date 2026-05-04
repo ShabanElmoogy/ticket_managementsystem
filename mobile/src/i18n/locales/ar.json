@@ -41,7 +41,8 @@
     "users": "المستخدمون",
     "customers": "العملاء",
     "tasks": "المهام",
-    "menu": "القائمة"
+    "menu": "القائمة",
+    "visits": "الزيارات"
   },
   "common": {
     "loading": "جاري التحميل...",
@@ -550,6 +551,48 @@
       "tv": "تلفاز",
       "used": "مستخدم",
       "free": "متاح"
+    }
+  },
+  "visits": {
+    "title":                  "زيارات العملاء",
+    "mapButton":              "خريطة الزيارات",
+    "customersWithLocation":  "عملاء لديهم موقع",
+    "noCustomersWithLocation":"لا يوجد عملاء لديهم موقع محدد",
+    "mapNotAvailableWeb":     "الخريطة غير متاحة على الويب",
+    "visits":                 "زيارات",
+    "logVisit":               "تسجيل زيارة",
+    "logFirstVisit":          "تسجيل أول زيارة",
+    "noVisitsYet":            "لا توجد زيارات مسجلة بعد",
+    "selectCustomer":         "اختر عميلاً من الخريطة أو القائمة أعلاه",
+    "editVisit":              "تعديل الزيارة",
+    "searchCustomers":        "ابحث عن عملاء بالاسم أو الشركة…",
+    "searchVisits":           "ابحث في الزيارات بالملاحظات أو الاسم أو الحالة…",
+    "noVisitsMatch":          "لا توجد زيارات تطابق بحثك أو الفلتر",
+    "form": {
+      "status":               "الحالة",
+      "visitedAt":            "تاريخ ووقت الزيارة",
+      "visitedAtPlaceholder": "اختر التاريخ والوقت",
+      "useNow":               "استخدام الوقت الحالي",
+      "notes":                "ملاحظات",
+      "notesPlaceholder":     "ما تمت مناقشته، النتيجة، الخطوات التالية…",
+      "gpsCapture":           "تم التقاط GPS:",
+      "noGps":                "لا يوجد GPS — إذن الموقع غير ممنوح",
+      "save":                 "حفظ الزيارة",
+      "update":               "تحديث الزيارة"
+    },
+    "status": {
+      "PLANNED":   "مخطط",
+      "COMPLETED": "مكتمل",
+      "CANCELLED": "ملغى",
+      "NO_SHOW":   "لم يحضر"
+    },
+    "messages": {
+      "created": "تم تسجيل الزيارة بنجاح",
+      "updated": "تم تحديث الزيارة بنجاح",
+      "deleted": "تم حذف الزيارة بنجاح",
+      "errorCreate": "خطأ في تسجيل الزيارة",
+      "errorUpdate": "خطأ في تحديث الزيارة",
+      "errorDelete": "خطأ في حذف الزيارة"
     }
   },
   "settings": {

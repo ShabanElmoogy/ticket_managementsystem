@@ -41,7 +41,8 @@
     "users": "Users",
     "customers": "Customers",
     "tasks": "Tasks",
-    "menu": "Menu"
+    "menu": "Menu",
+    "visits": "Visits"
   },
   "common": {
     "loading": "Loading...",
@@ -559,6 +560,48 @@
       "tv": "TV",
       "used": "used",
       "free": "free"
+    }
+  },
+  "visits": {
+    "title":                  "Customer Visits",
+    "mapButton":              "Visit Map",
+    "customersWithLocation":  "customers with location",
+    "noCustomersWithLocation":"No customers have a location set",
+    "mapNotAvailableWeb":     "Map not available on web",
+    "visits":                 "visits",
+    "logVisit":               "Log Visit",
+    "logFirstVisit":          "Log First Visit",
+    "noVisitsYet":            "No visits recorded yet",
+    "selectCustomer":         "Select a customer from the map or list above",
+    "editVisit":              "Edit Visit",
+    "searchCustomers":        "Search customers by name or company…",
+    "searchVisits":           "Search visits by notes, name, status…",
+    "noVisitsMatch":          "No visits match your search or filter",
+    "form": {
+      "status":               "Status",
+      "visitedAt":            "Visit Date & Time",
+      "visitedAtPlaceholder": "Select date and time",
+      "useNow":               "Use current time",
+      "notes":                "Notes",
+      "notesPlaceholder":     "What was discussed, outcome, next steps…",
+      "gpsCapture":           "GPS captured:",
+      "noGps":                "No GPS — location permission not granted",
+      "save":                 "Save Visit",
+      "update":               "Update Visit"
+    },
+    "status": {
+      "PLANNED":   "Planned",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "NO_SHOW":   "No Show"
+    },
+    "messages": {
+      "created": "Visit logged successfully",
+      "updated": "Visit updated successfully",
+      "deleted": "Visit deleted successfully",
+      "errorCreate": "Error logging visit",
+      "errorUpdate": "Error updating visit",
+      "errorDelete": "Error deleting visit"
     }
   },
   "settings": {

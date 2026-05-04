@@ -4,6 +4,7 @@ import { authenticateToken, requireTenantAdmin } from '../../middleware/auth.js'
 import { enforceTenantScope, requireTenantScopeMiddleware } from '../../utils/tenantUtils.js';
 import { validate } from '../../middleware/validate.js';
 import { createCustomerSchema, updateCustomerSchema, assignApplicationSchema } from './customers.validation.js';
+import visitsRoutes from './customerVisits/customerVisits.routes.js';
 
 const router = express.Router();
 
@@ -17,5 +18,8 @@ router.put('/:id',    authenticateToken, requireTenantScopeMiddleware, requireTe
 router.delete('/:id', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, customersController.deleteCustomer);
 
 router.delete('/:customerId/applications/:applicationId', authenticateToken, requireTenantScopeMiddleware, requireTenantAdmin, customersController.removeApplication);
+
+// Nested visits routes — /customers/:customerId/visits
+router.use('/:customerId/visits', visitsRoutes);
 
 export default router;

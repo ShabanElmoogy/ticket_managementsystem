@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen        from '@/src/features/admin/shared/AdminCrudScreen';
@@ -6,18 +7,24 @@ import { ConfirmDeleteDialog }    from '@/src/shared/components';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useToast }           from '@/src/shared/hooks/useToast';
 import { useErrorHandler }    from '@/src/shared/hooks/useErrorHandler';
+import { useThemeColors }     from '@/src/constants/theme';
 import { customersKeys } from '@/src/features/admin/customers/api/customers';
 import CustomerDetailScreen from '@/src/features/admin/customers/components/CustomerDetailScreen';
 import CustomerForm from '@/src/features/admin/customers/components/CustomerForm';
+import CustomerVisitsScreen from '@/src/features/admin/customers/components/CustomerVisitsScreen';
 import { useCustomers } from '@/src/features/admin/customers/hooks/useCustomers';
 import type { Customer, CreateCustomerData } from '@/src/services/api/types';
 
 const CustomersScreen: React.FC = () => {
   const { t }       = useTranslation();
+  const c           = useThemeColors();
   const toast       = useToast();
   const queryClient = useQueryClient();
   const { handleError } = useErrorHandler();
   const { f, columns, exporting, handleExport, selectedId, setSelectedId } = useCustomers();
+
+  // ── Visits map view ────────────────────────────────────────────────────────
+  const [showVisits, setShowVisits] = useState(false);
 
   // ── Detail → Edit state ────────────────────────────────────────────────────
   const [editingFromDetail,  setEditingFromDetail]  = useState<Customer | null>(null);
@@ -51,6 +58,15 @@ const CustomersScreen: React.FC = () => {
       metadata: { errorId, componentStack: errorInfo.componentStack }
     });
   };
+
+  // ── Visits map view ────────────────────────────────────────────────────────
+  if (showVisits) {
+    return (
+      <FeatureErrorBoundary featureName="CustomerVisits" onError={handleFeatureError}>
+        <CustomerVisitsScreen onClose={() => setShowVisits(false)} />
+      </FeatureErrorBoundary>
+    );
+  }
 
   // ── Detail view ────────────────────────────────────────────────────────────
   if (selectedId && !editingFromDetail) {
@@ -100,42 +116,64 @@ const CustomersScreen: React.FC = () => {
   // ── List view ───────────────────────────────────────────────────────────────
   return (
     <FeatureErrorBoundary featureName="Customers" onError={handleFeatureError}>
-      <AdminCrudScreen<Customer>
-        title={t('customers.title')}
-        icon="👥"
-        itemType={t('customers.itemType')}
-        entities={f.entities}
-        loading={f.loading}
-        columns={columns}
-        searchFields={['name', 'email', 'phone']}
-        getItemName={(c) => c.name}
-        onDelete={(id) => f.remove(id)}
-        onRefresh={f.refetch}
-        onExport={handleExport}
-        exporting={exporting}
-        searchPlaceholder={t('customers.searchPlaceholder')}
-        emptyMessage={t('customers.emptyMessage')}
-        emptyFilteredMessage={t('customers.emptyFilteredMessage')}
-        addLabel={t('customers.addTitle')}
-        exportLabel={t('common.exportPdf')}
-        exportingLabel={t('common.exporting')}
-        refreshLabel={t('common.refresh')}
-        refreshingLabel={t('common.refreshing')}
-        deleteSuccessMessage={t('customers.messages.deleted')}
-        onRowPress={(customer) => setSelectedId(customer.id)}
-        renderForm={(item, onClose) => (
-          <CustomerForm
-            item={item}
-            onClose={onClose}
-            submitting={f.ui.submitting}
-            mode="page"
-            onSave={async (data: CreateCustomerData) => {
-              if (item) await f.update(item.id, data);
-              else      await f.create(data);
-            }}
-          />
-        )}
-      />
+      <View style={{ flex: 1 }}>
+        {/* Visit Map shortcut bar */}
+        <View style={{ backgroundColor: c.surface.primary, borderBottomWidth: 1, borderBottomColor: c.border.primary, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <Pressable
+            onPress={() => setShowVisits(true)}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center', gap: 8,
+              paddingHorizontal: 14, paddingVertical: 9,
+              borderRadius: 10, borderWidth: 1,
+              backgroundColor: pressed ? '#1d4ed8' : '#2563eb',
+              borderColor: '#1d4ed8',
+              alignSelf: 'flex-start',
+            })}
+            accessibilityRole="button"
+          >
+            <Text style={{ fontSize: 16 }}>🗺️</Text>
+            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+              {t('visits.mapButton')}
+            </Text>
+          </Pressable>
+        </View>
+        <AdminCrudScreen<Customer>
+          title={t('customers.title')}
+          icon="👥"
+          itemType={t('customers.itemType')}
+          entities={f.entities}
+          loading={f.loading}
+          columns={columns}
+          searchFields={['name', 'email', 'phone']}
+          getItemName={(c) => c.name}
+          onDelete={(id) => f.remove(id)}
+          onRefresh={f.refetch}
+          onExport={handleExport}
+          exporting={exporting}
+          searchPlaceholder={t('customers.searchPlaceholder')}
+          emptyMessage={t('customers.emptyMessage')}
+          emptyFilteredMessage={t('customers.emptyFilteredMessage')}
+          addLabel={t('customers.addTitle')}
+          exportLabel={t('common.exportPdf')}
+          exportingLabel={t('common.exporting')}
+          refreshLabel={t('common.refresh')}
+          refreshingLabel={t('common.refreshing')}
+          deleteSuccessMessage={t('customers.messages.deleted')}
+          onRowPress={(customer) => setSelectedId(customer.id)}
+          renderForm={(item, onClose) => (
+            <CustomerForm
+              item={item}
+              onClose={onClose}
+              submitting={f.ui.submitting}
+              mode="page"
+              onSave={async (data: CreateCustomerData) => {
+                if (item) await f.update(item.id, data);
+                else      await f.create(data);
+              }}
+            />
+          )}
+        />
+      </View>
     </FeatureErrorBoundary>
   );
 };

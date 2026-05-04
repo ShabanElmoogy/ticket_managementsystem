@@ -16,7 +16,8 @@
     { "key": "applicationId", "value": "" },
     { "key": "customerId",    "value": "" },
     { "key": "ticketId",      "value": "" },
-    { "key": "commentId",     "value": "" }
+    { "key": "commentId",     "value": "" },
+    { "key": "visitId",       "value": "" }
   ],
   "item": [
     {
@@ -929,6 +930,234 @@
               "raw": "{{baseUrl}}/customers/{{customerId}}/applications/{{applicationId}}",
               "host": ["{{baseUrl}}"],
               "path": ["customers", "{{customerId}}", "applications", "{{applicationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Visits",
+      "item": [
+        {
+          "name": "List Visits for Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Create Visit (COMPLETED with GPS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('visitId', json.id);",
+                  "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+                  "pm.test('Has id', () => pm.expect(json.id).to.be.a('string'));",
+                  "pm.test('Status is COMPLETED', () => pm.expect(json.status).to.equal('COMPLETED'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"visitedAt\": \"2025-05-04T10:00:00.000Z\",\n  \"notes\": \"Visited the customer office. Discussed renewal.\",\n  \"latitude\": 24.7136,\n  \"longitude\": 46.6753\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Create Visit (PLANNED, no GPS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) pm.collectionVariables.set('visitId', json.id);",
+                  "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+                  "pm.test('Status is PLANNED', () => pm.expect(json.status).to.equal('PLANNED'));",
+                  "pm.test('latitude is null', () => pm.expect(json.latitude).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PLANNED\",\n  \"visitedAt\": \"2025-05-10T09:00:00.000Z\",\n  \"notes\": \"Scheduled follow-up visit.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Create Visit (invalid — out-of-range latitude)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 400 for out-of-range latitude', () => pm.expect(pm.response.code).to.equal(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"latitude\": 91.0,\n  \"longitude\": 46.6753\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Get Visit by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits/{{visitId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits", "{{visitId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Visit (change status to COMPLETED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Status updated', () => pm.expect(json.status).to.equal('COMPLETED'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"notes\": \"Visit completed. Contract signed.\",\n  \"latitude\": 25.2048,\n  \"longitude\": 55.2708\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits/{{visitId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits", "{{visitId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Visit (clear GPS coordinates)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('latitude is null after clear', () => pm.expect(json.latitude).to.be.null);",
+                  "pm.test('longitude is null after clear', () => pm.expect(json.longitude).to.be.null);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": null,\n  \"longitude\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits/{{visitId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits", "{{visitId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Visit (TENANT_ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test('Has message', () => pm.expect(pm.response.json().message).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/visits/{{visitId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}", "visits", "{{visitId}}"]
             }
           }
         }

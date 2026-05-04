@@ -1,4 +1,5 @@
 export * from './auth/auth.schema.js';
+export * from './customers/customerVisits/customerVisits.schema.js';
 export * from './tickets/tickets.schema.js';
 export * from './customers/customers.schema.js';
 export * from './applications/applications.schema.js';

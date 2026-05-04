@@ -90,6 +90,8 @@ export const CUSTOMERS = {
   BY_ID:              (id: string)                              => `/customers/${id}`,
   REMOVE_APPLICATION: (customerId: string, applicationId: string) =>
     `/customers/${customerId}/applications/${applicationId}`,
+  VISITS:             (customerId: string)                      => `/customers/${customerId}/visits`,
+  VISIT_BY_ID:        (customerId: string, visitId: string)     => `/customers/${customerId}/visits/${visitId}`,
 } as const;
 
 // ── Applications ──────────────────────────────────────────────────────────────
@@ -231,7 +233,7 @@ export const API = {
 
 export const QUERY_KEYS = {
   TICKETS:      { all: ['tickets']                      as const, detail: (id: string) => ['tickets', id]      as const },
-  CUSTOMERS:    { all: ['customers']                    as const, detail: (id: string) => ['customers', id]    as const },
+  CUSTOMERS:    { all: ['customers']                    as const, detail: (id: string) => ['customers', id]    as const, visits: (id: string) => ['customers', id, 'visits'] as const },
   APPLICATIONS: { all: ['applications']                 as const, detail: (id: string) => ['applications', id] as const },
   USERS:        { all: ['users']                        as const, detail: (id: string) => ['users', id]        as const },
   TENANTS:      { all: ['tenants']                      as const, detail: (id: string) => ['tenants', id]      as const },
