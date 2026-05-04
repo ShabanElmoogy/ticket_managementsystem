@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
@@ -39,7 +40,7 @@ const AppHeaderBar: React.FC = () => {
           backgroundColor: 'rgba(255,255,255,0.18)',
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ fontSize: 16 }}>🎫</Text>
+          <Ionicons name="ticket-outline" size={18} color={c.text.inverse} />
         </View>
         <Text style={{ color: c.text.inverse, fontWeight: FontWeight.bold, fontSize: 18 }}>
           TicketFlow
@@ -47,21 +48,22 @@ const AppHeaderBar: React.FC = () => {
       </Pressable>
 
       {/* Right actions */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         {/* Notification bell */}
         <IconButton
-          icon="🔔"
+          icon="notifications-outline"
           accessibilityLabel={t('nav.notifications')}
           badgeCount={unreadCount}
+          iconColor={c.text.inverse}
+          backgroundColor="rgba(255,255,255,0.15)"
           onPress={() => router.push('/(app)/notifications' as any)}
         />
 
-        {/* User avatar — palette-aware color, matches drawer avatar */}
+        {/* User avatar */}
         <Pressable
           style={{
-            flexDirection: 'row', alignItems: 'center', gap: 8,
             backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6,
+            borderRadius: 12, paddingHorizontal: 8, paddingVertical: 6,
           }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
@@ -72,11 +74,13 @@ const AppHeaderBar: React.FC = () => {
           />
         </Pressable>
 
-        {/* Hamburger */}
+        {/* Hamburger / close */}
         <IconButton
-          icon={open ? '✕' : '☰'}
+          icon={open ? 'close-outline' : 'menu-outline'}
           accessibilityLabel={open ? t('common.close') : t('nav.menu')}
-          iconSize={18}
+          iconSize={22}
+          iconColor={c.text.inverse}
+          backgroundColor="rgba(255,255,255,0.15)"
           onPress={() => setOpen(!open)}
         />
       </View>

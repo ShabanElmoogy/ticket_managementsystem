@@ -1,15 +1,19 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { FontSize, FontWeight } from '@/src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import type { IoniconName } from '@/src/components/layout/header/navItems';
+import { FontSize, FontWeight, Radius } from '@/src/constants/theme';
 
 export interface NavItemProps {
-  icon:           string;
+  icon:           IoniconName;
+  /** Badge background color behind the icon */
+  iconBg:         string;
+  /** Icon color rendered on top of iconBg */
+  iconColor:      string;
   label:          string;
-  /** Text + icon color. Pass `c.text.primary` from the parent for theme-aware color. */
+  /** Label text color — defaults to theme text color passed from parent */
   color?:         string;
-  /** Divider line color. Pass `c.border.primary` from the parent for theme-aware color. */
   dividerColor?:  string;
-  /** Show a horizontal divider above this item */
   dividerBefore?: boolean;
   onPress?:       () => void;
 }
@@ -17,17 +21,18 @@ export interface NavItemProps {
 /**
  * NavItem — a single row in a navigation drawer.
  *
- * Modal-safe: no hooks. All colors resolved by the parent and passed as props.
- * RTL: inherits direction from the parent View's `direction` style.
+ * Renders a colored square icon badge (like iOS Settings / modern nav drawers)
+ * followed by the label text.
  *
- * Usage:
- *   <NavItem icon="🏠" label="Home" color={c.text.primary} dividerColor={c.border.primary} onPress={...} />
+ * Modal-safe: no hooks. All colors resolved by the parent and passed as props.
  */
 const NavItem: React.FC<NavItemProps> = ({
   icon,
+  iconBg,
+  iconColor,
   label,
   color         = '#18181b',
-  dividerColor  = 'rgba(0,0,0,0.10)',
+  dividerColor  = 'rgba(0,0,0,0.08)',
   dividerBefore = false,
   onPress,
 }) => (
@@ -39,14 +44,17 @@ const NavItem: React.FC<NavItemProps> = ({
       style={styles.container}
       onPress={onPress}
       disabled={!onPress}
-      android_ripple={{ color: 'rgba(0,0,0,0.08)', borderless: false }}
+      android_ripple={{ color: 'rgba(0,0,0,0.06)', borderless: false }}
       accessibilityRole="menuitem"
       accessibilityLabel={label}
     >
-      <Text style={styles.icon} accessibilityElementsHidden>
-        {icon}
-      </Text>
-      <Text style={[styles.label, { color }]}>
+      {/* Colored icon badge */}
+      <View style={[styles.iconBadge, { backgroundColor: iconBg }]}>
+        <Ionicons name={icon} size={18} color={iconColor} />
+      </View>
+
+      {/* Label */}
+      <Text style={[styles.label, { color }]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -56,24 +64,27 @@ const NavItem: React.FC<NavItemProps> = ({
 const styles = StyleSheet.create({
   divider: {
     marginHorizontal: 16,
-    marginVertical:   4,
-    height:           1,
+    marginVertical:   6,
+    height:           StyleSheet.hairlineWidth,
   },
   container: {
     flexDirection:     'row',
     alignItems:        'center',
     paddingHorizontal: 16,
-    paddingVertical:   12,
-    gap:               12,
+    paddingVertical:   11,
+    gap:               14,
   },
-  icon: {
-    fontSize:  FontSize['2xl'],
-    width:     24,
-    textAlign: 'center',
+  iconBadge: {
+    width:          38,
+    height:         38,
+    borderRadius:   Radius.lg,
+    alignItems:     'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize:   FontSize.md,
     fontWeight: FontWeight.medium,
+    flex:       1,
   },
 });
 

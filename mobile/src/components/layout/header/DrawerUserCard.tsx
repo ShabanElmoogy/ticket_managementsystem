@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage } from '@/src/i18n';
-import { useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
+import { useIsDark, FontSize, FontWeight, Radius, Spacing } from '@/src/constants/theme';
 import type { ThemeColors } from '@/src/constants/tokens';
-import { Avatar, Badge, ToggleButton } from '@/src/shared/components';
+import { Avatar, Badge } from '@/src/shared/components';
 
 interface Props {
   name:           string;
@@ -24,33 +25,23 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme, res
     if (switching) return;
     setSwitching(true);
     try {
-      const newLang = currentLang === 'en' ? 'ar' : 'en';
-      await changeLanguage(newLang);
+      await changeLanguage(currentLang === 'en' ? 'ar' : 'en');
     } finally {
       setSwitching(false);
     }
   };
 
   return (
-    <View style={{
-      paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border.primary,
-    }}>
+    <View style={[styles.container, { borderBottomColor: c.border.primary }]}>
       {/* Avatar + name row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <View style={styles.userRow}>
         <Avatar
           text={name}
           backgroundColor={c.interactive.primary}
           size={44}
         />
         <View style={{ flex: 1 }}>
-          <Text style={{
-            color: c.text.primary,
-            fontWeight: FontWeight.bold,
-            fontSize: FontSize.md,
-            textAlign: isRtl ? 'right' : 'left',
-          }}>
+          <Text style={[styles.name, { color: c.text.primary, textAlign: isRtl ? 'right' : 'left' }]}>
             {name}
           </Text>
           <Badge
@@ -63,24 +54,81 @@ const DrawerUserCard: React.FC<Props> = ({ name, role, isRtl, onToggleTheme, res
       </View>
 
       {/* Theme + language toggles */}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <ToggleButton
-          icon={isDark ? '☀️' : '🌙'}
-          label={isDark ? 'Light' : 'Dark'}
-          backgroundColor={c.surface.elevated}
-          textColor={c.text.primary}
+      <View style={styles.toggleRow}>
+        {/* Dark / Light toggle */}
+        <Pressable
+          style={[styles.toggleBtn, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}
           onPress={onToggleTheme}
-        />
-        <ToggleButton
-          label={currentLang === 'en' ? 'عربي' : 'EN'}
-          loading={switching}
-          backgroundColor={c.surface.elevated}
-          textColor={c.text.primary}
+          accessibilityRole="button"
+          accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <Ionicons
+            name={isDark ? 'sunny-outline' : 'moon-outline'}
+            size={16}
+            color={c.text.primary}
+          />
+          <Text style={[styles.toggleLabel, { color: c.text.primary }]}>
+            {isDark ? 'Light' : 'Dark'}
+          </Text>
+        </Pressable>
+
+        {/* Language toggle */}
+        <Pressable
+          style={[styles.toggleBtn, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}
           onPress={handleLanguageSwitch}
-        />
+          disabled={switching}
+          accessibilityRole="button"
+          accessibilityLabel="Switch language"
+        >
+          {switching ? (
+            <ActivityIndicator size="small" color={c.text.primary} />
+          ) : (
+            <Ionicons name="language-outline" size={16} color={c.text.primary} />
+          )}
+          <Text style={[styles.toggleLabel, { color: c.text.primary }]}>
+            {currentLang === 'en' ? 'عربي' : 'EN'}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop:          16,
+    paddingHorizontal:   16,
+    paddingBottom:       12,
+    borderBottomWidth:   1,
+  },
+  userRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            12,
+    marginBottom:   12,
+  },
+  name: {
+    fontWeight: FontWeight.bold,
+    fontSize:   FontSize.md,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap:           8,
+  },
+  toggleBtn: {
+    flex:            1,
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             6,
+    paddingVertical: Spacing.sm,
+    borderRadius:    Radius.lg,
+    borderWidth:     1,
+  },
+  toggleLabel: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+});
 
 export default DrawerUserCard;

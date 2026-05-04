@@ -36,6 +36,7 @@ const AppBottomNav: React.FC = () => {
             activeIcon={tab.activeIcon}
             label={t(tab.labelKey)}
             isActive={isActive}
+            accentColor={tab.accentColor}
             onPress={() => router.push(tab.route as any)}
           />
         );

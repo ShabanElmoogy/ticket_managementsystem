@@ -1,56 +1,34 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { IoniconName } from '@/src/components/layout/bottom-nav/tabItems';
 import { useThemeColors } from '@/src/constants/theme';
 
-// Opacity for inactive icon — distinct from disabled (0.45)
-const INACTIVE_ICON_OPACITY = 0.4;
+const INACTIVE_OPACITY = 0.45;
 
 export interface BottomNavItemProps {
-  /** Icon to show when inactive */
-  icon:         string;
-  /** Icon to show when active — falls back to `icon` if not provided */
-  activeIcon?:  string;
-  /** Label shown below the icon */
-  label:        string;
-  /** Whether this item is currently active */
-  isActive:     boolean;
-  /** Active accent color — defaults to interactive.primary from theme */
-  activeColor?: string;
-  /** On press handler */
-  onPress?:     () => void;
+  icon:          IoniconName;
+  activeIcon?:   IoniconName;
+  label:         string;
+  isActive:      boolean;
+  /** Per-tab accent color — used for active icon, label, and indicator bar */
+  accentColor?:  string;
+  onPress?:      () => void;
 }
 
 /**
- * BottomNavItem — a single tab in a bottom navigation bar.
+ * BottomNavItem — a single tab in the bottom navigation bar.
  *
- * @usage
- *   Used in: `AppBottomNav`
+ * Active state: filled icon in per-tab accent color + colored label + top indicator bar.
+ * Inactive state: outline icon at reduced opacity in muted text color.
  *
- * @variants
- *   - Default: emoji icon + label, inactive at 40% opacity
- *   - Active: full-opacity icon (swaps to `activeIcon` if provided) + accent-colored label
- *             + 24×2 px indicator bar pinned to the top of the hit area
- *
- * @example
- *   <BottomNavItem
- *     icon="🏠"
- *     activeIcon="🏡"
- *     label="Home"
- *     isActive={currentRoute === 'home'}
- *     onPress={() => router.push('/home')}
- *   />
- *
- * @modal-safety
- *   ❌ Not Modal-safe — calls `useThemeColors()` internally.
- *   Use only in screen/tab-bar contexts, never inside a `<Modal>` tree.
- *
- * Reusable: no dependency on routing or tab config.
+ * @modal-safety ❌ Not Modal-safe — calls useThemeColors() internally.
  */
 const BottomNavItem: React.FC<BottomNavItemProps> = ({
-  icon, activeIcon, label, isActive, activeColor, onPress,
+  icon, activeIcon, label, isActive, accentColor, onPress,
 }) => {
-  const c               = useThemeColors();
-  const finalActiveColor = activeColor ?? c.interactive.primary;
+  const c      = useThemeColors();
+  const accent = accentColor ?? c.interactive.primary;
 
   return (
     <Pressable
@@ -61,18 +39,28 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({
       accessibilityLabel={label}
       accessibilityState={{ selected: isActive }}
     >
-      {/* Active indicator bar — centered at top */}
+      {/* Active indicator bar */}
       {isActive && (
-        <View style={[styles.indicator, { backgroundColor: finalActiveColor }]} />
+        <View style={[styles.indicator, { backgroundColor: accent }]} />
       )}
 
       {/* Icon */}
-      <Text style={[styles.icon, { opacity: isActive ? 1 : INACTIVE_ICON_OPACITY }]}>
-        {isActive ? (activeIcon ?? icon) : icon}
-      </Text>
+      <Ionicons
+        name={isActive ? (activeIcon ?? icon) : icon}
+        size={24}
+        color={isActive ? accent : c.text.secondary}
+        style={{ opacity: isActive ? 1 : INACTIVE_OPACITY }}
+      />
 
       {/* Label */}
-      <Text style={[styles.label, { color: isActive ? finalActiveColor : c.text.secondary }]}>
+      <Text style={[
+        styles.label,
+        {
+          color:   isActive ? accent : c.text.secondary,
+          opacity: isActive ? 1 : INACTIVE_OPACITY,
+          fontWeight: isActive ? '600' : '400',
+        },
+      ]}>
         {label}
       </Text>
     </Pressable>
@@ -81,26 +69,22 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex:           1,
-    alignItems:     'center',
-    justifyContent: 'center',
-    gap:            2,
+    flex:            1,
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             3,
     paddingVertical: 8,
   },
   indicator: {
     position:     'absolute',
     top:          0,
     alignSelf:    'center',
-    width:        24,
-    height:       2,
+    width:        28,
+    height:       3,
     borderRadius: 999,
   },
-  icon: {
-    fontSize: 24,
-  },
   label: {
-    fontSize:   12,
-    fontWeight: '500',
+    fontSize: 11,
   },
 });
 

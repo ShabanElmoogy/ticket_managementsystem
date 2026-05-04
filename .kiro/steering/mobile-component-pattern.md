@@ -143,7 +143,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `AppEmptyState` | `feedback/AppEmptyState.tsx` | ✅ Yes (`useThemeColors`) | ✅ Yes — `useThemeColors()` called at component level, before any `<Modal>` renders | `DataCard` (`ListEmptyComponent` for grid and compact views), `ReportCard` |
 | `AppToast` | `feedback/AppToast.tsx` | ✅ Yes (`useIsDark`) | ❌ No — root layout only | `app/_layout.tsx` via `<Toast config={toastConfig} />` |
 | `BottomNavItem` | `navigation/BottomNavItem.tsx` | ✅ Yes (`useThemeColors`) | ❌ No — screens only | `AppBottomNav` |
-| `NavItem` | `navigation/NavItem.tsx` | ❌ No | ✅ Yes | `DrawerNavList` |
+| `NavItem` | `navigation/NavItem.tsx` | ❌ No | ✅ Yes | `DrawerNavList` — requires `iconBg` (badge bg color) and `iconColor` (icon color) props; all colors resolved by parent |
 | `IconButton` | `navigation/IconButton.tsx` | ❌ No | ✅ Yes | `AppHeaderBar` |
 | `HapticTab` | `platform/HapticTab.tsx` | ❌ No | ✅ Yes | Bottom tab navigator via `tabBarButton` screen option |
 | `IconSymbol` (iOS) | `platform/IconSymbol.ios.tsx` | ❌ No | ✅ Yes | Any component needing an icon on iOS — Metro auto-selects over `IconSymbol.tsx` |
