@@ -1,58 +1,124 @@
-import React, { useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
-import AdminFormModal, { type AdminFormModalProps } from '@/src/features/admin/shared/AdminFormModal';
+import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { ticketTemplatesApi, ticketTemplatesKeys, type TicketTemplatePayload } from '@/src/features/admin/templates/api/templates';
-import { AppTextInput, AppBadge } from '@/src/shared/components';
+import { AppTextInput, AppFormField, AppBadge } from '@/src/shared/components';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { useErrorHandler } from '@/src/shared/hooks/useErrorHandler';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
+import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
 import type { TicketTemplate } from '@/src/services/api/types/index';
 import type { ColDef } from '@/src/shared/components';
 
-// ── Inline form ───────────────────────────────────────────────────────────────
+// ── Schema ────────────────────────────────────────────────────────────────────
 
-const TemplateForm = ({ item, onClose, onSave, submitting }: {
+const createTemplateSchema = (t: (k: string, o?: any) => string) =>
+  z.object({
+    name: z.string().trim()
+      .min(2, t('validation.minLength', { field: t('common.name'), min: 2 }))
+      .max(100, t('validation.maxLength', { field: t('common.name'), max: 100 })),
+    description: z.string().trim().max(500).optional().or(z.literal('')),
+  });
+
+// ── Inline TemplateForm — follows unified form pattern ────────────────────────
+
+const TemplateForm: React.FC<{
   item:       TicketTemplate | null;
   onClose:    () => void;
   onSave:     (data: TicketTemplatePayload) => Promise<void>;
   submitting: boolean;
-}) => {
-  const { t } = useTranslation();
-  const [name,        setName]        = useState(item?.name        ?? '');
-  const [description, setDescription] = useState(item?.description ?? '');
+}> = ({ item, onClose, onSave, submitting }) => {
+  const { t }  = useTranslation();
+  const toast  = useToast();
 
-  const nameInputProps = {
-    label: t('templates.form.name'),
-    value: name,
-    onChangeText: setName,
-    placeholder: t('templates.form.namePlaceholder'),
-    autoCapitalize: 'words' as const,
+  // ── Duplicate detection ──────────────────────────────────────────────────
+  const isDuplicateError = useRef(false);
+
+  useEffect(() => {
+    const unsub = networkEvents.onOkPress(() => {
+      if (isDuplicateError.current) {
+        isDuplicateError.current = false;
+        onClose();
+      }
+    });
+    return () => { unsub(); };
+  }, [onClose]);
+
+  // ── RHF ──────────────────────────────────────────────────────────────────
+  const form = useForm({
+    resolver: zodResolver(createTemplateSchema(t)),
+    mode: 'onBlur',
+    defaultValues: {
+      name:        item?.name        ?? '',
+      description: item?.description ?? '',
+    },
+  });
+
+  const { control, handleSubmit, formState: { isSubmitting } } = form;
+
+  const firstInputRef  = useFocusInput({ inModal: true, enabled: true });
+  const descriptionRef = useRef<any>(null);
+
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const doSave = async (data: any) => {
+    try {
+      await onSave({ name: data.name, description: data.description || undefined });
+      // ✅ Toast BEFORE onClose
+      toast.success(item ? t('templates.messages.updated') : t('templates.messages.created'));
+      onClose();
+    } catch (err: any) {
+      const serverMsg: string =
+        err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
+      if (serverMsg.toLowerCase().includes('already exists')) {
+        isDuplicateError.current = true;
+        toast.error(t('templates.duplicateError.title'), t('templates.duplicateError.message'));
+        return;
+      }
+      // All other errors: NetworkErrorDialog handles automatically
+    }
   };
 
-  const descriptionInputProps = {
-    label: t('templates.form.description'),
-    value: description,
-    onChangeText: setDescription,
-    placeholder: t('templates.form.descriptionPlaceholder'),
-    autoCapitalize: 'sentences' as const,
-  };
-
-  const modalProps: AdminFormModalProps = {
-    open: true,
-    title: item ? t('templates.editTitle') : t('templates.addTitle'),
-    onClose,
-    onSubmit: () => onSave({ name, description: description || undefined }),
-    submitting,
-    children: (
-      <>
-        <AppTextInput {...nameInputProps} />
-        <AppTextInput {...descriptionInputProps} />
-      </>
-    ),
-  };
-
-  return <AdminFormModal {...modalProps} />;
+  return (
+    <AdminFormModal
+      open
+      title={item ? t('templates.editTitle') : t('templates.addTitle')}
+      onClose={onClose}
+      onSubmit={handleSubmit(doSave)}
+      submitting={submitting || isSubmitting}
+    >
+      <AppFormField name="name" control={control}>
+        <AppTextInput
+          inputRef={firstInputRef}
+          nextRef={descriptionRef}
+          label={t('templates.form.name')}
+          placeholder={t('templates.form.namePlaceholder')}
+          required
+          autoCapitalize="words"
+          maxLength={100}
+          showClearButton
+        />
+      </AppFormField>
+      <AppFormField name="description" control={control}>
+        <AppTextInput
+          inputRef={descriptionRef}
+          label={t('templates.form.description')}
+          placeholder={t('templates.form.descriptionPlaceholder')}
+          autoCapitalize="sentences"
+          maxLength={500}
+          showClearButton
+          multiline
+          numberOfLines={3}
+          blurOnSubmit
+        />
+      </AppFormField>
+    </AdminFormModal>
+  );
 };
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -95,12 +161,11 @@ const TemplatesScreen: React.FC = () => {
     },
   });
 
-  // ── Error handler for feature-level errors ─────────────────────────────────
   const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
-    handleError(error, { 
-      feature: 'templates', 
+    handleError(error, {
+      feature: 'templates',
       operation: 'feature-boundary',
-      metadata: { errorId, componentStack: errorInfo.componentStack }
+      metadata: { errorId, componentStack: errorInfo.componentStack },
     });
   };
 
@@ -130,16 +195,9 @@ const TemplatesScreen: React.FC = () => {
             onClose={onClose}
             submitting={f.ui.submitting}
             onSave={async (data) => {
-              try {
-                if (item) await f.update(item.id, data);
-                else      await f.create(data);
-                onClose();
-              } catch (error) {
-                handleError(error, { 
-                  feature: 'templates', 
-                  operation: item ? 'update' : 'create' 
-                });
-              }
+              // TemplateForm.doSave handles toast + duplicate detection + error
+              if (item) await f.update(item.id, data);
+              else      await f.create(data);
             }}
           />
         )}

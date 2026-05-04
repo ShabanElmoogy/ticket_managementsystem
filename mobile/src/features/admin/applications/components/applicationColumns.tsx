@@ -11,7 +11,7 @@ import type { TFunction } from 'i18next';
  */
 export function getApplicationColumns(t: TFunction): ColDef<Application>[] {
   return [
-    { field: 'name',    headerName: t('applications.columns.name'),    flex: 1,   sortable: true },
+    { field: 'name',    headerName: t('applications.columns.name'),    sortable: true },
     {
       field: 'version', headerName: t('applications.columns.version'), width: 90, sortable: true,
       renderCell: (row) => (

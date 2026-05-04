@@ -382,7 +382,6 @@ const styles = StyleSheet.create({
   charBadgeText: {
     fontSize:      FontSize.xs,
     fontWeight:    FontWeight.bold,
-    fontVariant:   ['tabular-nums'] as any,
     letterSpacing: 0.2,
   },
   inputWrapper: {

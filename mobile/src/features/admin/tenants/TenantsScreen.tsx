@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import AdminCrudScreen from '@/src/features/admin/shared/AdminCrudScreen';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { tenantsApi, tenantsKeys, type Tenant } from '@/src/features/admin/tenants/api/tenants';
-import { AppTextInput, AppBadge } from '@/src/shared/components';
+import { AppTextInput, AppFormField, AppBadge } from '@/src/shared/components';
 import { useAdminFeature } from '@/src/shared/hooks/useAdminFeature';
 import { useErrorHandler } from '@/src/shared/hooks/useErrorHandler';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
+import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
 import type { ColDef } from '@/src/shared/components';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -19,7 +25,16 @@ const STATUS_COLOR: Record<string, string> = {
 
 interface TenantFormData { name: string; slug: string; supportEmail: string; }
 
-// ── Inline form ───────────────────────────────────────────────────────────────
+// ── Schema ────────────────────────────────────────────────────────────────────
+
+const createTenantSchema = (t: (k: string, o?: any) => string) =>
+  z.object({
+    name:         z.string().trim().min(2, t('validation.minLength', { field: t('common.name'), min: 2 })).max(100),
+    slug:         z.string().trim().min(2).max(60).optional().or(z.literal('')),
+    supportEmail: z.string().trim().check(z.email(t('validation.invalidEmail'))).optional().or(z.literal('')),
+  });
+
+// ── Inline TenantForm — follows unified form pattern ─────────────────────────
 
 const TenantForm: React.FC<{
   item:       Tenant | null;
@@ -27,40 +42,100 @@ const TenantForm: React.FC<{
   onSave:     (data: TenantFormData) => Promise<void>;
   submitting: boolean;
 }> = ({ item, onClose, onSave, submitting }) => {
-  const { t } = useTranslation();
-  const [name,         setName]         = useState(item?.name         ?? '');
-  const [slug,         setSlug]         = useState(item?.slug         ?? '');
-  const [supportEmail, setSupportEmail] = useState(item?.supportEmail ?? '');
+  const { t }  = useTranslation();
+  const toast  = useToast();
+
+  // ── Duplicate detection ──────────────────────────────────────────────────
+  const isDuplicateError = useRef(false);
+
+  useEffect(() => {
+    const unsub = networkEvents.onOkPress(() => {
+      if (isDuplicateError.current) {
+        isDuplicateError.current = false;
+        onClose();
+      }
+    });
+    return () => { unsub(); };
+  }, [onClose]);
+
+  // ── RHF ──────────────────────────────────────────────────────────────────
+  const form = useForm({
+    resolver: zodResolver(createTenantSchema(t)),
+    mode: 'onBlur',
+    defaultValues: {
+      name:         item?.name         ?? '',
+      slug:         item?.slug         ?? '',
+      supportEmail: item?.supportEmail ?? '',
+    },
+  });
+
+  const { control, handleSubmit, formState: { isSubmitting, errors } } = form;
+
+  const firstInputRef = useFocusInput({ inModal: true, enabled: true });
+  const slugRef       = useRef<any>(null);
+  const emailRef      = useRef<any>(null);
+
+  // ── Submit ────────────────────────────────────────────────────────────────
+  const doSave = async (data: any) => {
+    try {
+      await onSave({ name: data.name, slug: data.slug || '', supportEmail: data.supportEmail || '' });
+      // ✅ Toast BEFORE onClose
+      toast.success(item ? t('tenants.messages.updated') : t('tenants.messages.created'));
+      onClose();
+    } catch (err: any) {
+      const serverMsg: string =
+        err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
+      if (serverMsg.toLowerCase().includes('already exists')) {
+        isDuplicateError.current = true;
+        toast.error(t('tenants.duplicateError.title'), t('tenants.duplicateError.message'));
+        return;
+      }
+      // All other errors: NetworkErrorDialog handles automatically
+    }
+  };
 
   return (
     <AdminFormModal
       open
       title={item ? t('tenants.editTitle') : t('tenants.addTitle')}
       onClose={onClose}
-      onSubmit={() => onSave({ name, slug, supportEmail })}
-      submitting={submitting}
+      onSubmit={handleSubmit(doSave)}
+      submitting={submitting || isSubmitting}
     >
-      <AppTextInput
-        label={t('tenants.form.name')}
-        value={name}
-        onChangeText={setName}
-        placeholder={t('tenants.form.namePlaceholder')}
-        autoCapitalize="words"
-      />
-      <AppTextInput
-        label={t('tenants.form.slug')}
-        value={slug}
-        onChangeText={setSlug}
-        placeholder={t('tenants.form.slugPlaceholder')}
-        autoCapitalize="none"
-      />
-      <AppTextInput
-        label={t('tenants.form.supportEmail')}
-        value={supportEmail}
-        onChangeText={setSupportEmail}
-        fieldType="email"
-        placeholder={t('tenants.form.supportEmailPlaceholder')}
-      />
+      <AppFormField name="name" control={control}>
+        <AppTextInput
+          inputRef={firstInputRef}
+          nextRef={slugRef}
+          label={t('tenants.form.name')}
+          placeholder={t('tenants.form.namePlaceholder')}
+          required
+          autoCapitalize="words"
+          maxLength={100}
+          showClearButton
+        />
+      </AppFormField>
+      <AppFormField name="slug" control={control}>
+        <AppTextInput
+          inputRef={slugRef}
+          nextRef={emailRef}
+          label={t('tenants.form.slug')}
+          placeholder={t('tenants.form.slugPlaceholder')}
+          autoCapitalize="none"
+          maxLength={60}
+          showClearButton
+        />
+      </AppFormField>
+      <AppFormField name="supportEmail" control={control}>
+        <AppTextInput
+          inputRef={emailRef}
+          label={t('tenants.form.supportEmail')}
+          placeholder={t('tenants.form.supportEmailPlaceholder')}
+          fieldType="email"
+          maxLength={150}
+          showClearButton
+          blurOnSubmit
+        />
+      </AppFormField>
     </AdminFormModal>
   );
 };
@@ -108,12 +183,11 @@ const TenantsScreen: React.FC = () => {
     },
   });
 
-  // ── Error handler for feature-level errors ─────────────────────────────────
   const handleFeatureError = (error: Error, errorInfo: any, errorId: string) => {
-    handleError(error, { 
-      feature: 'tenants', 
+    handleError(error, {
+      feature: 'tenants',
       operation: 'feature-boundary',
-      metadata: { errorId, componentStack: errorInfo.componentStack }
+      metadata: { errorId, componentStack: errorInfo.componentStack },
     });
   };
 
@@ -143,16 +217,9 @@ const TenantsScreen: React.FC = () => {
             onClose={onClose}
             submitting={f.ui.submitting}
             onSave={async (data) => {
-              try {
-                if (item) await f.update(item.id, data);
-                else      await f.create(data);
-                onClose();
-              } catch (error) {
-                handleError(error, { 
-                  feature: 'tenants', 
-                  operation: item ? 'update' : 'create' 
-                });
-              }
+              // TenantForm.doSave handles toast + duplicate detection + error
+              if (item) await f.update(item.id, data);
+              else      await f.create(data);
             }}
           />
         )}

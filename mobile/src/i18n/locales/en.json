@@ -122,7 +122,6 @@
     "searchPlaceholder": "Search applications…",
     "emptyMessage": "No applications yet",
     "emptyFilteredMessage": "No applications match your search",
-    "notFound": "Application not found",
     "columns": {
       "name": "Name",
       "version": "Version",
@@ -146,8 +145,15 @@
       "errorCreate": "Error creating application",
       "errorUpdate": "Error updating application",
       "errorDelete": "Error deleting application",
-      "validationError": "Please fix the errors above",
       "validationError": "Please fix the errors before saving"
+    },
+    "duplicateError": {
+      "title": "Name Already Exists",
+      "message": "An application with this name already exists. Fix the name or dismiss to cancel."
+    },
+    "sections": {
+      "info": "Application Info",
+      "description": "Description"
     },
     "export": "Export PDF",
     "pdf": {
@@ -332,6 +338,15 @@
       "message": "\"{{name}}\" has tickets or comments. This will permanently delete the user and all their related data.",
       "confirmLabel": "Delete Everything"
     },
+    "duplicateError": {
+      "title": "Email Already Exists",
+      "message": "A user with this email already exists. Fix the email or dismiss to cancel."
+    },
+    "sections": {
+      "account": "Account",
+      "contact": "Contact",
+      "role": "Role"
+    },
     "pdf": {
       "totalUsers":   "Total Users",
       "admins":       "Admins",
@@ -369,6 +384,10 @@
       "errorCreate": "Error creating tenant",
       "errorUpdate": "Error updating tenant",
       "errorDelete": "Error deleting tenant"
+    },
+    "duplicateError": {
+      "title": "Slug Already Exists",
+      "message": "A tenant with this slug already exists. Fix the slug or dismiss to cancel."
     }
   },
   "templates": {
@@ -398,6 +417,10 @@
       "errorCreate": "Error creating template",
       "errorUpdate": "Error updating template",
       "errorDelete": "Error deleting template"
+    },
+    "duplicateError": {
+      "title": "Template Name Already Exists",
+      "message": "A template with this name already exists. Fix the name or dismiss to cancel."
     }
   },
   "tickets": {

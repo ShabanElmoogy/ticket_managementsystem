@@ -132,14 +132,14 @@ const ApplicationDetailScreen: React.FC<Props> = ({
                 <Text style={[styles.listTitle, { color: labelColor }]}>
                   👥  {t('applications.columns.customers')}
                 </Text>
-                <CountBadge count={app.customers.length} />
+                <CountBadge count={app.customers!.length} />
               </View>
-              {app.customers.map((ca: any, i: number) => (
+              {app.customers!.map((ca: any, i: number) => (
                 <View
                   key={ca.id}
                   style={[
                     styles.listRow,
-                    i < app.customers.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
+                    i < app.customers!.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
                   ]}
                 >
                   <View style={styles.listIcon}>
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
     borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
   },
-  versionText: { color: '#1d4ed8', fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  versionText: { color: '#1d4ed8', fontSize: 12, fontWeight: '700' },
   metaRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingTop: 12, borderTopWidth: 1,

@@ -1,17 +1,54 @@
-import React, { useCallback, useRef } from 'react';
-import { View, Text, Pressable } from 'react-native';
+/**
+ * UserForm.tsx
+ *
+ * Follows the unified form pattern (mobile-form-pattern.md).
+ * Reference: CustomerForm.tsx
+ *
+ * - RHF + zodResolver (no manual useState form state)
+ * - AppFormField for all text inputs
+ * - Controller for role ChipSelector
+ * - FormSection grouping
+ * - Duplicate email detection + specific toast
+ * - AdminFormPage with form= prop (dirty tracking, discard guard, scroll-to-error)
+ */
+
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useThemeColors } from '@/src/constants/theme';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
-import FormField      from '@/src/features/admin/shared/FormField';
-import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
-import { AppTextInput } from '@/src/shared/components';
+import FormSection    from '@/src/shared/components/forms/FormSection';
+import ChipSelector   from '@/src/shared/components/forms/ChipSelector';
+import { AppTextInput, AppFormField } from '@/src/shared/components';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
-import { useUserForm } from '../hooks/useUserForm';
-import { USER_ROLES, type UserRoleOption } from '../schemas/userSchema';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
+import { createUserFormSchema, USER_ROLES, type UserRoleOption } from '../schemas/userSchema';
 import { ROLE_CONFIG } from './userColumns';
 import type { User, CreateUserData } from '@/src/services/api/types';
+
+// ── Role options for ChipSelector ─────────────────────────────────────────────
+
+const ROLE_OPTIONS = USER_ROLES.map((role) => ({
+  value:       role,
+  label:       ROLE_CONFIG[role]?.label ?? role,
+  color:       ROLE_CONFIG[role]?.color,
+  bgColor:     ROLE_CONFIG[role]?.bg,
+}));
+
+// ── Linked stat config ────────────────────────────────────────────────────────
+
+const STAT_DEFS = [
+  { key: 'assignedTickets' as const, labelKey: 'users.detail.assignedTickets', color: Palette.blue700,  bg: '#eff6ff', border: '#bfdbfe' },
+  { key: 'createdTickets'  as const, labelKey: 'users.detail.createdTickets',  color: Palette.green700, bg: '#f0fdf4', border: '#bbf7d0' },
+  { key: 'comments'        as const, labelKey: 'users.detail.comments',        color: Palette.violet600, bg: '#f5f3ff', border: '#ddd6fe' },
+];
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   item:       User | null;
@@ -21,149 +58,195 @@ interface Props {
   mode?:      'page' | 'modal';
 }
 
-const UserForm: React.FC<Props> = ({
-  item, onClose, onSave, submitting, mode = 'page',
-}) => {
-  const { t }                  = useTranslation();
-  const { scrollToFirstError } = useFormScroll();
-  const c                      = useThemeColors();
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  const {
-    fields, errors, isDirty, firstErrorFieldId,
-    isSubmitting, handleChange, handleClear, handleSubmit,
-  } = useUserForm({ item, onSave, onClose });
+const UserForm: React.FC<Props> = ({ item, onClose, onSave, submitting, mode = 'page' }) => {
+  const { t }  = useTranslation();
+  const toast  = useToast();
+  const isEdit = !!item;
 
+  // ── Duplicate detection ────────────────────────────────────────────────────
+  const isDuplicateError = useRef(false);
+
+  useEffect(() => {
+    const unsub = networkEvents.onOkPress(() => {
+      if (isDuplicateError.current) {
+        isDuplicateError.current = false;
+        onClose();
+      }
+    });
+    return () => { unsub(); };
+  }, [onClose]);
+
+  // ── RHF setup ──────────────────────────────────────────────────────────────
+  const form = useForm({
+    resolver: zodResolver(createUserFormSchema(t, isEdit)),
+    mode: 'onBlur',
+    defaultValues: {
+      name:     item?.name  ?? '',
+      email:    item?.email ?? '',
+      password: '',
+      phone:    item?.phone ?? '',
+      role:     (item?.role as UserRoleOption) ?? 'EMPLOYEE',
+    },
+  });
+
+  const { control, handleSubmit, formState: { isSubmitting, errors } } = form;
+
+  // ── Keyboard chain ─────────────────────────────────────────────────────────
   const firstInputRef = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
+  const emailRef      = useRef<any>(null);
+  const passwordRef   = useRef<any>(null);
+  const phoneRef      = useRef<any>(null);
 
-  // Return-key chain: Name → Email → Password → Phone
-  const emailRef    = useRef<{ focus(): void } | null>(null);
-  const passwordRef = useRef<{ focus(): void } | null>(null);
-  const phoneRef    = useRef<{ focus(): void } | null>(null);
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  const doSave = async (data: any) => {
+    try {
+      await onSave({
+        name:     data.name,
+        email:    data.email,
+        // On edit: omit password when blank — backend treats absence as "no change"
+        ...(data.password ? { password: data.password } : isEdit ? {} : { password: '' }),
+        phone:    data.phone || undefined,
+        role:     data.role,
+      } as CreateUserData);
 
-  const onChangeName     = useCallback((v: string) => handleChange('name',     v), [handleChange]);
-  const onChangeEmail    = useCallback((v: string) => handleChange('email',    v), [handleChange]);
-  const onChangePassword = useCallback((v: string) => handleChange('password', v), [handleChange]);
-  const onChangePhone    = useCallback((v: string) => handleChange('phone',    v), [handleChange]);
+      // ✅ Toast BEFORE onClose — component unmounts on close
+      toast.success(isEdit ? t('users.messages.updated') : t('users.messages.created'));
+      onClose();
 
-  const onClearName  = useCallback(() => handleClear('name'),  [handleClear]);
-  const onClearEmail = useCallback(() => handleClear('email'), [handleClear]);
-  const onClearPhone = useCallback(() => handleClear('phone'), [handleClear]);
+    } catch (err: any) {
+      const serverMsg: string =
+        err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
 
-  const onSubmit = useCallback(async () => {
-    await handleSubmit();
-    if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
-  }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
+      if (serverMsg.toLowerCase().includes('already exists')) {
+        isDuplicateError.current = true;
+        toast.error(t('users.duplicateError.title'), t('users.duplicateError.message'));
+        return;
+      }
+      // All other errors: NetworkErrorDialog handles automatically
+    }
+  };
 
-  const formTitle       = item ? t('users.editTitle') : t('users.addTitle');
-  const isDisabled      = submitting || isSubmitting;
-  const isSubmittingAll = submitting || isSubmitting;
+  const formTitle  = isEdit ? t('users.editTitle') : t('users.addTitle');
+  const isDisabled = submitting || isSubmitting;
 
-  // Linked stats (edit mode only)
-  const assignedTickets = item?._count?.assignedTickets ?? 0;
-  const createdTickets  = item?._count?.createdTickets  ?? 0;
-  const comments        = item?._count?.comments        ?? 0;
-
+  // ── Fields JSX ─────────────────────────────────────────────────────────────
   const fields_jsx = (
     <>
-      {/* ── Required fields ── */}
-      <FormField fieldId="name">
-        <AppTextInput
-          inputRef={firstInputRef}
-          nextRef={emailRef}
-          label={t('users.form.name')}
-          value={fields.name}
-          onChangeText={onChangeName}
-          placeholder={t('users.form.namePlaceholder')}
-          error={errors.name}
-          autoCapitalize="words"
-          maxLength={100}
-          showClearButton
-          onClear={onClearName}
+      {/* Required fields */}
+      <FormSection
+        title={t('users.sections.account')}
+        icon="👤"
+        hasError={!!(errors.name || errors.email || errors.password)}
+      >
+        <AppFormField name="name" control={control}>
+          <AppTextInput
+            inputRef={firstInputRef}
+            nextRef={emailRef}
+            label={t('users.form.name')}
+            placeholder={t('users.form.namePlaceholder')}
+            required
+            autoCapitalize="words"
+            maxLength={100}
+            showClearButton
+          />
+        </AppFormField>
+
+        <AppFormField name="email" control={control}>
+          <AppTextInput
+            inputRef={emailRef}
+            nextRef={passwordRef}
+            label={t('users.form.email')}
+            placeholder={t('users.form.emailPlaceholder')}
+            required
+            fieldType="email"
+            maxLength={150}
+            showClearButton
+          />
+        </AppFormField>
+
+        <AppFormField name="password" control={control}>
+          <AppTextInput
+            inputRef={passwordRef}
+            nextRef={phoneRef}
+            label={isEdit ? t('users.form.passwordEdit') : t('users.form.password')}
+            placeholder={t('users.form.passwordPlaceholder')}
+            fieldType="password"
+            maxLength={100}
+            required={!isEdit}
+          />
+        </AppFormField>
+      </FormSection>
+
+      {/* Optional contact */}
+      <FormSection
+        title={t('users.sections.contact')}
+        icon="📞"
+        collapsible
+        hasError={!!errors.phone}
+      >
+        <AppFormField name="phone" control={control}>
+          <AppTextInput
+            inputRef={phoneRef}
+            label={t('users.form.phone')}
+            placeholder={t('users.form.phonePlaceholder')}
+            maxLength={30}
+            keyboardType="phone-pad"
+            showClearButton
+            blurOnSubmit
+          />
+        </AppFormField>
+      </FormSection>
+
+      {/* Role — ChipSelector via Controller */}
+      <FormSection
+        title={t('users.sections.role')}
+        icon="🔑"
+        last={!item}
+        hasError={!!errors.role}
+      >
+        <Controller
+          name="role"
+          control={control}
+          render={({ field: { value, onChange } }) => (
+            <ChipSelector
+              label={t('users.columns.role')}
+              options={ROLE_OPTIONS}
+              value={value}
+              onChange={onChange}
+            />
+          )}
         />
-      </FormField>
+      </FormSection>
 
-      <FormField fieldId="email">
-        <AppTextInput
-          inputRef={emailRef}
-          nextRef={passwordRef}
-          label={t('users.form.email')}
-          value={fields.email}
-          onChangeText={onChangeEmail}
-          placeholder={t('users.form.emailPlaceholder')}
-          error={errors.email}
-          fieldType="email"
-          maxLength={150}
-          showClearButton
-          onClear={onClearEmail}
-        />
-      </FormField>
-
-      <FormField fieldId="password">
-        <AppTextInput
-          inputRef={passwordRef}
-          nextRef={phoneRef}
-          label={item ? t('users.form.passwordEdit') : t('users.form.password')}
-          value={fields.password}
-          onChangeText={onChangePassword}
-          placeholder={t('users.form.passwordPlaceholder')}
-          error={errors.password}
-          fieldType="password"
-          maxLength={100}
-        />
-      </FormField>
-
-      <FormField fieldId="phone">
-        <AppTextInput
-          inputRef={phoneRef}
-          label={t('users.form.phone')}
-          value={fields.phone}
-          onChangeText={onChangePhone}
-          placeholder={t('users.form.phonePlaceholder')}
-          error={errors.phone}
-          maxLength={30}
-          keyboardType="phone-pad"
-          showClearButton
-          onClear={onClearPhone}
-          blurOnSubmit
-        />
-      </FormField>
-
-      {/* ── Role selector ── */}
-      <RoleSelector
-        value={fields.role}
-        onChange={(v) => handleChange('role', v)}
-        t={t}
-      />
-
-      {/* ── Linked stats (edit mode only) ── */}
+      {/* Linked stats — edit mode only */}
       {item && (
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.infoSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.info }}>{assignedTickets}</Text>
-            <Text style={{ fontSize: 11, color: c.intent.info, marginTop: 2 }}>{t('users.detail.assignedTickets')}</Text>
-          </View>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.successSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.success }}>{createdTickets}</Text>
-            <Text style={{ fontSize: 11, color: c.intent.success, marginTop: 2 }}>{t('users.detail.createdTickets')}</Text>
-          </View>
-          <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: c.intent.warningSurface, borderWidth: 1, borderColor: c.border.secondary, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: c.intent.warning }}>{comments}</Text>
-            <Text style={{ fontSize: 11, color: c.intent.warning, marginTop: 2 }}>{t('users.detail.comments')}</Text>
-          </View>
+        <View style={styles.statsRow}>
+          {STAT_DEFS.map((def) => (
+            <View key={def.key} style={[styles.statCard, { backgroundColor: def.bg, borderColor: def.border }]}>
+              <Text style={[styles.statValue, { color: def.color }]}>
+                {item._count?.[def.key] ?? 0}
+              </Text>
+              <Text style={[styles.statLabel, { color: def.color }]}>
+                {t(def.labelKey)}
+              </Text>
+            </View>
+          ))}
         </View>
       )}
     </>
   );
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (mode === 'page') {
     return (
       <AdminFormPage
         title={formTitle}
         onBack={onClose}
-        onSubmit={onSubmit}
-        submitting={isSubmittingAll}
-        submitDisabled={isDisabled}
-        isDirty={isDirty}
+        onSubmit={doSave}
+        submitting={isDisabled}
+        form={form}
         submitLabel={t('common.save')}
       >
         {fields_jsx}
@@ -176,9 +259,8 @@ const UserForm: React.FC<Props> = ({
       open
       title={formTitle}
       onClose={onClose}
-      onSubmit={onSubmit}
-      submitting={isSubmittingAll}
-      submitDisabled={isDisabled}
+      onSubmit={handleSubmit(doSave)}
+      submitting={isDisabled}
       submitLabel={t('common.save')}
     >
       {fields_jsx}
@@ -186,53 +268,13 @@ const UserForm: React.FC<Props> = ({
   );
 };
 
-// ── Role selector ─────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-interface SelectorProps {
-  value:    UserRoleOption;
-  onChange: (v: UserRoleOption) => void;
-  t:        (key: string) => string;
-}
-
-const RoleSelector: React.FC<SelectorProps> = ({ value, onChange, t }) => {
-  const c = useThemeColors();
-
-  const ROLE_LABELS: Record<UserRoleOption, string> = {
-    SUPER_ADMIN:  t('users.roles.superAdmin'),
-    TENANT_ADMIN: t('users.roles.tenantAdmin'),
-    EMPLOYEE:     t('users.roles.employee'),
-    PROGRAMMER:   t('users.roles.programmer'),
-  };
-
-  return (
-    <View style={{ marginBottom: 12 }}>
-      <Text style={{ fontSize: 13, fontWeight: '600', marginBottom: 8, color: c.text.secondary }}>
-        {t('users.columns.role')}
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {USER_ROLES.map((role) => {
-          const cfg     = ROLE_CONFIG[role];
-          const isActive = value === role;
-          return (
-            <Pressable
-              key={role}
-              onPress={() => onChange(role)}
-              style={{
-                paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
-                borderWidth: 1.5,
-                borderColor: isActive ? cfg.color : c.border.primary,
-                backgroundColor: isActive ? cfg.bg : c.surface.primary,
-              }}
-            >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: isActive ? cfg.color : c.text.secondary }}>
-                {ROLE_LABELS[role]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-};
+const styles = StyleSheet.create({
+  statsRow:  { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  statCard:  { flex: 1, padding: 12, borderRadius: Radius.xl, borderWidth: 1, alignItems: 'center' },
+  statValue: { fontSize: FontSize['3xl'], fontWeight: FontWeight.extrabold },
+  statLabel: { fontSize: FontSize.xs, marginTop: 3, fontWeight: FontWeight.medium, textAlign: 'center' },
+});
 
 export default UserForm;

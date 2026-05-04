@@ -827,6 +827,8 @@ Uses React Native's built-in `Share` API — no extra dependencies. `url` is iOS
 "customers.location.searchError"   → "Address search failed. Please try again."
 "customers.location.geocoding"     → "Looking up address…"
 "customers.location.nearMe"        → "Nearby"
+"customers.duplicateEmail.title"   → "Email Already Exists"
+"customers.duplicateEmail.message" → "A customer with this email address already exists"
 ```
 
 ---
@@ -919,6 +921,31 @@ assignProgrammer(id, programmerId)                // POST /tickets/:id/assign-pr
 
 **Password:** Required on create (min 6 chars), optional on edit (leave blank to keep existing)
 
+`UserForm` follows the unified form pattern (`mobile-form-pattern.md`) — RHF + `zodResolver`, `AppFormField` for text inputs, `Controller` for `ChipSelector` role picker, `FormSection` grouping, and duplicate email detection. The old `useUserForm` hook is no longer used.
+
+### Form sections
+
+| Section | Icon | Fields | Collapsible |
+|---|---|---|---|
+| Account | 👤 | Name · Email · Password | No (required) |
+| Contact | 📞 | Phone | Yes |
+| Role | 🔑 | Role (ChipSelector) | No |
+
+### Password omission on edit
+
+On edit, an empty password field means "no change". The `doSave` handler conditionally omits the field:
+
+```ts
+await onSave({
+  name:  data.name,
+  email: data.email,
+  // Omit password entirely on edit when blank — backend treats absence as "no change"
+  ...(data.password ? { password: data.password } : isEdit ? {} : { password: '' }),
+  phone: data.phone || undefined,
+  role:  data.role,
+} as CreateUserData);
+```
+
 ### Schema Pattern
 
 The Users schema uses an `isEdit` flag to conditionally require password:
@@ -1002,6 +1029,9 @@ Use this pattern for any detail screen where the full-detail endpoint is role-re
 "users.messages.deleted"           → "User deleted"
 "users.messages.errorDelete"       → "Error deleting user"
 "users.notFound"                   → "User not found"
+"users.sections.account"           → "Account"
+"users.sections.contact"           → "Contact"
+"users.sections.role"              → "Role"
 "users.columns.email"              → "Email"
 "users.columns.phone"              → "Phone"
 "users.columns.role"               → "Role"
@@ -1015,6 +1045,8 @@ Use this pattern for any detail screen where the full-detail endpoint is role-re
 "users.detail.reminders"           → "Reminders"
 "users.detail.reminderInterval"    → "Reminder Interval"
 "users.detail.whatsapp"            → "WhatsApp"
+"users.duplicateError.title"       → "Email Already Exists"
+"users.duplicateError.message"     → "A user with this email address already exists"
 "users.messages.forceDeleted"      → "User and all related data deleted"
 "users.forceDelete.title"          → "Force Delete User"
 "users.forceDelete.message"        → "This will permanently delete {{name}} and all associated tickets, comments, and activities."
@@ -1760,24 +1792,36 @@ Use descriptive `operation` values for different actions:
 
 ### Form save operations
 
-The `httpClient` interceptor automatically surfaces all API errors via the global `NetworkErrorDialog`. Form `doSave` handlers should use an **empty catch block** — do not re-handle API errors with `toast.error()` or custom dialogs, as the interceptor already handles them:
+The `httpClient` interceptor automatically surfaces all API errors via the global `NetworkErrorDialog`. Form `doSave` handlers should keep their catch block minimal — do not re-handle generic API errors with `toast.error()` or custom dialogs, as the interceptor already handles them.
+
+**Exception:** when a specific, actionable error needs a user-friendly toast (e.g. duplicate email), call `toast.error()` for that case only and let all other errors fall through to `NetworkErrorDialog`.
 
 ```ts
 const doSave = async (data: any) => {
   try {
     await onSave({ ...data } as CreateEntityData);
+    // ✅ Toast BEFORE onClose — component unmounts on close
     toast.success(item ? t('feature.messages.updated') : t('feature.messages.created'));
     onClose();
-  } catch {
-    // NetworkErrorDialog handles all API errors automatically via httpClient interceptor
+  } catch (err: any) {
+    // NetworkErrorDialog handles all API errors automatically via httpClient interceptor.
+    // Only add a toast here for specific, actionable errors the user needs to act on.
+    const serverMsg: string =
+      err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
+    if (serverMsg.toLowerCase().includes('already exists')) {
+      // ✅ Specific toast for duplicate so the user knows what happened
+      toast.error(t('feature.duplicateEmail.title'), t('feature.duplicateEmail.message'));
+    }
+    // All other errors are shown by NetworkErrorDialog — do not toast here
   }
 };
 ```
 
 **Rules:**
-- Never call `toast.error()` in a form save catch block — the interceptor already shows the error
-- Never show a custom dialog for specific API errors (e.g. duplicate email) — let the global dialog handle it
 - The success toast and `onClose()` are only called when `onSave` resolves without throwing
+- Do NOT add a generic `toast.error()` in the catch — the interceptor already shows the error
+- DO add a `toast.error()` for specific, user-actionable errors (e.g. duplicate email) — inspect the server message and only toast for that case
+- All other errors fall through silently to `NetworkErrorDialog`
 - `FeatureErrorBoundary` + `useErrorHandler` are still used for non-form async operations (fetch, export, delete)
 
 ---
@@ -1789,8 +1833,8 @@ const doSave = async (data: any) => {
 - [ ] Wrap all view states with `FeatureErrorBoundary`
 - [ ] Implement `handleFeatureError` for boundary errors
 - [ ] Use structured `handleError(error, { feature, operation })` in non-form async operations (fetch, export, delete)
-- [ ] Form `doSave` uses empty catch — `NetworkErrorDialog` handles API errors automatically
-- [ ] No `toast.error()` in form save catch blocks
+- [ ] Form `doSave` uses minimal catch — `NetworkErrorDialog` handles generic API errors automatically
+- [ ] `toast.error()` in catch only for specific actionable errors (e.g. duplicate email) — not for generic failures
 
 ### Files
 - [ ] `api/<feature>.ts` — service + singleton + query keys + `getOne`

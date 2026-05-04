@@ -1,153 +1,202 @@
-import React, { useCallback, useRef } from 'react';
-import { View, Text, TextInput } from 'react-native';
+/**
+ * ApplicationForm.tsx
+ *
+ * Follows the unified form pattern (mobile-form-pattern.md).
+ * Reference: CustomerForm.tsx
+ *
+ * - RHF + zodResolver (no manual useState form state)
+ * - AppFormField for all text inputs
+ * - FormSection grouping
+ * - AdminFormPage with form= prop (dirty tracking, discard guard, scroll-to-error)
+ */
+
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Palette, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import AdminFormPage  from '@/src/features/admin/shared/AdminFormPage';
 import AdminFormModal from '@/src/features/admin/shared/AdminFormModal';
-import FormField      from '@/src/features/admin/shared/FormField';
-import { useFormScroll } from '@/src/features/admin/shared/FormScrollContext';
-import { AppTextInput } from '@/src/shared/components';
+import FormSection    from '@/src/shared/components/forms/FormSection';
+import { AppTextInput, AppFormField } from '@/src/shared/components';
 import { useFocusInput } from '@/src/shared/hooks/useFocusInput';
-import { useApplicationForm } from '../hooks/useApplicationForm';
+import { useToast } from '@/src/shared/hooks/useToast';
+import { networkEvents } from '@/src/services/api/networkEvents';
+import { createApplicationFormSchema } from '../schemas/applicationSchema';
 import type { Application, CreateApplicationData } from '@/src/services/api/types';
 
+// ── Linked stat config ────────────────────────────────────────────────────────
+
+const STAT_DEFS = [
+  { key: 'tickets'   as const, labelKey: 'applications.columns.tickets',   color: Palette.blue700,  bg: '#eff6ff', border: '#bfdbfe' },
+  { key: 'customers' as const, labelKey: 'applications.columns.customers', color: Palette.green700, bg: '#f0fdf4', border: '#bbf7d0' },
+];
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
 interface Props {
-  item:        Application | null;
-  onClose:     () => void;
-  onSave:      (data: CreateApplicationData) => Promise<void>;
-  submitting:  boolean;
-  mode?:       'page' | 'modal';
+  item:       Application | null;
+  onClose:    () => void;
+  onSave:     (data: CreateApplicationData) => Promise<void>;
+  submitting: boolean;
+  mode?:      'page' | 'modal';
 }
 
-const ApplicationForm: React.FC<Props> = ({
-  item, onClose, onSave, submitting, mode = 'page',
-}) => {
-  const { t }                  = useTranslation();
-  const { scrollToFirstError } = useFormScroll();
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  const {
-    fields,
-    errors,
-    isDirty,
-    firstErrorFieldId,
-    isSubmitting,
-    handleChange,
-    handleClear,
-    handleSubmit,
-  } = useApplicationForm({ item, onSave, onClose });
+const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting, mode = 'page' }) => {
+  const { t }  = useTranslation();
+  const toast  = useToast();
+  const isEdit = !!item;
 
+  // ── Duplicate detection ────────────────────────────────────────────────────
+  const isDuplicateError = useRef(false);
+
+  useEffect(() => {
+    const unsub = networkEvents.onOkPress(() => {
+      if (isDuplicateError.current) {
+        isDuplicateError.current = false;
+        onClose();
+      }
+    });
+    return () => { unsub(); };
+  }, [onClose]);
+
+  // ── RHF setup ──────────────────────────────────────────────────────────────
+  const form = useForm({
+    resolver: zodResolver(createApplicationFormSchema(t)),
+    mode: 'onBlur',
+    defaultValues: {
+      name:        item?.name        ?? '',
+      version:     item?.version     ?? '',
+      description: item?.description ?? '',
+    },
+  });
+
+  const { control, handleSubmit, formState: { isSubmitting, errors } } = form;
+
+  // ── Keyboard chain ─────────────────────────────────────────────────────────
   const firstInputRef  = useFocusInput({ inModal: mode === 'modal', enabled: true, delay: mode === 'page' ? 100 : undefined });
-  const versionRef     = useRef<TextInput | null>(null);
-  const descriptionRef = useRef<TextInput | null>(null);
+  const versionRef     = useRef<any>(null);
+  const descriptionRef = useRef<any>(null);
 
-  const onChangeName        = useCallback((v: string) => handleChange('name', v),        [handleChange]);
-  const onChangeVersion     = useCallback((v: string) => handleChange('version', v),     [handleChange]);
-  const onChangeDescription = useCallback((v: string) => handleChange('description', v), [handleChange]);
-  const onClearName         = useCallback(() => handleClear('name'),        [handleClear]);
-  const onClearVersion      = useCallback(() => handleClear('version'),     [handleClear]);
-  const onClearDescription  = useCallback(() => handleClear('description'), [handleClear]);
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  const doSave = async (data: any) => {
+    try {
+      await onSave({
+        name:        data.name,
+        version:     data.version     || undefined,
+        description: data.description || undefined,
+      } as CreateApplicationData);
 
-  const onSubmit = useCallback(async () => {
-    await handleSubmit();
-    if (firstErrorFieldId) scrollToFirstError([firstErrorFieldId]);
-  }, [handleSubmit, firstErrorFieldId, scrollToFirstError]);
+      // ✅ Toast BEFORE onClose — component unmounts on close
+      toast.success(isEdit ? t('applications.messages.updated') : t('applications.messages.created'));
+      onClose();
 
-  const formTitle       = item ? t('applications.editTitle') : t('applications.addTitle');
-  const isDisabled      = submitting || isSubmitting;   // only disable while saving
-  const isSubmittingAll = submitting || isSubmitting;
+    } catch (err: any) {
+      const serverMsg: string =
+        err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
 
-  // ── Linked stats (edit mode only) ─────────────────────────────────────────
-  const linkedTickets   = item?._count?.tickets   ?? 0;
-  const linkedCustomers = item?._count?.customers ?? 0;
+      if (serverMsg.toLowerCase().includes('already exists')) {
+        isDuplicateError.current = true;
+        toast.error(t('applications.duplicateError.title'), t('applications.duplicateError.message'));
+        return;
+      }
+      // All other errors: NetworkErrorDialog handles automatically
+    }
+  };
 
-  // ── Shared fields ─────────────────────────────────────────────────────────
+  const formTitle  = isEdit ? t('applications.editTitle') : t('applications.addTitle');
+  const isDisabled = submitting || isSubmitting;
+
+  // ── Fields JSX ─────────────────────────────────────────────────────────────
   const fields_jsx = (
     <>
-      {/* ── Name ── */}
-      <FormField fieldId="name">
-        <AppTextInput
-          inputRef={firstInputRef}
-          nextRef={versionRef}
-          label={t('applications.form.name')}
-          value={fields.name}
-          onChangeText={onChangeName}
-          placeholder={t('applications.form.namePlaceholder')}
-          error={errors.name}
-          autoCapitalize="words"
-          maxLength={100}
-          showClearButton
-          onClear={onClearName}
-        />
-      </FormField>
+      {/* Required */}
+      <FormSection
+        title={t('applications.sections.info')}
+        icon="📱"
+        hasError={!!(errors.name || errors.version)}
+      >
+        <AppFormField name="name" control={control}>
+          <AppTextInput
+            inputRef={firstInputRef}
+            nextRef={versionRef}
+            label={t('applications.form.name')}
+            placeholder={t('applications.form.namePlaceholder')}
+            required
+            autoCapitalize="words"
+            maxLength={100}
+            showClearButton
+          />
+        </AppFormField>
 
-      {/* ── Version ── */}
-      <FormField fieldId="version">
-        <AppTextInput
-          inputRef={versionRef}
-          nextRef={descriptionRef}
-          label={t('applications.form.version')}
-          value={fields.version}
-          onChangeText={onChangeVersion}
-          placeholder={t('applications.form.versionPlaceholder')}
-          error={errors.version}
-          autoCapitalize="none"
-          maxLength={50}
-          showClearButton
-          onClear={onClearVersion}
-        />
-      </FormField>
+        <AppFormField name="version" control={control}>
+          <AppTextInput
+            inputRef={versionRef}
+            nextRef={descriptionRef}
+            label={t('applications.form.version')}
+            placeholder={t('applications.form.versionPlaceholder')}
+            autoCapitalize="none"
+            maxLength={50}
+            showClearButton
+          />
+        </AppFormField>
+      </FormSection>
 
-      {/* ── Description (multiline) ── */}
-      <FormField fieldId="description">
-        <AppTextInput
-          inputRef={descriptionRef}
-          label={t('applications.form.description')}
-          value={fields.description}
-          onChangeText={onChangeDescription}
-          placeholder={t('applications.form.descriptionPlaceholder')}
-          error={errors.description}
-          autoCapitalize="sentences"
-          maxLength={500}
-          showClearButton
-          onClear={onClearDescription}
-          multiline
-          numberOfLines={3}
-          blurOnSubmit
-        />
-      </FormField>
+      {/* Optional description */}
+      <FormSection
+        title={t('applications.sections.description')}
+        icon="📝"
+        collapsible
+        defaultCollapsed={!item?.description}
+        last={!item}
+        hasError={!!errors.description}
+      >
+        <AppFormField name="description" control={control}>
+          <AppTextInput
+            inputRef={descriptionRef}
+            label={t('applications.form.description')}
+            placeholder={t('applications.form.descriptionPlaceholder')}
+            autoCapitalize="sentences"
+            maxLength={500}
+            showClearButton
+            multiline
+            numberOfLines={3}
+            blurOnSubmit
+          />
+        </AppFormField>
+      </FormSection>
 
-      {/* ── Linked stats (edit mode only) ── */}
+      {/* Linked stats — edit mode only */}
       {item && (
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-          <View style={{
-            flex: 1, padding: 12, borderRadius: 10,
-            backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe',
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1d4ed8' }}>{linkedTickets}</Text>
-            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2 }}>{t('applications.columns.tickets')}</Text>
-          </View>
-          <View style={{
-            flex: 1, padding: 12, borderRadius: 10,
-            backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0',
-            alignItems: 'center',
-          }}>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#065f46' }}>{linkedCustomers}</Text>
-            <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2 }}>{t('applications.columns.customers')}</Text>
-          </View>
+        <View style={styles.statsRow}>
+          {STAT_DEFS.map((def) => (
+            <View key={def.key} style={[styles.statCard, { backgroundColor: def.bg, borderColor: def.border }]}>
+              <Text style={[styles.statValue, { color: def.color }]}>
+                {item._count?.[def.key] ?? 0}
+              </Text>
+              <Text style={[styles.statLabel, { color: def.color }]}>
+                {t(def.labelKey)}
+              </Text>
+            </View>
+          ))}
         </View>
       )}
     </>
   );
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (mode === 'page') {
     return (
       <AdminFormPage
         title={formTitle}
         onBack={onClose}
-        onSubmit={onSubmit}
-        submitting={isSubmittingAll}
-        submitDisabled={isDisabled}
-        isDirty={isDirty}
+        onSubmit={doSave}
+        submitting={isDisabled}
+        form={form}
         submitLabel={t('common.save')}
       >
         {fields_jsx}
@@ -160,14 +209,22 @@ const ApplicationForm: React.FC<Props> = ({
       open
       title={formTitle}
       onClose={onClose}
-      onSubmit={onSubmit}
-      submitting={isSubmittingAll}
-      submitDisabled={isDisabled}
+      onSubmit={handleSubmit(doSave)}
+      submitting={isDisabled}
       submitLabel={t('common.save')}
     >
       {fields_jsx}
     </AdminFormModal>
   );
 };
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  statsRow:  { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statCard:  { flex: 1, padding: 14, borderRadius: Radius.xl, borderWidth: 1, alignItems: 'center' },
+  statValue: { fontSize: FontSize['3xl'], fontWeight: FontWeight.extrabold },
+  statLabel: { fontSize: FontSize.xs, marginTop: 3, fontWeight: FontWeight.medium, textAlign: 'center' },
+});
 
 export default ApplicationForm;

@@ -91,13 +91,8 @@ const ApplicationsScreen: React.FC = () => {
           submitting={false}
           mode="page"
           onSave={async (data: CreateApplicationData) => {
-            try {
-              await f.update(editingFromDetail.id, data);
-              setEditingFromDetail(null);
-              setSelectedId(editingFromDetail.id); // return to detail after save
-            } catch (error) {
-              handleError(error, { feature: 'applications', operation: 'update' });
-            }
+            // ApplicationForm.doSave handles toast + error — just call the API
+            await f.update(editingFromDetail.id, data);
           }}
         />
       </FeatureErrorBoundary>
@@ -137,16 +132,9 @@ const ApplicationsScreen: React.FC = () => {
             submitting={f.ui.submitting}
             mode="page"
             onSave={async (data: CreateApplicationData) => {
-              try {
-                if (item) await f.update(item.id, data);
-                else      await f.create(data);
-                onClose();
-              } catch (error) {
-                handleError(error, { 
-                  feature: 'applications', 
-                  operation: item ? 'update' : 'create' 
-                });
-              }
+              // ApplicationForm.doSave handles toast + duplicate detection + error
+              if (item) await f.update(item.id, data);
+              else      await f.create(data);
             }}
           />
         )}

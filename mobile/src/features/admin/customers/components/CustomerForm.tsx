@@ -43,7 +43,7 @@ const CustomerForm: React.FC<Props> = ({
         onClose();
       }
     });
-    return unsub;
+    return () => { unsub(); };
   }, [onClose]);
 
   // ── RHF setup ──────────────────────────────────────────────────────────────
@@ -98,6 +98,7 @@ const CustomerForm: React.FC<Props> = ({
         latitude:              lat,
         longitude:             lng,
       } as CreateCustomerData);
+      // ✅ Toast BEFORE onClose — component unmounts on close
       toast.success(item ? t('customers.messages.updated') : t('customers.messages.created'));
       onClose();
     } catch (err: any) {
@@ -107,7 +108,10 @@ const CustomerForm: React.FC<Props> = ({
         err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
       if (serverMsg.toLowerCase().includes('already exists')) {
         isDuplicateError.current = true;
+        // ✅ Show a specific toast for duplicate so the user knows what happened
+        toast.error(t('customers.duplicateEmail.title'), t('customers.duplicateEmail.message'));
       }
+      // All other errors are shown by NetworkErrorDialog — do not toast here
     }
   };
 
