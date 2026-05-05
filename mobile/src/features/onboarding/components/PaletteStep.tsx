@@ -18,8 +18,8 @@ interface PaletteOptionConfig {
 const PALETTE_OPTIONS: PaletteOptionConfig[] = [
   { option: 'blue',   labelKey: 'onboarding.palette.blue',   primaryColor: Palette.blue600,    accentColor: '#93C5FD' },
   { option: 'orange', labelKey: 'onboarding.palette.orange', primaryColor: Palette.orange500,  accentColor: '#FCD34D' },
-  { option: 'green',  labelKey: 'onboarding.palette.green',  primaryColor: Palette.emerald600, accentColor: '#6EE7B7' },
-  { option: 'black',  labelKey: 'onboarding.palette.black',  primaryColor: Palette.neutral500, accentColor: Palette.neutral300 },
+  { option: 'green',  labelKey: 'onboarding.palette.green',  primaryColor: Palette.green700,   accentColor: Palette.green400 },
+  { option: 'black',  labelKey: 'onboarding.palette.black',  primaryColor: '#171717',          accentColor: '#a3a3a3' },
 ];
 
 interface Props {

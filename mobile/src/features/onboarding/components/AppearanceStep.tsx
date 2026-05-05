@@ -61,9 +61,9 @@ const AppearancePill: React.FC<PillProps> = ({ option, isActive, label, resolved
         style={[
           styles.pill,
           {
-            backgroundColor: isActive ? c.interactive.primary : 'transparent',
-            borderColor:     isActive ? c.interactive.primary : c.border.primary,
-            shadowColor:     c.interactive.primary,
+            backgroundColor: isActive ? c.buttons.primary.bg : 'transparent',
+            borderColor:     isActive ? c.buttons.primary.bg  : c.border.primary,
+            shadowColor:     c.buttons.primary.bg,
             shadowOpacity:   isActive ? 0.20 : 0,
             shadowRadius:    8,
             shadowOffset:    { width: 0, height: 3 },

@@ -4,7 +4,6 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 const { Animated } = require('react-native') as { Animated: any };
 import { Ionicons } from '@expo/vector-icons';
 import type { ThemeColors } from '@/src/constants/tokens';
-import { Palette } from '@/src/constants/tokens';
 import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
 
 interface LanguageOption {
@@ -46,8 +45,8 @@ const LanguagePill: React.FC<PillProps> = ({ option, isActive, resolvedColors: c
   const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
   const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 6 }).start();
 
-  const bgColor     = isActive ? c.interactive.primary : 'transparent';
-  const borderColor = isActive ? c.interactive.primary : c.border.primary;
+  const bgColor     = isActive ? c.buttons.primary.bg : 'transparent';
+  const borderColor = isActive ? c.buttons.primary.bg  : c.border.primary;
   const textColor   = isActive ? c.buttons.primary.text : c.text.secondary;
   const flagOpacity = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
 
@@ -65,7 +64,7 @@ const LanguagePill: React.FC<PillProps> = ({ option, isActive, resolvedColors: c
           {
             backgroundColor: bgColor,
             borderColor,
-            shadowColor:     c.interactive.primary,
+            shadowColor:     c.buttons.primary.bg,
             shadowOpacity:   isActive ? 0.20 : 0,
             shadowRadius:    8,
             shadowOffset:    { width: 0, height: 3 },
