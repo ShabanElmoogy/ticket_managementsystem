@@ -42,7 +42,6 @@ const DeviceInfoHeader: React.FC<Props> = ({ osVersion }) => {
             {t('deviceInfo.title')}
           </Text>
         </View>
-        <LanguageSwitcher />
       </View>
 
       {/* Bottom row — OS version */}

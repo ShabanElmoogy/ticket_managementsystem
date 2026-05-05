@@ -18,7 +18,9 @@ const DeviceInfoScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {sections.map((s) => (
-          <SectionCard key={s.title} section={s} />
+          <View key={s.title}>
+            <SectionCard section={s} />
+          </View>
         ))}
       </ScrollView>
     </View>
