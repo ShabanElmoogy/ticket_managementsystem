@@ -1,31 +1,29 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { ToggleBlock } from '../../types/types';
 
-interface Props { block: ToggleBlock; isDark: boolean; onChange: (patch: Partial<ToggleBlock>) => void; }
+interface Props { block: ToggleBlock; onChange: (patch: Partial<ToggleBlock>) => void; }
 
 const TOGGLE_COLOR = '#64748b';
 
-const ToggleEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const ToggleEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   const [open, setOpen] = useState(false);
 
   return (
     <View style={{
       borderRadius: 12, overflow: 'hidden',
-      borderWidth: 1.5, borderColor: isDark ? '#334155' : '#e2e8f0',
+      borderWidth: 1.5, borderColor: c.border.primary,
     }}>
-      {/* Summary row */}
       <Pressable
         onPress={() => setOpen((v) => !v)}
         style={({ pressed }) => ({
           flexDirection: 'row', alignItems: 'center', gap: 10,
           paddingHorizontal: 14, paddingVertical: 12,
-          backgroundColor: pressed
-            ? (isDark ? '#334155' : '#f1f5f9')
-            : (isDark ? '#1e293b' : '#f8fafc'),
+          backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
         })}
       >
-        {/* Arrow */}
         <View style={{
           width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
           backgroundColor: TOGGLE_COLOR + '20',
@@ -34,42 +32,37 @@ const ToggleEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             {open ? '▼' : '▶'}
           </Text>
         </View>
-
-        {/* Summary input */}
         <TextInput
           value={block.summary}
           onChangeText={(summary) => onChange({ summary })}
           placeholder="Toggle title…"
-          placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+          placeholderTextColor={c.border.secondary}
           style={{
             flex: 1, fontSize: 15, fontWeight: '600',
-            color: isDark ? '#e2e8f0' : '#1e293b',
+            color: c.text.primary,
           }}
         />
-
-        {/* Open/close hint */}
-        <Text style={{ fontSize: 10, color: isDark ? '#475569' : '#94a3b8' }}>
+        <Text style={{ fontSize: 10, color: c.text.muted }}>
           {open ? 'Collapse' : 'Expand'}
         </Text>
       </Pressable>
 
-      {/* Content */}
       {open && (
         <View style={{
-          borderTopWidth: 1, borderTopColor: isDark ? '#334155' : '#f1f5f9',
-          backgroundColor: isDark ? '#0f172a' : '#fff',
+          borderTopWidth: 1, borderTopColor: c.border.primary,
+          backgroundColor: c.surface.card,
           padding: 14,
         }}>
           <TextInput
             value={block.content}
             onChangeText={(content) => onChange({ content })}
             placeholder="Toggle content goes here…"
-            placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+            placeholderTextColor={c.border.secondary}
             multiline
             autoFocus
             style={{
               fontSize: 14, lineHeight: 22,
-              color: isDark ? '#e2e8f0' : '#1e293b',
+              color: c.text.primary,
               minHeight: 80,
             }}
           />

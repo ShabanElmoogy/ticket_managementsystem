@@ -1,24 +1,26 @@
 import React, { useMemo } from 'react';
+import { useThemeColors } from '@/src/constants/theme';
 import type { CustomerTicketsSummaryRow } from '@/src/features/admin/reports/types';
 import { AppDataTable, type ColDef, type SortState, W } from '@/src/shared/components';
 import { createBadgeColumn, createTotalColumn } from '@/src/shared/utils/tableUtils';
+import { Palette } from '@/src/constants/tokens';
 
 interface Props {
   rows: CustomerTicketsSummaryRow[];
-  isDark: boolean;
   sort: SortState;
   onSort: (field: string) => void;
 }
 
-const SummaryTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
+const SummaryTable: React.FC<Props> = ({ rows, sort, onSort }) => {
+  const c = useThemeColors();
   const columns = useMemo<ColDef<CustomerTicketsSummaryRow>[]>(() => [
     { field: 'customerName', headerName: 'Customer',     width: W.customer, align: 'left' },
-    createTotalColumn<CustomerTicketsSummaryRow>(isDark),
-    createBadgeColumn<CustomerTicketsSummaryRow>('open',       'Open',        '#f59e0b'),
-    createBadgeColumn<CustomerTicketsSummaryRow>('inProgress', 'In Progress', '#8b5cf6'),
-    createBadgeColumn<CustomerTicketsSummaryRow>('resolved',   'Resolved',    '#10b981'),
-    createBadgeColumn<CustomerTicketsSummaryRow>('closed',     'Closed',      '#64748b'),
-  ], [isDark]);
+    createTotalColumn<CustomerTicketsSummaryRow>(c),
+    createBadgeColumn<CustomerTicketsSummaryRow>('open',       'Open',        Palette.amber500),
+    createBadgeColumn<CustomerTicketsSummaryRow>('inProgress', 'In Progress', Palette.violet500),
+    createBadgeColumn<CustomerTicketsSummaryRow>('resolved',   'Resolved',    Palette.emerald500),
+    createBadgeColumn<CustomerTicketsSummaryRow>('closed',     'Closed',      Palette.zinc500),
+  ], [c]);
 
   return (
     <AppDataTable

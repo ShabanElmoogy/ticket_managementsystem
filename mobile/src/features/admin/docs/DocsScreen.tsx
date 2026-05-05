@@ -16,25 +16,25 @@ import { exportDocToPdf } from '@/src/features/admin/docs/utils/exportDocPdf';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
 import { useDirection } from '@/src/providers/DirectionProvider';
 import { useThemeColors } from '@/src/constants/theme';
-import { useUiStore } from '@/src/stores/uiStore';
 
 // ── Save status indicator ─────────────────────────────────────────────────────
 
-const SaveIndicator: React.FC<{ status: string; isDark: boolean }> = ({ status, isDark }) => {
+const SaveIndicator: React.FC<{ status: string }> = ({ status }) => {
+  const c = useThemeColors();
   if (status === 'idle') return null;
-  const cfg: Record<string, { text: string; color: string; bg: string }> = {
-    saving: { text: 'Saving…', color: '#f59e0b', bg: '#fffbeb' },
-    saved:  { text: '✓ Saved', color: '#10b981', bg: '#f0fdf4' },
-    error:  { text: '✗ Error', color: '#ef4444', bg: '#fef2f2' },
+  const cfg: Record<string, { text: string; color: string; surface: string }> = {
+    saving: { text: 'Saving…', color: c.intent.warning,  surface: c.intent.warningSurface },
+    saved:  { text: '✓ Saved', color: c.intent.success,  surface: c.intent.successSurface },
+    error:  { text: '✗ Error', color: c.intent.error,    surface: c.intent.errorSurface   },
   };
-  const c = cfg[status];
-  if (!c) return null;
+  const cfg_ = cfg[status];
+  if (!cfg_) return null;
   return (
     <View style={{
       paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-      backgroundColor: isDark ? c.color + '22' : c.bg,
+      backgroundColor: cfg_.surface,
     }}>
-      <Text style={{ fontSize: 11, color: c.color, fontWeight: '700' }}>{c.text}</Text>
+      <Text style={{ fontSize: 11, color: cfg_.color, fontWeight: '700' }}>{cfg_.text}</Text>
     </View>
   );
 };
@@ -42,8 +42,9 @@ const SaveIndicator: React.FC<{ status: string; isDark: boolean }> = ({ status, 
 // ── Inline title editor ───────────────────────────────────────────────────────
 
 const TitleEditor: React.FC<{
-  title: string; isDark: boolean; onRename: (t: string) => void;
-}> = ({ title, isDark, onRename }) => {
+  title: string; onRename: (t: string) => void;
+}> = ({ title, onRename }) => {
+  const c = useThemeColors();
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(title);
 
@@ -59,10 +60,10 @@ const TitleEditor: React.FC<{
         autoFocus
         style={{
           flex: 1, fontSize: 15, fontWeight: '700',
-          color: isDark ? '#f1f5f9' : '#0f172a',
-          backgroundColor: isDark ? '#334155' : '#f1f5f9',
+          color: c.text.primary,
+          backgroundColor: c.surface.elevated,
           borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
-          borderWidth: 1.5, borderColor: '#3b82f6',
+          borderWidth: 1.5, borderColor: c.border.focus,
         }}
       />
     );
@@ -70,10 +71,10 @@ const TitleEditor: React.FC<{
 
   return (
     <Pressable onPress={() => setEditing(true)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', flex: 1 }}>
+      <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', color: c.text.primary, flex: 1 }}>
         {title}
       </Text>
-      <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#94a3b8' }}>✎</Text>
+      <Text style={{ fontSize: 11, color: c.text.muted }}>✎</Text>
     </Pressable>
   );
 };
@@ -81,16 +82,14 @@ const TitleEditor: React.FC<{
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const DocsScreen: React.FC = () => {
-  const { colorMode } = useUiStore();
-  const isDark = colorMode === 'dark';
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const isWide = width >= 768;
   const { isRtl: isRTL } = useDirection();
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [exporting,   setExporting]   = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [exporting,     setExporting]     = useState(false);
+  const [searchOpen,    setSearchOpen]    = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const { templates, saveTemplate, deleteTemplate, instantiateTemplate } = useBlockTemplates();
@@ -156,20 +155,16 @@ const DocsScreen: React.FC = () => {
     }
   };
 
-  const bg          = c.surface.secondary;
-  const headerBg    = c.surface.primary;
-  const borderColor = c.border.primary;
-
   return (
     <FeatureErrorBoundary featureName="Docs">
-      <View style={{ flex: 1, backgroundColor: bg }}>
+      <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
 
       {/* ── Header ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingVertical: 10,
-        backgroundColor: headerBg,
-        borderBottomWidth: 1, borderBottomColor: borderColor,
+        backgroundColor: c.surface.primary,
+        borderBottomWidth: 1, borderBottomColor: c.border.primary,
         elevation: 2,
       }}>
         {!isWide && (
@@ -178,7 +173,7 @@ const DocsScreen: React.FC = () => {
             style={({ pressed }) => ({
               width: 36, height: 36, borderRadius: 10,
               alignItems: 'center', justifyContent: 'center',
-              backgroundColor: pressed ? (isDark ? '#475569' : '#e2e8f0') : (isDark ? '#334155' : '#f1f5f9'),
+              backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
             })}
           >
             <Text style={{ fontSize: 17 }}>📁</Text>
@@ -186,14 +181,14 @@ const DocsScreen: React.FC = () => {
         )}
 
         {currentDoc ? (
-          <TitleEditor title={currentDoc.title} isDark={isDark} onRename={renameCurrentDoc} />
+          <TitleEditor title={currentDoc.title} onRename={renameCurrentDoc} />
         ) : (
-          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: isDark ? '#475569' : '#94a3b8' }}>
+          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: c.text.muted }}>
             Documentation
           </Text>
         )}
 
-        <SaveIndicator status={saveStatus} isDark={isDark} />
+        <SaveIndicator status={saveStatus} />
 
         {/* Export PDF */}
         {currentDoc && (
@@ -203,12 +198,12 @@ const DocsScreen: React.FC = () => {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-              backgroundColor: pressed ? '#dc2626' : '#ef4444',
+              backgroundColor: pressed ? c.buttons.danger.pressed : c.buttons.danger.bg,
               opacity: exporting ? 0.6 : 1,
             })}
           >
             <Text style={{ fontSize: 13 }}>{exporting ? '⏳' : '📄'}</Text>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.buttons.danger.text }}>
               {exporting ? 'Exporting…' : 'PDF'}
             </Text>
           </Pressable>
@@ -221,13 +216,13 @@ const DocsScreen: React.FC = () => {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-              backgroundColor: preview ? '#3b82f6'
-                : pressed ? (isDark ? '#475569' : '#e2e8f0')
-                : (isDark ? '#334155' : '#f1f5f9'),
+              backgroundColor: preview
+                ? c.buttons.primary.bg
+                : pressed ? c.surface.elevated : c.surface.tertiary,
             })}
           >
             <Text style={{ fontSize: 13 }}>{preview ? '✏️' : '👁'}</Text>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: preview ? '#fff' : (isDark ? '#e2e8f0' : '#374151') }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: preview ? c.buttons.primary.text : c.text.secondary }}>
               {preview ? 'Edit' : 'Preview'}
             </Text>
           </Pressable>
@@ -240,16 +235,16 @@ const DocsScreen: React.FC = () => {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-              backgroundColor: pressed ? '#2563eb' : '#3b82f6',
+              backgroundColor: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg,
             })}
           >
             <Text style={{ fontSize: 13 }}>💾</Text>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>Save</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.buttons.primary.text }}>Save</Text>
           </Pressable>
         )}
 
         {/* Undo / Redo */}
-        {currentDoc && !preview && <UndoRedoButtons isDark={isDark} />}
+        {currentDoc && !preview && <UndoRedoButtons />}
       </View>
 
       {/* ── Body ── */}
@@ -260,7 +255,7 @@ const DocsScreen: React.FC = () => {
           <View style={{ width: 220 }}>
             <DocTreeSidebar
               tree={tree} docs={docs} currentDocId={currentDocId}
-              selectedTreeId={selectedTreeId} expanded={expanded} isDark={isDark}
+              selectedTreeId={selectedTreeId} expanded={expanded}
               onSelectDoc={(docId, nodeId) => { setCurrentDocId(docId); setSelectedTreeId(nodeId); }}
               onSelectFolder={setSelectedTreeId}
               onToggleExpand={toggleExpand}
@@ -275,12 +270,11 @@ const DocsScreen: React.FC = () => {
         {/* Editor / Preview */}
         <View style={{ flex: 1 }}>
           {preview ? (
-            <DocPreview blocks={currentDoc?.blocks ?? []} isDark={isDark} />
+            <DocPreview blocks={currentDoc?.blocks ?? []} />
           ) : (
             <DocEditor
               blocks={currentDoc?.blocks ?? []}
               hasDoc={!!currentDoc}
-              isDark={isDark}
               onUpdateBlock={(id, patch) => updateBlock(id, patch)}
               onRemoveBlock={removeBlock}
               onDuplicateBlock={duplicateBlock}
@@ -291,7 +285,7 @@ const DocsScreen: React.FC = () => {
             />
           )}
           {currentDoc && !preview && (
-            <BlockPalette onAdd={addBlock} isDark={isDark} horizontal
+            <BlockPalette onAdd={addBlock} horizontal
               templateCount={templates.length}
               onOpenTemplates={() => setTemplatesOpen(true)}
             />
@@ -299,7 +293,7 @@ const DocsScreen: React.FC = () => {
         </View>
 
         {isWide && currentDoc && !preview && (
-          <BlockPalette onAdd={addBlock} isDark={isDark} horizontal={false}
+          <BlockPalette onAdd={addBlock} horizontal={false}
             templateCount={templates.length}
             onOpenTemplates={() => setTemplatesOpen(true)}
           />
@@ -322,14 +316,14 @@ const DocsScreen: React.FC = () => {
                 width: DRAWER_W,
                 transform: [{ translateX: slideAnim }],
                 elevation: 16,
-                shadowColor: '#000',
+                shadowColor: c.shadow,
                 shadowOffset: { width: isRTL ? -4 : 4, height: 0 },
-                shadowOpacity: 0.25, shadowRadius: 12,
+                shadowOpacity: 1, shadowRadius: 12,
               }}
             >
               <DocTreeSidebar
                 tree={tree} docs={docs} currentDocId={currentDocId}
-                selectedTreeId={selectedTreeId} expanded={expanded} isDark={isDark}
+                selectedTreeId={selectedTreeId} expanded={expanded}
                 onSelectDoc={(docId, nodeId) => { setCurrentDocId(docId); setSelectedTreeId(nodeId); closeSidebar(); }}
                 onSelectFolder={setSelectedTreeId}
                 onToggleExpand={toggleExpand}
@@ -347,7 +341,6 @@ const DocsScreen: React.FC = () => {
       <TemplatesModal
         visible={templatesOpen}
         templates={templates}
-        isDark={isDark}
         onClose={() => setTemplatesOpen(false)}
         onDelete={deleteTemplate}
         onUse={(template) => {
@@ -360,11 +353,9 @@ const DocsScreen: React.FC = () => {
       <ContentSearchModal
         visible={searchOpen}
         docs={docs}
-        isDark={isDark}
         onClose={() => setSearchOpen(false)}
         onSelectDoc={(docId) => {
           setCurrentDocId(docId);
-          // find the tree node id for this doc
           const findNodeId = (nodes: typeof tree): string | null => {
             for (const n of nodes) {
               if (n.type === 'doc' && (n as any).docId === docId) return n.id;

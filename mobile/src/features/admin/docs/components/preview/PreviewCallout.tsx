@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import type { CalloutBlock } from '../../types/types';
-import { CALLOUT_CFG, type PreviewColors } from './previewUtils';
+import { CALLOUT_CFG, usePreviewColors } from './previewUtils';
+import { useIsDark } from '@/src/constants/theme';
 
-interface Props { block: CalloutBlock; isDark: boolean; colors: PreviewColors; }
+interface Props { block: CalloutBlock; }
 
-const PreviewCallout: React.FC<Props> = ({ block, isDark, colors }) => {
+const PreviewCallout: React.FC<Props> = ({ block }) => {
+  const isDark = useIsDark();
+  const colors = usePreviewColors();
   const cfg = CALLOUT_CFG[block.calloutType];
   return (
     <View style={{

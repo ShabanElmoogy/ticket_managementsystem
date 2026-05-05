@@ -6,11 +6,10 @@ interface Props {
   totalItems: number;
   totalUnfiltered: number;
   isFiltered: boolean;
-  isDark: boolean;
 }
 
 const ReportCardHeader: React.FC<Props> = ({
-  label, totalItems, totalUnfiltered, isFiltered, isDark,
+  label, totalItems, totalUnfiltered, isFiltered,
 }) => (
   <SectionHeader
     title={label}

@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { Palette } from '@/src/constants/tokens';
 import type { ReportType } from '@/src/features/admin/reports/types';
 import { CompactListRow, InitialAvatar } from '@/src/shared/components';
 
-interface Props { row: any; isDark: boolean; }
+interface Props { row: any; }
 
-const ReportCompactRow: React.FC<Props> = ({ row, isDark: _ }) => {
+const ReportCompactRow: React.FC<Props> = ({ row }) => {
   if (!row) return null;
   const type: ReportType = row._reportType;
   const name: string     = row.customerName ?? row.title ?? '—';
@@ -24,8 +25,8 @@ const ReportCompactRow: React.FC<Props> = ({ row, isDark: _ }) => {
       : '';
 
   const totalBadge = row.total != null && type !== 'tickets' ? (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: '#3b82f620' }}>
-      <Text style={{ fontSize: 11, fontWeight: '700', color: '#3b82f6' }}>{row.total}</Text>
+    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: Palette.blue500 + '20' }}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: Palette.blue500 }}>{row.total}</Text>
     </View>
   ) : undefined;
 

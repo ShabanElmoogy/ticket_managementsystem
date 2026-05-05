@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
+import { useIsDark } from '@/src/constants/theme';
 import type { CodeBlock } from '../../types/types';
 
 const LANGUAGES = [
@@ -17,10 +18,15 @@ const LANGUAGES = [
   { id: 'yaml',       label: 'YAML', color: '#10b981' },
 ];
 
-interface Props { block: CodeBlock; isDark: boolean; onChange: (patch: Partial<CodeBlock>) => void; }
+interface Props { block: CodeBlock; onChange: (patch: Partial<CodeBlock>) => void; }
 
-const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const CodeBlockEditor: React.FC<Props> = ({ block, onChange }) => {
+  const isDark     = useIsDark();
   const activeLang = LANGUAGES.find((l) => l.id === block.language) ?? LANGUAGES[0];
+
+  // Code editor always uses dark bg regardless of theme — it's a code terminal
+  const headerBg = isDark ? '#0f172a' : '#1e293b';
+  const codeBg   = isDark ? '#020617' : '#0f172a';
 
   return (
     <View style={{ borderRadius: 12, overflow: 'hidden', borderWidth: 1.5, borderColor: activeLang.color + '55' }}>
@@ -28,20 +34,17 @@ const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 12, paddingVertical: 8,
-        backgroundColor: isDark ? '#0f172a' : '#1e293b',
+        backgroundColor: headerBg,
       }}>
-        {/* Traffic lights */}
         <View style={{ flexDirection: 'row', gap: 5 }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#ef4444' }} />
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#f59e0b' }} />
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#10b981' }} />
         </View>
-        {/* Active language badge */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: activeLang.color }} />
           <Text style={{ fontSize: 12, fontWeight: '700', color: activeLang.color }}>{activeLang.label}</Text>
         </View>
-        {/* Line count */}
         <Text style={{ fontSize: 10, color: '#475569' }}>
           {block.code.split('\n').length} lines
         </Text>
@@ -50,7 +53,7 @@ const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       {/* Language selector */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
-        style={{ backgroundColor: isDark ? '#0f172a' : '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' }}
+        style={{ backgroundColor: headerBg, borderBottomWidth: 1, borderBottomColor: '#334155' }}
         contentContainerStyle={{ paddingHorizontal: 10, paddingVertical: 6, gap: 5, flexDirection: 'row' }}
       >
         {LANGUAGES.map((lang) => {
@@ -73,7 +76,7 @@ const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         })}
       </ScrollView>
 
-      {/* Code input */}
+      {/* Code input — always dark terminal style */}
       <TextInput
         value={block.code}
         onChangeText={(code) => onChange({ code })}
@@ -87,17 +90,16 @@ const CodeBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           fontFamily: 'monospace',
           fontSize: 13, lineHeight: 21,
           color: '#e2e8f0',
-          backgroundColor: isDark ? '#020617' : '#0f172a',
+          backgroundColor: codeBg,
           padding: 14,
           minHeight: 140,
         }}
       />
 
-      {/* Footer */}
       <View style={{
         flexDirection: 'row', justifyContent: 'flex-end',
         paddingHorizontal: 12, paddingVertical: 5,
-        backgroundColor: isDark ? '#0f172a' : '#1e293b',
+        backgroundColor: headerBg,
       }}>
         <Text style={{ fontSize: 10, color: '#334155' }}>{block.code.length} chars</Text>
       </View>

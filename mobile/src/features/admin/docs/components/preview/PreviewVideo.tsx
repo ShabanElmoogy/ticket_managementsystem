@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Video, ResizeMode } from 'expo-av';
+import { useThemeColors } from '@/src/constants/theme';
 import type { VideoBlock } from '../../types/types';
 import type { PreviewColors } from './previewUtils';
 
-interface Props { block: VideoBlock; isDark: boolean; colors: PreviewColors; }
+interface Props { block: VideoBlock; colors: PreviewColors; }
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
 const SERVER_ORIGIN = BASE_URL.replace(/\/api\/?$/, '');
@@ -78,9 +79,10 @@ const HostedVideoPlayer: React.FC<HostedVideoProps> = ({ uri, width, height }) =
 // ─────────────────────────────────────────────────────────────────────────────
 // PreviewVideo
 // ─────────────────────────────────────────────────────────────────────────────
-const PreviewVideo: React.FC<Props> = ({ block, isDark, colors }) => {
+const PreviewVideo: React.FC<Props> = ({ block, colors }) => {
   const [playing, setPlaying] = useState(false);
   const { width } = useWindowDimensions();
+  const c = useThemeColors();
 
   const playerWidth  = width - 35;
   const playerHeight = Math.round(playerWidth * 9 / 16);
@@ -97,7 +99,7 @@ const PreviewVideo: React.FC<Props> = ({ block, isDark, colors }) => {
       return (
         <View style={{
           height: 100, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+          backgroundColor: c.surface.tertiary,
           borderWidth: 1, borderColor: colors.borderColor,
         }}>
           <Text style={{ fontSize: 24 }}>🎬</Text>
@@ -167,8 +169,8 @@ const PreviewVideo: React.FC<Props> = ({ block, isDark, colors }) => {
     return (
       <View style={{
         height: 80, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: isDark ? '#1e293b' : '#fef2f2',
-        borderWidth: 1, borderColor: isDark ? '#334155' : '#fecaca',
+        backgroundColor: c.intent.errorSurface,
+        borderWidth: 1, borderColor: c.intent.error + '44',
       }}>
         <Text style={{ fontSize: 12, color: '#ef4444', fontWeight: '600' }}>
           ⚠️ Unsupported video URL

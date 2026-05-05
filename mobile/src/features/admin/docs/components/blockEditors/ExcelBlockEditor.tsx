@@ -6,13 +6,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ExcelBlock } from '../../types/types';
 import ExcelViewer from '../shared/ExcelViewer';
 
 interface Props {
   block: ExcelBlock;
-  isDark: boolean;
   onChange: (patch: Partial<ExcelBlock>) => void;
 }
 
@@ -69,7 +69,9 @@ async function deleteFileFromServer(url: string): Promise<void> {
   }
 }
 
-const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const ExcelBlockEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c      = useThemeColors();
+  const isDark = useIsDark();
   const [tab, setTab]             = useState<Tab>(block.url?.startsWith('/uploads/') ? 'upload' : 'link');
   const [uploading, setUploading] = useState(false);
   const [expanded,   setExpanded]   = useState(false);
@@ -79,11 +81,11 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const viewerWidth  = width - 80;
   const viewerHeight = 400;
 
-  const bg     = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const text   = isDark ? '#e2e8f0' : '#1e293b';
-  const muted  = isDark ? '#64748b' : '#94a3b8';
-  const tabBg  = isDark ? '#0f172a' : '#f1f5f9';
+  const bg     = c.surface.secondary;
+  const border = c.border.primary;
+  const text   = c.text.primary;
+  const muted  = c.text.muted;
+  const tabBg  = c.surface.tertiary;
 
   const isUploaded = !!block.url?.startsWith('/uploads/');
 
@@ -188,7 +190,7 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               gap: 10, paddingVertical: 18, borderRadius: 10,
-              backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+              backgroundColor: c.intent.successSurface,
               borderWidth: 1.5, borderColor: ACCENT,
             }}>
               <ActivityIndicator color={ACCENT} />
@@ -213,7 +215,7 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           {isUploaded && !uploading && (
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 8,
-              backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+              backgroundColor: c.intent.successSurface,
               borderRadius: 8, borderWidth: 1, borderColor: '#22c55e',
               paddingHorizontal: 10, paddingVertical: 8,
             }}>
@@ -236,15 +238,13 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             onPress={() => setExpanded((v) => !v)}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              backgroundColor: pressed
-                ? (isDark ? '#0f2d1a' : '#f0fdf4')
-                : (isDark ? '#1e293b' : '#fff'),
+              backgroundColor: pressed ? c.intent.successSurface : c.surface.card,
               borderRadius: 12,
               borderBottomLeftRadius: expanded ? 0 : 12,
               borderBottomRightRadius: expanded ? 0 : 12,
               borderWidth: 1.5,
-              borderColor: isDark ? '#166534' : '#bbf7d0',
-              borderBottomColor: expanded ? 'transparent' : (isDark ? '#166534' : '#bbf7d0'),
+              borderColor: c.intent.success + '55',
+              borderBottomColor: expanded ? 'transparent' : c.intent.success + '55',
               padding: 14,
             })}
           >
@@ -270,7 +270,7 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               width: viewerWidth, height: viewerHeight,
               borderWidth: 1.5, borderTopWidth: 0,
-              borderColor: isDark ? '#166534' : '#bbf7d0',
+              borderColor: c.intent.success + '55',
               borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
               overflow: 'hidden',
             }}>
@@ -278,8 +278,8 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
               <View style={{
                 flexDirection: 'row', justifyContent: 'flex-end',
                 paddingHorizontal: 10, paddingVertical: 6,
-                backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-                borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: c.surface.tertiary,
+                borderBottomWidth: 1, borderBottomColor: c.border.primary,
               }}>
                 <Pressable
                   onPress={() => setFullscreen(true)}
@@ -298,7 +298,6 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
                 url={resolveUrl(block.url)}
                 width={viewerWidth}
                 height={viewerHeight - 38}
-                isDark={isDark}
               />
             </View>
           )}
@@ -306,8 +305,8 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       ) : (
         <View style={{
           height: 100, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8,
-          backgroundColor: isDark ? '#1e293b' : '#f0fdf4',
-          borderWidth: 2, borderColor: isDark ? '#334155' : '#bbf7d0', borderStyle: 'dashed',
+          backgroundColor: c.intent.successSurface,
+          borderWidth: 2, borderColor: c.intent.success + '55', borderStyle: 'dashed',
         }}>
           <Text style={{ fontSize: 36 }}>📊</Text>
           <Text style={{ fontSize: 13, fontWeight: '600', color: ACCENT }}>Add a spreadsheet</Text>
@@ -325,12 +324,12 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         onRequestClose={() => setFullscreen(false)}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#fff' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: c.surface.secondary }}>
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 12,
             paddingHorizontal: 16, paddingVertical: 12,
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+            backgroundColor: c.surface.card,
+            borderBottomWidth: 1, borderBottomColor: c.border.primary,
           }}>
             <Text style={{ fontSize: 20 }}>{iconEmoji}</Text>
             <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: text }} numberOfLines={1}>
@@ -342,8 +341,8 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
               style={({ pressed }) => ({
                 width: 36, height: 36, borderRadius: 18,
                 alignItems: 'center', justifyContent: 'center',
-                backgroundColor: pressed ? (isDark ? '#334155' : '#f1f5f9') : 'transparent',
-                borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: pressed ? c.surface.elevated : 'transparent',
+                borderWidth: 1, borderColor: c.border.primary,
               })}
             >
               <Text style={{ fontSize: 16, color: muted }}>✕</Text>
@@ -353,7 +352,6 @@ const ExcelBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             url={resolveUrl(block.url)}
             width={width}
             height={height - 80}
-            isDark={isDark}
           />
         </SafeAreaView>
       </Modal>

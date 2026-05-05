@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { HeadingBlock } from '../../types/types';
 
 const SIZES = [
@@ -15,30 +16,30 @@ const ALIGNS: Array<{ key: 'left'|'center'|'right'; icon: string }> = [
   { key: 'right',  icon: '➡' },
 ];
 
-interface Props { block: HeadingBlock; isDark: boolean; onChange: (patch: Partial<HeadingBlock>) => void; }
+interface Props { block: HeadingBlock; onChange: (patch: Partial<HeadingBlock>) => void; }
 
-const HeadingBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const HeadingBlockEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   const [sizeIdx, setSizeIdx] = useState(0);
   const { size, weight } = SIZES[sizeIdx];
   const align = block.settings?.align ?? 'left';
-  const color = block.settings?.color ?? (isDark ? '#f1f5f9' : '#0f172a');
+  const color = block.settings?.color ?? c.text.primary;
 
   return (
     <View style={{ gap: 10 }}>
-      {/* Toolbar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {/* Size selector */}
-        <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0' }}>
+        <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: c.border.primary }}>
           {SIZES.map((s, i) => (
             <Pressable
               key={s.label}
               onPress={() => setSizeIdx(i)}
               style={{
                 paddingHorizontal: 10, paddingVertical: 5,
-                backgroundColor: sizeIdx === i ? '#6366f1' : (isDark ? '#1e293b' : '#f8fafc'),
+                backgroundColor: sizeIdx === i ? '#6366f1' : c.surface.tertiary,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '700', color: sizeIdx === i ? '#fff' : (isDark ? '#94a3b8' : '#64748b') }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: sizeIdx === i ? '#fff' : c.text.muted }}>
                 {s.label}
               </Text>
             </Pressable>
@@ -46,17 +47,17 @@ const HeadingBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         </View>
 
         {/* Align */}
-        <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0' }}>
+        <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: c.border.primary }}>
           {ALIGNS.map((a) => (
             <Pressable
               key={a.key}
               onPress={() => onChange({ settings: { ...block.settings, align: a.key } })}
               style={{
                 paddingHorizontal: 9, paddingVertical: 5,
-                backgroundColor: align === a.key ? '#6366f1' : (isDark ? '#1e293b' : '#f8fafc'),
+                backgroundColor: align === a.key ? '#6366f1' : c.surface.tertiary,
               }}
             >
-              <Text style={{ fontSize: 12, color: align === a.key ? '#fff' : (isDark ? '#94a3b8' : '#64748b') }}>{a.icon}</Text>
+              <Text style={{ fontSize: 12, color: align === a.key ? '#fff' : c.text.muted }}>{a.icon}</Text>
             </Pressable>
           ))}
         </View>
@@ -64,25 +65,22 @@ const HeadingBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
 
       {/* Color row */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#94a3b8', fontWeight: '600' }}>Color:</Text>
-        {COLORS.map((c) => (
+        <Text style={{ fontSize: 11, color: c.text.muted, fontWeight: '600' }}>Color:</Text>
+        {COLORS.map((col) => (
           <Pressable
-            key={c}
-            onPress={() => onChange({ settings: { ...block.settings, color: c } })}
+            key={col}
+            onPress={() => onChange({ settings: { ...block.settings, color: col } })}
             style={{
-              width: 22, height: 22, borderRadius: 11, backgroundColor: c,
-              borderWidth: 2.5, borderColor: color === c ? '#fff' : 'transparent',
-              shadowColor: color === c ? c : 'transparent',
-              shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4,
+              width: 22, height: 22, borderRadius: 11, backgroundColor: col,
+              borderWidth: 2.5, borderColor: color === col ? '#fff' : 'transparent',
             }}
           />
         ))}
-        {/* Reset */}
         <Pressable
           onPress={() => onChange({ settings: { ...block.settings, color: undefined } })}
-          style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: isDark ? '#334155' : '#f1f5f9' }}
+          style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: c.surface.elevated }}
         >
-          <Text style={{ fontSize: 10, color: isDark ? '#94a3b8' : '#64748b' }}>Reset</Text>
+          <Text style={{ fontSize: 10, color: c.text.muted }}>Reset</Text>
         </Pressable>
       </ScrollView>
 
@@ -91,7 +89,7 @@ const HeadingBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         value={block.text}
         onChangeText={(text) => onChange({ text })}
         placeholder="Type your heading…"
-        placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+        placeholderTextColor={c.border.secondary}
         multiline
         style={{
           fontSize: size, fontWeight: weight,

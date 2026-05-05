@@ -3,6 +3,7 @@ import {
   Modal, View, Text, Pressable, FlatList, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useThemeColors } from '@/src/constants/theme';
 import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
 import { ConfirmDeleteDialog } from '@/src/shared/components/dialogs';
 import type { BlockTemplate } from '@/src/features/admin/docs/hooks/useBlockTemplates';
@@ -10,7 +11,6 @@ import type { BlockTemplate } from '@/src/features/admin/docs/hooks/useBlockTemp
 interface Props {
   visible: boolean;
   templates: BlockTemplate[];
-  isDark: boolean;
   onClose: () => void;
   onUse: (template: BlockTemplate) => void;
   onDelete: (id: string) => void;
@@ -19,19 +19,15 @@ interface Props {
 // ── Template card ─────────────────────────────────────────────────────────────
 const TemplateCard: React.FC<{
   template:        BlockTemplate;
-  isDark:          boolean;
   onUse:           () => void;
   onDeleteRequest: () => void;
-}> = ({ template, isDark, onUse, onDeleteRequest }) => {
-  const bg     = isDark ? '#1e293b' : '#fff';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const text   = isDark ? '#e2e8f0' : '#1e293b';
-  const muted  = isDark ? '#64748b' : '#94a3b8';
+}> = ({ template, onUse, onDeleteRequest }) => {
+  const c = useThemeColors();
 
   return (
     <View style={{
-      backgroundColor: bg, borderRadius: 12,
-      borderWidth: 1, borderColor: border,
+      backgroundColor: c.surface.card, borderRadius: 12,
+      borderWidth: 1, borderColor: c.border.primary,
       marginHorizontal: 14, marginBottom: 10,
       overflow: 'hidden',
     }}>
@@ -39,33 +35,33 @@ const TemplateCard: React.FC<{
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 10,
         paddingHorizontal: 14, paddingVertical: 10,
-        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-        borderBottomWidth: 1, borderBottomColor: border,
+        backgroundColor: c.surface.secondary,
+        borderBottomWidth: 1, borderBottomColor: c.border.primary,
       }}>
         <Text style={{ fontSize: 18 }}>📋</Text>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: text }} numberOfLines={1}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: c.text.primary }} numberOfLines={1}>
             {template.name}
           </Text>
-          <Text style={{ fontSize: 11, color: muted, marginTop: 1 }}>
+          <Text style={{ fontSize: 11, color: c.text.muted, marginTop: 1 }}>
             {template.blocks.length} block{template.blocks.length !== 1 ? 's' : ''} · {new Date(template.createdAt).toLocaleDateString()}
           </Text>
         </View>
         <Pressable onPress={onDeleteRequest} hitSlop={6}>
-          <Text style={{ fontSize: 14, color: '#ef4444' }}>🗑️</Text>
+          <Text style={{ fontSize: 14, color: c.intent.error }}>🗑️</Text>
         </Pressable>
       </View>
 
       {/* Block type preview chips */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, padding: 10 }}>
         {template.blocks.slice(0, 6).map((b, i) => {
-          const meta = BLOCK_META[b.type] ?? { emoji: '□', color: '#64748b', label: b.type };
+          const meta = BLOCK_META[b.type] ?? { emoji: '□', color: c.text.muted, label: b.type };
           return (
             <View key={i} style={{
               flexDirection: 'row', alignItems: 'center', gap: 3,
               paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
-              backgroundColor: meta.color + (isDark ? '28' : '15'),
-              borderWidth: 1, borderColor: meta.color + (isDark ? '44' : '25'),
+              backgroundColor: meta.color + '20',
+              borderWidth: 1, borderColor: meta.color + '35',
             }}>
               <Text style={{ fontSize: 11 }}>{meta.emoji}</Text>
               <Text style={{ fontSize: 10, fontWeight: '600', color: meta.color }}>{meta.label}</Text>
@@ -75,9 +71,9 @@ const TemplateCard: React.FC<{
         {template.blocks.length > 6 && (
           <View style={{
             paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
-            backgroundColor: isDark ? '#334155' : '#f1f5f9',
+            backgroundColor: c.surface.elevated,
           }}>
-            <Text style={{ fontSize: 10, color: muted }}>+{template.blocks.length - 6} more</Text>
+            <Text style={{ fontSize: 10, color: c.text.muted }}>+{template.blocks.length - 6} more</Text>
           </View>
         )}
       </View>
@@ -88,11 +84,11 @@ const TemplateCard: React.FC<{
         style={({ pressed }) => ({
           flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
           paddingVertical: 10, marginHorizontal: 10, marginBottom: 10, borderRadius: 8,
-          backgroundColor: pressed ? '#2563eb' : '#3b82f6',
+          backgroundColor: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg,
         })}
       >
         <Text style={{ fontSize: 14 }}>➕</Text>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>Insert template</Text>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: c.buttons.primary.text }}>Insert template</Text>
       </Pressable>
     </View>
   );
@@ -100,16 +96,11 @@ const TemplateCard: React.FC<{
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 const TemplatesModal: React.FC<Props> = ({
-  visible, templates, isDark, onClose, onUse, onDelete,
+  visible, templates, onClose, onUse, onDelete,
 }) => {
-  const [search,          setSearch]          = useState('');
-  const [deleteTarget,    setDeleteTarget]    = useState<BlockTemplate | null>(null);
-
-  const bg       = isDark ? '#0f172a' : '#f8fafc';
-  const headerBg = isDark ? '#1e293b' : '#fff';
-  const border   = isDark ? '#334155' : '#e2e8f0';
-  const muted    = isDark ? '#64748b' : '#94a3b8';
-  const inputBg  = isDark ? '#273549' : '#f1f5f9';
+  const [search,       setSearch]       = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<BlockTemplate | null>(null);
+  const c = useThemeColors();
 
   const filtered = templates.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase())
@@ -122,35 +113,35 @@ const TemplatesModal: React.FC<Props> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.surface.secondary }}>
         {/* Header */}
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 10,
           paddingHorizontal: 14, paddingVertical: 10,
-          backgroundColor: headerBg,
-          borderBottomWidth: 1, borderBottomColor: border,
+          backgroundColor: c.surface.card,
+          borderBottomWidth: 1, borderBottomColor: c.border.primary,
         }}>
           <Text style={{ fontSize: 18 }}>📋</Text>
-          <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b' }}>
+          <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: c.text.primary }}>
             Block Templates
           </Text>
           <Pressable onPress={onClose} hitSlop={8}>
-            <Text style={{ fontSize: 14, color: muted, fontWeight: '600' }}>Close</Text>
+            <Text style={{ fontSize: 14, color: c.text.muted, fontWeight: '600' }}>Close</Text>
           </Pressable>
         </View>
 
         {/* Search */}
         {templates.length > 3 && (
-          <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: border }}>
+          <View style={{ paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border.primary }}>
             <TextInput
               value={search}
               onChangeText={setSearch}
               placeholder="Search templates…"
-              placeholderTextColor={muted}
+              placeholderTextColor={c.text.muted}
               style={{
-                backgroundColor: inputBg, borderRadius: 8,
+                backgroundColor: c.surface.tertiary, borderRadius: 8,
                 paddingHorizontal: 12, paddingVertical: 8,
-                fontSize: 13, color: isDark ? '#e2e8f0' : '#1e293b',
+                fontSize: 13, color: c.text.primary,
               }}
               clearButtonMode="while-editing"
             />
@@ -161,10 +152,10 @@ const TemplatesModal: React.FC<Props> = ({
         {filtered.length === 0 ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 }}>
             <Text style={{ fontSize: 40 }}>📋</Text>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b', textAlign: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text.primary, textAlign: 'center' }}>
               {templates.length === 0 ? 'No templates yet' : 'No results'}
             </Text>
-            <Text style={{ fontSize: 13, color: muted, textAlign: 'center' }}>
+            <Text style={{ fontSize: 13, color: c.text.muted, textAlign: 'center' }}>
               {templates.length === 0
                 ? 'Save a block as a template using the ⧉ menu in the block toolbar'
                 : 'Try a different search term'}
@@ -179,7 +170,6 @@ const TemplatesModal: React.FC<Props> = ({
             renderItem={({ item }) => (
               <TemplateCard
                 template={item}
-                isDark={isDark}
                 onUse={() => { onUse(item); onClose(); }}
                 onDeleteRequest={() => setDeleteTarget(item)}
               />

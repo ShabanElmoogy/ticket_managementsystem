@@ -4,6 +4,7 @@ import {
   View, Text, TextInput, Pressable, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { PdfBlock } from '../../types/types';
 import PdfViewer from '../shared/PdfViewer';
@@ -11,7 +12,6 @@ import PdfFullscreenModal from '../shared/PdfFullscreenModal';
 
 interface Props {
   block: PdfBlock;
-  isDark: boolean;
   onChange: (patch: Partial<PdfBlock>) => void;
 }
 
@@ -77,7 +77,9 @@ async function deletePdfFromServer(url: string): Promise<void> {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const PdfBlockEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c      = useThemeColors();
+  const isDark = useIsDark();
   const [tab, setTab]           = useState<Tab>(block.url?.startsWith('/uploads/') ? 'upload' : 'link');
   const [uploading, setUploading] = useState(false);
   const [expanded,   setExpanded]   = useState(false);
@@ -85,13 +87,13 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const { width }               = useWindowDimensions();
 
   const viewerWidth  = width - 80;
-  const viewerHeight = Math.round(viewerWidth * 1.4); // A4 ratio
+  const viewerHeight = Math.round(viewerWidth * 1.4);
 
-  const bg     = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const text   = isDark ? '#e2e8f0' : '#1e293b';
-  const muted  = isDark ? '#64748b' : '#94a3b8';
-  const tabBg  = isDark ? '#0f172a' : '#f1f5f9';
+  const bg     = c.surface.secondary;
+  const border = c.border.primary;
+  const text   = c.text.primary;
+  const muted  = c.text.muted;
+  const tabBg  = c.surface.tertiary;
 
   const isUploaded = !!block.url?.startsWith('/uploads/');
 
@@ -186,7 +188,7 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               gap: 10, paddingVertical: 18, borderRadius: 10,
-              backgroundColor: isDark ? '#2d1010' : '#fff5f5',
+              backgroundColor: c.intent.errorSurface,
               borderWidth: 1.5, borderColor: ACCENT,
             }}>
               <ActivityIndicator color={ACCENT} />
@@ -212,7 +214,7 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           {isUploaded && !uploading && (
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 8,
-              backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+              backgroundColor: c.intent.successSurface,
               borderRadius: 8, borderWidth: 1, borderColor: '#22c55e',
               paddingHorizontal: 10, paddingVertical: 8,
             }}>
@@ -237,14 +239,14 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 12,
               backgroundColor: pressed
-                ? (isDark ? '#2d1010' : '#fff5f5')
-                : (isDark ? '#1e293b' : '#fff'),
+                ? c.intent.errorSurface
+                : c.surface.card,
               borderRadius: 12,
               borderBottomLeftRadius: expanded ? 0 : 12,
               borderBottomRightRadius: expanded ? 0 : 12,
               borderWidth: 1.5,
-              borderColor: isDark ? '#334155' : '#fecaca',
-              borderBottomColor: expanded ? 'transparent' : (isDark ? '#334155' : '#fecaca'),
+              borderColor: c.intent.error + '44',
+              borderBottomColor: expanded ? 'transparent' : c.intent.error + '44',
               padding: 14,
             })}
           >
@@ -271,7 +273,7 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               width: viewerWidth, height: viewerHeight,
               borderWidth: 1.5, borderTopWidth: 0,
-              borderColor: isDark ? '#334155' : '#fecaca',
+              borderColor: c.intent.error + '44',
               borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
               overflow: 'hidden',
             }}>
@@ -279,8 +281,8 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
               <View style={{
                 flexDirection: 'row', justifyContent: 'flex-end',
                 paddingHorizontal: 10, paddingVertical: 6,
-                backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-                borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: c.surface.tertiary,
+                borderBottomWidth: 1, borderBottomColor: c.border.primary,
               }}>
                 <Pressable
                   onPress={() => setFullscreen(true)}
@@ -301,7 +303,6 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
                 url={resolveUrl(block.url)}
                 width={viewerWidth}
                 height={viewerHeight - 38}
-                isDark={isDark}
               />
             </View>
           )}
@@ -311,7 +312,6 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             visible={fullscreen}
             url={resolveUrl(block.url)}
             name={block.name || block.url.split('/').pop()}
-            isDark={isDark}
             onClose={() => setFullscreen(false)}
           />
         </View>
@@ -319,8 +319,8 @@ const PdfBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
         /* Empty state */
         <View style={{
           height: 100, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8,
-          backgroundColor: isDark ? '#1e293b' : '#fff5f5',
-          borderWidth: 2, borderColor: isDark ? '#334155' : '#fecaca', borderStyle: 'dashed',
+          backgroundColor: c.intent.errorSurface,
+          borderWidth: 2, borderColor: c.intent.error + '44', borderStyle: 'dashed',
         }}>
           <Text style={{ fontSize: 36 }}>📄</Text>
           <Text style={{ fontSize: 13, fontWeight: '600', color: ACCENT }}>Add a PDF</Text>

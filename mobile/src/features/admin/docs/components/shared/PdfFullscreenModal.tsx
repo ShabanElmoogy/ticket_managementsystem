@@ -3,23 +3,20 @@ import {
   Modal, View, Text, Pressable, StatusBar, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import PdfViewer from './PdfViewer';
 
 interface Props {
   visible: boolean;
   url: string;
   name?: string;
-  isDark: boolean;
   onClose: () => void;
 }
 
-const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, isDark, onClose }) => {
+const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, onClose }) => {
   const { width, height } = useWindowDimensions();
-
-  const bg      = isDark ? '#0f172a' : '#f8fafc';
-  const headerBg = isDark ? '#1e293b' : '#fff';
-  const border  = isDark ? '#334155' : '#e2e8f0';
-  const text    = isDark ? '#e2e8f0' : '#1e293b';
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   return (
     <Modal
@@ -28,14 +25,14 @@ const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, isDark, onClo
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={headerBg} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={c.surface.card} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.surface.secondary }}>
         {/* Header */}
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 12,
           paddingHorizontal: 16, paddingVertical: 12,
-          backgroundColor: headerBg,
-          borderBottomWidth: 1, borderBottomColor: border,
+          backgroundColor: c.surface.card,
+          borderBottomWidth: 1, borderBottomColor: c.border.primary,
         }}>
           <View style={{
             width: 34, height: 40, borderRadius: 6,
@@ -44,7 +41,7 @@ const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, isDark, onClo
           }}>
             <Text style={{ fontSize: 18 }}>📄</Text>
           </View>
-          <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: text }} numberOfLines={1}>
+          <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: c.text.primary }} numberOfLines={1}>
             {name || url.split('/').pop() || 'PDF Document'}
           </Text>
           <Pressable
@@ -53,13 +50,11 @@ const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, isDark, onClo
             style={({ pressed }) => ({
               width: 36, height: 36, borderRadius: 18,
               alignItems: 'center', justifyContent: 'center',
-              backgroundColor: pressed
-                ? (isDark ? '#334155' : '#f1f5f9')
-                : (isDark ? '#1e293b' : '#f8fafc'),
-              borderWidth: 1, borderColor: border,
+              backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
+              borderWidth: 1, borderColor: c.border.primary,
             })}
           >
-            <Text style={{ fontSize: 16, color: isDark ? '#94a3b8' : '#64748b' }}>✕</Text>
+            <Text style={{ fontSize: 16, color: c.text.muted }}>✕</Text>
           </Pressable>
         </View>
 
@@ -67,8 +62,7 @@ const PdfFullscreenModal: React.FC<Props> = ({ visible, url, name, isDark, onClo
         <PdfViewer
           url={url}
           width={width}
-          height={height - 80} // subtract header height
-          isDark={isDark}
+          height={height - 80}
         />
       </SafeAreaView>
     </Modal>

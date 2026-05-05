@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput, Modal } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
 import type { DocBlock } from '@/src/features/admin/docs/types/types';
 import { ConfirmDeleteDialog } from '@/src/shared/components';
@@ -8,7 +9,6 @@ interface Props {
   block: DocBlock;
   index: number;
   total: number;
-  isDark: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDuplicate: () => void;
@@ -17,21 +17,14 @@ interface Props {
 }
 
 const BlockToolbar: React.FC<Props> = ({
-  block, index, total, isDark,
+  block, index, total,
   onMoveUp, onMoveDown, onDuplicate, onDelete, onSaveAsTemplate,
 }) => {
-  const [confirmOpen,   setConfirmOpen]   = useState(false);
-  const [templateOpen,  setTemplateOpen]  = useState(false);
-  const [templateName,  setTemplateName]  = useState('');
-  const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
-
-  const toolbarBg = isDark ? '#273549' : '#f1f5f9';
-  const btnBg     = isDark ? '#334155' : '#ffffff';
-  const btnBorder = isDark ? '#475569' : '#e2e8f0';
-  const btnText   = isDark ? '#cbd5e1' : '#64748b';
-  const divider   = isDark ? '#334155' : '#e9ecef';
-  const deleteBg     = isDark ? '#3b1515' : '#fef2f2';
-  const deleteBorder = isDark ? '#7f1d1d' : '#fecaca';
+  const [confirmOpen,  setConfirmOpen]  = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const c    = useThemeColors();
+  const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: c.text.muted };
 
   const btn = (
     label: string,
@@ -50,31 +43,31 @@ const BlockToolbar: React.FC<Props> = ({
         opacity: opts?.disabled ? 0.3 : 1,
         borderWidth: 1.5,
         borderColor: opts?.danger
-          ? deleteBorder
+          ? c.intent.error + '66'
           : opts?.primary
-          ? '#3b82f6'
-          : btnBorder,
+          ? c.interactive.primary
+          : c.border.primary,
         backgroundColor: pressed
           ? (opts?.danger
-              ? (isDark ? '#7f1d1d' : '#fee2e2')
+              ? c.intent.errorSurface
               : opts?.primary
-              ? '#2563eb'
-              : btnBorder)
+              ? c.interactive.primaryPressed
+              : c.surface.elevated)
           : (opts?.danger
-              ? deleteBg
+              ? c.intent.errorSurface
               : opts?.primary
-              ? (isDark ? '#1e3a5f' : '#eff6ff')
-              : btnBg),
+              ? c.interactive.primary + '20'
+              : c.surface.card),
       })}
     >
       <Text style={{
         fontSize: opts?.primary ? 24 : 18,
         fontWeight: opts?.primary ? '800' : '500',
         color: opts?.danger
-          ? (isDark ? '#fca5a5' : '#ef4444')
+          ? c.intent.error
           : opts?.primary
-          ? '#3b82f6'
-          : btnText,
+          ? c.interactive.primary
+          : c.text.secondary,
         lineHeight: opts?.primary ? 28 : 22,
         includeFontPadding: false,
       }}>
@@ -82,8 +75,6 @@ const BlockToolbar: React.FC<Props> = ({
       </Text>
     </Pressable>
   );
-
-  const handleDelete = () => setConfirmOpen(true);
 
   const handleSaveTemplate = () => {
     setTemplateName(meta.label + ' template');
@@ -103,18 +94,18 @@ const BlockToolbar: React.FC<Props> = ({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 10,
-        backgroundColor: toolbarBg,
+        backgroundColor: c.surface.tertiary,
         borderBottomWidth: 1,
-        borderBottomColor: divider,
+        borderBottomColor: c.border.primary,
         gap: 6,
       }}>
         {/* Type badge */}
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 5,
           paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-          backgroundColor: isDark ? meta.color + '30' : meta.color + '15',
+          backgroundColor: meta.color + '20',
           borderWidth: 1,
-          borderColor: isDark ? meta.color + '55' : meta.color + '25',
+          borderColor: meta.color + '40',
         }}>
           <Text style={{ fontSize: 12 }}>{meta.emoji}</Text>
           <Text style={{
@@ -135,13 +126,13 @@ const BlockToolbar: React.FC<Props> = ({
         </View>
 
         {/* Separator */}
-        <View style={{ width: 1, height: 32, backgroundColor: divider, marginHorizontal: 4 }} />
+        <View style={{ width: 1, height: 32, backgroundColor: c.border.primary, marginHorizontal: 4 }} />
 
         {/* Action group */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {onSaveAsTemplate && btn('📋', handleSaveTemplate)}
           {btn('⧉', onDuplicate)}
-          {btn('✕', handleDelete, { danger: true })}
+          {btn('✕', () => setConfirmOpen(true), { danger: true })}
         </View>
       </View>
 
@@ -163,31 +154,32 @@ const BlockToolbar: React.FC<Props> = ({
         >
           <Pressable
             style={{
-              backgroundColor: isDark ? '#1e293b' : '#fff',
+              backgroundColor: c.surface.card,
               borderRadius: 14, padding: 20, width: '100%',
-              borderWidth: 1.5, borderColor: isDark ? '#475569' : '#e2e8f0',
-              shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.25, shadowRadius: 16, elevation: 12,
+              borderWidth: 1.5, borderColor: c.border.secondary,
+              shadowColor: c.shadow,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 1, shadowRadius: 16, elevation: 12,
             }}
             onPress={(e) => e.stopPropagation()}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b', marginBottom: 4 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: c.text.primary, marginBottom: 4 }}>
               Save as template
             </Text>
-            <Text style={{ fontSize: 12, color: isDark ? '#64748b' : '#94a3b8', marginBottom: 14 }}>
+            <Text style={{ fontSize: 12, color: c.text.muted, marginBottom: 14 }}>
               Give this template a name so you can reuse it later.
             </Text>
             <TextInput
               value={templateName}
               onChangeText={setTemplateName}
               placeholder="Template name…"
-              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+              placeholderTextColor={c.text.muted}
               autoFocus
               style={{
-                backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-                borderRadius: 8, borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: c.surface.secondary,
+                borderRadius: 8, borderWidth: 1, borderColor: c.border.primary,
                 paddingHorizontal: 12, paddingVertical: 10,
-                fontSize: 14, color: isDark ? '#e2e8f0' : '#1e293b',
+                fontSize: 14, color: c.text.primary,
                 marginBottom: 14,
               }}
               onSubmitEditing={confirmSaveTemplate}
@@ -197,20 +189,20 @@ const BlockToolbar: React.FC<Props> = ({
                 onPress={() => setTemplateOpen(false)}
                 style={({ pressed }) => ({
                   flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center',
-                  backgroundColor: pressed ? (isDark ? '#334155' : '#e2e8f0') : (isDark ? '#1e293b' : '#f1f5f9'),
-                  borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0',
+                  backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
+                  borderWidth: 1, borderColor: c.border.primary,
                 })}
               >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#94a3b8' : '#64748b' }}>Cancel</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text.muted }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={confirmSaveTemplate}
                 style={({ pressed }) => ({
                   flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center',
-                  backgroundColor: pressed ? '#2563eb' : '#3b82f6',
+                  backgroundColor: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg,
                 })}
               >
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff' }}>Save</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: c.buttons.primary.text }}>Save</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -221,5 +213,3 @@ const BlockToolbar: React.FC<Props> = ({
 };
 
 export default BlockToolbar;
-
-

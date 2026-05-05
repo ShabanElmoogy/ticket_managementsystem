@@ -1,5 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { TextBlock } from '../../types/types';
 
 const ALIGNS: Array<{ key: 'left' | 'center' | 'right'; icon: string }> = [
@@ -15,35 +16,32 @@ const TEXT_COLORS = [
 
 interface Props {
   block:    TextBlock;
-  isDark:   boolean;
   onChange: (patch: Partial<TextBlock>) => void;
 }
 
-// ── Web fallback — plain textarea, no window dependency ───────────────────────
+// ── Web fallback ──────────────────────────────────────────────────────────────
 
-const TextBlockEditorWeb: React.FC<Props> = ({ block, isDark, onChange }) => {
-  const borderC = isDark ? '#334155' : '#e2e8f0';
-  const editorBg = isDark ? '#0f172a' : '#fafafa';
-  const textColor = isDark ? '#e2e8f0' : '#1e293b';
-
+const TextBlockEditorWeb: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   return (
-    <View style={{ borderRadius: 10, borderWidth: 1.5, borderColor: borderC, minHeight: 120, backgroundColor: editorBg, padding: 12 }}>
-      <Text style={{ color: textColor, fontSize: 13 }}>
+    <View style={{ borderRadius: 10, borderWidth: 1.5, borderColor: c.border.primary, minHeight: 120, backgroundColor: c.surface.secondary, padding: 12 }}>
+      <Text style={{ color: c.text.primary, fontSize: 13 }}>
         {block.html?.replace(/<[^>]+>/g, '') || 'Rich text editor not available on web.'}
       </Text>
     </View>
   );
 };
 
-// ── Native editor — lazy require to avoid window at module level ──────────────
+// ── Native editor ─────────────────────────────────────────────────────────────
 
-const TextBlockEditorNative: React.FC<Props> = ({ block, isDark, onChange }) => {
+const TextBlockEditorNative: React.FC<Props> = ({ block, onChange }) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { RichEditor, RichToolbar, actions } = require('react-native-pell-rich-editor');
+  const c = useThemeColors();
 
   const editorRef = useRef<any>(null);
   const align     = block.settings?.align ?? 'left';
-  const color     = block.settings?.color ?? (isDark ? '#e2e8f0' : '#1e293b');
+  const color     = block.settings?.color ?? c.text.primary;
 
   const handleChange = useCallback((html: string) => {
     onChange({ html });
@@ -56,15 +54,15 @@ const TextBlockEditorNative: React.FC<Props> = ({ block, isDark, onChange }) => 
     if (newAlign === 'right')  editorRef.current?.commandDOM('document.execCommand("justifyRight")');
   };
 
-  const handleColorChange = (c: string) => {
-    onChange({ settings: { ...block.settings, color: c } });
-    editorRef.current?.setForeColor(c);
+  const handleColorChange = (col: string) => {
+    onChange({ settings: { ...block.settings, color: col } });
+    editorRef.current?.setForeColor(col);
   };
 
-  const editorBg  = isDark ? '#0f172a' : '#fafafa';
-  const borderC   = isDark ? '#334155' : '#e2e8f0';
-  const toolbarBg = isDark ? '#1e293b' : '#f8fafc';
-  const iconTint  = isDark ? '#94a3b8' : '#64748b';
+  const editorBg  = c.surface.secondary;
+  const borderC   = c.border.primary;
+  const toolbarBg = c.surface.tertiary;
+  const iconTint  = c.text.muted;
 
   return (
     <View style={{ gap: 8 }}>
@@ -72,7 +70,7 @@ const TextBlockEditorNative: React.FC<Props> = ({ block, isDark, onChange }) => 
       <View style={{ borderRadius: 10, overflow: 'hidden', borderWidth: 1.5, borderColor: borderC }}>
         <RichToolbar
           editor={editorRef}
-          selectedIconTint="#3b82f6"
+          selectedIconTint={c.interactive.primary}
           iconTint={iconTint}
           style={{ backgroundColor: toolbarBg, height: 44 }}
           actions={[
@@ -91,18 +89,18 @@ const TextBlockEditorNative: React.FC<Props> = ({ block, isDark, onChange }) => 
             <Pressable
               key={a.key}
               onPress={() => handleAlignChange(a.key)}
-              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: align === a.key ? '#3b82f6' : (isDark ? '#1e293b' : '#f8fafc') }}
+              style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: align === a.key ? c.interactive.primary : c.surface.tertiary }}
             >
-              <Text style={{ fontSize: 13, color: align === a.key ? '#fff' : iconTint }}>{a.icon}</Text>
+              <Text style={{ fontSize: 13, color: align === a.key ? c.text.inverse : iconTint }}>{a.icon}</Text>
             </Pressable>
           ))}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: 'row', alignItems: 'center' }}>
-          {TEXT_COLORS.map((c) => (
+          {TEXT_COLORS.map((col) => (
             <Pressable
-              key={c}
-              onPress={() => handleColorChange(c)}
-              style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: c, borderWidth: 2.5, borderColor: color === c ? '#fff' : 'transparent' }}
+              key={col}
+              onPress={() => handleColorChange(col)}
+              style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: col, borderWidth: 2.5, borderColor: color === col ? '#fff' : 'transparent' }}
             />
           ))}
         </ScrollView>
@@ -117,7 +115,7 @@ const TextBlockEditorNative: React.FC<Props> = ({ block, isDark, onChange }) => 
           placeholder="Start typing your paragraph…"
           editorStyle={{
             backgroundColor: editorBg, color,
-            placeholderColor: isDark ? '#334155' : '#cbd5e1',
+            placeholderColor: c.border.secondary,
             contentCSSText: `font-size:15px;line-height:1.6;font-family:-apple-system,sans-serif;text-align:${align};padding:12px;min-height:80px;`,
           }}
           style={{ backgroundColor: editorBg, minHeight: 120 }}

@@ -938,7 +938,7 @@ const darkBlue: ThemeColors = {
     tertiary:  Palette.zinc800,
     elevated:  Palette.zinc700,
     card:      Palette.zinc900,
-    header:    '#0f172a',
+    header:    Palette.blue700,   // balanced blue — visible but not too bright for dark mode
   },
   text: {
     primary:   Palette.zinc50,

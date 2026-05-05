@@ -4,12 +4,12 @@ import {
   View, Text, TextInput, Image, Pressable, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useThemeColors } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ImageBlock } from '../../types/types';
 
 interface Props {
   block: ImageBlock;
-  isDark: boolean;
   onChange: (patch: Partial<ImageBlock>) => void;
 }
 
@@ -82,17 +82,18 @@ async function deleteImageFromServer(url: string): Promise<void> {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const ImageBlockEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   const [tab, setTab]           = useState<Tab>('link');
   const [uploading, setUploading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading]   = useState(false);
 
-  const bg      = isDark ? '#1e293b' : '#f8fafc';
-  const border  = isDark ? '#334155' : '#e2e8f0';
-  const text    = isDark ? '#e2e8f0' : '#1e293b';
-  const muted   = isDark ? '#64748b' : '#94a3b8';
-  const tabBg   = isDark ? '#0f172a' : '#f1f5f9';
+  const bg      = c.surface.secondary;
+  const border  = c.border.primary;
+  const text    = c.text.primary;
+  const muted   = c.text.muted;
+  const tabBg   = c.surface.tertiary;
   const activeBg = '#ec4899';
 
   const hostedImage = block.url ? isHostedImage(block.url) : false;
@@ -221,7 +222,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               gap: 10, paddingVertical: 18, borderRadius: 10,
-              backgroundColor: isDark ? '#2d1a2e' : '#fdf4ff',
+              backgroundColor: c.intent.successSurface + '80',
               borderWidth: 1.5, borderColor: '#ec4899',
             }}>
               <ActivityIndicator color="#ec4899" />
@@ -253,7 +254,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
                   flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                   gap: 6, paddingVertical: 13, borderRadius: 10,
                   borderWidth: 1.5, borderColor: '#ec4899',
-                  backgroundColor: pressed ? (isDark ? '#2d1a2e' : '#fdf4ff') : 'transparent',
+                  backgroundColor: pressed ? c.surface.tertiary : 'transparent',
                 })}
               >
                 <Text style={{ fontSize: 18 }}>📸</Text>
@@ -266,7 +267,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           {block.url?.startsWith('/uploads/') && !uploading && (
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 8,
-              backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+              backgroundColor: c.intent.successSurface,
               borderRadius: 8, borderWidth: 1, borderColor: '#22c55e',
               paddingHorizontal: 10, paddingVertical: 8,
             }}>
@@ -313,12 +314,12 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       ) : !uploading ? (
         <View style={{
           height: 140, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8,
-          backgroundColor: isDark ? '#1e293b' : '#fdf2f8',
-          borderWidth: 2, borderColor: isDark ? '#334155' : '#fbcfe8', borderStyle: 'dashed',
+          backgroundColor: c.surface.secondary,
+          borderWidth: 2, borderColor: c.border.secondary, borderStyle: 'dashed',
         }}>
           <Text style={{ fontSize: 36 }}>🖼️</Text>
           <Text style={{ fontSize: 13, fontWeight: '600', color: '#ec4899' }}>Add an image</Text>
-          <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#f9a8d4' }}>
+          <Text style={{ fontSize: 11, color: c.text.muted }}>
             {tab === 'link' ? 'Paste a URL above' : 'Gallery or Camera'}
           </Text>
         </View>
@@ -334,7 +335,7 @@ const ImageBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           value={block.caption ?? ''}
           onChangeText={(caption) => onChange({ caption })}
           placeholder="Add a caption…"
-          placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+          placeholderTextColor={c.border.secondary}
           style={{ flex: 1, fontSize: 13, color: muted, fontStyle: 'italic' }}
         />
       </View>

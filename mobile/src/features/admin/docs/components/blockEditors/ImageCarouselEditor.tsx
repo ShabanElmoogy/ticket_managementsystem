@@ -5,13 +5,13 @@ import {
   ActivityIndicator, ScrollView, useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useThemeColors } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { ImageCarouselBlock, ImageItem } from '../../types/types';
 import { newId } from '../../utils/idUtils';
 
 interface Props {
   block: ImageCarouselBlock;
-  isDark: boolean;
   onChange: (patch: Partial<ImageCarouselBlock>) => void;
 }
 
@@ -70,21 +70,21 @@ interface CardProps {
   item: ImageItem;
   idx: number;
   total: number;
-  isDark: boolean;
   onUpdate: (patch: Partial<ImageItem>) => void;
   onRemove: () => void;
 }
 
-const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, onRemove }) => {
+const ImageCard: React.FC<CardProps> = ({ item, idx, total, onUpdate, onRemove }) => {
+  const c = useThemeColors();
   const [uploading, setUploading] = useState(false);
   const [imgError,  setImgError]  = useState(false);
   const { width } = useWindowDimensions();
-  const cardWidth = width - 80; // matches preview width
+  const cardWidth = width - 80;
 
-  const bg     = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const muted  = isDark ? '#64748b' : '#94a3b8';
-  const text   = isDark ? '#e2e8f0' : '#1e293b';
+  const bg     = c.surface.secondary;
+  const border = c.border.primary;
+  const muted  = c.text.muted;
+  const text   = c.text.primary;
 
   const handleUpload = async (uri: string, mimeType: string, filename: string) => {
     setUploading(true);
@@ -129,15 +129,15 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
   return (
     <View style={{
       borderRadius: 12, overflow: 'hidden',
-      borderWidth: 1.5, borderColor: isDark ? '#334155' : '#fbcfe8',
-      backgroundColor: isDark ? '#1e293b' : '#fff',
+      borderWidth: 1.5, borderColor: c.border.primary,
+      backgroundColor: c.surface.card,
       marginBottom: 10,
     }}>
       {/* Card header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingVertical: 8,
-        backgroundColor: isDark ? '#0f172a' : '#fdf2f8',
+        backgroundColor: c.surface.secondary,
       }}>
         <View style={{
           width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
@@ -160,7 +160,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
             {imgError ? (
               <View style={{
                 height: 120, alignItems: 'center', justifyContent: 'center', gap: 4,
-                backgroundColor: isDark ? '#1e293b' : '#fef2f2',
+                backgroundColor: c.intent.errorSurface,
               }}>
                 <Text style={{ fontSize: 20 }}>⚠️</Text>
                 <Text style={{ fontSize: 11, color: '#ef4444' }}>Could not load image</Text>
@@ -187,7 +187,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
         ) : uploading ? (
           <View style={{
             height: 100, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 6,
-            backgroundColor: isDark ? '#2d1a2e' : '#fdf4ff',
+            backgroundColor: c.surface.tertiary,
             borderWidth: 1.5, borderColor: ACCENT,
           }}>
             <ActivityIndicator color={ACCENT} />
@@ -213,7 +213,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
                 flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 gap: 5, paddingVertical: 10, borderRadius: 8,
                 borderWidth: 1.5, borderColor: ACCENT,
-                backgroundColor: pressed ? (isDark ? '#2d1a2e' : '#fdf4ff') : 'transparent',
+                backgroundColor: pressed ? c.surface.elevated : 'transparent',
               })}
             >
               <Text style={{ fontSize: 16 }}>📸</Text>
@@ -242,7 +242,7 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
                 flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 gap: 5, paddingVertical: 7, borderRadius: 8,
                 borderWidth: 1.5, borderColor: ACCENT,
-                backgroundColor: pressed ? (isDark ? '#2d1a2e' : '#fdf4ff') : 'transparent',
+                backgroundColor: pressed ? c.surface.elevated : 'transparent',
               })}
             >
               <Text style={{ fontSize: 14 }}>📸</Text>
@@ -271,7 +271,8 @@ const ImageCard: React.FC<CardProps> = ({ item, idx, total, isDark, onUpdate, on
 // ─────────────────────────────────────────────────────────────────────────────
 // ImageCarouselEditor
 // ─────────────────────────────────────────────────────────────────────────────
-const ImageCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const ImageCarouselEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   const images = block.images ?? [];
 
   const updateImage = (idx: number, patch: Partial<ImageItem>) =>
@@ -297,10 +298,10 @@ const ImageCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           <Text style={{ fontSize: 20 }}>🖼️</Text>
         </View>
         <View>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: c.text.primary }}>
             Image Carousel
           </Text>
-          <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#94a3b8' }}>
+          <Text style={{ fontSize: 11, color: c.text.muted }}>
             {block.images?.length ?? 0} image{(block.images?.length ?? 0) !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -310,10 +311,10 @@ const ImageCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       {images.length === 0 && (
         <View style={{
           height: 80, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isDark ? '#1e293b' : '#fdf2f8',
-          borderWidth: 2, borderColor: isDark ? '#334155' : '#fbcfe8', borderStyle: 'dashed',
+          backgroundColor: c.surface.secondary,
+          borderWidth: 2, borderColor: c.border.secondary, borderStyle: 'dashed',
         }}>
-          <Text style={{ fontSize: 12, color: isDark ? '#475569' : '#f9a8d4' }}>
+          <Text style={{ fontSize: 12, color: c.text.muted }}>
             No images yet — tap "Add Image" below
           </Text>
         </View>
@@ -326,7 +327,6 @@ const ImageCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           item={img}
           idx={idx}
           total={images.length}
-          isDark={isDark}
           onUpdate={(patch) => updateImage(idx, patch)}
           onRemove={() => removeImage(idx)}
         />

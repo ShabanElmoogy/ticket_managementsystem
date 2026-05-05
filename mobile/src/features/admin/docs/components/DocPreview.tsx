@@ -5,16 +5,16 @@ import {
   PreviewHeading, PreviewText, PreviewDivider, PreviewImage, PreviewVideo,
   PreviewBulletedList, PreviewNumberedList, PreviewCode, PreviewQuote,
   PreviewCallout, PreviewTable, PreviewToggle, PreviewTabs,
-  PreviewVideoCarousel, PreviewImageCarousel, PreviewPdf, PreviewExcel, getPreviewColors,
+  PreviewVideoCarousel, PreviewImageCarousel, PreviewPdf, PreviewExcel,
 } from '@/src/features/admin/docs/components/preview';
+import { usePreviewColors } from '@/src/features/admin/docs/components/preview/previewUtils';
 
-interface Props { blocks: DocBlock[]; isDark: boolean; }
+interface Props { blocks: DocBlock[]; }
 
-const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
-  const [openToggles,  setOpenToggles]  = useState<Record<string, boolean>>({});
-  const [activeTabs,   setActiveTabs]   = useState<Record<string, number>>({});
-
-  const colors = getPreviewColors(isDark);
+const DocPreview: React.FC<Props> = ({ blocks }) => {
+  const [openToggles, setOpenToggles] = useState<Record<string, boolean>>({});
+  const [activeTabs,  setActiveTabs]  = useState<Record<string, number>>({});
+  const colors = usePreviewColors();
 
   const renderBlock = (block: DocBlock) => {
     switch (block.type) {
@@ -25,27 +25,26 @@ const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
       case 'divider':
         return <PreviewDivider key={block.id} block={block as any} colors={colors} />;
       case 'image':
-        return <PreviewImage key={block.id} block={block as any} isDark={isDark} colors={colors} />;
+        return <PreviewImage key={block.id} block={block as any} colors={colors} />;
       case 'video':
-        return <PreviewVideo key={block.id} block={block as any} isDark={isDark} colors={colors} />;
+        return <PreviewVideo key={block.id} block={block as any} colors={colors} />;
       case 'bulletedList':
         return <PreviewBulletedList key={block.id} block={block as any} colors={colors} />;
       case 'numberedList':
         return <PreviewNumberedList key={block.id} block={block as any} colors={colors} />;
       case 'code':
-        return <PreviewCode key={block.id} block={block as any} isDark={isDark} colors={colors} />;
+        return <PreviewCode key={block.id} block={block as any} colors={colors} />;
       case 'quote':
         return <PreviewQuote key={block.id} block={block as any} colors={colors} />;
       case 'callout':
-        return <PreviewCallout key={block.id} block={block as any} isDark={isDark} colors={colors} />;
+        return <PreviewCallout key={block.id} block={block as any} colors={colors} />;
       case 'table':
-        return <PreviewTable key={block.id} block={block as any} isDark={isDark} colors={colors} />;
+        return <PreviewTable key={block.id} block={block as any} colors={colors} />;
       case 'toggle':
         return (
           <PreviewToggle
             key={block.id}
             block={block as any}
-            isDark={isDark}
             colors={colors}
             isOpen={!!openToggles[block.id]}
             onToggle={() => setOpenToggles((s) => ({ ...s, [block.id]: !s[block.id] }))}
@@ -64,31 +63,13 @@ const DocPreview: React.FC<Props> = ({ blocks, isDark }) => {
         );
       }
       case 'videoCarousel':
-        return (
-          <PreviewVideoCarousel
-            key={block.id}
-            block={block as any}
-            isDark={isDark}
-            colors={colors}
-          />
-        );
+        return <PreviewVideoCarousel key={block.id} block={block as any} colors={colors} />;
       case 'imageCarousel':
-        return (
-          <PreviewImageCarousel
-            key={block.id}
-            block={block as any}
-            isDark={isDark}
-            colors={colors}
-          />
-        );
+        return <PreviewImageCarousel key={block.id} block={block as any} colors={colors} />;
       case 'pdf':
-        return (
-          <PreviewPdf key={block.id} block={block as any} isDark={isDark} colors={colors} />
-        );
+        return <PreviewPdf key={block.id} block={block as any} colors={colors} />;
       case 'excel':
-        return (
-          <PreviewExcel key={block.id} block={block as any} isDark={isDark} colors={colors} />
-        );
+        return <PreviewExcel key={block.id} block={block as any} colors={colors} />;
       default:
         return null;
     }

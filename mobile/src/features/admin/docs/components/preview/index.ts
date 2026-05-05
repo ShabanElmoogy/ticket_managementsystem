@@ -15,4 +15,4 @@ export { default as PreviewVideoCarousel } from './PreviewVideoCarousel';
 export { default as PreviewImageCarousel } from './PreviewImageCarousel';
 export { default as PreviewPdf }           from './PreviewPdf';
 export { default as PreviewExcel }         from './PreviewExcel';
-export { getPreviewColors }                from './previewUtils';
+export { getPreviewColors, usePreviewColors } from './previewUtils';

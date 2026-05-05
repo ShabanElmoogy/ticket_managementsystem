@@ -8,13 +8,13 @@ import { Video, ResizeMode } from 'expo-av';
 import { WebView } from 'react-native-webview';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { useThemeColors } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { VideoCarouselBlock, VideoItem } from '../../types/types';
 import { newId } from '../../utils/idUtils';
 
 interface Props {
   block: VideoCarouselBlock;
-  isDark: boolean;
   onChange: (patch: Partial<VideoCarouselBlock>) => void;
 }
 
@@ -89,12 +89,12 @@ async function deleteVideo(url: string): Promise<void> {
 interface CardProps {
   item: VideoItem;
   idx: number;
-  isDark: boolean;
   onUpdate: (patch: Partial<VideoItem>) => void;
   onRemove: () => void;
 }
 
-const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove }) => {
+const VideoCard: React.FC<CardProps> = ({ item, idx, onUpdate, onRemove }) => {
+  const c = useThemeColors();
   const [tab, setTab]           = useState<Tab>(item.url ? (getYouTubeId(item.url) ? 'link' : 'upload') : 'upload');
   const [uploading, setUploading] = useState(false);
   const [playing, setPlaying]   = useState(false);
@@ -104,11 +104,11 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
   const playerWidth  = width - 96;
   const playerHeight = Math.round(playerWidth * 9 / 16);
 
-  const bg     = isDark ? '#1e293b' : '#f8fafc';
-  const border = isDark ? '#334155' : '#e2e8f0';
-  const muted  = isDark ? '#64748b' : '#94a3b8';
-  const text   = isDark ? '#e2e8f0' : '#1e293b';
-  const tabBg  = isDark ? '#0f172a' : '#f1f5f9';
+  const bg     = c.surface.secondary;
+  const border = c.border.primary;
+  const muted  = c.text.muted;
+  const text   = c.text.primary;
+  const tabBg  = c.surface.tertiary;
 
   const youtubeId   = item.url ? getYouTubeId(item.url) : null;
   const hostedVideo = item.url ? isHostedVideo(item.url) : false;
@@ -171,15 +171,15 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
   return (
     <View style={{
       borderRadius: 12, overflow: 'hidden',
-      borderWidth: 1.5, borderColor: isDark ? '#334155' : '#fecaca',
-      backgroundColor: isDark ? '#1e293b' : '#fff',
+      borderWidth: 1.5, borderColor: c.border.primary,
+      backgroundColor: c.surface.card,
       marginBottom: 10,
     }}>
       {/* Card header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 12, paddingVertical: 8,
-        backgroundColor: isDark ? '#0f172a' : '#fef2f2',
+        backgroundColor: c.intent.errorSurface,
       }}>
         <View style={{
           width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
@@ -261,7 +261,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
               <View style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 gap: 8, paddingVertical: 14, borderRadius: 8,
-                backgroundColor: isDark ? '#1e3a5f' : '#eff6ff',
+                backgroundColor: c.intent.infoSurface,
                 borderWidth: 1.5, borderColor: '#3b82f6',
               }}>
                 <ActivityIndicator color="#3b82f6" />
@@ -286,7 +286,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
                     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                     gap: 4, paddingVertical: 9, borderRadius: 8,
                     borderWidth: 1.5, borderColor: '#3b82f6',
-                    backgroundColor: pressed ? (isDark ? '#1e3a5f' : '#eff6ff') : 'transparent',
+                    backgroundColor: pressed ? c.intent.infoSurface : 'transparent',
                   })}
                 >
                   <Text style={{ fontSize: 15 }}>📹</Text>
@@ -311,7 +311,7 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
             {item.url?.startsWith('/uploads/') && !uploading && (
               <View style={{
                 flexDirection: 'row', alignItems: 'center', gap: 6,
-                backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+                backgroundColor: c.intent.successSurface,
                 borderRadius: 6, borderWidth: 1, borderColor: '#22c55e',
                 paddingHorizontal: 8, paddingVertical: 6,
               }}>
@@ -377,7 +377,8 @@ const VideoCard: React.FC<CardProps> = ({ item, idx, isDark, onUpdate, onRemove 
 // ─────────────────────────────────────────────────────────────────────────────
 // VideoCarouselEditor
 // ─────────────────────────────────────────────────────────────────────────────
-const VideoCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const VideoCarouselEditor: React.FC<Props> = ({ block, onChange }) => {
+  const c = useThemeColors();
   const videos = block.videos ?? [];
 
   const updateVideo = (idx: number, patch: Partial<VideoItem>) =>
@@ -403,10 +404,10 @@ const VideoCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           <Text style={{ fontSize: 20 }}>🎬</Text>
         </View>
         <View>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#e2e8f0' : '#1e293b' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: c.text.primary }}>
             Video Carousel
           </Text>
-          <Text style={{ fontSize: 11, color: isDark ? '#475569' : '#94a3b8' }}>
+          <Text style={{ fontSize: 11, color: c.text.muted }}>
             {block.videos?.length ?? 0} video{(block.videos?.length ?? 0) !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -416,10 +417,10 @@ const VideoCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
       {videos.length === 0 && (
         <View style={{
           height: 80, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isDark ? '#1e293b' : '#fef2f2',
-          borderWidth: 2, borderColor: isDark ? '#334155' : '#fecaca', borderStyle: 'dashed',
+          backgroundColor: c.intent.errorSurface,
+          borderWidth: 2, borderColor: c.intent.error + '44', borderStyle: 'dashed',
         }}>
-          <Text style={{ fontSize: 12, color: isDark ? '#475569' : '#fca5a5' }}>
+          <Text style={{ fontSize: 12, color: c.text.muted }}>
             No videos yet — tap "Add Video" below
           </Text>
         </View>
@@ -431,7 +432,6 @@ const VideoCarouselEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           key={video.id}
           item={video}
           idx={idx}
-          isDark={isDark}
           onUpdate={(patch) => updateVideo(idx, patch)}
           onRemove={() => removeVideo(idx)}
         />

@@ -1,16 +1,14 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useDocsStore } from '@/src/features/admin/docs/hooks/useDocsStore';
+import { useThemeColors } from '@/src/constants/theme';
 
-interface Props {
-  isDark: boolean;
-}
-
-const UndoRedoButtons: React.FC<Props> = ({ isDark }) => {
+const UndoRedoButtons: React.FC = () => {
   const undo    = useDocsStore((s) => s.undo);
   const redo    = useDocsStore((s) => s.redo);
   const canUndo = useDocsStore((s) => s.past.length > 0);
   const canRedo = useDocsStore((s) => s.future.length > 0);
+  const c       = useThemeColors();
 
   if (!canUndo && !canRedo) return null;
 
@@ -29,10 +27,10 @@ const UndoRedoButtons: React.FC<Props> = ({ isDark }) => {
           paddingVertical: 9,
           borderRadius: 10,
           backgroundColor: !canUndo
-            ? (isDark ? '#1e293b' : '#f1f5f9')
+            ? c.surface.elevated
             : pressed
-            ? '#1d4ed8'
-            : '#3b82f6',
+            ? c.buttons.primary.pressed
+            : c.buttons.primary.bg,
           opacity: canUndo ? 1 : 0.45,
         })}
       >
@@ -40,20 +38,20 @@ const UndoRedoButtons: React.FC<Props> = ({ isDark }) => {
           fontSize: 17,
           lineHeight: 21,
           marginRight: 4,
-          color: canUndo ? '#fff' : (isDark ? '#475569' : '#94a3b8'),
+          color: canUndo ? c.text.inverse : c.text.muted,
         }}>
           ↩
         </Text>
         <Text style={{
           fontSize: 12,
           fontWeight: '700',
-          color: canUndo ? '#fff' : (isDark ? '#475569' : '#94a3b8'),
+          color: canUndo ? c.text.inverse : c.text.muted,
         }}>
           Undo
         </Text>
       </Pressable>
 
-      {/* Redo */}
+      {/* Redo — uses a distinct violet color to differentiate from Undo */}
       <Pressable
         onPress={redo}
         disabled={!canRedo}
@@ -65,10 +63,10 @@ const UndoRedoButtons: React.FC<Props> = ({ isDark }) => {
           paddingVertical: 9,
           borderRadius: 10,
           backgroundColor: !canRedo
-            ? (isDark ? '#1e293b' : '#f1f5f9')
+            ? c.surface.elevated
             : pressed
-            ? '#6d28d9'
-            : '#8b5cf6',
+            ? c.interactive.primaryPressed
+            : c.interactive.primary,
           opacity: canRedo ? 1 : 0.45,
         })}
       >
@@ -76,14 +74,14 @@ const UndoRedoButtons: React.FC<Props> = ({ isDark }) => {
           fontSize: 17,
           lineHeight: 21,
           marginRight: 4,
-          color: canRedo ? '#fff' : (isDark ? '#475569' : '#94a3b8'),
+          color: canRedo ? c.text.inverse : c.text.muted,
         }}>
           ↪
         </Text>
         <Text style={{
           fontSize: 12,
           fontWeight: '700',
-          color: canRedo ? '#fff' : (isDark ? '#475569' : '#94a3b8'),
+          color: canRedo ? c.text.inverse : c.text.muted,
         }}>
           Redo
         </Text>

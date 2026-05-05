@@ -5,12 +5,12 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 
 interface Props {
-  url: string;       // full resolved https:// URL
+  url: string;
   width: number;
   height: number;
-  isDark: boolean;
   onOpenExternal?: () => void;
 }
 
@@ -142,23 +142,24 @@ pdfjsLib.getDocument({
 </html>`;
 }
 
-const PdfViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExternal }) => {
+const PdfViewer: React.FC<Props> = ({ url, width, height, onOpenExternal }) => {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   const html = buildHtml(url, isDark);
 
   return (
-    <View style={{ width, height, backgroundColor: isDark ? '#1e293b' : '#f8fafc' }}>
-      {/* Native loading overlay — shown until WebView fires onLoadEnd */}
+    <View style={{ width, height, backgroundColor: c.surface.secondary }}>
       {loading && !error && (
         <View style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
           alignItems: 'center', justifyContent: 'center', zIndex: 1,
-          backgroundColor: isDark ? '#1e293b' : '#f8fafc', gap: 8,
+          backgroundColor: c.surface.secondary, gap: 8,
         }}>
-          <ActivityIndicator color="#dc2626" size="large" />
-          <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+          <ActivityIndicator color={c.intent.error} size="large" />
+          <Text style={{ fontSize: 12, color: c.text.muted }}>
             Loading PDF…
           </Text>
         </View>
@@ -169,7 +170,7 @@ const PdfViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExternal
           flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20,
         }}>
           <Text style={{ fontSize: 28 }}>⚠️</Text>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#dc2626', textAlign: 'center' }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: c.intent.error, textAlign: 'center' }}>
             Could not load PDF
           </Text>
           {onOpenExternal && (
@@ -177,24 +178,21 @@ const PdfViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExternal
               onPress={onOpenExternal}
               style={({ pressed }) => ({
                 paddingHorizontal: 16, paddingVertical: 9, borderRadius: 8,
-                backgroundColor: pressed ? '#b91c1c' : '#dc2626',
+                backgroundColor: pressed ? c.buttons.danger.pressed : c.buttons.danger.bg,
               })}
             >
-              <Text style={{ fontSize: 13, color: '#fff', fontWeight: '700' }}>Open externally ↗</Text>
+              <Text style={{ fontSize: 13, color: c.buttons.danger.text, fontWeight: '700' }}>Open externally ↗</Text>
             </Pressable>
           )}
         </View>
       ) : (
         <WebView
-          // baseUrl = server origin → Android allows fetching from same host
           source={{ html, baseUrl: SERVER_ORIGIN }}
           style={{ flex: 1 }}
           javaScriptEnabled
           domStorageEnabled
           originWhitelist={['*']}
-          // Allow mixed content (http PDF on https page) — needed for some setups
           mixedContentMode="always"
-          // Allow universal access so PDF.js can fetch the PDF URL
           allowUniversalAccessFromFileURLs
           allowFileAccessFromFileURLs
           onLoadStart={() => { setLoading(true); setError(false); }}

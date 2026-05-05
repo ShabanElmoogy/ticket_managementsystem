@@ -6,6 +6,7 @@ import { INDENT_PX } from './types';
 import IconPickerModal from './IconPickerModal';
 import IconBtn from './IconBtn';
 import { useDirection } from '@/src/providers/DirectionProvider';
+import { useThemeColors } from '@/src/constants/theme';
 
 interface Props {
   node: TreeNode;
@@ -27,7 +28,8 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
   const [renameVal, setRenameVal]   = useState(node.title);
   const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const { isRtl } = useDirection();   // ← reads from DirectionProvider, not I18nManager
+  const { isRtl } = useDirection();
+  const c = useThemeColors();
 
   const isDoc        = node.type === 'doc';
   const isFolder     = node.type === 'folder';
@@ -35,11 +37,11 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
   const isExpanded   = !!p.expanded[node.id];
 
   // ── Colors ────────────────────────────────────────────────────────────────
-  const sidebarBg  = p.isDark ? '#0f172a' : '#f8fafc';
-  const hoverBg    = p.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
-  const selectedBg = p.isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.08)';
-  const textMuted  = p.isDark ? '#64748b' : '#94a3b8';
-  const textMain   = p.isDark ? '#e2e8f0' : '#1e293b';
+  const sidebarBg  = c.surface.secondary;
+  const hoverBg    = c.interactive.pressed;
+  const selectedBg = c.interactive.primary + '18';
+  const textMuted  = c.text.muted;
+  const textMain   = c.text.primary;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handlePress = () => {
@@ -105,7 +107,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
           {/* Doc icon — web: DescriptionIcon 14px */}
           {isDoc && (
             <View style={{ marginEnd: 6, width: 30, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 13, lineHeight: 16, color: isCurrentDoc ? '#3b82f6' : textMuted }}>
+              <Text style={{ fontSize: 13, lineHeight: 16, color: isCurrentDoc ? c.interactive.primary : textMuted }}>
                 📄
               </Text>
             </View>
@@ -125,7 +127,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
                 color: textMain,
                 // web: borderBottom only, no box
                 borderBottomWidth: 1.5,
-                borderBottomColor: '#3b82f6',
+                borderBottomColor: c.border.focus,
                 paddingVertical: 1,
                 paddingHorizontal: 0,
               }}
@@ -137,7 +139,7 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
               style={{
                 flex: 1, fontSize: 12, lineHeight: 16,
                 fontWeight: isCurrentDoc ? '600' : isFolder ? '500' : '400',
-                color: isCurrentDoc ? '#3b82f6' : textMain,
+                color: isCurrentDoc ? c.interactive.primary : textMain,
                 paddingStart : 10
               }}
             >
@@ -185,13 +187,13 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
             {/* Separator between copy/add and delete */}
             <View style={{
               width: 3, height: 16, marginHorizontal: 7,
-              backgroundColor: p.isDark ? '#334155' : '#e2e8f0',
+              backgroundColor: c.border.primary,
             }} />
 
             <IconBtn
               onPress={() => p.onDelete(node.id)}
               color="#ef4444"
-              hoverBg={p.isDark ? '#3b1515' : '#fee2e2'}
+              hoverBg={c.intent.errorSurface}
             >
               ✕
             </IconBtn>
@@ -204,7 +206,6 @@ const TreeRow: React.FC<Props> = ({ node, depth, p }) => {
         <IconPickerModal
           visible={pickerOpen}
           current={(node as FolderNode).icon}
-          isDark={p.isDark}
           onSelect={(icon) => p.onSetFolderIcon(node.id, icon)}
           onClear={() => p.onSetFolderIcon(node.id, '')}
           onClose={() => setPickerOpen(false)}

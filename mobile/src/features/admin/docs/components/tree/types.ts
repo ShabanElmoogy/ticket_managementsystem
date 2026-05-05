@@ -6,7 +6,6 @@ export interface TreeSidebarProps {
   currentDocId: string | null;
   selectedTreeId: string | null;
   expanded: Record<string, boolean>;
-  isDark: boolean;
   onSelectDoc: (docId: string, nodeId: string) => void;
   onSelectFolder: (nodeId: string) => void;
   onToggleExpand: (id: string) => void;

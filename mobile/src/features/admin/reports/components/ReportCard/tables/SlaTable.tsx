@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { Text } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { SlaMetricsRow } from '@/src/features/admin/reports/types';
 import { AppDataTable, W, type ColDef, type SortState } from '@/src/shared/components';
-import { useThemeColors } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 import {
   createBadgeColumn,
   createTotalColumn,
@@ -11,25 +12,24 @@ import {
 
 interface Props {
   rows: SlaMetricsRow[];
-  isDark: boolean;
   sort: SortState;
   onSort: (field: string) => void;
 }
 
-const SlaTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
+const SlaTable: React.FC<Props> = ({ rows, sort, onSort }) => {
   const c = useThemeColors();
   const columns = useMemo<ColDef<SlaMetricsRow>[]>(() => [
     { field: 'customerName', headerName: 'Customer', width: W.customer, align: 'left' },
-    createTotalColumn<SlaMetricsRow>(isDark),
-    createBadgeColumn<SlaMetricsRow>('withDeadline', 'With SLA', '#3b82f6'),
-    createBadgeColumn<SlaMetricsRow>('overdue',      'Overdue',  '#ef4444'),
-    createBadgeColumn<SlaMetricsRow>('resolved',     'Resolved', '#10b981'),
+    createTotalColumn<SlaMetricsRow>(c),
+    createBadgeColumn<SlaMetricsRow>('withDeadline', 'With SLA', Palette.blue500),
+    createBadgeColumn<SlaMetricsRow>('overdue',      'Overdue',  Palette.red500),
+    createBadgeColumn<SlaMetricsRow>('resolved',     'Resolved', Palette.emerald500),
     createThresholdColumn<SlaMetricsRow>(
       'onTimeCount',
       'On Time',
       (r) => r.onTimeCount,
       (r) => r.resolved,
-      isDark,
+      c,
     ),
     {
       field: 'avgResolutionHours',
@@ -40,7 +40,7 @@ const SlaTable: React.FC<Props> = ({ rows, isDark, sort, onSort }) => {
         ? <Text style={{ fontSize: 12, fontWeight: '600', color: c.text.primary }}>{r.avgResolutionHours}h</Text>
         : <Text style={{ fontSize: 12, color: c.text.muted }}>—</Text>,
     },
-  ], [isDark]);
+  ], [c]);
 
   return (
     <AppDataTable

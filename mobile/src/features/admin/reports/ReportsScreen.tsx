@@ -32,7 +32,6 @@ const ReportsScreen: React.FC = () => {
         {/* Header */}
         <View style={{ paddingHorizontal: 4, paddingTop: 16, paddingBottom: 12 }}>
           <ReportsHeader
-            isDark={isDark}
             view={view}
             onViewChange={(v) => setView('Reports', v)}
             loading={loading}
@@ -54,7 +53,7 @@ const ReportsScreen: React.FC = () => {
             />
           )}
 
-          <ReportTypeSelector value={reportType} onChange={setReportType} isDark={isDark} />
+          <ReportTypeSelector value={reportType} onChange={setReportType} />
         </View>
 
         {/* Report card */}

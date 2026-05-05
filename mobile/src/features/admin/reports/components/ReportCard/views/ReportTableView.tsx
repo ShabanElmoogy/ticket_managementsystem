@@ -18,14 +18,10 @@ interface Props {
   activePag: PaginationState;
   loading: boolean;
   onRefresh: () => void;
-  isDark: boolean;
 }
 
-/**
- * Report-specific table view — thin wrapper around PaginatedView.
- */
 const ReportTableView: React.FC<Props> = ({
-  renderTable, ListHeader, activePag, loading, onRefresh, isDark,
+  renderTable, ListHeader, activePag, loading, onRefresh,
 }) => (
   <PaginatedView
     renderContent={renderTable}

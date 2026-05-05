@@ -1,25 +1,21 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { BlockType } from '@/src/features/admin/docs/types/types';
 import { BLOCK_TYPES } from './blockTypes';
 import PaletteButton from './PaletteButton';
 
 interface Props {
   onAdd: (type: BlockType) => void;
-  isDark: boolean;
   templateCount?: number;
   onOpenTemplates?: () => void;
 }
 
-const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark, templateCount = 0, onOpenTemplates }) => {
-  const bg          = isDark ? '#0f172a' : '#f8fafc';
-  const stripBorder = isDark ? '#1e293b' : '#e2e8f0';
-  const btnBg       = isDark ? '#1e293b' : '#ffffff';
-  const btnBorder   = isDark ? '#334155' : '#e2e8f0';
-  const labelColor  = isDark ? '#94a3b8' : '#64748b';
+const HorizontalPalette: React.FC<Props> = ({ onAdd, templateCount = 0, onOpenTemplates }) => {
+  const c = useThemeColors();
 
   return (
-    <View style={{ backgroundColor: bg, borderTopWidth: 1, borderTopColor: stripBorder }}>
+    <View style={{ backgroundColor: c.surface.secondary, borderTopWidth: 1, borderTopColor: c.border.primary }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -33,20 +29,19 @@ const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark, templateCount = 0, 
       >
         <Text style={{
           fontSize: 9, fontWeight: '800', letterSpacing: 0.8,
-          color: isDark ? '#334155' : '#cbd5e1',
+          color: c.text.muted,
           textTransform: 'uppercase', marginRight: 2,
         }}>
           ADD
         </Text>
 
-        {/* Templates button */}
         {onOpenTemplates && (
           <Pressable
             onPress={onOpenTemplates}
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10,
-              backgroundColor: pressed ? '#7c3aed22' : (isDark ? '#1e293b' : '#fff'),
+              backgroundColor: pressed ? '#7c3aed22' : c.surface.card,
               borderWidth: 1.5,
               borderColor: pressed ? '#7c3aed88' : '#7c3aed55',
               minWidth: 56,
@@ -67,9 +62,6 @@ const HorizontalPalette: React.FC<Props> = ({ onAdd, isDark, templateCount = 0, 
             key={def.type}
             def={def}
             onAdd={onAdd}
-            btnBg={btnBg}
-            btnBorder={btnBorder}
-            labelColor={labelColor}
             iconSize={26}
             labelFontSize={10}
             variant="horizontal"

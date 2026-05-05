@@ -8,12 +8,12 @@ import { WebView } from 'react-native-webview';
 import { Video, ResizeMode } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { useThemeColors } from '@/src/constants/theme';
 import { tokenManager } from '@/src/services/api/tokenManager';
 import type { VideoBlock } from '../../types/types';
 
 interface Props {
   block: VideoBlock;
-  isDark: boolean;
   onChange: (patch: Partial<VideoBlock>) => void;
 }
 
@@ -110,8 +110,9 @@ async function deleteVideoFromServer(url: string): Promise<void> {
   }
 }
 
-const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const VideoBlockEditor: React.FC<Props> = ({ block, onChange }) => {
   const { width } = useWindowDimensions();
+  const c = useThemeColors();
   const [tab, setTab]           = useState<Tab>('link');
   const [playing, setPlaying]   = useState(false);
   const [embedError, setEmbedError] = useState(false);
@@ -123,12 +124,11 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
   const hostedVideo  = block.url ? isHostedVideo(block.url) : false;
   const localVideo   = block.url ? isLocalUri(block.url) : false;
 
-  // ── Colors ────────────────────────────────────────────────────────────────
-  const bg       = isDark ? '#1e293b' : '#f8fafc';
-  const border   = isDark ? '#334155' : '#e2e8f0';
-  const text     = isDark ? '#e2e8f0' : '#1e293b';
-  const muted    = isDark ? '#64748b' : '#94a3b8';
-  const tabBg    = isDark ? '#0f172a' : '#f1f5f9';
+  const bg       = c.surface.secondary;
+  const border   = c.border.primary;
+  const text     = c.text.primary;
+  const muted    = c.text.muted;
+  const tabBg    = c.surface.tertiary;
   const activeBg = '#3b82f6';
 
   // ── Upload flow ───────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               gap: 10, paddingVertical: 18, borderRadius: 10,
-              backgroundColor: isDark ? '#1e3a5f' : '#eff6ff',
+              backgroundColor: c.intent.infoSurface,
               borderWidth: 1.5, borderColor: '#3b82f6',
             }}>
               <ActivityIndicator color="#3b82f6" />
@@ -309,7 +309,7 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
                   flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                   gap: 6, paddingVertical: 12, borderRadius: 10,
                   borderWidth: 1.5, borderColor: '#3b82f6',
-                  backgroundColor: pressed ? (isDark ? '#1e3a5f' : '#eff6ff') : 'transparent',
+                  backgroundColor: pressed ? c.intent.infoSurface : 'transparent',
                 })}
               >
                 <Text style={{ fontSize: 18 }}>📹</Text>
@@ -336,7 +336,7 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           {block.url && hostedVideo && !uploading && (
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 8,
-              backgroundColor: isDark ? '#0f2d1a' : '#f0fdf4',
+              backgroundColor: c.intent.successSurface,
               borderRadius: 8, borderWidth: 1, borderColor: '#22c55e',
               paddingHorizontal: 10, paddingVertical: 8,
             }}>
@@ -359,8 +359,8 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           embedError ? (
             <View style={{
               width: playerWidth, height: 100, borderRadius: 12,
-              backgroundColor: isDark ? '#1e293b' : '#fef2f2',
-              borderWidth: 1.5, borderColor: isDark ? '#7f1d1d' : '#fecaca',
+              backgroundColor: c.intent.errorSurface,
+              borderWidth: 1.5, borderColor: c.intent.error + '66',
               alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#ef4444' }}>🚫 Embedding disabled</Text>
@@ -445,8 +445,8 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           // Non-YouTube, non-hosted URL
           <View style={{
             height: 80, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: isDark ? '#1e293b' : '#fef2f2',
-            borderWidth: 1.5, borderColor: isDark ? '#334155' : '#fecaca',
+            backgroundColor: c.intent.errorSurface,
+            borderWidth: 1.5, borderColor: c.intent.error + '44',
           }}>
             <Text style={{ fontSize: 13, color: '#ef4444', fontWeight: '600' }}>
               ⚠️ Only YouTube URLs are supported for links
@@ -473,7 +473,7 @@ const VideoBlockEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
           value={block.caption ?? ''}
           onChangeText={(caption) => onChange({ caption })}
           placeholder="Add a caption…"
-          placeholderTextColor={isDark ? '#334155' : '#cbd5e1'}
+          placeholderTextColor={c.border.secondary}
           style={{ flex: 1, fontSize: 13, color: muted, fontStyle: 'italic' }}
         />
       </View>

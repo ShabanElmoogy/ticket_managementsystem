@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import type { DocRefNode } from '../../types/types';
 
 interface Props {
   query: string;
   nodes: DocRefNode[];
   currentDocId: string | null;
-  isDark: boolean;
   onSelect: (docId: string, nodeId: string) => void;
 }
 
@@ -14,11 +14,9 @@ interface Props {
  * Flat list of doc nodes filtered by search query.
  * Shown in place of the tree when the user is searching.
  */
-const TreeSearchResults: React.FC<Props> = ({ query, nodes, currentDocId, isDark, onSelect }) => {
-  const border   = isDark ? '#334155' : '#e2e8f0';
-  const text     = isDark ? '#e2e8f0' : '#1e293b';
-  const muted    = isDark ? '#64748b' : '#94a3b8';
-  const activeBg = isDark ? '#1e3a5f' : '#eff6ff';
+const TreeSearchResults: React.FC<Props> = ({ query, nodes, currentDocId, onSelect }) => {
+  const c        = useThemeColors();
+  const activeBg = c.interactive.primary + '18';
 
   const filtered = useMemo(
     () => nodes.filter((n) => n.title.toLowerCase().includes(query.toLowerCase())),
@@ -28,7 +26,7 @@ const TreeSearchResults: React.FC<Props> = ({ query, nodes, currentDocId, isDark
   if (filtered.length === 0) {
     return (
       <View style={{ padding: 16, alignItems: 'center' }}>
-        <Text style={{ fontSize: 12, color: muted }}>No docs match "{query}"</Text>
+        <Text style={{ fontSize: 12, color: c.text.muted }}>No docs match "{query}"</Text>
       </View>
     );
   }
@@ -49,7 +47,7 @@ const TreeSearchResults: React.FC<Props> = ({ query, nodes, currentDocId, isDark
             style={({ pressed }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 8,
               paddingHorizontal: 12, paddingVertical: 9,
-              backgroundColor: isActive ? activeBg : pressed ? border : 'transparent',
+              backgroundColor: isActive ? activeBg : pressed ? c.surface.elevated : 'transparent',
             })}
           >
             <Text style={{ fontSize: 14 }}>📄</Text>
@@ -57,7 +55,7 @@ const TreeSearchResults: React.FC<Props> = ({ query, nodes, currentDocId, isDark
               style={{
                 flex: 1, fontSize: 13,
                 fontWeight: isActive ? '700' : '500',
-                color: isActive ? '#3b82f6' : text,
+                color: isActive ? c.interactive.primary : c.text.primary,
               }}
               numberOfLines={1}
             >

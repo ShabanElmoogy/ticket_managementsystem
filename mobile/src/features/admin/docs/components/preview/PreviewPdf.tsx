@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Linking, useWindowDimensions } from 'react-native';
 import type { PdfBlock } from '../../types/types';
-import type { PreviewColors } from './previewUtils';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
+import { usePreviewColors } from './previewUtils';
 import PdfViewer from '../shared/PdfViewer';
 import PdfFullscreenModal from '../shared/PdfFullscreenModal';
 
-interface Props { block: PdfBlock; isDark: boolean; colors: PreviewColors; }
+interface Props { block: PdfBlock; }
 
 const BASE_URL      = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
 const SERVER_ORIGIN = BASE_URL.replace(/\/api\/?$/, '');
@@ -14,7 +15,10 @@ function resolveUrl(url: string): string {
   return url.startsWith('/uploads/') ? `${SERVER_ORIGIN}${url}` : url;
 }
 
-const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
+const PreviewPdf: React.FC<Props> = ({ block }) => {
+  const isDark = useIsDark();
+  const c = useThemeColors();
+  const colors = usePreviewColors();
   const [expanded,   setExpanded]   = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const { width } = useWindowDimensions();
@@ -35,15 +39,13 @@ const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
         onPress={() => setExpanded((v) => !v)}
         style={({ pressed }) => ({
           flexDirection: 'row', alignItems: 'center', gap: 14,
-          backgroundColor: pressed
-            ? (isDark ? '#2d1010' : '#fff5f5')
-            : (isDark ? '#1e293b' : '#fff'),
+          backgroundColor: pressed ? c.intent.errorSurface : c.surface.card,
           borderRadius: 12,
           borderBottomLeftRadius: expanded ? 0 : 12,
           borderBottomRightRadius: expanded ? 0 : 12,
           borderWidth: 1.5,
-          borderColor: isDark ? '#7f1d1d' : '#fecaca',
-          borderBottomColor: expanded ? 'transparent' : (isDark ? '#7f1d1d' : '#fecaca'),
+          borderColor: c.intent.error + '44',
+          borderBottomColor: expanded ? 'transparent' : c.intent.error + '44',
           padding: 14,
         })}
       >
@@ -75,7 +77,7 @@ const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
       {expanded && (
         <View style={{
           borderWidth: 1.5, borderTopWidth: 0,
-          borderColor: isDark ? '#7f1d1d' : '#fecaca',
+          borderColor: c.intent.error + '44',
           borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
           overflow: 'hidden',
         }}>
@@ -83,8 +85,8 @@ const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
           <View style={{
             flexDirection: 'row', justifyContent: 'flex-end',
             paddingHorizontal: 10, paddingVertical: 6,
-            backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-            borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+            backgroundColor: c.surface.tertiary,
+            borderBottomWidth: 1, borderBottomColor: c.border.primary,
           }}>
             <Pressable
               onPress={() => setFullscreen(true)}
@@ -103,7 +105,6 @@ const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
             url={fullUrl}
             width={viewerWidth}
             height={viewerHeight}
-            isDark={isDark}
             onOpenExternal={handleOpenExternal}
           />
         </View>
@@ -114,7 +115,6 @@ const PreviewPdf: React.FC<Props> = ({ block, isDark, colors }) => {
         visible={fullscreen}
         url={fullUrl}
         name={displayName}
-        isDark={isDark}
         onClose={() => setFullscreen(false)}
       />
     </View>

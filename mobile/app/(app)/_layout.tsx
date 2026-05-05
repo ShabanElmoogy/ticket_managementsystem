@@ -2,6 +2,7 @@ import { Stack, Redirect } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/stores/authStore';
+import { useThemeColors } from '@/src/constants/theme';
 import AppHeader, {
   DrawerProvider,
   AppDrawerOverlay,
@@ -12,9 +13,10 @@ import AppBottomNav from '@/src/components/layout/AppBottomNav';
 function AppShell() {
   const { setBottomNavHeight } = useDrawer();
   const insets = useSafeAreaInsets();
+  const c      = useThemeColors();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: c.surface.primary }}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <AppHeader />
 

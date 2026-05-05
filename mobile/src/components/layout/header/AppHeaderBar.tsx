@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
-import { useThemeColors, FontWeight } from '@/src/constants/theme';
+import { useThemeColors, FontWeight, Palette } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
 import { Avatar, IconButton } from '@/src/shared/components';
 
@@ -42,7 +42,7 @@ const AppHeaderBar: React.FC = () => {
         }}>
           <Ionicons name="ticket-outline" size={18} color={c.text.inverse} />
         </View>
-        <Text style={{ color: c.text.inverse, fontWeight: FontWeight.bold, fontSize: 18 }}>
+        <Text style={{ color: Palette.white, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.3 }}>
           TicketFlow
         </Text>
       </Pressable>
@@ -67,9 +67,10 @@ const AppHeaderBar: React.FC = () => {
           }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
-          <Avatar
+        <Avatar
             text={user.name}
-            backgroundColor={c.interactive.primary}
+            backgroundColor="rgba(255,255,255,0.25)"
+            textColor={Palette.white}
             size={28}
           />
         </Pressable>

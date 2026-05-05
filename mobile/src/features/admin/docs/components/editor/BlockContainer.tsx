@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Pressable } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import BlockToolbar from '@/src/features/admin/docs/components/editor/BlockToolbar';
 import { BLOCK_META } from '@/src/features/admin/docs/components/editor/blockMeta';
 import type { DocBlock } from '@/src/features/admin/docs/types/types';
@@ -8,7 +9,6 @@ interface Props {
   block: DocBlock;
   index: number;
   total: number;
-  isDark: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDuplicate: () => void;
@@ -18,16 +18,14 @@ interface Props {
 }
 
 const BlockContainer: React.FC<Props> = ({
-  block, index, total, isDark,
+  block, index, total,
   onMoveUp, onMoveDown, onDuplicate, onDelete, onSaveAsTemplate, children,
 }) => {
   const [focused, setFocused] = useState(false);
-  const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: '#64748b' };
+  const c    = useThemeColors();
+  const meta = BLOCK_META[block.type] ?? { label: block.type, emoji: '□', color: c.text.muted };
 
-  const cardBg     = isDark ? '#1e293b' : '#ffffff';
-  const cardBorder = focused
-    ? meta.color + '88'
-    : isDark ? '#3d5068' : '#e2e8f0';
+  const cardBorder = focused ? meta.color + '88' : c.border.primary;
 
   return (
     <View>
@@ -39,20 +37,19 @@ const BlockContainer: React.FC<Props> = ({
           borderRadius: 12,
           borderWidth: 1.5,
           borderColor: cardBorder,
-          backgroundColor: cardBg,
+          backgroundColor: c.surface.card,
           overflow: 'hidden',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: isDark ? 2 : 1 },
-          shadowOpacity: isDark ? 0.3 : 0.06,
-          shadowRadius: isDark ? 6 : 3,
-          elevation: isDark ? 4 : 2,
+          shadowColor: c.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 1,
+          shadowRadius: 4,
+          elevation: 2,
         }}
       >
         <BlockToolbar
           block={block}
           index={index}
           total={total}
-          isDark={isDark}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
           onDuplicate={onDuplicate}

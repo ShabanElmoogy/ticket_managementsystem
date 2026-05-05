@@ -4,12 +4,12 @@ import {
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { WebView } from 'react-native-webview';
+import { useThemeColors } from '@/src/constants/theme';
 import type { VideoCarouselBlock } from '../../types/types';
 import type { PreviewColors } from './previewUtils';
 
 interface Props {
   block: VideoCarouselBlock;
-  isDark?: boolean;
   colors: PreviewColors;
 }
 
@@ -118,9 +118,10 @@ const YouTubeSlide: React.FC<{ youtubeId: string; width: number; height: number 
 // ─────────────────────────────────────────────────────────────────────────────
 // PreviewVideoCarousel
 // ─────────────────────────────────────────────────────────────────────────────
-const PreviewVideoCarousel: React.FC<Props> = ({ block, isDark = false, colors }) => {
+const PreviewVideoCarousel: React.FC<Props> = ({ block, colors }) => {
   const [idx, setIdx] = useState(0);
   const { width }     = useWindowDimensions();
+  const c             = useThemeColors();
 
   const playerWidth  = width - 35;
   const playerHeight = Math.round(playerWidth * 9 / 16);
@@ -141,7 +142,7 @@ const PreviewVideoCarousel: React.FC<Props> = ({ block, isDark = false, colors }
         <View style={{
           width: playerWidth, height: playerHeight,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
+          backgroundColor: c.surface.tertiary,
         }}>
           <Text style={{ fontSize: 28 }}>🎬</Text>
           <Text style={{ fontSize: 12, color: colors.mutedColor, marginTop: 4 }}>No video</Text>
@@ -158,7 +159,7 @@ const PreviewVideoCarousel: React.FC<Props> = ({ block, isDark = false, colors }
       <View style={{
         width: playerWidth, height: playerHeight,
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: isDark ? '#1e293b' : '#fef2f2',
+        backgroundColor: c.intent.errorSurface,
       }}>
         <Text style={{ fontSize: 12, color: '#ef4444' }}>⚠️ Unsupported URL</Text>
       </View>
@@ -237,7 +238,7 @@ const PreviewVideoCarousel: React.FC<Props> = ({ block, isDark = false, colors }
             <Pressable key={i} onPress={() => goTo(i)}>
               <View style={{
                 width: i === idx ? 16 : 6, height: 6, borderRadius: 3,
-                backgroundColor: i === idx ? '#ef4444' : (isDark ? '#334155' : '#cbd5e1'),
+                backgroundColor: i === idx ? '#ef4444' : c.border.secondary,
               }} />
             </Pressable>
           ))}

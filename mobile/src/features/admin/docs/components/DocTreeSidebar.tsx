@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 import TreeEmpty from '@/src/features/admin/docs/components/tree/TreeEmpty';
 import TreeHeader from '@/src/features/admin/docs/components/tree/TreeHeader';
 import TreeRow from '@/src/features/admin/docs/components/tree/TreeRow';
@@ -23,12 +24,10 @@ function collectAllDocNodes(nodes: TreeNode[]): DocRefNode[] {
 
 // ── Main sidebar ──────────────────────────────────────────────────────────────
 const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
-  const { isDark, tree } = props;
+  const { tree } = props;
+  const c = useThemeColors();
   const { isRtl } = useDirection();
   const [searchQuery, setSearchQuery] = useState('');
-
-  const sidebarBg = isDark ? '#0f172a' : '#f8fafc';
-  const borderC   = isDark ? '#1e293b' : '#e2e8f0';
 
   const allDocNodes = useMemo(() => collectAllDocNodes(tree), [tree]);
   const isSearching = searchQuery.trim().length > 0;
@@ -36,14 +35,13 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
   return (
     <View style={{
       flex: 1,
-      backgroundColor: sidebarBg,
+      backgroundColor: c.surface.secondary,
       ...(isRtl
-        ? { borderLeftWidth: 1, borderLeftColor: borderC }
-        : { borderRightWidth: 1, borderRightColor: borderC }),
+        ? { borderLeftWidth: 1, borderLeftColor: c.border.primary }
+        : { borderRightWidth: 1, borderRightColor: c.border.primary }),
     }}>
 
       <TreeHeader
-        isDark={isDark}
         onAddDoc={props.onAddDoc}
         onAddFolder={props.onAddFolder}
         onSearch={props.onSearch}
@@ -52,7 +50,6 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
       <TreeSearchInput
         value={searchQuery}
         onChange={setSearchQuery}
-        isDark={isDark}
       />
 
       {isSearching ? (
@@ -60,7 +57,6 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
           query={searchQuery}
           nodes={allDocNodes}
           currentDocId={props.currentDocId}
-          isDark={isDark}
           onSelect={(docId, nodeId) => {
             setSearchQuery('');
             props.onSelectDoc(docId, nodeId);
@@ -74,7 +70,7 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
           keyboardShouldPersistTaps="handled"
         >
           {tree.length === 0 ? (
-            <TreeEmpty isDark={isDark} onAddDoc={() => props.onAddDoc(null)} />
+            <TreeEmpty onAddDoc={() => props.onAddDoc(null)} />
           ) : (
             tree.map((node) => (
               <TreeRow key={node.id} node={node} depth={0} p={props} />
@@ -83,8 +79,8 @@ const DocTreeSidebar: React.FC<TreeSidebarProps> = (props) => {
         </ScrollView>
       )}
 
-      <View style={{ paddingVertical: 6, alignItems: 'center', borderTopWidth: 1, borderTopColor: borderC }}>
-        <Text style={{ fontSize: 10, color: isDark ? '#334155' : '#cbd5e1' }}>
+      <View style={{ paddingVertical: 6, alignItems: 'center', borderTopWidth: 1, borderTopColor: c.border.primary }}>
+        <Text style={{ fontSize: 10, color: c.text.muted }}>
           Long-press to rename
         </Text>
       </View>

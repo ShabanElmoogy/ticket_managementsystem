@@ -1,4 +1,5 @@
 import type { CalloutType } from '../../types/types';
+import { useThemeColors } from '@/src/constants/theme';
 
 export const CALLOUT_CFG: Record<CalloutType, { emoji: string; color: string; bg: string; darkBg: string }> = {
   info:    { emoji: 'ℹ️', color: '#3b82f6', bg: '#eff6ff', darkBg: 'rgba(59,130,246,0.1)' },
@@ -25,6 +26,17 @@ export interface PreviewColors {
   borderColor: string;
 }
 
+/** Hook — returns PreviewColors derived from the active theme palette. */
+export function usePreviewColors(): PreviewColors {
+  const c = useThemeColors();
+  return {
+    textColor:   c.text.primary,
+    mutedColor:  c.text.muted,
+    borderColor: c.border.primary,
+  };
+}
+
+/** @deprecated Use usePreviewColors() hook instead. Kept for backward compat. */
 export function getPreviewColors(isDark: boolean): PreviewColors {
   return {
     textColor:   isDark ? '#e2e8f0' : '#1e293b',

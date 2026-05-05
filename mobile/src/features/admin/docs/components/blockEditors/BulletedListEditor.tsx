@@ -5,13 +5,12 @@ import type { BulletedListBlock } from '../../types/types';
 
 interface Props {
   block:    BulletedListBlock;
-  isDark:   boolean;
   onChange: (patch: Partial<BulletedListBlock>) => void;
 }
 
 const ACCENT = '#10b981';
 
-const BulletedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const BulletedListEditor: React.FC<Props> = ({ block, onChange }) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const updateItem  = (idx: number, val: string) => {
@@ -30,7 +29,6 @@ const BulletedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     setTimeout(() => inputRefs.current[Math.max(0, idx - 1)]?.focus(), 50);
   };
 
-  // ── Bullet marker: small filled circle inside a tinted ring ───────────────
   const renderMarker = (_idx: number) => (
     <View style={{
       width: 22, height: 22, borderRadius: 11,
@@ -42,7 +40,6 @@ const BulletedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     </View>
   );
 
-  // ── Add-row marker: same ring with a "+" ──────────────────────────────────
   const renderAddMarker = () => (
     <View style={{
       width: 22, height: 22, borderRadius: 11,
@@ -57,7 +54,6 @@ const BulletedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     <ListEditor
       title={block.title}
       items={block.items}
-      isDark={isDark}
       accentColor={ACCENT}
       renderMarker={renderMarker}
       renderAddMarker={renderAddMarker}

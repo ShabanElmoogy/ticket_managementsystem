@@ -1,39 +1,41 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
+import { Palette } from '@/src/constants/tokens';
 import type { ReportType } from '@/src/features/admin/reports/types';
 import { StatCard, type StatItem } from '@/src/shared/components';
 
-interface Props { row: any; isDark: boolean; }
+interface Props { row: any; }
 
-const ReportGridCard: React.FC<Props> = ({ row, isDark }) => {
+const ReportGridCard: React.FC<Props> = ({ row }) => {
+  const c = useThemeColors();
   if (!row) return null;
   const name: string     = row.customerName ?? row.title ?? '—';
   const type: ReportType = row._reportType;
-  const muted            = isDark ? '#64748b' : '#94a3b8';
 
   // ── Build stat badges ────────────────────────────────────────────────────
   const stats: StatItem[] = [];
 
   if (type === 'summary') {
-    if (row.open       != null) stats.push({ label: 'Open',     value: row.open,        color: '#f59e0b' });
-    if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,  color: '#8b5cf6' });
-    if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,    color: '#10b981' });
-    if (row.closed     != null) stats.push({ label: 'Closed',   value: row.closed,      color: '#64748b' });
+    if (row.open       != null) stats.push({ label: 'Open',     value: row.open,                    color: Palette.amber500  });
+    if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,              color: Palette.violet500 });
+    if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,                color: Palette.emerald500 });
+    if (row.closed     != null) stats.push({ label: 'Closed',   value: row.closed,                  color: Palette.zinc500   });
   } else if (type === 'customers-status') {
-    if (row.open       != null) stats.push({ label: 'Open',     value: row.open,                          color: '#f59e0b' });
-    if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,                    color: '#8b5cf6' });
-    if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,                      color: '#10b981' });
-    if (row.openPct    != null) stats.push({ label: 'Open %',   value: Math.round(row.openPct),           color: '#f59e0b' });
-    if (row.resolvedPct != null) stats.push({ label: 'Res. %',  value: Math.round(row.resolvedPct),       color: '#10b981' });
+    if (row.open       != null) stats.push({ label: 'Open',     value: row.open,                    color: Palette.amber500  });
+    if (row.inProgress != null) stats.push({ label: 'In Prog',  value: row.inProgress,              color: Palette.violet500 });
+    if (row.resolved   != null) stats.push({ label: 'Resolved', value: row.resolved,                color: Palette.emerald500 });
+    if (row.openPct    != null) stats.push({ label: 'Open %',   value: Math.round(row.openPct),     color: Palette.amber500  });
+    if (row.resolvedPct != null) stats.push({ label: 'Res. %',  value: Math.round(row.resolvedPct), color: Palette.emerald500 });
   } else if (type === 'customers-activity') {
-    if (row.created7   != null) stats.push({ label: 'Created',  value: row.created7,    color: '#3b82f6' });
-    if (row.closed7    != null) stats.push({ label: 'Closed',   value: row.closed7,     color: '#10b981' });
-    if (row.created30  != null) stats.push({ label: 'Cr 30d',   value: row.created30,   color: '#6366f1' });
-    if (row.closed30   != null) stats.push({ label: 'Cl 30d',   value: row.closed30,    color: '#ec4899' });
+    if (row.created7   != null) stats.push({ label: 'Created',  value: row.created7,  color: Palette.blue500   });
+    if (row.closed7    != null) stats.push({ label: 'Closed',   value: row.closed7,   color: Palette.emerald500 });
+    if (row.created30  != null) stats.push({ label: 'Cr 30d',   value: row.created30, color: Palette.indigo500 });
+    if (row.closed30   != null) stats.push({ label: 'Cl 30d',   value: row.closed30,  color: Palette.pink500   });
   } else if (type === 'sla') {
-    if (row.total      != null) stats.push({ label: 'Total',    value: row.total,       color: '#3b82f6' });
-    if (row.overdue    != null) stats.push({ label: 'Overdue',  value: row.overdue,     color: '#ef4444' });
-    if (row.onTimeCount != null) stats.push({ label: 'On Time', value: row.onTimeCount, color: '#10b981' });
+    if (row.total      != null) stats.push({ label: 'Total',    value: row.total,       color: Palette.blue500    });
+    if (row.overdue    != null) stats.push({ label: 'Overdue',  value: row.overdue,     color: Palette.red500     });
+    if (row.onTimeCount != null) stats.push({ label: 'On Time', value: row.onTimeCount, color: Palette.emerald500 });
   }
 
   // ── Build subtitle ───────────────────────────────────────────────────────
@@ -44,23 +46,23 @@ const ReportGridCard: React.FC<Props> = ({ row, isDark }) => {
   // ── Build footer ─────────────────────────────────────────────────────────
   const footer =
     type === 'sla' && row.avgResolutionHours != null ? (
-      <Text style={{ fontSize: 11, color: muted }}>
+      <Text style={{ fontSize: 11, color: c.text.muted }}>
         Avg resolution: {row.avgResolutionHours.toFixed(1)}h
       </Text>
     ) : type === 'tickets' ? (
       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
         {row.status && (
-          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: '#3b82f620' }}>
-            <Text style={{ fontSize: 11, color: '#3b82f6', fontWeight: '600' }}>{row.status}</Text>
+          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: Palette.blue500 + '20' }}>
+            <Text style={{ fontSize: 11, color: Palette.blue500, fontWeight: '600' }}>{row.status}</Text>
           </View>
         )}
         {row.priority && (
-          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: '#f59e0b20' }}>
-            <Text style={{ fontSize: 11, color: '#f59e0b', fontWeight: '600' }}>{row.priority}</Text>
+          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: Palette.amber500 + '20' }}>
+            <Text style={{ fontSize: 11, color: Palette.amber500, fontWeight: '600' }}>{row.priority}</Text>
           </View>
         )}
         {row.customer?.name && (
-          <Text style={{ fontSize: 11, color: muted }}>{row.customer.name}</Text>
+          <Text style={{ fontSize: 11, color: c.text.muted }}>{row.customer.name}</Text>
         )}
       </View>
     ) : undefined;

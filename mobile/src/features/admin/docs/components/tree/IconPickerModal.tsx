@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, Modal } from 'react-native';
+import { useThemeColors } from '@/src/constants/theme';
 
 const FOLDER_ICONS = [
   '📁','📂','📚','📖','📝','📋','📌','📎','🗂️','🗃️',
@@ -10,7 +11,6 @@ const FOLDER_ICONS = [
 interface Props {
   visible: boolean;
   current?: string;
-  isDark: boolean;
   onSelect: (icon: string) => void;
   onClear: () => void;
   onClose: () => void;
@@ -18,57 +18,62 @@ interface Props {
 
 /** Web equivalent: MUI Popover containing the emoji grid */
 const IconPickerModal: React.FC<Props> = ({
-  visible, current, isDark, onSelect, onClear, onClose,
-}) => (
-  <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-    <Pressable
-      onPress={onClose}
-      style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
-    >
+  visible, current, onSelect, onClear, onClose,
+}) => {
+  const c = useThemeColors();
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
-        onPress={() => {}}
-        style={{
-          backgroundColor: isDark ? '#1e293b' : '#fff',
-          borderRadius: 12, padding: 16, width: 240,
-          elevation: 12,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.2, shadowRadius: 12,
-        }}
+        onPress={onClose}
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
       >
-        <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#f1f5f9' : '#0f172a', marginBottom: 10 }}>
-          Choose folder icon
-        </Text>
+        <Pressable
+          onPress={() => {}}
+          style={{
+            backgroundColor: c.surface.card,
+            borderRadius: 12, padding: 16, width: 240,
+            elevation: 12,
+            shadowColor: c.shadow,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 1,
+            shadowRadius: 12,
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '700', color: c.text.primary, marginBottom: 10 }}>
+            Choose folder icon
+          </Text>
 
-        {/* web: flexWrap + gap:0.5 (4px) */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {FOLDER_ICONS.map((emoji) => (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {FOLDER_ICONS.map((emoji) => (
+              <Pressable
+                key={emoji}
+                onPress={() => { onSelect(emoji); onClose(); }}
+                style={{
+                  width: 36, height: 36, margin: 2,
+                  alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 6, borderWidth: 2,
+                  borderColor: current === emoji ? c.interactive.primary : 'transparent',
+                  backgroundColor: c.surface.elevated,
+                }}
+              >
+                <Text style={{ fontSize: 18 }}>{emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {current ? (
             <Pressable
-              key={emoji}
-              onPress={() => { onSelect(emoji); onClose(); }}
-              style={{
-                width: 36, height: 36, margin: 2,
-                alignItems: 'center', justifyContent: 'center',
-                borderRadius: 6, borderWidth: 2,
-                borderColor: current === emoji ? '#3b82f6' : 'transparent',
-                backgroundColor: isDark ? '#334155' : '#f1f5f9',
-              }}
+              onPress={() => { onClear(); onClose(); }}
+              style={{ marginTop: 10, paddingVertical: 6, alignItems: 'center' }}
             >
-              <Text style={{ fontSize: 18 }}>{emoji}</Text>
+              <Text style={{ fontSize: 12, color: c.intent.error }}>Remove icon</Text>
             </Pressable>
-          ))}
-        </View>
-
-        {current ? (
-          <Pressable
-            onPress={() => { onClear(); onClose(); }}
-            style={{ marginTop: 10, paddingVertical: 6, alignItems: 'center' }}
-          >
-            <Text style={{ fontSize: 12, color: '#ef4444' }}>Remove icon</Text>
-          </Pressable>
-        ) : null}
+          ) : null}
+        </Pressable>
       </Pressable>
-    </Pressable>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 export default IconPickerModal;

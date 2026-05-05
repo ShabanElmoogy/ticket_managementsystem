@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, Image, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import type { ImageCarouselBlock } from '../../types/types';
-import type { PreviewColors } from './previewUtils';
+import { useThemeColors } from '@/src/constants/theme';
+import { usePreviewColors } from './previewUtils';
 
 interface Props {
   block: ImageCarouselBlock;
-  isDark: boolean;
-  colors: PreviewColors;
 }
 
 const BASE_URL      = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
@@ -16,7 +15,9 @@ function resolveUrl(url: string): string {
   return url.startsWith('/uploads/') ? `${SERVER_ORIGIN}${url}` : url;
 }
 
-const PreviewImageCarousel: React.FC<Props> = ({ block, isDark, colors }) => {
+const PreviewImageCarousel: React.FC<Props> = ({ block }) => {
+  const c = useThemeColors();
+  const colors = usePreviewColors();
   const [idx, setIdx]         = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(false);
@@ -49,7 +50,7 @@ const PreviewImageCarousel: React.FC<Props> = ({ block, isDark, colors }) => {
           <View style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             alignItems: 'center', justifyContent: 'center', zIndex: 1,
-            backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+            backgroundColor: c.surface.secondary,
           }}>
             <ActivityIndicator color="#ec4899" size="large" />
           </View>
@@ -57,7 +58,7 @@ const PreviewImageCarousel: React.FC<Props> = ({ block, isDark, colors }) => {
         {error ? (
           <View style={{
             flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4,
-            backgroundColor: isDark ? '#1e293b' : '#fef2f2',
+            backgroundColor: c.surface.secondary,
           }}>
             <Text style={{ fontSize: 24 }}>⚠️</Text>
             <Text style={{ fontSize: 12, color: '#ef4444', fontWeight: '600' }}>Could not load image</Text>
@@ -138,7 +139,7 @@ const PreviewImageCarousel: React.FC<Props> = ({ block, isDark, colors }) => {
             <Pressable key={i} onPress={() => goTo(i)}>
               <View style={{
                 width: i === idx ? 16 : 6, height: 6, borderRadius: 3,
-                backgroundColor: i === idx ? '#ec4899' : (isDark ? '#334155' : '#cbd5e1'),
+                backgroundColor: i === idx ? '#ec4899' : c.surface.elevated,
               }} />
             </Pressable>
           ))}

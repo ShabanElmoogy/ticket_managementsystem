@@ -5,13 +5,12 @@ import type { NumberedListBlock } from '../../types/types';
 
 interface Props {
   block:    NumberedListBlock;
-  isDark:   boolean;
   onChange: (patch: Partial<NumberedListBlock>) => void;
 }
 
 const ACCENT = '#10b981';
 
-const NumberedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
+const NumberedListEditor: React.FC<Props> = ({ block, onChange }) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const updateItem  = (idx: number, val: string) => {
@@ -30,7 +29,6 @@ const NumberedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     setTimeout(() => inputRefs.current[Math.max(0, idx - 1)]?.focus(), 50);
   };
 
-  // ── Number marker: rounded square badge with the item index ───────────────
   const renderMarker = (idx: number) => (
     <View style={{
       width: 26, height: 26, borderRadius: 8,
@@ -42,7 +40,6 @@ const NumberedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     </View>
   );
 
-  // ── Add-row marker: same badge with "+" ───────────────────────────────────
   const renderAddMarker = () => (
     <View style={{
       width: 26, height: 26, borderRadius: 8,
@@ -57,7 +54,6 @@ const NumberedListEditor: React.FC<Props> = ({ block, isDark, onChange }) => {
     <ListEditor
       title={block.title}
       items={block.items}
-      isDark={isDark}
       accentColor={ACCENT}
       renderMarker={renderMarker}
       renderAddMarker={renderAddMarker}

@@ -8,13 +8,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import { tokenManager } from '../../../../../services/api/tokenManager';
 
 interface Props {
   url: string;
   width: number;
   height: number;
-  isDark: boolean;
   onOpenExternal?: () => void;
 }
 
@@ -198,10 +198,12 @@ try {
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
-const ExcelViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExternal }) => {
+const ExcelViewer: React.FC<Props> = ({ url, width, height, onOpenExternal }) => {
   const [html,    setHtml]    = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
+  const c      = useThemeColors();
+  const isDark = useIsDark();
 
   useEffect(() => {
     setHtml(null);
@@ -223,10 +225,10 @@ const ExcelViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExtern
     return (
       <View style={{
         width, height, alignItems: 'center', justifyContent: 'center', gap: 10,
-        backgroundColor: isDark ? '#1e293b' : '#fff',
+        backgroundColor: c.surface.card,
       }}>
-        <ActivityIndicator color="#16a34a" size="large" />
-        <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b' }}>
+        <ActivityIndicator color={c.intent.success} size="large" />
+        <Text style={{ fontSize: 12, color: c.text.muted }}>
           Loading spreadsheet…
         </Text>
       </View>
@@ -237,13 +239,13 @@ const ExcelViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExtern
     return (
       <View style={{
         width, height, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20,
-        backgroundColor: isDark ? '#1e293b' : '#fff',
+        backgroundColor: c.surface.card,
       }}>
         <Text style={{ fontSize: 28 }}>⚠️</Text>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: '#dc2626', textAlign: 'center' }}>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: c.intent.error, textAlign: 'center' }}>
           Could not load file
         </Text>
-        <Text style={{ fontSize: 11, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center' }}>
+        <Text style={{ fontSize: 11, color: c.text.muted, textAlign: 'center' }}>
           {error}
         </Text>
         {onOpenExternal && (
@@ -251,10 +253,10 @@ const ExcelViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExtern
             onPress={onOpenExternal}
             style={({ pressed }) => ({
               paddingHorizontal: 16, paddingVertical: 9, borderRadius: 8,
-              backgroundColor: pressed ? '#15803d' : '#16a34a',
+              backgroundColor: pressed ? c.buttons.success.pressed : c.buttons.success.bg,
             })}
           >
-            <Text style={{ fontSize: 13, color: '#fff', fontWeight: '700' }}>Open externally ↗</Text>
+            <Text style={{ fontSize: 13, color: c.buttons.success.text, fontWeight: '700' }}>Open externally ↗</Text>
           </Pressable>
         )}
       </View>
@@ -262,7 +264,7 @@ const ExcelViewer: React.FC<Props> = ({ url, width, height, isDark, onOpenExtern
   }
 
   return (
-    <View style={{ width, height, backgroundColor: isDark ? '#1e293b' : '#fff' }}>
+    <View style={{ width, height, backgroundColor: c.surface.card }}>
       <WebView
         source={{ html, baseUrl: SERVER_ORIGIN }}
         style={{ flex: 1 }}

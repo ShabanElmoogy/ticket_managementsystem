@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Colors, Palette, FontSize, FontWeight, Radius } from '@/src/constants/tokens';
+import { Palette, FontSize, FontWeight, Radius, type ThemeColors } from '@/src/constants/tokens';
 import type { ColDef } from '../components/data/AppDataTable';
 
 // ── Column width constants ────────────────────────────────────────────────────
@@ -19,10 +19,10 @@ export const W = {
   name:     140,
 } as const;
 
+// ── Re-export domain color maps for convenience ───────────────────────────────
+export { StatusColors, PriorityColors } from '@/src/constants/tokens';
+
 // ── Tinted badge (table cells only) ──────────────────────────────────────────
-// Distinct from the shared Badge component — this variant has a colored border
-// and uses the accent color as the text color (not c.text.inverse).
-// Used exclusively inside table renderCell functions.
 
 const TintedBadge: React.FC<{ label: string | number; color: string }> = ({ label, color }) => (
   <View style={{
@@ -54,12 +54,11 @@ export function createBadgeColumn<T>(
 // ── Total column ──────────────────────────────────────────────────────────────
 
 export function createTotalColumn<T>(
-  isDark: boolean,
+  c: ThemeColors,
   field: keyof T = 'total' as keyof T,
   headerName = 'Total',
   width = W.num,
 ): ColDef<T> {
-  const c = isDark ? Colors.dark : Colors.light;
   return {
     field,
     headerName,
@@ -101,12 +100,11 @@ export function createThresholdColumn<T>(
   headerName: string,
   getCount: (r: T) => number,
   getTotal: (r: T) => number,
-  isDark: boolean,
+  c: ThemeColors,
   width = 80,
   thresholds: [number, number] = [80, 50],
   colors: [string, string, string] = [Palette.green500, Palette.amber500, Palette.red500],
 ): ColDef<T> {
-  const c = isDark ? Colors.dark : Colors.light;
   return {
     field,
     headerName,
@@ -132,3 +130,6 @@ export function createThresholdColumn<T>(
     },
   };
 }
+
+// ── Re-export Badge for external use ─────────────────────────────────────────
+export { TintedBadge as Badge };

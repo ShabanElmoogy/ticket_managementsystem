@@ -4,11 +4,12 @@ import {
   Modal, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useThemeColors, useIsDark } from '@/src/constants/theme';
 import type { ExcelBlock } from '../../types/types';
 import type { PreviewColors } from './previewUtils';
 import ExcelViewer from '../shared/ExcelViewer';
 
-interface Props { block: ExcelBlock; isDark: boolean; colors: PreviewColors; }
+interface Props { block: ExcelBlock; colors: PreviewColors; }
 
 const BASE_URL      = process.env.EXPO_PUBLIC_API_URL ?? 'https://localhost:3000/api';
 const SERVER_ORIGIN = BASE_URL.replace(/\/api\/?$/, '');
@@ -18,7 +19,9 @@ function resolveUrl(url: string): string {
   return url.startsWith('/uploads/') ? `${SERVER_ORIGIN}${url}` : url;
 }
 
-const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
+const PreviewExcel: React.FC<Props> = ({ block, colors }) => {
+  const c      = useThemeColors();
+  const isDark = useIsDark();
   const [expanded,   setExpanded]   = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const { width, height }           = useWindowDimensions();
@@ -41,15 +44,13 @@ const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
         onPress={() => setExpanded((v) => !v)}
         style={({ pressed }) => ({
           flexDirection: 'row', alignItems: 'center', gap: 14,
-          backgroundColor: pressed
-            ? (isDark ? '#0f2d1a' : '#f0fdf4')
-            : (isDark ? '#1e293b' : '#fff'),
+          backgroundColor: pressed ? c.intent.successSurface : c.surface.card,
           borderRadius: 12,
           borderBottomLeftRadius: expanded ? 0 : 12,
           borderBottomRightRadius: expanded ? 0 : 12,
           borderWidth: 1.5,
-          borderColor: isDark ? '#166534' : '#bbf7d0',
-          borderBottomColor: expanded ? 'transparent' : (isDark ? '#166534' : '#bbf7d0'),
+          borderColor: c.intent.success + '66',
+          borderBottomColor: expanded ? 'transparent' : c.intent.success + '66',
           padding: 14,
         })}
       >
@@ -83,16 +84,15 @@ const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
       {expanded && (
         <View style={{
           borderWidth: 1.5, borderTopWidth: 0,
-          borderColor: isDark ? '#166534' : '#bbf7d0',
+          borderColor: c.intent.success + '66',
           borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
           overflow: 'hidden',
         }}>
-          {/* Fullscreen button */}
           <View style={{
             flexDirection: 'row', justifyContent: 'flex-end',
             paddingHorizontal: 10, paddingVertical: 6,
-            backgroundColor: isDark ? '#0f172a' : '#f1f5f9',
-            borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+            backgroundColor: c.surface.tertiary,
+            borderBottomWidth: 1, borderBottomColor: c.border.primary,
           }}>
             <Pressable
               onPress={() => setFullscreen(true)}
@@ -111,7 +111,6 @@ const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
             url={fullUrl}
             width={viewerWidth}
             height={viewerHeight}
-            isDark={isDark}
             onOpenExternal={handleOpenExternal}
           />
         </View>
@@ -125,15 +124,15 @@ const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
         onRequestClose={() => setFullscreen(false)}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#fff' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: c.surface.secondary }}>
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 12,
             paddingHorizontal: 16, paddingVertical: 12,
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            borderBottomWidth: 1, borderBottomColor: isDark ? '#334155' : '#e2e8f0',
+            backgroundColor: c.surface.card,
+            borderBottomWidth: 1, borderBottomColor: c.border.primary,
           }}>
             <Text style={{ fontSize: 20 }}>{iconEmoji}</Text>
-            <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: colors.textColor }} numberOfLines={1}>
+            <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: c.text.primary }} numberOfLines={1}>
               {displayName}
             </Text>
             <Pressable
@@ -142,18 +141,17 @@ const PreviewExcel: React.FC<Props> = ({ block, isDark, colors }) => {
               style={({ pressed }) => ({
                 width: 36, height: 36, borderRadius: 18,
                 alignItems: 'center', justifyContent: 'center',
-                backgroundColor: pressed ? (isDark ? '#334155' : '#f1f5f9') : 'transparent',
-                borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0',
+                backgroundColor: pressed ? c.surface.elevated : 'transparent',
+                borderWidth: 1, borderColor: c.border.primary,
               })}
             >
-              <Text style={{ fontSize: 16, color: colors.mutedColor }}>✕</Text>
+              <Text style={{ fontSize: 16, color: c.text.muted }}>✕</Text>
             </Pressable>
           </View>
           <ExcelViewer
             url={fullUrl}
             width={width}
             height={height - 80}
-            isDark={isDark}
             onOpenExternal={handleOpenExternal}
           />
         </SafeAreaView>
