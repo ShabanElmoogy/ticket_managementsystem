@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   ScrollView, View, Text, Pressable,
   PanResponder, Animated, LayoutAnimation, UIManager, Platform,
@@ -24,6 +24,8 @@ interface Props {
   onInsertBlock: (type: BlockType, afterIndex: number) => void;
   onReorderBlocks: (orderedIds: string[]) => void;
   onSaveBlockAsTemplate?: (block: DocBlock) => void;
+  /** Call this to scroll the editor to the last block */
+  scrollToEndRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 // ── Drag handle ───────────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ const DocEditor: React.FC<Props> = ({
   blocks, hasDoc,
   onUpdateBlock, onRemoveBlock, onDuplicateBlock, onMoveBlock,
   onInsertBlock, onReorderBlocks, onSaveBlockAsTemplate,
+  scrollToEndRef,
 }) => {
   const [insertAfter, setInsertAfter] = useState<number | null>(null);
   const [draggingId,  setDraggingId]  = useState<string | null>(null);
@@ -90,6 +93,27 @@ const DocEditor: React.FC<Props> = ({
   const blockHeights = useRef<Record<string, number>>({});
   const scrollOffset = useRef(0);
   const scrollRef    = useRef<ScrollView>(null);
+
+  // Scroll to end whenever a new block is added
+  const prevLengthRef = useRef(blocks.length);
+  useEffect(() => {
+    if (blocks.length > prevLengthRef.current) {
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+    }
+    prevLengthRef.current = blocks.length;
+  }, [blocks.length]);
+
+  // Expose scrollToEnd so the parent can trigger it after adding a block
+  useEffect(() => {
+    if (scrollToEndRef) {
+      scrollToEndRef.current = () => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      };
+    }
+    return () => {
+      if (scrollToEndRef) scrollToEndRef.current = null;
+    };
+  }, [scrollToEndRef]);
 
   const computeDropIndex = useCallback((absoluteY: number) => {
     const relY = absoluteY + scrollOffset.current;

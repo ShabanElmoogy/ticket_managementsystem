@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
-  View, Text, Pressable, TextInput,
-  useWindowDimensions, Animated,
+  View, Text, Pressable,
+  useWindowDimensions,
 } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated, TextInput } = require('react-native') as { Animated: any; TextInput: any };
 import BlockPalette from '@/src/features/admin/docs/components/BlockPalette';
 import ContentSearchModal from '@/src/features/admin/docs/components/ContentSearchModal';
 import DocEditor from '@/src/features/admin/docs/components/DocEditor';
@@ -92,6 +94,8 @@ const DocsScreen: React.FC = () => {
   const [searchOpen,    setSearchOpen]    = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
 
+  const scrollToEndRef = useRef<(() => void) | null>(null);
+
   const { templates, saveTemplate, deleteTemplate, instantiateTemplate } = useBlockTemplates();
 
   const DRAWER_W  = Math.min(260, width * 0.78);
@@ -139,6 +143,10 @@ const DocsScreen: React.FC = () => {
   const saveCurrentDoc    = useDocsStore((s) => s.saveCurrentDoc);
   const renameCurrentDoc  = useDocsStore((s) => s.renameCurrentDoc);
 
+  const handleAddBlock = useCallback((type: Parameters<typeof addBlock>[0]) => {
+    addBlock(type);
+  }, [addBlock]);
+
   const currentDoc = useCurrentDoc();
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -170,8 +178,7 @@ const DocsScreen: React.FC = () => {
         {!isWide && (
           <Pressable
             onPress={openSidebar}
-            style={({ pressed }) => ({
-              width: 36, height: 36, borderRadius: 10,
+            style={({ pressed }: { pressed: boolean }) => ({
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: pressed ? c.surface.elevated : c.surface.tertiary,
             })}
@@ -195,7 +202,7 @@ const DocsScreen: React.FC = () => {
           <Pressable
             onPress={handleExport}
             disabled={exporting}
-            style={({ pressed }) => ({
+            style={({ pressed }: { pressed: boolean }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
               backgroundColor: pressed ? c.buttons.danger.pressed : c.buttons.danger.bg,
@@ -213,7 +220,7 @@ const DocsScreen: React.FC = () => {
         {currentDoc && (
           <Pressable
             onPress={() => setPreview(!preview)}
-            style={({ pressed }) => ({
+            style={({ pressed }: { pressed: boolean }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
               backgroundColor: preview
@@ -232,7 +239,7 @@ const DocsScreen: React.FC = () => {
         {currentDoc && !preview && (
           <Pressable
             onPress={saveCurrentDoc}
-            style={({ pressed }) => ({
+            style={({ pressed }: { pressed: boolean }) => ({
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
               backgroundColor: pressed ? c.buttons.primary.pressed : c.buttons.primary.bg,
@@ -282,6 +289,7 @@ const DocsScreen: React.FC = () => {
               onInsertBlock={insertBlock}
               onReorderBlocks={reorderBlocks}
               onSaveBlockAsTemplate={(block) => saveTemplate(block.type + ' template', [block])}
+              scrollToEndRef={scrollToEndRef}
             />
           )}
           {currentDoc && !preview && (
