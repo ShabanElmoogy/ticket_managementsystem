@@ -46,9 +46,9 @@ const LanguagePill: React.FC<PillProps> = ({ option, isActive, resolvedColors: c
   const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
   const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 6 }).start();
 
-  const bgColor    = isActive ? c.interactive.primary : 'transparent';
+  const bgColor     = isActive ? c.interactive.primary : 'transparent';
   const borderColor = isActive ? c.interactive.primary : c.border.primary;
-  const textColor  = isActive ? Palette.white : c.text.secondary;
+  const textColor   = isActive ? c.buttons.primary.text : c.text.secondary;
   const flagOpacity = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
 
   return (
@@ -86,7 +86,7 @@ const LanguagePill: React.FC<PillProps> = ({ option, isActive, resolvedColors: c
         {/* Checkmark — only when active */}
         {isActive && (
           <View style={styles.check}>
-            <Ionicons name="checkmark-circle" size={16} color={Palette.white + 'CC'} />
+            <Ionicons name="checkmark-circle" size={16} color={c.buttons.primary.text} />
           </View>
         )}
       </Pressable>

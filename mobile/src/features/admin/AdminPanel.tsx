@@ -50,7 +50,7 @@ function AdminPanel() {
   const [selected, setSelected] = React.useState('dashboard');
 
   // Blue palette: use per-item colors for a colorful multi-hue look.
-  // Orange / Green palettes: use c.tint so the active tab always matches the palette.
+  // Orange / Green / Black / White palettes: use c.tint so the active tab always matches the palette.
   const useItemColors = paletteOption === 'blue';
 
   const visibleItems = MENU_ITEMS.filter(

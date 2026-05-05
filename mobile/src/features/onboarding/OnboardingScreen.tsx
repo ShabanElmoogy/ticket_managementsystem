@@ -42,7 +42,7 @@ const OnboardingScreen: React.FC = () => {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.surface.secondary }]}>
 
       {/* ── Hero ── */}
-      <View style={[styles.hero, { backgroundColor: c.interactive.primary }]}>
+      <View style={[styles.hero, { backgroundColor: c.surface.header }]}>
         {/* Decorative orbs */}
         <View style={[styles.orb, styles.orbTR]} />
         <View style={[styles.orb, styles.orbBL]} />
@@ -50,7 +50,7 @@ const OnboardingScreen: React.FC = () => {
 
         {/* Icon badge */}
         <View style={styles.iconBadge}>
-          <Ionicons name="ticket-outline" size={34} color={c.interactive.primary} />
+          <Ionicons name="ticket-outline" size={34} color={c.surface.header} />
         </View>
 
         <Text style={styles.heroAppName} accessibilityRole="header">
@@ -137,11 +137,11 @@ const OnboardingScreen: React.FC = () => {
               { backgroundColor: c.buttons.primary.bg, flexDirection: isRtl ? 'row-reverse' : 'row' },
             ]}
           >
-            <Text style={[styles.getStartedText, { color: Palette.white }]} numberOfLines={1}>
+            <Text style={[styles.getStartedText, { color: c.buttons.primary.text }]} numberOfLines={1}>
               {t('onboarding.ready.getStarted')}
             </Text>
             <View style={[styles.arrowBadge, isRtl ? { marginEnd: 10 } : { marginStart: 10 }]}>
-              <Ionicons name={getStartedArrow} size={18} color={Palette.white} />
+              <Ionicons name={getStartedArrow} size={18} color={c.buttons.primary.text} />
             </View>
           </Pressable>
         </Animated.View>

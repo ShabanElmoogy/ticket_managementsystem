@@ -32,7 +32,8 @@ export function useThemeColors(): ThemeColors {
 
   // Guard against invalid paletteOption values (e.g. from corrupted AsyncStorage)
   const safeOption: PaletteOption =
-    (paletteOption === 'blue' || paletteOption === 'orange' || paletteOption === 'green')
+    (paletteOption === 'blue' || paletteOption === 'orange' || paletteOption === 'green' ||
+     paletteOption === 'black')
       ? paletteOption
       : 'blue';
 

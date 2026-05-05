@@ -74,9 +74,9 @@ const AppearancePill: React.FC<PillProps> = ({ option, isActive, label, resolved
         <Ionicons
           name={isActive ? option.activeIcon : option.iconName}
           size={16}
-          color={isActive ? Palette.white : c.text.secondary}
+          color={isActive ? c.buttons.primary.text : c.text.secondary}
         />
-        <Text style={[styles.label, { color: isActive ? Palette.white : c.text.secondary }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: isActive ? c.buttons.primary.text : c.text.secondary }]} numberOfLines={1}>
           {label}
         </Text>
       </Pressable>

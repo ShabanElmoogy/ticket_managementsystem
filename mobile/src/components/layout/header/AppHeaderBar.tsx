@@ -36,9 +36,12 @@ const AppHeaderBar: React.FC = () => {
         onPress={() => router.push('/(app)' as any)}
       >
         <View style={{
-          width: 32, height: 32, borderRadius: 8,
-          backgroundColor: 'rgba(255,255,255,0.18)',
-          alignItems: 'center', justifyContent: 'center',
+          width: 32,
+          height: 32, 
+          borderRadius: 8,
+          backgroundColor: c.text.primary,
+          alignItems: 'center', 
+          justifyContent: 'center',
         }}>
           <Ionicons name="ticket-outline" size={18} color={c.text.inverse} />
         </View>
@@ -54,7 +57,7 @@ const AppHeaderBar: React.FC = () => {
           icon="notifications-outline"
           accessibilityLabel={t('nav.notifications')}
           badgeCount={unreadCount}
-          iconColor={c.text.inverse}
+          iconColor={c.text.primary}
           backgroundColor="rgba(255,255,255,0.15)"
           onPress={() => router.push('/(app)/notifications' as any)}
         />
@@ -80,7 +83,7 @@ const AppHeaderBar: React.FC = () => {
           icon={open ? 'close-outline' : 'menu-outline'}
           accessibilityLabel={open ? t('common.close') : t('nav.menu')}
           iconSize={22}
-          iconColor={c.text.inverse}
+          iconColor={c.text.primary}
           backgroundColor="rgba(255,255,255,0.15)"
           onPress={() => setOpen(!open)}
         />

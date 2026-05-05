@@ -658,7 +658,9 @@
       "subtitle": "Select an accent color for the app's interactive elements.",
       "blue": "Blue",
       "orange": "Orange",
-      "green": "Green"
+      "green": "Green",
+      "black": "Black",
+      "white": "White"
     },
     "ready": {
       "title": "You're All Set!",

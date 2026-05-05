@@ -1135,14 +1135,156 @@ const darkGreen: ThemeColors = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Semantic Tokens — Black & White system palettes
+// Black: high-contrast dark neutral (no hue cast)
+// White: clean minimal light neutral (no hue cast)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Light — Black (high-contrast monochrome) */
+const lightBlack: ThemeColors = {
+  surface: {
+    primary:   Palette.white,
+    secondary: Palette.neutral50,
+    tertiary:  Palette.neutral100,
+    elevated:  Palette.neutral200,
+    card:      Palette.white,
+    header:    Palette.neutral900,
+  },
+  text: {
+    primary:   Palette.neutral900,
+    secondary: Palette.neutral600,
+    tertiary:  Palette.neutral500,
+    muted:     Palette.neutral400,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.neutral200,
+    secondary: Palette.neutral300,
+    focus:     Palette.neutral900,
+  },
+  intent: {
+    success:        Palette.emerald600,
+    successSurface: Palette.emerald50,
+    error:          Palette.red600,
+    errorSurface:   Palette.red50,
+    warning:        Palette.amber600,
+    warningSurface: Palette.amber50,
+    info:           Palette.blue600,
+    infoSurface:    Palette.blue50,
+  },
+  interactive: {
+    primary:          Palette.neutral900,
+    primaryPressed:   Palette.neutral700,
+    secondary:        Palette.neutral200,
+    disabled:         Palette.neutral300,
+    pressed:          Palette.neutral100,
+    success:          Palette.emerald600,
+    successPressed:   Palette.emerald700,
+    warning:          Palette.amber500,
+    warningPressed:   Palette.amber600,
+    error:            Palette.red600,
+    errorPressed:     Palette.red700,
+    chipBg:           Palette.neutral100,
+    chipBorder:       Palette.neutral300,
+    chipActiveBg:     Palette.neutral900,
+    chipActiveBorder: Palette.neutral700,
+    chipActiveText:   Palette.white,
+    chipText:         Palette.neutral600,
+  },
+  buttons: {
+    primary:   { bg: Palette.neutral900,  pressed: Palette.neutral700,  text: Palette.white },
+    success:   { bg: Palette.emerald600,  pressed: Palette.emerald700,  text: Palette.white },
+    danger:    { bg: Palette.red600,      pressed: Palette.red700,      text: Palette.white },
+    secondary: { bg: Palette.neutral200,  text: Palette.neutral900,     border: Palette.neutral300 },
+    outline:   { border: Palette.neutral900, text: Palette.neutral900 },
+    ghost:     { text: Palette.neutral900 },
+    neutral:   { bg: Palette.neutral100,  pressed: Palette.neutral200,  text: Palette.neutral600 },
+    cancel:    { bg: 'transparent',       pressed: Palette.neutral100,  text: Palette.neutral500, border: Palette.neutral300 },
+  },
+  tint:            Palette.neutral900,
+  icon:            Palette.neutral500,
+  tabIconDefault:  Palette.neutral400,
+  tabIconSelected: Palette.neutral900,
+  shadow:          'rgba(0,0,0,0.12)',
+};
+
+/** Dark — Black (deep monochrome) */
+const darkBlack: ThemeColors = {
+  surface: {
+    primary:   Palette.neutral900,
+    secondary: Palette.neutral950,
+    tertiary:  Palette.neutral800,
+    elevated:  Palette.neutral700,
+    card:      Palette.neutral900,
+    header:    Palette.neutral800,
+  },
+  text: {
+    primary:   Palette.neutral50,
+    secondary: Palette.neutral300,
+    tertiary:  Palette.neutral400,
+    muted:     Palette.neutral500,
+    inverse:   Palette.white,
+  },
+  border: {
+    primary:   Palette.neutral700,
+    secondary: Palette.neutral600,
+    focus:     Palette.neutral200,
+  },
+  intent: {
+    success:        Palette.emerald400,
+    successSurface: Palette.emerald950,
+    error:          Palette.red400,
+    errorSurface:   Palette.red950,
+    warning:        Palette.amber400,
+    warningSurface: Palette.amber950,
+    info:           Palette.blue400,
+    infoSurface:    Palette.blue950,
+  },
+  interactive: {
+    primary:          Palette.neutral200,
+    primaryPressed:   Palette.neutral400,
+    secondary:        Palette.neutral700,
+    disabled:         Palette.neutral600,
+    pressed:          Palette.neutral700,
+    success:          Palette.emerald400,
+    successPressed:   Palette.emerald500,
+    warning:          Palette.amber400,
+    warningPressed:   Palette.amber500,
+    error:            Palette.red400,
+    errorPressed:     Palette.red500,
+    chipBg:           Palette.neutral800,
+    chipBorder:       Palette.neutral600,
+    chipActiveBg:     Palette.neutral200,
+    chipActiveBorder: Palette.neutral400,
+    chipActiveText:   Palette.neutral950,
+    chipText:         Palette.neutral300,
+  },
+  buttons: {
+    primary:   { bg: Palette.white,       pressed: Palette.neutral200,  text: Palette.neutral950 },
+    success:   { bg: Palette.emerald500,  pressed: Palette.emerald600,  text: Palette.white },
+    danger:    { bg: Palette.red500,      pressed: Palette.red600,      text: Palette.white },
+    secondary: { bg: Palette.neutral700,  text: Palette.neutral100,     border: Palette.neutral600 },
+    outline:   { border: Palette.neutral200, text: Palette.neutral200 },
+    ghost:     { text: Palette.neutral200 },
+    neutral:   { bg: Palette.neutral700,  pressed: Palette.neutral600,  text: Palette.neutral300 },
+    cancel:    { bg: 'transparent',       pressed: Palette.neutral700,  text: Palette.neutral400, border: Palette.neutral600 },
+  },
+  tint:            Palette.neutral200,
+  icon:            Palette.neutral400,
+  tabIconDefault:  Palette.neutral500,
+  tabIconSelected: Palette.neutral200,
+  shadow:          'rgba(0,0,0,0.60)',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PaletteOption + ColorsByPalette + Colors
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type PaletteOption = 'blue' | 'orange' | 'green';
+export type PaletteOption = 'blue' | 'orange' | 'green' | 'black';
 
 export const ColorsByPalette: Record<'light' | 'dark', Record<PaletteOption, ThemeColors>> = {
-  light: { blue: lightBlue, orange: lightOrange, green: lightGreen },
-  dark:  { blue: darkBlue,  orange: darkOrange,  green: darkGreen  },
+  light: { blue: lightBlue, orange: lightOrange, green: lightGreen, black: lightBlack },
+  dark:  { blue: darkBlue,  orange: darkOrange,  green: darkGreen,  black: darkBlack  },
 };
 
 // Colors.light / Colors.dark remain the blue-palette sets for backward compat.

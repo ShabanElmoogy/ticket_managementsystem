@@ -19,6 +19,7 @@ const PALETTE_OPTIONS: PaletteOptionConfig[] = [
   { option: 'blue',   labelKey: 'onboarding.palette.blue',   primaryColor: Palette.blue600,    accentColor: '#93C5FD' },
   { option: 'orange', labelKey: 'onboarding.palette.orange', primaryColor: Palette.orange500,  accentColor: '#FCD34D' },
   { option: 'green',  labelKey: 'onboarding.palette.green',  primaryColor: Palette.emerald600, accentColor: '#6EE7B7' },
+  { option: 'black',  labelKey: 'onboarding.palette.black',  primaryColor: Palette.neutral500, accentColor: Palette.neutral300 },
 ];
 
 interface Props {
@@ -72,10 +73,14 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
           style={[
             styles.card,
             {
-              borderColor:    isActive ? config.primaryColor : c.border.primary,
-              backgroundColor: isActive ? config.primaryColor + '12' : c.surface.secondary,
+              borderColor:     config.option === 'black'
+                ? (isActive ? c.text.primary : c.border.primary)
+                : (isActive ? config.primaryColor : c.border.primary),
+              backgroundColor: isActive
+                ? (config.option === 'black' ? c.surface.elevated : config.primaryColor + '12')
+                : c.surface.secondary,
               borderWidth:    animatedBorder,
-              shadowColor:    config.primaryColor,
+              shadowColor:    config.option === 'black' ? c.text.primary : config.primaryColor,
               shadowOpacity:  animatedShadow,
               shadowRadius:   12,
               shadowOffset:   { width: 0, height: 4 },
@@ -83,11 +88,23 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
             },
           ]}
         >
-          {/* Swatch */}
-          <View style={[styles.swatchRing, { borderColor: isActive ? config.primaryColor + '44' : config.primaryColor + '1A' }]}>
-            <View style={[styles.swatchCircle, { backgroundColor: config.primaryColor }]}>
-              <View style={[styles.swatchShine, { backgroundColor: config.accentColor + '80' }]} />
-            </View>
+          {/* Swatch — split circle for black, standard for others */}
+          <View style={[styles.swatchRing, {
+            borderColor: config.option === 'black'
+              ? c.border.primary
+              : isActive ? config.primaryColor + '44' : config.primaryColor + '1A',
+          }]}>
+            {config.option === 'black' ? (
+              // Half-black / half-white split — visible on any background
+              <View style={[styles.swatchCircle, { overflow: 'hidden', backgroundColor: 'transparent' }]}>
+                <View style={{ position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', backgroundColor: '#111111' }} />
+                <View style={{ position: 'absolute', right: 0, top: 0, width: '50%', height: '100%', backgroundColor: '#f5f5f5' }} />
+              </View>
+            ) : (
+              <View style={[styles.swatchCircle, { backgroundColor: config.primaryColor }]}>
+                <View style={[styles.swatchShine, { backgroundColor: config.accentColor + '80' }]} />
+              </View>
+            )}
           </View>
 
           {/* Label */}
@@ -95,7 +112,9 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
             style={[
               styles.label,
               {
-                color:      isActive ? config.primaryColor : c.text.secondary,
+                color: config.option === 'black'
+                  ? (isActive ? c.text.primary : c.text.secondary)
+                  : (isActive ? config.primaryColor : c.text.secondary),
                 fontWeight: isActive ? '700' : '500',
                 textAlign:  isRtl ? 'right' : 'left',
               },
@@ -107,8 +126,10 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
 
           {/* Check badge */}
           {isActive && (
-            <View style={[styles.checkBadge, { backgroundColor: config.primaryColor }]}>
-              <Ionicons name="checkmark" size={9} color={Palette.white} />
+            <View style={[styles.checkBadge, {
+              backgroundColor: config.option === 'black' ? c.text.primary : config.primaryColor,
+            }]}>
+              <Ionicons name="checkmark" size={9} color={config.option === 'black' ? c.surface.primary : c.buttons.primary.text} />
             </View>
           )}
         </Animated.View>
