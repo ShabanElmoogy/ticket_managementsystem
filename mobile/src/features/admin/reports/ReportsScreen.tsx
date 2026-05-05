@@ -1,17 +1,15 @@
 import React from 'react';
 import { View } from 'react-native';
-import ReportCard from '@/src/features/admin/reports/components/ReportCard';
-import ReportsHeader from '@/src/features/admin/reports/components/ReportsHeader';
-import ReportTypeSelector from '@/src/features/admin/reports/components/ReportTypeSelector';
+import ReportCard         from './components/ReportCard';
+import ReportsHeader      from './components/ReportsHeader';
+import ReportTypeSelector from './components/ReportTypeSelector';
 import { FeatureErrorBoundary } from '@/src/shared/components/feedback/ErrorBoundary';
-import { ErrorBanner } from '@/src/shared/components';
-import { useReports } from '@/src/features/admin/reports/hooks/useReports';
+import { ErrorBanner }    from '@/src/shared/components';
+import { useReports }     from './hooks/useReports';
 import { useThemeColors } from '@/src/constants/theme';
-import { useUiStore } from '@/src/stores/uiStore';
+import { useUiStore }     from '@/src/stores/uiStore';
 
 const ReportsScreen: React.FC = () => {
-  const { colorMode } = useUiStore();
-  const isDark = colorMode === 'dark';
   const c = useThemeColors();
 
   const {
@@ -29,7 +27,6 @@ const ReportsScreen: React.FC = () => {
     <FeatureErrorBoundary featureName="Reports">
       <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
 
-        {/* Header */}
         <View style={{ paddingHorizontal: 4, paddingTop: 16, paddingBottom: 12 }}>
           <ReportsHeader
             view={view}
@@ -56,7 +53,6 @@ const ReportsScreen: React.FC = () => {
           <ReportTypeSelector value={reportType} onChange={setReportType} />
         </View>
 
-        {/* Report card */}
         <View style={{ flex: 1, marginHorizontal: 16, marginBottom: 16 }}>
           <ReportCard
             reportType={reportType}
@@ -66,7 +62,6 @@ const ReportsScreen: React.FC = () => {
             tickets={tickets}
             slaRows={slaRows}
             loading={loading}
-            isDark={isDark}
             onRefresh={refresh}
             onFilteredData={setFilteredData}
             activityPeriod={activityPeriod}

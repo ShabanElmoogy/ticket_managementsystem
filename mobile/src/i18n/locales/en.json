@@ -632,6 +632,42 @@
       "errorDelete": "Error deleting visit"
     }
   },
+  "onboarding": {
+    "welcome": {
+      "title": "TicketFlow Pro",
+      "tagline": "Professional ticket management, right in your pocket.",
+      "next": "Get Started"
+    },
+    "language": {
+      "title": "Choose Your Language",
+      "subtitle": "Select the language you'd like to use in the app."
+    },
+    "appearance": {
+      "title": "Choose Appearance",
+      "subtitle": "Pick a color mode that suits your environment.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "palette": {
+      "title": "Choose Your Palette",
+      "subtitle": "Select an accent color for the app's interactive elements.",
+      "blue": "Blue",
+      "orange": "Orange",
+      "green": "Green"
+    },
+    "ready": {
+      "title": "You're All Set!",
+      "subtitle": "Your preferences have been saved. Welcome to TicketFlow Pro.",
+      "getStarted": "Get Started",
+      "language": "Language:",
+      "colorMode": "Color Mode:",
+      "palette": "Palette:"
+    },
+    "skip": "Skip",
+    "back": "Back",
+    "stepOf": "Step {{current}} of {{total}}"
+  },
   "settings": {
     "dateFormat": {
       "title":       "Date Format",

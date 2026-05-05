@@ -5,15 +5,15 @@ import type {
   CustomerTicketsSummaryRow, CustomerStatusRow,
   CustomerActivityRow, ActivityPeriod, SlaMetricsRow,
 } from '@/src/features/admin/reports/types';
-import ActivityPeriodSelector from '@/src/features/admin/reports/components/ReportCard/ActivityPeriodSelector';
-import SlaTable from '@/src/features/admin/reports/components/ReportCard/tables/SlaTable';
-import StatusTable from '@/src/features/admin/reports/components/ReportCard/tables/StatusTable';
-import SummaryTable from '@/src/features/admin/reports/components/ReportCard/tables/SummaryTable';
-import TicketsTable from '@/src/features/admin/reports/components/ReportCard/tables/TicketsTable';
-import ActivityTable from '@/src/features/admin/reports/components/ReportCard/tables/ActivityTable';
-import ReportCompactRow from '@/src/features/admin/reports/components/ReportCard/views/ReportCompactRow';
-import ReportGridCard from '@/src/features/admin/reports/components/ReportCard/views/ReportGridCard';
-import { useReportData } from '@/src/features/admin/reports/components/ReportCard/useReportData';
+import ActivityPeriodSelector from './ActivityPeriodSelector';
+import SlaTable      from './tables/SlaTable';
+import StatusTable   from './tables/StatusTable';
+import SummaryTable  from './tables/SummaryTable';
+import TicketsTable  from './tables/TicketsTable';
+import ActivityTable from './tables/ActivityTable';
+import ReportCompactRow from './views/ReportCompactRow';
+import ReportGridCard   from './views/ReportGridCard';
+import { useReportData } from './useReportData';
 import { AppEmptyState, DataCard } from '@/src/shared/components';
 import type { Ticket } from '@/src/services/api/types';
 import type { AdminView } from '@/src/stores/uiStore';
@@ -26,7 +26,6 @@ interface Props {
   tickets:      Ticket[];
   slaRows:      SlaMetricsRow[];
   loading:      boolean;
-  isDark:       boolean;
   onRefresh:    () => void;
   onFilteredData?: (data: {
     summaryRows:  CustomerTicketsSummaryRow[];
@@ -40,24 +39,22 @@ interface Props {
   view?: AdminView;
 }
 
-// ── Tagged row type for grid/compact views ────────────────────────────────────
 interface TaggedRow { id: string; _reportType: ReportType; [key: string]: any; }
 
 const ReportCard: React.FC<Props> = ({
   reportType, summaryRows, statusRows, activityRows, tickets, slaRows,
-  loading, isDark, onRefresh, onFilteredData,
+  loading, onRefresh, onFilteredData,
   activityPeriod = DEFAULT_PERIOD, onActivityPeriodChange,
   view = 'table',
 }) => {
   const [search, setSearch] = useState('');
 
-  const label           = REPORT_TYPES.find(r => r.id === reportType)?.label ?? '';
-  const isFiltered      = search.trim().length > 0;
+  const label             = REPORT_TYPES.find(r => r.id === reportType)?.label ?? '';
+  const isFiltered        = search.trim().length > 0;
   const searchPlaceholder = reportType === 'tickets'
     ? 'Search by title or customer…'
     : 'Search by customer name…';
 
-  // ── Filter → sort → paginate ──────────────────────────────────────────────
   const {
     activePag, totalUnfiltered, activeRows,
     summaryPag, statusPag, activityPag, ticketsPag, slaPag,
@@ -69,7 +66,6 @@ const ReportCard: React.FC<Props> = ({
 
   const totalItems = activePag.total;
 
-  // Map PaginationResult → PaginationState shape expected by DataCard
   const paginationForCard = {
     page:       activePag.page,
     totalPages: activePag.totalPages,
@@ -81,7 +77,6 @@ const ReportCard: React.FC<Props> = ({
     prev:       activePag.prev,
   };
 
-  // ── Table renderer ────────────────────────────────────────────────────────
   const renderTable = useCallback(() => {
     if (totalItems === 0) {
       return <AppEmptyState
@@ -92,36 +87,35 @@ const ReportCard: React.FC<Props> = ({
     }
     switch (reportType) {
       case 'summary':
-        return <SummaryTable rows={summaryPag.rows} isDark={isDark}
+        return <SummaryTable rows={summaryPag.rows}
           sort={summarySorting.sort} onSort={summarySorting.toggle} />;
       case 'customers-status':
-        return <StatusTable rows={statusPag.rows} isDark={isDark}
+        return <StatusTable rows={statusPag.rows}
           sort={statusSorting.sort} onSort={statusSorting.toggle} />;
       case 'customers-activity':
-        return <ActivityTable rows={activityPag.rows} isDark={isDark}
+        return <ActivityTable rows={activityPag.rows}
           sort={activitySorting.sort} onSort={activitySorting.toggle}
           period={activityPeriod} />;
       case 'tickets':
-        return <TicketsTable rows={ticketsPag.rows as Ticket[]} isDark={isDark}
+        return <TicketsTable rows={ticketsPag.rows as Ticket[]}
           sort={ticketsSorting.sort} onSort={ticketsSorting.toggle} />;
       case 'sla':
-        return <SlaTable rows={slaPag.rows as SlaMetricsRow[]} isDark={isDark}
+        return <SlaTable rows={slaPag.rows as SlaMetricsRow[]}
           sort={slaSorting.sort} onSort={slaSorting.toggle} />;
     }
   }, [
-    reportType, totalItems, isFiltered, search, isDark, activityPeriod,
+    reportType, totalItems, isFiltered, search, activityPeriod,
     summaryPag.rows, statusPag.rows, activityPag.rows, ticketsPag.rows, slaPag.rows,
     summarySorting, statusSorting, activitySorting, ticketsSorting, slaSorting,
   ]);
 
-  // ── Header extras (activity period selector) ──────────────────────────────
   const headerExtras = useMemo(() =>
     reportType === 'customers-activity' && onActivityPeriodChange ? (
       <View style={{ paddingHorizontal: 12, paddingBottom: 4 }}>
-        <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} isDark={isDark} />
+        <ActivityPeriodSelector value={activityPeriod} onChange={onActivityPeriodChange} />
       </View>
     ) : null,
-    [reportType, activityPeriod, onActivityPeriodChange, isDark],
+    [reportType, activityPeriod, onActivityPeriodChange],
   );
 
   return (
@@ -131,13 +125,11 @@ const ReportCard: React.FC<Props> = ({
       rows={activeRows as TaggedRow[]}
       loading={loading}
       search={search}
-      onSearchChange={setSearch}
-      searchPlaceholder={searchPlaceholder}
       view={view}
       renderTable={renderTable}
       pagination={paginationForCard}
-      renderGridItem={(item) => <ReportGridCard row={item} isDark={isDark} />}
-      renderCompactItem={(item) => <ReportCompactRow row={item} isDark={isDark} />}
+      renderGridItem={(item) => <ReportGridCard row={item} />}
+      renderCompactItem={(item) => <ReportCompactRow row={item} />}
       headerExtras={headerExtras}
       onRefresh={onRefresh}
     />

@@ -623,6 +623,42 @@
       "errorDelete": "خطأ في حذف الزيارة"
     }
   },
+  "onboarding": {
+    "welcome": {
+      "title": "TicketFlow Pro",
+      "tagline": "إدارة التذاكر الاحترافية، في متناول يدك.",
+      "next": "ابدأ"
+    },
+    "language": {
+      "title": "اختر لغتك",
+      "subtitle": "حدد اللغة التي تريد استخدامها في التطبيق."
+    },
+    "appearance": {
+      "title": "اختر المظهر",
+      "subtitle": "اختر وضع الألوان الذي يناسب بيئتك.",
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام"
+    },
+    "palette": {
+      "title": "اختر لوحة الألوان",
+      "subtitle": "اختر لون التمييز للعناصر التفاعلية في التطبيق.",
+      "blue": "أزرق",
+      "orange": "برتقالي",
+      "green": "أخضر"
+    },
+    "ready": {
+      "title": "أنت جاهز!",
+      "subtitle": "تم حفظ تفضيلاتك. مرحباً بك في TicketFlow Pro.",
+      "getStarted": "ابدأ الآن",
+      "language": "اللغة:",
+      "colorMode": "وضع الألوان:",
+      "palette": "لوحة الألوان:"
+    },
+    "skip": "تخطي",
+    "back": "رجوع",
+    "stepOf": "الخطوة {{current}} من {{total}}"
+  },
   "settings": {
     "dateFormat": {
       "title":       "تنسيق التاريخ",

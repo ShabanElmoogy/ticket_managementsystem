@@ -2,7 +2,7 @@
 inclusion: always
 ---
 
-# Mobile — Theme System
+# Mobile — Theme System & UI Rules
 
 Complete reference for the color system, icon system, and theme-aware coding patterns in the mobile app.
 
