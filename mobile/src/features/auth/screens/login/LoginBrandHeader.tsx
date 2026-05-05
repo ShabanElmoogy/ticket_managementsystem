@@ -4,6 +4,8 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 const { Animated } = require('react-native') as { Animated: any };
 import { useTranslation } from 'react-i18next';
 import { useThemeColors, useIsDark, Palette } from '@/src/constants/theme';
+import { useUiStore } from '@/src/stores/uiStore';
+import type { PaletteOption } from '@/src/constants/tokens';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface LoginBrandHeaderProps {
@@ -18,6 +20,26 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
   const c = useThemeColors();
   const isDark = useIsDark();
   const { t } = useTranslation();
+  const paletteOption = useUiStore((s) => s.paletteOption);
+
+  const PALETTE_CYCLE: PaletteOption[] = ['blue', 'orange', 'green', 'black'];
+  const PALETTE_COLORS: Record<PaletteOption, string> = {
+    blue:   '#3b82f6',
+    orange: '#f97316',
+    green:  '#047857',
+    black:  '#171717',
+  };
+  const PALETTE_LABELS: Record<PaletteOption, string> = {
+    blue:   '🔵',
+    orange: '🟠',
+    green:  '🟢',
+    black:  '⚫',
+  };
+  const handleCyclePalette = () => {
+    const idx  = PALETTE_CYCLE.indexOf(paletteOption);
+    const next = PALETTE_CYCLE[(idx + 1) % PALETTE_CYCLE.length];
+    useUiStore.getState().setPaletteOption(next);
+  };
 
   const pills = [t('auth.featureDashboard'), t('auth.featureKanban'), t('auth.featureAlerts')];
 
@@ -167,6 +189,35 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
                   { color: pressed ? Palette.white : c.text.primary },
                 ]}>
                   {themeLabel}
+                </Text>
+              </>
+            )}
+          </Pressable>
+
+          {/* Palette cycle pill */}
+          <Pressable
+            style={({ pressed }: { pressed: boolean }) => [
+              styles.ctrlPill,
+              {
+                backgroundColor: pressed
+                  ? PALETTE_COLORS[paletteOption]
+                  : isDark ? c.surface.elevated : c.surface.tertiary,
+                borderColor: `${PALETTE_COLORS[paletteOption]}80`,
+                shadowColor: PALETTE_COLORS[paletteOption],
+              },
+            ]}
+            onPress={handleCyclePalette}
+            accessibilityRole="button"
+            accessibilityLabel="Change color palette"
+          >
+            {({ pressed }: { pressed: boolean }) => (
+              <>
+                <Text style={{ fontSize: 18, lineHeight: 22 }}>{PALETTE_LABELS[paletteOption]}</Text>
+                <Text style={[
+                  styles.ctrlPillText,
+                  { color: pressed ? Palette.white : c.text.primary },
+                ]}>
+                  {t(`onboarding.palette.${paletteOption}`)}
                 </Text>
               </>
             )}
