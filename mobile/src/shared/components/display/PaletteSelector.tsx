@@ -39,9 +39,9 @@ export interface PaletteSelectorProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SWATCHES: PaletteSwatch[] = [
-  { option: 'blue',   label: 'Blue',   color: Palette.blue500,   darkColor: Palette.blue600   },
   { option: 'orange', label: 'Orange', color: Palette.orange500, darkColor: Palette.orange600 },
   { option: 'green',  label: 'Green',  color: Palette.green600,  darkColor: Palette.green700  },
+  { option: 'blue',   label: 'Blue',   color: Palette.blue500,   darkColor: Palette.blue600   },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

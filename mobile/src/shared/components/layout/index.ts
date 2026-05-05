@@ -11,6 +11,9 @@ export type { VerticalDividerProps }  from './VerticalDivider';
 export { default as PanelCard }       from './PanelCard';
 export type { PanelCardProps }        from './PanelCard';
 
+export { TabBar, SubTabBar }          from './TabBar';
+export type { TabItem, TabBarProps, SubTabBarProps } from './TabBar';
+
 // ── Internal — used only by AppScreenHeader, not part of the public API ───────
 // HeaderTitle, HeaderActionGroup, ViewToggle internals are not exported.
 // Import directly from their files if needed for testing or extension.

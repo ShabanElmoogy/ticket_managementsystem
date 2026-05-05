@@ -1,66 +1,59 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { BaseToastProps } from 'react-native-toast-message';
-import { Palette, Colors } from '@/src/constants/tokens';
-import { useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
+import { useThemeColors, useIsDark, FontSize, FontWeight } from '@/src/constants/theme';
+import { Colors } from '@/src/constants/tokens';
 
 /**
  * AppToast
  *
  * Custom toast renderer for `react-native-toast-message`.
  * Provides `success`, `error`, `info`, and `warning` variants.
+ * Accent colors are read from `useThemeColors()` so they update with palette changes.
  *
  * ## Setup
- * Pass `toastConfig` to the `<Toast />` component in the root layout:
  * ```tsx
  * // app/_layout.tsx
  * import Toast from 'react-native-toast-message';
  * import { toastConfig } from '@/src/shared/components/feedback/AppToast';
- *
  * <Toast config={toastConfig} />
  * ```
  *
  * ## Usage
  * ```ts
- * import Toast from 'react-native-toast-message';
- *
  * Toast.show({ type: 'success', text1: 'Saved!', text2: 'Customer updated.' });
  * Toast.show({ type: 'error',   text1: 'Failed', text2: 'Could not save.' });
  * Toast.show({ type: 'info',    text1: 'Note',   text2: 'No changes made.' });
  * Toast.show({ type: 'warning', text1: 'Warning', text2: 'Session expiring.' });
  * ```
- *
- * Or use the `useToast()` hook from `@/src/shared/hooks/useToast`.
- *
- * ## Layout
- * ```
- * ┌▌──────────────────────────────────────┐
- * │  [icon]  text1 (bold)                 │
- * │          text2 (muted)                │
- * └───────────────────────────────────────┘
- *  ▌ = colored left border
- * ```
  */
 
-// ── Toast item ────────────────────────────────────────────────────────────────
+type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastItemProps extends BaseToastProps {
-  accentColor: string;
-  icon:        string;
+  variant: ToastVariant;
 }
 
-const ToastItem: React.FC<ToastItemProps> = ({
-  text1,
-  text2,
-  accentColor,
-  icon,
-  onPress,
-}) => {
-  // Inverted: toast is dark when app is light, light when app is dark
-  const isDark = useIsDark();
-  const c = isDark ? Colors.light : Colors.dark;
+const ICONS: Record<ToastVariant, string> = {
+  success: '✅',
+  error:   '❌',
+  info:    'ℹ️',
+  warning: '⚠️',
+};
 
-  // Build accessible label from available text
+const ToastItem: React.FC<ToastItemProps> = ({ text1, text2, variant, onPress }) => {
+  const c      = useThemeColors();
+  const isDark = useIsDark();
+
+  // Inverted surface: toast is dark when app is light, light when app is dark
+  const surface = isDark ? Colors.light : Colors.dark;
+
+  const accentColor =
+    variant === 'success' ? c.intent.success  :
+    variant === 'error'   ? c.intent.error    :
+    variant === 'warning' ? c.intent.warning  :
+                            c.intent.info;
+
   const a11yLabel = [text1, text2].filter(Boolean).join('. ');
 
   return (
@@ -71,32 +64,24 @@ const ToastItem: React.FC<ToastItemProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: c.surface.primary,
+          backgroundColor: surface.surface.primary,
           borderLeftColor: accentColor,
-          shadowColor:     c.shadow,
+          shadowColor:     surface.shadow,
         },
       ]}
     >
-      {/* Icon badge */}
       <View style={[styles.iconWrap, { backgroundColor: accentColor + '22' }]}>
-        <Text style={styles.iconText}>{icon}</Text>
+        <Text style={styles.iconText}>{ICONS[variant]}</Text>
       </View>
 
-      {/* Text */}
       <View style={styles.textWrap}>
         {!!text1 && (
-          <Text
-            numberOfLines={2}
-            style={[styles.text1, { color: c.text.primary }]}
-          >
+          <Text numberOfLines={2} style={[styles.text1, { color: surface.text.primary }]}>
             {text1}
           </Text>
         )}
         {!!text2 && (
-          <Text
-            numberOfLines={2}
-            style={[styles.text2, { color: c.text.secondary }]}
-          >
+          <Text numberOfLines={2} style={[styles.text2, { color: surface.text.secondary }]}>
             {text2}
           </Text>
         )}
@@ -105,25 +90,12 @@ const ToastItem: React.FC<ToastItemProps> = ({
   );
 };
 
-// ── Toast config ──────────────────────────────────────────────────────────────
-// Pass to <Toast config={toastConfig} /> in the root layout.
-
 export const toastConfig = {
-  success: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.green500}  icon="✅" />
-  ),
-  error: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.red500}    icon="❌" />
-  ),
-  info: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.blue500}   icon="ℹ️" />
-  ),
-  warning: (props: BaseToastProps) => (
-    <ToastItem {...props} accentColor={Palette.amber500}  icon="⚠️" />
-  ),
+  success: (props: BaseToastProps) => <ToastItem {...props} variant="success" />,
+  error:   (props: BaseToastProps) => <ToastItem {...props} variant="error"   />,
+  info:    (props: BaseToastProps) => <ToastItem {...props} variant="info"    />,
+  warning: (props: BaseToastProps) => <ToastItem {...props} variant="warning" />,
 };
-
-// ── Styles — static layout only, colors applied inline ───────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -150,12 +122,6 @@ const styles = StyleSheet.create({
   },
   iconText: { fontSize: 18 },
   textWrap: { flex: 1 },
-  text1: {
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.bold,
-  },
-  text2: {
-    fontSize:  FontSize.xs,
-    marginTop: 2,
-  },
+  text1:    { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  text2:    { fontSize: FontSize.xs, marginTop: 2 },
 });

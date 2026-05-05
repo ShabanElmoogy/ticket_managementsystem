@@ -858,7 +858,7 @@ const lightOrange: ThemeColors = {
   shadow:          'rgba(120,60,0,0.10)',
 };
 
-/** Light — Emerald / Green */
+/** Light — Green */
 const lightGreen: ThemeColors = {
   surface: {
     primary:   Palette.white,
@@ -866,7 +866,7 @@ const lightGreen: ThemeColors = {
     tertiary:  Palette.zinc100,
     elevated:  Palette.zinc200,
     card:      Palette.white,
-    header:    Palette.emerald700,
+    header:    Palette.green700,
   },
   text: {
     primary:   Palette.zinc900,
@@ -878,7 +878,7 @@ const lightGreen: ThemeColors = {
   border: {
     primary:   Palette.zinc200,
     secondary: Palette.zinc300,
-    focus:     Palette.emerald600,
+    focus:     Palette.green600,
   },
   intent: {
     success:        Palette.emerald600,
@@ -891,8 +891,8 @@ const lightGreen: ThemeColors = {
     infoSurface:    Palette.blue50,
   },
   interactive: {
-    primary:          Palette.emerald600,
-    primaryPressed:   Palette.emerald700,
+    primary:          Palette.green600,
+    primaryPressed:   Palette.green700,
     secondary:        Palette.zinc200,
     disabled:         Palette.zinc300,
     pressed:          Palette.zinc100,
@@ -902,27 +902,27 @@ const lightGreen: ThemeColors = {
     warningPressed:   Palette.amber600,
     error:            Palette.red600,
     errorPressed:     Palette.red700,
-    chipBg:           Palette.emerald50,
-    chipBorder:       Palette.emerald200,
-    chipActiveBg:     Palette.emerald600,
-    chipActiveBorder: Palette.emerald700,
+    chipBg:           Palette.green50,
+    chipBorder:       Palette.green200,
+    chipActiveBg:     Palette.green600,
+    chipActiveBorder: Palette.green700,
     chipActiveText:   Palette.white,
-    chipText:         Palette.emerald700,
+    chipText:         Palette.green700,
   },
   buttons: {
-    primary:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
+    primary:   { bg: Palette.green600,   pressed: Palette.green700,   text: Palette.white },
     success:   { bg: Palette.emerald600, pressed: Palette.emerald700, text: Palette.white },
     danger:    { bg: Palette.red600,     pressed: Palette.red700,     text: Palette.white },
     secondary: { bg: Palette.zinc100,    text: Palette.zinc900,       border: Palette.zinc300 },
-    outline:   { border: Palette.emerald600, text: Palette.emerald600 },
-    ghost:     { text: Palette.emerald600 },
+    outline:   { border: Palette.green600, text: Palette.green600 },
+    ghost:     { text: Palette.green600 },
     neutral:   { bg: Palette.zinc100,    pressed: Palette.zinc200,    text: Palette.zinc600 },
     cancel:    { bg: 'transparent',      pressed: Palette.zinc100,    text: Palette.zinc500, border: Palette.zinc300 },
   },
-  tint:            Palette.emerald600,
+  tint:            Palette.green600,
   icon:            Palette.zinc500,
   tabIconDefault:  Palette.zinc400,
-  tabIconSelected: Palette.emerald600,
+  tabIconSelected: Palette.green600,
   shadow:          'rgba(0,0,0,0.10)',
 };
 
@@ -1066,7 +1066,7 @@ const darkOrange: ThemeColors = {
   shadow:          'rgba(0,0,0,0.55)',
 };
 
-/** Dark — Emerald / Green */
+/** Dark — Green */
 const darkGreen: ThemeColors = {
   surface: {
     primary:   Palette.zinc900,
@@ -1074,7 +1074,7 @@ const darkGreen: ThemeColors = {
     tertiary:  Palette.zinc800,
     elevated:  Palette.zinc700,
     card:      Palette.zinc900,
-    header:    Palette.emerald800,
+    header:    Palette.green800,
   },
   text: {
     primary:   Palette.zinc50,
@@ -1086,7 +1086,7 @@ const darkGreen: ThemeColors = {
   border: {
     primary:   Palette.zinc700,
     secondary: Palette.zinc600,
-    focus:     Palette.emerald400,
+    focus:     Palette.green400,
   },
   intent: {
     success:        Palette.emerald400,
@@ -1099,8 +1099,8 @@ const darkGreen: ThemeColors = {
     infoSurface:    Palette.blue950,
   },
   interactive: {
-    primary:          Palette.emerald400,
-    primaryPressed:   Palette.emerald500,
+    primary:          Palette.green400,
+    primaryPressed:   Palette.green500,
     secondary:        Palette.zinc700,
     disabled:         Palette.zinc600,
     pressed:          Palette.zinc700,
@@ -1112,25 +1112,25 @@ const darkGreen: ThemeColors = {
     errorPressed:     Palette.red500,
     chipBg:           Palette.zinc800,
     chipBorder:       Palette.zinc600,
-    chipActiveBg:     Palette.emerald400,
-    chipActiveBorder: Palette.emerald500,
+    chipActiveBg:     Palette.green400,
+    chipActiveBorder: Palette.green500,
     chipActiveText:   Palette.zinc900,
     chipText:         Palette.zinc300,
   },
   buttons: {
-    primary:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
+    primary:   { bg: Palette.green500,   pressed: Palette.green600,   text: Palette.white },
     success:   { bg: Palette.emerald500, pressed: Palette.emerald600, text: Palette.white },
     danger:    { bg: Palette.red500,     pressed: Palette.red600,     text: Palette.white },
     secondary: { bg: Palette.zinc700,    text: Palette.zinc100,       border: Palette.zinc600 },
-    outline:   { border: Palette.emerald400, text: Palette.emerald400 },
-    ghost:     { text: Palette.emerald400 },
+    outline:   { border: Palette.green400, text: Palette.green400 },
+    ghost:     { text: Palette.green400 },
     neutral:   { bg: Palette.zinc700,    pressed: Palette.zinc600,    text: Palette.zinc300 },
     cancel:    { bg: 'transparent',      pressed: Palette.zinc700,    text: Palette.zinc400, border: Palette.zinc600 },
   },
-  tint:            Palette.emerald400,
+  tint:            Palette.green400,
   icon:            Palette.zinc400,
   tabIconDefault:  Palette.zinc500,
-  tabIconSelected: Palette.emerald400,
+  tabIconSelected: Palette.green400,
   shadow:          'rgba(0,0,0,0.50)',
 };
 

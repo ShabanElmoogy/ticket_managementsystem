@@ -14,6 +14,7 @@ import TemplatesScreen     from '@/src/features/admin/templates/TemplatesScreen'
 import TenantsScreen       from '@/src/features/admin/tenants/TenantsScreen';
 import TicketsScreen       from '@/src/features/admin/tickets/TicketsScreen';
 import UsersScreen         from '@/src/features/admin/users/UsersScreen';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore }    from '@/src/stores/authStore';
 import type { IoniconName } from '@/src/components/layout/header/navItems';
 
@@ -21,24 +22,22 @@ import type { IoniconName } from '@/src/components/layout/header/navItems';
 
 interface MenuItem {
   id:      string;
-  label:   string;
   icon:    IoniconName;
-  /** Badge background color for the icon */
   color:   string;
   roles?:  string[];
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',    icon: 'grid',               color: Palette.blue500    },
-  { id: 'tickets',      label: 'Tickets',      icon: 'ticket',             color: Palette.violet500  },
-  { id: 'customers',    label: 'Customers',    icon: 'people',             color: Palette.teal500    },
-  { id: 'applications', label: 'Applications', icon: 'phone-portrait',     color: Palette.indigo500  },
-  { id: 'users',        label: 'Users',        icon: 'person',             color: Palette.cyan500    },
-  { id: 'templates',    label: 'Templates',    icon: 'document-text',      color: Palette.amber500   },
-  { id: 'docs',         label: 'Docs',         icon: 'library',            color: Palette.emerald500 },
-  { id: 'reports',      label: 'Reports',      icon: 'bar-chart',          color: Palette.orange500  },
-  { id: 'tenants',      label: 'Tenants',      icon: 'business',           color: Palette.rose500,   roles: ['SUPER_ADMIN'] },
-  { id: 'settings',     label: 'Settings',     icon: 'settings',           color: Palette.slate500   },
+  { id: 'dashboard',    icon: 'grid',               color: Palette.blue500    },
+  { id: 'tickets',      icon: 'ticket',             color: Palette.violet500  },
+  { id: 'customers',    icon: 'people',             color: Palette.teal500    },
+  { id: 'applications', icon: 'phone-portrait',     color: Palette.indigo500  },
+  { id: 'users',        icon: 'person',             color: Palette.cyan500    },
+  { id: 'templates',    icon: 'document-text',      color: Palette.amber500   },
+  { id: 'docs',         icon: 'library',            color: Palette.emerald500 },
+  { id: 'reports',      icon: 'bar-chart',          color: Palette.orange500  },
+  { id: 'tenants',      icon: 'business',           color: Palette.rose500,   roles: ['SUPER_ADMIN'] },
+  { id: 'settings',     icon: 'settings',           color: Palette.slate500   },
 ];
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
@@ -46,6 +45,7 @@ const MENU_ITEMS: MenuItem[] = [
 function AdminPanel() {
   const { user }    = useAuthStore();
   const c           = useThemeColors();
+  const { t }       = useTranslation();
   const paletteOption = useUiStore((s) => s.paletteOption);
   const [selected, setSelected] = React.useState('dashboard');
 
@@ -113,7 +113,7 @@ function AdminPanel() {
                     fontWeight: isActive ? FontWeight.semibold : FontWeight.normal,
                   },
                 ]}>
-                  {item.label}
+                  {t(`nav.${item.id}`)}
                 </Text>
               </Pressable>
             );

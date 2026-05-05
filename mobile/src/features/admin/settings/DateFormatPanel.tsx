@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import Toast from 'react-native-toast-message';
 import { adminSettingsApi } from '@/src/features/admin/settings/api/adminSettingsApi';
-import SettingsCard, { AlertBanner } from '@/src/features/admin/settings/components/SettingsCard';
+import SettingsCard from '@/src/features/admin/settings/components/SettingsCard';
+import SettingsPanelLayout from '@/src/features/admin/settings/components/SettingsPanelLayout';
 import { AppButton } from '@/src/shared/components';
 import ChipSelector from '@/src/shared/components/forms/ChipSelector';
 import { useTenantStore, DATE_FORMATS, type DateFormatValue } from '@/src/stores/tenantStore';
-
-type AlertState = { type: 'success' | 'error' | 'info'; msg: string } | null;
+import { useThemeColors } from '@/src/constants/theme';
 
 const TO_DAYJS: Record<string, string> = {
-  'dd/MM/yyyy':  'DD/MM/YYYY',
-  'MM/dd/yyyy':  'MM/DD/YYYY',
-  'yyyy-MM-dd':  'YYYY-MM-DD',
-  'dd-MM-yyyy':  'DD-MM-YYYY',
-  'MM-dd-yyyy':  'MM-DD-YYYY',
-  'd MMM yyyy':  'D MMM YYYY',
+  'dd/MM/yyyy': 'DD/MM/YYYY',
+  'MM/dd/yyyy': 'MM/DD/YYYY',
+  'yyyy-MM-dd': 'YYYY-MM-DD',
+  'dd-MM-yyyy': 'DD-MM-YYYY',
+  'MM-dd-yyyy': 'MM-DD-YYYY',
+  'd MMM yyyy': 'D MMM YYYY',
   'MMM d, yyyy': 'MMM D, YYYY',
 };
 
@@ -22,16 +25,12 @@ const PREVIEW_DATE = dayjs('2025-12-31');
 
 const DateFormatPanel: React.FC = () => {
   const { dateFormat, setDateFormat } = useTenantStore();
+  const c = useThemeColors();
+  const { t } = useTranslation();
 
   const [selected, setSelected] = useState<DateFormatValue>(dateFormat);
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [alert,    setAlert]    = useState<AlertState>(null);
-
-  const showAlert = (type: 'success' | 'error' | 'info', msg: string) => {
-    setAlert({ type, msg });
-    setTimeout(() => setAlert(null), 3000);
-  };
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     adminSettingsApi.getDateFormat()
@@ -40,7 +39,7 @@ const DateFormatPanel: React.FC = () => {
         setSelected(fmt);
         setDateFormat(fmt);
       })
-      .catch(() => setSelected(dateFormat))
+      .catch(() => Toast.show({ type: 'error', text1: t('settings.dateFormat.loadError') }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -51,42 +50,48 @@ const DateFormatPanel: React.FC = () => {
       const saved = (res?.dateFormat ?? selected) as DateFormatValue;
       setSelected(saved);
       setDateFormat(saved);
-      showAlert('success', 'Date format saved successfully');
+      Toast.show({ type: 'success', text1: t('settings.dateFormat.saveSuccess') });
     } catch (e) {
-      showAlert('error', e instanceof Error ? e.message : 'Failed to save');
+      Toast.show({ type: 'error', text1: e instanceof Error ? e.message : t('settings.dateFormat.saveError') });
     } finally { setSaving(false); }
   };
 
-  // Build options from DATE_FORMATS — preview shows the formatted date
   const options = DATE_FORMATS.map((fmt) => ({
-    value:   fmt.value,
-    label:   fmt.value,
+    value: fmt.value,
+    label: fmt.value,
     description: fmt.preview,
     preview: PREVIEW_DATE.format(TO_DAYJS[fmt.value] ?? fmt.value),
   }));
 
-  const content = (
-    <>
-      {alert && <AlertBanner {...alert} />}
-      <ChipSelector
-        options={options}
-        value={selected}
-        onChange={(v) => setSelected(v as DateFormatValue)}
-      />
-      <AppButton variant="primary" loading={saving} loadingText="Saving…" onPress={handleSave} fullWidth>
-        Save Date Format
-      </AppButton>
-    </>
-  );
-
   return (
-    <SettingsCard
-      icon="📅"
-      title="Date Format"
-      description="Choose how dates are displayed across the entire application for all users in your organisation."
-      loading={loading}
-      children={content}
-    />
+    <SettingsPanelLayout
+      footer={
+        <AppButton
+          variant="contained"
+          size="large"
+          fullWidth
+          loading={saving}
+          loadingText={t('common.saving')}
+          onPress={handleSave}
+          leftIcon={<Ionicons name="save" size={18} color={c.text.inverse} style={{ marginEnd: 6 }} />}
+        >
+          {t('settings.dateFormat.save')}
+        </AppButton>
+      }
+    >
+      <SettingsCard
+        icon={<Ionicons name="calendar" size={20} color={c.tint} />}
+        title={t('settings.dateFormat.title')}
+        description={t('settings.dateFormat.description')}
+        loading={loading}
+      >
+        <ChipSelector
+          options={options}
+          value={selected}
+          onChange={(v) => setSelected(v as DateFormatValue)}
+        />
+      </SettingsCard>
+    </SettingsPanelLayout>
   );
 };
 
