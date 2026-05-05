@@ -76,15 +76,15 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
         <View style={styles.iconOuter}>
           <Animated.View style={[
             styles.glowRingOuter,
-            { backgroundColor: c.interactive.primary, transform: [{ scale: pulse2 }] },
+            { backgroundColor: c.surface.header, transform: [{ scale: pulse2 }] },
           ]} />
           <Animated.View style={[
             styles.glowRingInner,
-            { backgroundColor: c.interactive.primary, transform: [{ scale: pulse1 }] },
+            { backgroundColor: c.surface.header, transform: [{ scale: pulse1 }] },
           ]} />
           <View style={[
             styles.iconWrap,
-            { backgroundColor: c.interactive.primary, shadowColor: c.interactive.primary },
+            { backgroundColor: c.surface.header, shadowColor: c.surface.header },
           ]}>
             <Ionicons name="ticket-outline" size={22} color={Palette.white} />
           </View>

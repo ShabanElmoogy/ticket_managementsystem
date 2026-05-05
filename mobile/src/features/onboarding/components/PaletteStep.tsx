@@ -75,9 +75,9 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
             {
               borderColor:     config.option === 'black'
                 ? (isActive ? c.text.primary : c.border.primary)
-                : (isActive ? config.primaryColor : c.border.primary),
+                : (isActive ? 'rgba(255,255,255,0.4)' : c.border.primary),
               backgroundColor: isActive
-                ? (config.option === 'black' ? c.surface.elevated : config.primaryColor + '12')
+                ? (config.option === 'black' ? c.surface.elevated : config.primaryColor)
                 : c.surface.secondary,
               borderWidth:    animatedBorder,
               shadowColor:    config.option === 'black' ? c.text.primary : config.primaryColor,
@@ -92,7 +92,7 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
           <View style={[styles.swatchRing, {
             borderColor: config.option === 'black'
               ? c.border.primary
-              : isActive ? config.primaryColor + '44' : config.primaryColor + '1A',
+              : isActive ? 'rgba(255,255,255,0.5)' : config.primaryColor + '1A',
           }]}>
             {config.option === 'black' ? (
               // Half-black / half-white split — visible on any background
@@ -114,7 +114,7 @@ const PaletteCard: React.FC<CardProps> = ({ config, isActive, label, resolvedCol
               {
                 color: config.option === 'black'
                   ? (isActive ? c.text.primary : c.text.secondary)
-                  : (isActive ? config.primaryColor : c.text.secondary),
+                  : (isActive ? '#ffffff' : c.text.secondary),
                 fontWeight: isActive ? '700' : '500',
                 textAlign:  isRtl ? 'right' : 'left',
               },
