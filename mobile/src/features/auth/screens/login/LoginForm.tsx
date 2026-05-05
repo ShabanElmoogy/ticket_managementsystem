@@ -1,17 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { AppTextInput, AppButton } from '@/src/shared/components';
 
 export interface LoginFormProps {
-  email:          string;
-  onEmailChange:  (v: string) => void;
-  password:       string;
+  email: string;
+  onEmailChange: (v: string) => void;
+  password: string;
   onPasswordChange: (v: string) => void;
-  error?:         string;
-  loading:        boolean;
-  onSubmit:       () => void;
+  error?: string;
+  loading: boolean;
+  onSubmit: () => void;
 }
 
 /**
@@ -22,7 +23,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   password, onPasswordChange,
   error, loading, onSubmit,
 }) => {
-  const c     = useThemeColors();
+  const c = useThemeColors();
   const { t } = useTranslation();
 
   return (
@@ -64,7 +65,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         loadingText={t('auth.signingIn')}
         onPress={onSubmit}
         style={styles.submitBtn}
-        leftIcon={<Text style={{ fontSize: 18 }}>🔐</Text>}
+        leftIcon={<Ionicons name="lock-closed-outline" size={18} color={c.buttons.primary.text} style={{ marginEnd: 6 }} />}
       >
         {t('auth.signInButton')}
       </AppButton>
@@ -74,30 +75,30 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
 const styles = StyleSheet.create({
   eyebrow: {
-    fontSize:      11,
-    fontWeight:    '600',
+    fontSize: 11,
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
-    textAlign:     'center',
-    marginBottom:  4,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   title: {
-    fontSize:     22,
-    fontWeight:   'bold',
-    textAlign:    'center',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize:     13,
-    textAlign:    'center',
+    fontSize: 13,
+    textAlign: 'center',
     marginBottom: 18,
   },
   errorBox: {
-    borderWidth:       1,
-    borderRadius:      8,
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical:   10,
-    marginBottom:      12,
+    paddingVertical: 10,
+    marginBottom: 12,
   },
   errorText: { fontSize: 14 },
   submitBtn: { marginTop: 4 },

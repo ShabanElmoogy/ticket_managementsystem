@@ -20,6 +20,10 @@
     "noTenantsFound":    "No tenants found",
     "quickDemoLogin":    "Quick demo login",
     "systemAdmin":       "System Administrator",
+    "switchToLtr":      "Switch to English (LTR)",
+    "switchToRtl":      "Switch to Arabic (RTL)",
+    "switchToLight":    "Switch to light mode",
+    "switchToDark":     "Switch to dark mode",
     "featureDashboard":  "📊 Dashboard",
     "featureKanban":     "🗂️ Kanban",
     "featureAlerts":     "🔔 Alerts"

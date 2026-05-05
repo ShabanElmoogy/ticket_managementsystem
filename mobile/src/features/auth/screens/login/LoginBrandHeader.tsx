@@ -4,6 +4,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 const { Animated } = require('react-native') as { Animated: any };
 import { useTranslation } from 'react-i18next';
 import { useThemeColors, useIsDark, Palette } from '@/src/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export interface LoginBrandHeaderProps {
   isRtl: boolean;
@@ -58,8 +59,8 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
   // Control button helpers — keep natural direction so RTL order is fine
   // Target language shown (so user sees what they'd switch TO)
   const langLabel = isRtl ? 'EN' : 'AR';
-  const themeIcon = isDark ? '☀️' : '🌙';
-  const themeLabel = isDark ? 'Light' : 'Dark';
+  const themeIconName = isDark ? 'sunny-outline' : 'moon-outline';
+  const themeLabel = isDark ? t('onboarding.appearance.light') : t('onboarding.appearance.dark');
 
   return (
     <Animated.View
@@ -85,7 +86,7 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
             styles.iconWrap,
             { backgroundColor: c.interactive.primary, shadowColor: c.interactive.primary },
           ]}>
-            <Text style={styles.iconEmoji}>🎫</Text>
+            <Ionicons name="ticket-outline" size={22} color={Palette.white} />
           </View>
         </View>
 
@@ -125,11 +126,11 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
             ]}
             onPress={onToggleDirection}
             accessibilityRole="button"
-            accessibilityLabel={isRtl ? 'Switch to LTR (English)' : 'Switch to RTL (Arabic)'}
+            accessibilityLabel={isRtl ? t('auth.switchToLtr') : t('auth.switchToRtl')}
           >
             {({ pressed }: { pressed: boolean }) => (
               <>
-                <Text style={styles.ctrlPillIcon}>🌐</Text>
+                <Ionicons name="language-outline" size={22} color={pressed ? Palette.white : c.interactive.primary} />
                 <Text style={[
                   styles.ctrlPillText,
                   { color: pressed ? Palette.white : c.text.primary, marginLeft: 5 },
@@ -156,11 +157,11 @@ const LoginBrandHeader: React.FC<LoginBrandHeaderProps> = ({
             ]}
             onPress={onToggleTheme}
             accessibilityRole="button"
-            accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            accessibilityLabel={isDark ? t('auth.switchToLight') : t('auth.switchToDark')}
           >
             {({ pressed }: { pressed: boolean }) => (
               <>
-                <Text style={styles.ctrlPillIcon}>{themeIcon}</Text>
+                <Ionicons name={themeIconName} size={22} color={pressed ? Palette.white : c.interactive.primary} />
                 <Text style={[
                   styles.ctrlPillText,
                   { color: pressed ? Palette.white : c.text.primary },
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  iconEmoji: { fontSize: 20 },
+
 
   // ── Name block
   nameBlock: { flex: 1 },

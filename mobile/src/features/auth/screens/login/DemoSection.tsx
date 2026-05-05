@@ -87,7 +87,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({
         <View style={[styles.adminAccentBar, { backgroundColor: c.interactive.primary }]} />
 
         <View style={[styles.adminAvatar, { backgroundColor: c.interactive.primary }]}>
-          <Text style={[styles.adminAvatarText, { color: c.text.inverse }]}>SA</Text>
+          <Text style={[styles.adminAvatarText, { color: c.surface.card }]}>SA</Text>
         </View>
 
         <View style={styles.adminInfo}>
@@ -96,7 +96,7 @@ const DemoSection: React.FC<DemoSectionProps> = ({
         </View>
 
         <View style={[styles.adminBadge, { backgroundColor: c.interactive.primary }]}>
-          <Text style={[styles.adminBadgeText, { color: c.text.inverse }]}>Admin</Text>
+          <Text style={[styles.adminBadgeText, { color: c.surface.card }]}>Admin</Text>
         </View>
       </Pressable>
     </View>

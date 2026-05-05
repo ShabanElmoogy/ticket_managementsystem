@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated } = require('react-native') as { Animated: any };
 import { Ionicons } from '@expo/vector-icons';
 import type { ThemeColors } from '@/src/constants/tokens';
 import { Palette } from '@/src/constants/tokens';
@@ -8,13 +10,12 @@ import { changeLanguage, getCurrentLanguage } from '@/src/i18n';
 interface LanguageOption {
   code:        'en' | 'ar';
   nativeLabel: string;
-  subLabel:    string;
   flag:        string;
 }
 
 const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: 'en', nativeLabel: 'English',  subLabel: 'United States',              flag: '🇺🇸' },
-  { code: 'ar', nativeLabel: 'العربية', subLabel: 'المملكة العربية السعودية',  flag: '🇸🇦' },
+  { code: 'en', nativeLabel: 'English',  flag: '🇺🇸' },
+  { code: 'ar', nativeLabel: 'العربية', flag: '🇸🇦' },
 ];
 
 interface Props {
@@ -22,33 +23,36 @@ interface Props {
   isRtl:          boolean;
 }
 
-interface CardProps {
+interface PillProps {
   option:         LanguageOption;
   isActive:       boolean;
   resolvedColors: ThemeColors;
-  isRtl:          boolean;
   onPress:        () => void;
 }
 
-const LanguageCard: React.FC<CardProps> = ({ option, isActive, resolvedColors: c, isRtl, onPress }) => {
+const LanguagePill: React.FC<PillProps> = ({ option, isActive, resolvedColors: c, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim  = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-  const flagScale = useRef(new Animated.Value(isActive ? 1 : 0.82)).current;
+  const fillAnim  = useRef(new Animated.Value(isActive ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.spring(glowAnim,  { toValue: isActive ? 1 : 0,    useNativeDriver: false, speed: 18, bounciness: 4 }).start();
-    Animated.spring(flagScale, { toValue: isActive ? 1 : 0.82, useNativeDriver: true,  speed: 18, bounciness: 6 }).start();
+    Animated.spring(fillAnim, {
+      toValue:         isActive ? 1 : 0,
+      useNativeDriver: false,
+      speed:           20,
+      bounciness:      4,
+    }).start();
   }, [isActive]);
 
-  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
-  const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 8 }).start();
+  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 6 }).start();
 
-  const animBorder  = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [1.5, 2.5] });
-  const animShadow  = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0,   0.22] });
-  const animBubble  = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0,   0.12] });
+  const bgColor    = isActive ? c.interactive.primary : 'transparent';
+  const borderColor = isActive ? c.interactive.primary : c.border.primary;
+  const textColor  = isActive ? Palette.white : c.text.secondary;
+  const flagOpacity = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
 
   return (
-    <Animated.View style={[styles.cardWrapper, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], flex: 1 }}>
       <Pressable
         onPress={onPress}
         onPressIn={onPressIn}
@@ -56,55 +60,35 @@ const LanguageCard: React.FC<CardProps> = ({ option, isActive, resolvedColors: c
         accessibilityRole="button"
         accessibilityLabel={option.nativeLabel}
         accessibilityState={{ selected: isActive }}
-        style={styles.pressable}
-      >
-        <Animated.View style={[
-          styles.card,
+        style={[
+          styles.pill,
           {
-            borderColor:     isActive ? c.interactive.primary : c.border.primary,
-            backgroundColor: isActive ? c.interactive.primary + '12' : c.surface.secondary,
-            borderWidth:     animBorder,
+            backgroundColor: bgColor,
+            borderColor,
             shadowColor:     c.interactive.primary,
-            shadowOpacity:   animShadow,
-            shadowRadius:    14,
-            shadowOffset:    { width: 0, height: 5 },
-            elevation:       isActive ? 7 : 0,
+            shadowOpacity:   isActive ? 0.20 : 0,
+            shadowRadius:    8,
+            shadowOffset:    { width: 0, height: 3 },
+            elevation:       isActive ? 4 : 0,
           },
-        ]}>
-          {/* Flag bubble */}
-          <Animated.View style={[
-            styles.flagBubble,
-            {
-              backgroundColor: isActive
-                ? c.interactive.primary + '18'
-                : c.border.primary + '55',
-              transform: [{ scale: flagScale }],
-            },
-          ]}>
-            <Text style={styles.flag}>{option.flag}</Text>
-          </Animated.View>
+        ]}
+      >
+        {/* Flag */}
+        <Animated.Text style={[styles.flag, { opacity: flagOpacity }]}>
+          {option.flag}
+        </Animated.Text>
 
-          {/* Labels */}
-          <Text style={[styles.nativeLabel, {
-            color:      isActive ? c.interactive.primary : c.text.primary,
-            fontWeight: isActive ? '700' : '600',
-            textAlign:  isRtl ? 'right' : 'center',
-          }]} numberOfLines={1}>
-            {option.nativeLabel}
-          </Text>
-          <Text style={[styles.subLabel, {
-            color: isActive ? c.interactive.primary + 'AA' : c.text.secondary,
-          }]} numberOfLines={1}>
-            {option.subLabel}
-          </Text>
+        {/* Label */}
+        <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
+          {option.nativeLabel}
+        </Text>
 
-          {/* Check badge */}
-          {isActive && (
-            <View style={[styles.checkBadge, { backgroundColor: c.interactive.primary }]}>
-              <Ionicons name="checkmark" size={9} color={Palette.white} />
-            </View>
-          )}
-        </Animated.View>
+        {/* Checkmark — only when active */}
+        {isActive && (
+          <View style={styles.check}>
+            <Ionicons name="checkmark-circle" size={16} color={Palette.white + 'CC'} />
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -119,57 +103,38 @@ const LanguageStep: React.FC<Props> = ({ resolvedColors: c, isRtl }) => {
   };
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
       {LANGUAGE_OPTIONS.map((option) => (
-        <LanguageCard
-          key={option.code}
-          option={option}
-          isActive={selectedCode === option.code}
-          resolvedColors={c}
-          isRtl={isRtl}
-          onPress={() => handleSelect(option.code)}
-        />
+        <View key={option.code} style={{ flex: 1 }}>
+          <LanguagePill
+            option={option}
+            isActive={selectedCode === option.code}
+            resolvedColors={c}
+            onPress={() => handleSelect(option.code)}
+          />
+        </View>
       ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  row:         { flexDirection: 'row', gap: 10 },
-  cardWrapper: { flex: 1 },
-  pressable:   { flex: 1 },
-  card: {
-    flex:              1,
-    borderRadius:      20,
-    paddingVertical:   10,
-    paddingHorizontal: 12,
+  row: {
+    gap: 10,
+  },
+  pill: {
+    flexDirection:     'row',
     alignItems:        'center',
     justifyContent:    'center',
-    gap:               6,
-    minHeight:         90,
-    position:          'relative',
+    gap:               8,
+    paddingVertical:   11,
+    paddingHorizontal: 16,
+    borderRadius:      99,
+    borderWidth:       1.5,
   },
-  flagBubble: {
-    width:          54,
-    height:         54,
-    borderRadius:   27,
-    alignItems:     'center',
-    justifyContent: 'center',
-    marginBottom:   2,
-  },
-  flag:        { fontSize: 28 },
-  nativeLabel: { fontSize: 14, letterSpacing: 0.2, textAlign: 'center' },
-  subLabel:    { fontSize: 10, fontWeight: '400', letterSpacing: 0.1, textAlign: 'center' },
-  checkBadge: {
-    position:       'absolute',
-    top:            10,
-    end:            10,
-    width:          18,
-    height:         18,
-    borderRadius:   9,
-    alignItems:     'center',
-    justifyContent: 'center',
-  },
+  flag:  { fontSize: 20 },
+  label: { fontSize: 14, fontWeight: '600', letterSpacing: 0.2, flexShrink: 1 },
+  check: { marginStart: 2 },
 });
 
 export default LanguageStep;

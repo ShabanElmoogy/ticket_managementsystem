@@ -1,11 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated } = require('react-native') as { Animated: any };
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import type { ThemeColors, PaletteOption } from '@/src/constants/tokens';
@@ -128,15 +124,16 @@ const PaletteStep: React.FC<Props> = ({ resolvedColors: c, isRtl }) => {
   return (
     <View style={styles.row}>
       {PALETTE_OPTIONS.map((config) => (
-        <PaletteCard
-          key={config.option}
-          config={config}
-          isActive={paletteOption === config.option}
-          label={t(config.labelKey)}
-          resolvedColors={c}
-          isRtl={isRtl}
-          onPress={() => useUiStore.getState().setPaletteOption(config.option)}
-        />
+        <View key={config.option} style={styles.cardWrapper}>
+          <PaletteCard
+            config={config}
+            isActive={paletteOption === config.option}
+            label={t(config.labelKey)}
+            resolvedColors={c}
+            isRtl={isRtl}
+            onPress={() => useUiStore.getState().setPaletteOption(config.option)}
+          />
+        </View>
       ))}
     </View>
   );

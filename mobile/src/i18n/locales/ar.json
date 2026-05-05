@@ -20,6 +20,10 @@
     "noTenantsFound":    "لا يوجد مستأجرون",
     "quickDemoLogin":    "تسجيل دخول تجريبي سريع",
     "systemAdmin":       "مدير النظام",
+    "switchToLtr":      "التبديل إلى الإنجليزية",
+    "switchToRtl":      "التبديل إلى العربية",
+    "switchToLight":    "التبديل إلى الوضع الفاتح",
+    "switchToDark":     "التبديل إلى الوضع الداكن",
     "featureDashboard":  "📊 لوحة التحكم",
     "featureKanban":     "🗂️ كانبان",
     "featureAlerts":     "🔔 التنبيهات"

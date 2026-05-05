@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Animated } = require('react-native') as { Animated: any };
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -135,11 +137,11 @@ const OnboardingScreen: React.FC = () => {
               { backgroundColor: c.buttons.primary.bg, flexDirection: isRtl ? 'row-reverse' : 'row' },
             ]}
           >
-            <Text style={[styles.getStartedText, { color: c.text.primary }]} numberOfLines={1}>
+            <Text style={[styles.getStartedText, { color: Palette.white }]} numberOfLines={1}>
               {t('onboarding.ready.getStarted')}
             </Text>
             <View style={[styles.arrowBadge, isRtl ? { marginEnd: 10 } : { marginStart: 10 }]}>
-              <Ionicons name={getStartedArrow} size={18} color={c.tint} />
+              <Ionicons name={getStartedArrow} size={18} color={Palette.white} />
             </View>
           </Pressable>
         </Animated.View>
