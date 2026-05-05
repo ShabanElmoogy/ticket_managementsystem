@@ -284,13 +284,19 @@ function AdminCrudScreen<T extends { id: string }>({
   return (
     <View style={{ flex: 1, backgroundColor: c.surface.secondary }}>
       <AppScreenHeader
-        view={view} onViewChange={(v) => setAdminView(title, v)}
+        view={view} 
+        onViewChange={(v) => setAdminView(title, v)}
         onAdd={canAdd ? () => { setFormItem(null); setFormOpen(true); } : undefined}
         addLabel={addLabel ?? `Add ${itemType}`}
         loading={loading}
-        onExport={onExport} exporting={exporting} exportDisabled={loading || entities.length === 0}
-        exportLabel={exportLabel} exportingLabel={exportingLabel}
-        onRefresh={onRefresh} refreshLabel={refreshLabel} refreshingLabel={refreshingLabel}
+        onExport={onExport} 
+        exporting={exporting} 
+        exportDisabled={loading || entities.length === 0}
+        exportLabel={exportLabel} 
+        exportingLabel={exportingLabel}
+        onRefresh={onRefresh} 
+        refreshLabel={refreshLabel} 
+        refreshingLabel={refreshingLabel}
       />
 
       <View style={{ marginTop: 8, marginBottom: 8 , marginHorizontal: 10}}>

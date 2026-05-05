@@ -68,12 +68,24 @@ export interface AppScreenHeaderProps {
  * Each section only renders when the relevant props are provided.
  */
 const AppScreenHeader: React.FC<AppScreenHeaderProps> = ({
-  subtitle, badge,
-  view, onViewChange, leftActions,
-  onAdd, addLabel, loading = false,
-  onExport, exporting = false, exportDisabled = false, exportLabel, exportingLabel,
-  onRefresh, refreshLabel, refreshingLabel,
-  rightActions, style,
+  subtitle,
+  badge,
+  view,
+  onViewChange,
+  leftActions,
+  onAdd, 
+  addLabel,
+  loading = false,
+  onExport, 
+  exporting = false, 
+  exportDisabled = false, 
+  exportLabel, 
+  exportingLabel,
+  onRefresh, 
+  refreshLabel, 
+  refreshingLabel,
+  rightActions,
+  style,
 }) => {
   const { t } = useTranslation();
   const c     = useThemeColors();

@@ -14,6 +14,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useUiStore } from '@/src/stores/uiStore';
 import { Palette, Spacing, Radius, BorderWidth, FontSize, FontWeight } from '@/src/constants/tokens';
 import type { ThemeColors, PaletteOption } from '@/src/constants/tokens';
@@ -23,25 +24,27 @@ import type { ThemeColors, PaletteOption } from '@/src/constants/tokens';
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface PaletteSwatch {
-  option:    PaletteOption;
-  label:     string;
-  color:     string;   // primary color for the swatch circle (light mode representative)
-  darkColor: string;   // darker shade for the pressed/border state
+  option:        PaletteOption;
+  label:         string;
+  color:         string;
+  darkColor:     string;
+  isMonochrome?: boolean;
 }
 
 export interface PaletteSelectorProps {
-  resolvedColors:  ThemeColors;   // Modal-safety: caller resolves via useThemeColors()
-  isRtlOverride?:  boolean;       // for use inside Modal trees
+  resolvedColors:  ThemeColors;
+  isRtlOverride?:  boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Swatch definitions — static, no imports needed
+// Swatch definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SWATCHES: PaletteSwatch[] = [
-  { option: 'orange', label: 'Orange', color: Palette.orange500, darkColor: Palette.orange600 },
-  { option: 'green',  label: 'Green',  color: Palette.green600,  darkColor: Palette.green700  },
-  { option: 'blue',   label: 'Blue',   color: Palette.blue500,   darkColor: Palette.blue600   },
+  { option: 'blue',   label: 'Blue',   color: Palette.blue500,    darkColor: Palette.blue600    },
+  { option: 'orange', label: 'Orange', color: Palette.orange500,  darkColor: Palette.orange600  },
+  { option: 'green',  label: 'Green',  color: Palette.emerald600, darkColor: Palette.emerald700 },
+  { option: 'black',  label: 'Black',  color: Palette.neutral700, darkColor: Palette.neutral900, isMonochrome: true },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,30 +71,43 @@ const PaletteSelector: React.FC<PaletteSelectorProps> = ({ resolvedColors: c }) 
             style={({ pressed }) => [
               styles.swatch,
               {
-                backgroundColor: isActive ? swatch.color : c.surface.secondary,
-                borderColor: isActive ? swatch.darkColor : c.border.primary,
+                backgroundColor: isActive
+                  ? (swatch.isMonochrome ? c.surface.elevated : swatch.color)
+                  : c.surface.secondary,
+                borderColor: isActive
+                  ? (swatch.isMonochrome ? c.text.primary : swatch.darkColor)
+                  : c.border.primary,
                 borderWidth: isActive ? BorderWidth.thick : BorderWidth.thin,
                 opacity: pressed ? 0.8 : 1,
               },
             ]}
           >
-            {/* Color dot */}
-            <View
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: swatch.color,
-                  borderColor: isActive ? Palette.white : swatch.darkColor,
-                },
-              ]}
-            />
+            {/* Color dot — split circle for black, standard for others */}
+            {swatch.isMonochrome ? (
+              <View style={[styles.dot, { overflow: 'hidden', backgroundColor: 'transparent', borderColor: c.border.primary }]}>
+                <View style={{ position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', backgroundColor: '#111111' }} />
+                <View style={{ position: 'absolute', right: 0, top: 0, width: '50%', height: '100%', backgroundColor: '#f5f5f5' }} />
+              </View>
+            ) : (
+              <View
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor: swatch.color,
+                    borderColor: isActive ? Palette.white : swatch.darkColor,
+                  },
+                ]}
+              />
+            )}
 
             {/* Label */}
             <Text
               style={[
                 styles.label,
                 {
-                  color: isActive ? Palette.white : c.text.secondary,
+                  color: isActive
+                    ? (swatch.isMonochrome ? c.text.primary : Palette.white)
+                    : c.text.secondary,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.medium,
                 },
               ]}
@@ -101,8 +117,14 @@ const PaletteSelector: React.FC<PaletteSelectorProps> = ({ resolvedColors: c }) 
 
             {/* Active checkmark overlay */}
             {isActive && (
-              <View style={styles.checkmark}>
-                <Text style={styles.checkmarkText}>✓</Text>
+              <View style={[styles.checkmark, {
+                backgroundColor: swatch.isMonochrome ? c.text.primary + '33' : 'rgba(255,255,255,0.3)',
+              }]}>
+                <Ionicons
+                  name="checkmark"
+                  size={10}
+                  color={swatch.isMonochrome ? c.text.primary : Palette.white}
+                />
               </View>
             )}
           </Pressable>

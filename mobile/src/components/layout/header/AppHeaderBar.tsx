@@ -5,9 +5,15 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useUiStore } from '@/src/stores/uiStore';
-import { useThemeColors, FontWeight, Palette } from '@/src/constants/theme';
+import { useThemeColors, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
 import { Avatar, IconButton } from '@/src/shared/components';
+
+// All header backgrounds are dark/saturated across every palette + mode.
+// White icons and a subtle white-tinted button bg work universally.
+const BTN_BG    = 'rgba(255,255,255,0.15)';
+const AVATAR_BG = 'rgba(255,255,255,0.22)';
+const WHITE     = '#ffffff';
 
 const AppHeaderBar: React.FC = () => {
   const { user }                           = useAuthStore();
@@ -36,45 +42,40 @@ const AppHeaderBar: React.FC = () => {
         onPress={() => router.push('/(app)' as any)}
       >
         <View style={{
-          width: 32,
-          height: 32, 
-          borderRadius: 8,
-          backgroundColor: c.text.primary,
-          alignItems: 'center', 
-          justifyContent: 'center',
+          width: 32, height: 32, borderRadius: 8,
+          backgroundColor: BTN_BG,
+          alignItems: 'center', justifyContent: 'center',
         }}>
-          <Ionicons name="ticket-outline" size={18} color={c.text.inverse} />
+          <Ionicons name="ticket-outline" size={18} color={WHITE} />
         </View>
-        <Text style={{ color: Palette.white, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.3 }}>
+        <Text style={{ color: WHITE, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.3 }}>
           TicketFlow
         </Text>
       </Pressable>
 
       {/* Right actions */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+
         {/* Notification bell */}
         <IconButton
           icon="notifications-outline"
           accessibilityLabel={t('nav.notifications')}
           badgeCount={unreadCount}
-          iconColor={c.text.primary}
-          backgroundColor="rgba(255,255,255,0.15)"
+          iconColor={WHITE}
+          backgroundColor={BTN_BG}
           onPress={() => router.push('/(app)/notifications' as any)}
         />
 
         {/* User avatar */}
         <Pressable
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius: 12, paddingHorizontal: 8, paddingVertical: 6,
-          }}
+          style={{ borderRadius: 20 }}
           onPress={() => router.push('/(app)/profile' as any)}
         >
-        <Avatar
+          <Avatar
             text={user.name}
-            backgroundColor="rgba(255,255,255,0.25)"
-            textColor={Palette.white}
-            size={28}
+            backgroundColor={AVATAR_BG}
+            textColor={WHITE}
+            size={34}
           />
         </Pressable>
 
@@ -83,8 +84,8 @@ const AppHeaderBar: React.FC = () => {
           icon={open ? 'close-outline' : 'menu-outline'}
           accessibilityLabel={open ? t('common.close') : t('nav.menu')}
           iconSize={22}
-          iconColor={c.text.primary}
-          backgroundColor="rgba(255,255,255,0.15)"
+          iconColor={WHITE}
+          backgroundColor={BTN_BG}
           onPress={() => setOpen(!open)}
         />
       </View>

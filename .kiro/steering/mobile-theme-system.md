@@ -512,10 +512,10 @@ Background colors:
 
 | Variant | Background | Icon color |
 |---|---|---|
-| `add` | `c.intent.successSurface` | `c.intent.success` |
-| `export` | `c.intent.errorSurface` | `c.intent.error` |
-| `refresh` | `c.surface.tertiary` | `c.text.secondary` |
-| `neutral` | `c.surface.tertiary` | `c.text.secondary` |
+| `add` | `c.interactive.primary + '20'` | `c.interactive.primary` |
+| `export` | `c.intent.error + '20'` | `c.intent.error` |
+| `refresh` | `c.surface.elevated` | `c.interactive.primary` |
+| `neutral` | `c.surface.elevated` | `c.interactive.primary` |
 
 Icons: `add-circle-outline`, `document-outline`, `refresh-outline`, `ellipsis-horizontal`
 

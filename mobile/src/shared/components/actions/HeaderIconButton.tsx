@@ -12,7 +12,7 @@ import type { IoniconName } from '@/src/components/layout/header/navItems';
  * Used in admin screen headers for Add / Export / Refresh / custom actions.
  *
  * Variants:
- *   add     — success tint bg (theme-aware), success text
+ *   add     — palette accent tint bg (theme-aware, matches active palette), accent text
  *   export  — error tint bg, error text
  *   refresh — neutral bg, spinning animation on press/loading
  *   neutral — neutral bg, secondary text (default)
@@ -89,20 +89,21 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   // ── Colors — fully theme-aware ────────────────────────────────────────────
+  // Add: uses active palette accent (matches current theme)
+  // Export: uses error color (red — destructive/irreversible action)
+  // Refresh/Neutral: uses elevated surface
   const bg = isDisabled          ? c.surface.elevated
-           : variant === 'add'    ? c.intent.successSurface
-           : variant === 'export' ? c.intent.errorSurface
-           : c.surface.tertiary;
+           : variant === 'add'    ? c.interactive.primary + '20'
+           : variant === 'export' ? c.intent.error        + '20'
+           : c.surface.elevated;
 
   const bgPressed = isDisabled          ? c.surface.elevated
-                  : variant === 'add'    ? c.interactive.success + '40'
-                  : variant === 'export' ? c.interactive.error   + '40'
-                  : c.surface.elevated;
+                  : variant === 'add'    ? c.interactive.primary + '35'
+                  : variant === 'export' ? c.intent.error        + '35'
+                  : c.surface.tertiary;
 
   const iconColor = isDisabled          ? c.text.muted
-                  : variant === 'add'    ? c.intent.success
-                  : variant === 'export' ? c.intent.error
-                  : c.text.secondary;
+                  : c.interactive.primary;
 
   const textColor = iconColor;
 

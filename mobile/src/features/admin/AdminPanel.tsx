@@ -30,14 +30,14 @@ interface MenuItem {
 const MENU_ITEMS: MenuItem[] = [
   { id: 'dashboard',    icon: 'grid',               color: Palette.blue500    },
   { id: 'tickets',      icon: 'ticket',             color: Palette.violet500  },
-  { id: 'customers',    icon: 'people',             color: Palette.teal500    },
-  { id: 'applications', icon: 'phone-portrait',     color: Palette.indigo500  },
-  { id: 'users',        icon: 'person',             color: Palette.cyan500    },
-  { id: 'templates',    icon: 'document-text',      color: Palette.amber500   },
-  { id: 'docs',         icon: 'library',            color: Palette.emerald500 },
-  { id: 'reports',      icon: 'bar-chart',          color: Palette.orange500  },
-  { id: 'tenants',      icon: 'business',           color: Palette.rose500,   roles: ['SUPER_ADMIN'] },
-  { id: 'settings',     icon: 'settings',           color: Palette.slate500   },
+  { id: 'customers',    icon: 'people',             color: Palette.blue500    },
+  { id: 'applications', icon: 'phone-portrait',     color: Palette.violet500  },
+  { id: 'users',        icon: 'person',             color: Palette.blue500    },
+  { id: 'templates',    icon: 'document-text',      color: Palette.violet500   },
+  { id: 'docs',         icon: 'library',            color: Palette.blue500 },
+  { id: 'reports',      icon: 'bar-chart',          color: Palette.violet500  },
+  { id: 'tenants',      icon: 'business',           color: Palette.blue500,   roles: ['SUPER_ADMIN'] },
+  { id: 'settings',     icon: 'settings',           color: Palette.violet500   },
 ];
 
 // ── Admin Panel ───────────────────────────────────────────────────────────────
