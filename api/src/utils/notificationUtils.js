@@ -1,6 +1,58 @@
 import { db } from '../config/database.js';
 import { notifications, tickets, users, customers, applications } from '../modules/schema.js';
 import { eq, and, not, lt, gte, desc, isNotNull } from 'drizzle-orm';
+import { sendPushNotifications } from './expoPushSender.js';
+import { findTokensByUserId } from '../modules/notifications/pushTokens/pushTokens.repository.js';
+
+// ── Notification type → deep-link screen mapping ──────────────────────────────
+
+/**
+ * Maps a NotificationType to the mobile deep-link screen name.
+ * Falls back to 'notifications' for unknown types.
+ */
+function getDeepLinkScreen(type) {
+  switch (type) {
+    case 'TICKET_CREATED':
+    case 'TICKET_UPDATED':
+    case 'TICKET_ASSIGNED':
+    case 'COMMENT_ADDED':
+    case 'COMMENT_MENTION':
+    case 'COMMENT_DELETED':
+    case 'STATUS_CHANGED':
+    case 'PRIORITY_ESCALATED':
+    case 'TICKET_DUE_SOON':
+    case 'TICKET_OVERDUE':
+      return 'ticket-detail';
+    case 'EPIC_FEATURE_STATUS_CHANGED':
+      return 'dashboard';
+    default:
+      return 'notifications';
+  }
+}
+
+/**
+ * Maps a NotificationType to the Android notification channel ID.
+ */
+function getChannelId(type) {
+  switch (type) {
+    case 'TICKET_CREATED':
+    case 'TICKET_UPDATED':
+    case 'TICKET_ASSIGNED':
+    case 'STATUS_CHANGED':
+    case 'PRIORITY_ESCALATED':
+    case 'TICKET_DUE_SOON':
+    case 'TICKET_OVERDUE':
+      return 'ticket-updates';
+    case 'COMMENT_ADDED':
+    case 'COMMENT_MENTION':
+    case 'COMMENT_DELETED':
+      return 'mentions';
+    case 'EPIC_FEATURE_STATUS_CHANGED':
+      return 'general';
+    default:
+      return 'ticket-updates';
+  }
+}
 
 export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {
   try {
@@ -34,6 +86,41 @@ export const createNotification = async ({ userId, ticketId, type, title, messag
 
     if (req?.emitNotification) {
       req.emitNotification(userId, notificationData);
+    }
+
+    // ── Push notifications ────────────────────────────────────────────────────
+    // Fire-and-forget — push failures must never affect the main notification flow.
+    // Fetch the user's registered device tokens and send via Expo Push API.
+    try {
+      const pushTokenRows = await findTokensByUserId(userId);
+      if (pushTokenRows.length > 0) {
+        const screen    = getDeepLinkScreen(type);
+        const channelId = getChannelId(type);
+        const params    = ticketId ? { ticketId } : undefined;
+
+        const messages = pushTokenRows.map((row) => ({
+          to:        row.token,
+          title,
+          body:      message,
+          sound:     'default',
+          badge:     1,
+          channelId,
+          data: {
+            type,
+            screen,
+            ...(params ? { params } : {}),
+            ...(ticketId ? { ticketId } : {}),
+          },
+        }));
+
+        // Non-blocking — do not await at the top level
+        sendPushNotifications(messages).catch((err) =>
+          console.error('[notificationUtils] Push send failed:', err.message)
+        );
+      }
+    } catch (err) {
+      // Never let push token lookup crash the notification creation
+      console.error('[notificationUtils] Failed to fetch push tokens:', err.message);
     }
 
     return { success: true };

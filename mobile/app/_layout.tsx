@@ -30,6 +30,7 @@ import { useTenantStore } from '@/src/stores/tenantStore';
 import { usePaginationStore } from '@/src/stores/paginationStore';
 import { API } from '@/src/constants/api';
 import { http } from '@/src/services/api/httpClient';
+import { notificationService, useNotificationStore } from '@/src/features/notifications';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,10 +97,14 @@ export default function RootLayout() {
         useTenantStore.getState().syncDateFormat();
         // 6. Sync pagination settings (non-blocking)
         syncPaginationSettings().catch(() => {});
+        // 7. Initialize push notifications (non-blocking — never delays app render)
+        notificationService.initialize().catch(() => {});
       }
 
-      // 4. Routes render now with correct auth state
+      // Routes render now with correct auth state
       setReady(true);
+      // Signal navigation stack is ready for deferred deep-link navigation
+      useNotificationStore.getState().setNavigationReady(true);
     }
 
     bootstrap();

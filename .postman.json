@@ -17,7 +17,8 @@
     { "key": "customerId",    "value": "" },
     { "key": "ticketId",      "value": "" },
     { "key": "commentId",     "value": "" },
-    { "key": "visitId",       "value": "" }
+    { "key": "visitId",       "value": "" },
+    { "key": "notificationId", "value": "" }
   ],
   "item": [
     {
@@ -1589,6 +1590,356 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{baseUrl}}/docs/tree/{{nodeId}}", "host": ["{{baseUrl}}"], "path": ["docs", "tree", "{{nodeId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response is array or paginated object', () => {",
+                  "  pm.expect(Array.isArray(json) || (typeof json === 'object' && json !== null)).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications (unread only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?unreadOnly=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [{ "key": "unreadOnly", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications (paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has count field', () => pm.expect(json).to.have.property('count'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "count"]
+            }
+          }
+        },
+        {
+          "name": "Register Push Token ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has id', () => pm.expect(json).to.have.property('id'));",
+                  "pm.test('Response has token', () => pm.expect(json).to.have.property('token'));",
+                  "pm.test('Response has userId', () => pm.expect(json).to.have.property('userId'));",
+                  "pm.test('Response has platform', () => pm.expect(json).to.have.property('platform'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\",\n  \"platform\": \"ios\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push-token"]
+            }
+          }
+        },
+        {
+          "name": "Register Push Token (Android) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has id', () => pm.expect(json).to.have.property('id'));",
+                  "pm.test('Platform is android', () => pm.expect(json.platform).to.equal('android'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push-token"]
+            }
+          }
+        },
+        {
+          "name": "Register Push Token (missing token — 400) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.expect(pm.response.code).to.equal(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"ios\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push-token"]
+            }
+          }
+        },
+        {
+          "name": "Register Push Token (invalid platform — 400) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.expect(pm.response.code).to.equal(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\",\n  \"platform\": \"web\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push-token"]
+            }
+          }
+        },
+        {
+          "name": "Delete Push Token (logout) ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has message', () => pm.expect(json).to.have.property('message'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/push-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "push-token"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Mark Single Notification as Read ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}"]
+            }
           }
         }
       ]

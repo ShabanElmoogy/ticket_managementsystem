@@ -12,6 +12,7 @@ import {
   applyNewTokens,
 } from '../services/api/httpClient';
 import { HTTP_STATUS } from '../constants/api';
+import { notificationService } from '../features/notifications';
 
 // ============================================================================
 // Types  — identical to web/src/stores/authStore.ts
@@ -145,6 +146,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         tokenManager.clear();
         stopTokenRefreshCycle();
+        notificationService.cleanup().catch(() => {});
         set({
           user: null,
           token: null,

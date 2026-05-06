@@ -8,8 +8,15 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#6366f1",
+      "androidMode": "default",
+      "sounds": []
+    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.ticketflow.mobile",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to record the customer's address."
       }
@@ -25,7 +32,8 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.mobile",
       "softwareKeyboardLayoutMode": "adjustNothing",
-      "permissions": ["ACCESS_FINE_LOCATION"]
+      "permissions": ["ACCESS_FINE_LOCATION"],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -49,7 +57,16 @@
       "@react-native-community/datetimepicker",
       ["expo-location", {
         "locationWhenInUsePermission": "This app uses your location to record the customer's address."
-      }]
+      }],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#6366f1",
+          "sounds": [],
+          "androidMode": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

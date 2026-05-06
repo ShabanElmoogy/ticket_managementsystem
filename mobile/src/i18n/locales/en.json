@@ -805,5 +805,23 @@
       "saveError": "Failed to save pagination settings",
       "errorDefaultExceedsMax": "Default page size cannot exceed maximum page size"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "emptyMessage": "You're all caught up! No notifications yet.",
+    "markAllRead": "Mark all as read",
+    "types": {
+      "TICKET_CREATED":              "Ticket Created",
+      "TICKET_UPDATED":              "Ticket Updated",
+      "TICKET_ASSIGNED":             "Ticket Assigned",
+      "COMMENT_ADDED":               "Comment Added",
+      "COMMENT_MENTION":             "You Were Mentioned",
+      "COMMENT_DELETED":             "Comment Deleted",
+      "STATUS_CHANGED":              "Status Changed",
+      "PRIORITY_ESCALATED":          "Priority Escalated",
+      "TICKET_DUE_SOON":             "Due Soon",
+      "TICKET_OVERDUE":              "Overdue",
+      "EPIC_FEATURE_STATUS_CHANGED": "Epic Feature Updated"
+    }
   }
 }

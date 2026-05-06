@@ -302,6 +302,13 @@
       "when": 1777886390006,
       "tag": "0044_cheerful_guardsmen",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1778086735848,
+      "tag": "0045_aspiring_hannibal_king",
+      "breakpoints": true
     }
   ]
 }

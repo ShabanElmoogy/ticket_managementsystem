@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
-import { useUiStore } from '@/src/stores/uiStore';
+import { useNotificationStore } from '@/src/features/notifications/stores/notificationStore';
 import { useThemeColors, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
 import { Avatar, IconButton } from '@/src/shared/components';
@@ -17,7 +17,7 @@ const WHITE     = '#ffffff';
 
 const AppHeaderBar: React.FC = () => {
   const { user }                           = useAuthStore();
-  const { unreadCount }                    = useUiStore();
+  const unreadCount                        = useNotificationStore((s) => s.unreadCount);
   const { open, setOpen, setHeaderHeight } = useDrawer();
   const router                             = useRouter();
   const c                                  = useThemeColors();

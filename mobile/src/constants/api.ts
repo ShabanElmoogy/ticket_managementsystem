@@ -116,11 +116,12 @@ export const LABELS = {
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const NOTIFICATIONS = {
-  LIST:     '/notifications',
-  COUNT:    '/notifications/count',
-  READ_ALL: '/notifications/read-all',
-  BY_ID:    (id: string) => `/notifications/${id}`,
-  READ:     (id: string) => `/notifications/${id}/read`,
+  LIST:       '/notifications',
+  COUNT:      '/notifications/count',
+  READ_ALL:   '/notifications/read-all',
+  PUSH_TOKEN: '/notifications/push-token',
+  BY_ID:      (id: string) => `/notifications/${id}`,
+  READ:       (id: string) => `/notifications/${id}/read`,
 } as const;
 
 // ── Kanban ────────────────────────────────────────────────────────────────────

@@ -796,6 +796,24 @@
       "saveError": "فشل حفظ إعدادات التصفح",
       "errorDefaultExceedsMax": "لا يمكن أن يتجاوز حجم الصفحة الافتراضي الحد الأقصى"
     }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "emptyMessage": "أنت على اطلاع بكل شيء! لا توجد إشعارات بعد.",
+    "markAllRead": "تحديد الكل كمقروء",
+    "types": {
+      "TICKET_CREATED":              "تذكرة جديدة",
+      "TICKET_UPDATED":              "تحديث التذكرة",
+      "TICKET_ASSIGNED":             "تعيين التذكرة",
+      "COMMENT_ADDED":               "تعليق جديد",
+      "COMMENT_MENTION":             "تم ذكرك",
+      "COMMENT_DELETED":             "حذف التعليق",
+      "STATUS_CHANGED":              "تغيير الحالة",
+      "PRIORITY_ESCALATED":          "رفع الأولوية",
+      "TICKET_DUE_SOON":             "موعد الاستحقاق قريب",
+      "TICKET_OVERDUE":              "متأخرة",
+      "EPIC_FEATURE_STATUS_CHANGED": "تحديث ميزة الملحمة"
+    }
   }
 }
 
