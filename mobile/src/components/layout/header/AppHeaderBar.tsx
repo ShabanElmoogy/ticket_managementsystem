@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useNotificationStore } from '@/src/features/notifications/stores/notificationStore';
+import { useUiStore } from '@/src/stores/uiStore';
 import { useThemeColors, FontWeight } from '@/src/constants/theme';
 import { useDrawer } from '@/src/components/layout/header/DrawerContext';
 import { Avatar, IconButton } from '@/src/shared/components';
@@ -17,13 +18,26 @@ const WHITE     = '#ffffff';
 
 const AppHeaderBar: React.FC = () => {
   const { user }                           = useAuthStore();
-  const unreadCount                        = useNotificationStore((s) => s.unreadCount);
+  const notifUnread                        = useNotificationStore((s) => s.unreadCount);
+  const activityUnread                     = useUiStore((s) => s.unreadCount);
   const { open, setOpen, setHeaderHeight } = useDrawer();
   const router                             = useRouter();
+  const pathname                           = usePathname();
   const c                                  = useThemeColors();
   const { t }                              = useTranslation();
 
   if (!user) return null;
+
+  const isDashboard = pathname === '/' || pathname === '/index' || pathname === '/(app)';
+  // On dashboard show activity feed unread count, elsewhere show notification count
+  const bellCount = isDashboard ? activityUnread : notifUnread;
+  const handleBellPress = () => {
+    if (isDashboard) {
+      router.push('/(app)/activity-feed' as any);
+    } else {
+      router.push('/(app)/notifications' as any);
+    }
+  };
 
   return (
     <View
@@ -60,10 +74,10 @@ const AppHeaderBar: React.FC = () => {
         <IconButton
           icon="notifications-outline"
           accessibilityLabel={t('nav.notifications')}
-          badgeCount={unreadCount}
+          badgeCount={bellCount}
           iconColor={WHITE}
           backgroundColor={BTN_BG}
-          onPress={() => router.push('/(app)/notifications' as any)}
+          onPress={handleBellPress}
         />
 
         {/* User avatar */}

@@ -35,6 +35,10 @@ interface UiState {
   setUnreadCount: (count: number) => void;
   incrementUnread: () => void;
   clearUnread: () => void;
+
+  activityFeedOpen: boolean;
+  setActivityFeedOpen: (open: boolean) => void;
+  toggleActivityFeed: () => void;
 }
 
 /** Sync Appearance API so navigation theme + status bar follow uiStore */
@@ -74,6 +78,10 @@ export const useUiStore = create<UiState>()(
       setUnreadCount: (unreadCount) => set({ unreadCount }),
       incrementUnread: () => set((s) => ({ unreadCount: s.unreadCount + 1 })),
       clearUnread: () => set({ unreadCount: 0 }),
+
+      activityFeedOpen: false,
+      setActivityFeedOpen: (activityFeedOpen) => set({ activityFeedOpen }),
+      toggleActivityFeed: () => set((s) => ({ activityFeedOpen: !s.activityFeedOpen })),
     }),
     {
       name: 'ui-storage',

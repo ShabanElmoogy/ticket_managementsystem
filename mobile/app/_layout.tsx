@@ -34,6 +34,7 @@ import { usePaginationStore } from '@/src/stores/paginationStore';
 import { API } from '@/src/constants/api';
 import { http } from '@/src/services/api/httpClient';
 import { notificationService, useNotificationStore } from '@/src/features/notifications';
+import { useGlobalActivityCount } from '@/src/hooks/useGlobalActivityCount';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,9 @@ async function syncPaginationSettings() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [ready, setReady] = useState(false);
+
+  // Global socket listener — keeps bell badge count updated on all screens
+  useGlobalActivityCount();
 
   useEffect(() => {
     // Start watching network connectivity for offline retry queue
