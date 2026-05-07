@@ -18,7 +18,6 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
-  ScrollView,
   StyleSheet,
   Pressable,
   Text,
@@ -192,10 +191,8 @@ const DashboardScreen: React.FC = () => {
 
   return (
     <FeatureErrorBoundary featureName="Dashboard">
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: c.surface.primary }]}
-        edges={['top']}
-      >
+      <SafeAreaView edges={['top']}>
+        <View style={[styles.safeArea, { backgroundColor: c.surface.primary }]}>
         <View style={[styles.container, { backgroundColor: c.surface.primary }]}>
 
           {/* ── Stats cards ─────────────────────────────────────────────── */}
@@ -240,62 +237,56 @@ const DashboardScreen: React.FC = () => {
 
           {/* ── Ticket feed ─────────────────────────────────────────────── */}
           <View style={styles.feedContainer}>
-            <ScrollView
-              style={styles.scrollView}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}
-            >
-              <TicketFeed
-                tickets={tickets}
-                isLoading={isLoading}
-                viewMode={viewMode}
-                isAdmin={isAdmin}
-                isEmployee={isEmployee}
-                currentUserId={currentUser?.id ?? ''}
-                tenantSuspended={tenantSuspended}
-                selectedIds={selectedIds}
-                sharingAvailable={sharingAvailable}
-                onPress={handleTicketPress}
-                onTake={(id) => takeTicket(id)}
-                onStatusChange={(id, status) => updateStatus(id, status)}
-                onDelete={(id) => deleteTicket(id)}
-                onRestore={(id) => restoreTicket(id)}
-                onReassign={(id) => {
-                  // Reassign handled via overflow menu — no-op here
-                }}
-                onEditDueDate={(id, date) => editDueDate(id, date)}
-                onAssignProgrammer={(id) => {
-                  // Navigate to detail for programmer assignment
-                  setSelectedTicketId(id);
-                }}
-                onActivityPress={(id) => setSelectedTicketId(id)}
-                onSelect={isAdmin ? toggleSelect : undefined}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-              />
-
-              {/* ── Activity feed panel ──────────────────────────────────── */}
-              <ActivityFeedPanel
-                activities={activities}
-                unreadCount={unreadCount}
-                loading={activityLoading}
-                isExpanded={panelExpanded}
-                filterExpanded={filterExpanded}
-                typeFilter={typeFilter}
-                searchQuery={activitySearch}
-                typeCounts={typeCounts}
-                onMarkAllRead={markAllRead}
-                onMarkAllUnread={markAllUnread}
-                onClearAll={clearAll}
-                onToggleExpand={handlePanelToggle}
-                onToggleFilter={() => setFilterExpanded((v) => !v)}
-                onTypeFilter={setTypeFilter}
-                onSearchChange={setActivitySearch}
-                onMarkRead={markRead}
-                onMarkUnread={markUnread}
-                onItemPress={handleActivityPress}
-              />
-            </ScrollView>
+            <TicketFeed
+              tickets={tickets}
+              isLoading={isLoading}
+              viewMode={viewMode}
+              isAdmin={isAdmin}
+              isEmployee={isEmployee}
+              currentUserId={currentUser?.id ?? ''}
+              tenantSuspended={tenantSuspended}
+              selectedIds={selectedIds}
+              sharingAvailable={sharingAvailable}
+              onPress={handleTicketPress}
+              onTake={(id) => takeTicket(id)}
+              onStatusChange={(id, status) => updateStatus(id, status)}
+              onDelete={(id) => deleteTicket(id)}
+              onRestore={(id) => restoreTicket(id)}
+              onReassign={(id) => {
+                // Reassign handled via overflow menu — no-op here
+              }}
+              onEditDueDate={(id, date) => editDueDate(id, date)}
+              onAssignProgrammer={(id) => {
+                // Navigate to detail for programmer assignment
+                setSelectedTicketId(id);
+              }}
+              onActivityPress={(id) => setSelectedTicketId(id)}
+              onSelect={isAdmin ? toggleSelect : undefined}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+              listFooter={
+                <ActivityFeedPanel
+                  activities={activities}
+                  unreadCount={unreadCount}
+                  loading={activityLoading}
+                  isExpanded={panelExpanded}
+                  filterExpanded={filterExpanded}
+                  typeFilter={typeFilter}
+                  searchQuery={activitySearch}
+                  typeCounts={typeCounts}
+                  onMarkAllRead={markAllRead}
+                  onMarkAllUnread={markAllUnread}
+                  onClearAll={clearAll}
+                  onToggleExpand={handlePanelToggle}
+                  onToggleFilter={() => setFilterExpanded((v) => !v)}
+                  onTypeFilter={setTypeFilter}
+                  onSearchChange={setActivitySearch}
+                  onMarkRead={markRead}
+                  onMarkUnread={markUnread}
+                  onItemPress={handleActivityPress}
+                />
+              }
+            />
           </View>
 
           {/* ── Bulk action bar (admin, when tickets selected) ───────────── */}
@@ -328,6 +319,7 @@ const DashboardScreen: React.FC = () => {
             </Pressable>
           )}
         </View>
+        </View>
       </SafeAreaView>
     </FeatureErrorBoundary>
   );
@@ -346,12 +338,6 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: Spacing['5xl'],
   },
   fab: {
     position:       'absolute',

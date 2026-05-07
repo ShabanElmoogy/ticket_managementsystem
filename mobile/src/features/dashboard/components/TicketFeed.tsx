@@ -56,6 +56,8 @@ interface TicketFeedProps {
 
   /** Users available for @mention in inline comments */
   mentionUsers?: Array<{ id: string; name: string }>;
+  /** Optional footer rendered below the list (e.g. ActivityFeedPanel) */
+  listFooter?: React.ReactNode;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,6 +106,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   onRefresh,
   isRefreshing = false,
   mentionUsers = [],
+  listFooter,
 }) => {
   const c = useThemeColors();
 
@@ -167,11 +170,16 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
 
   // ── Loading footer ─────────────────────────────────────────────────────────
 
-  const ListFooter = isLoading && tickets.length > 0 ? (
-    <View style={styles.footer}>
-      <ActivityIndicator size="small" color={c.interactive.primary} />
-    </View>
-  ) : null;
+  const ListFooter = (
+    <>
+      {isLoading && tickets.length > 0 && (
+        <View style={styles.footer}>
+          <ActivityIndicator size="small" color={c.interactive.primary} />
+        </View>
+      )}
+      {listFooter}
+    </>
+  );
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
 

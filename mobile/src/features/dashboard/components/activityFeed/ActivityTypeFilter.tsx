@@ -19,17 +19,13 @@
  * ✅ Uses `c.*` tokens from `useThemeColors()` — screen only (not Modal-safe).
  */
 
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
   StyleSheet,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RN = require('react-native') as any;
-const Animated = RN.Animated as any;
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -129,7 +125,7 @@ interface ActivityTypeFilterProps {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ActivityTypeFilter: React.FC<ActivityTypeFilterProps> = ({
+export const ActivityTypeFilter: React.FC<ActivityTypeFilterProps> = ({
   activeFilter,
   typeCounts,
   isExpanded,
@@ -137,22 +133,6 @@ const ActivityTypeFilter: React.FC<ActivityTypeFilterProps> = ({
   onToggleExpand,
 }) => {
   const c = useThemeColors();
-
-  // Chevron rotation
-  const chevronRotation = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
-
-  React.useEffect(() => {
-    Animated.timing(chevronRotation, {
-      toValue:         isExpanded ? 1 : 0,
-      duration:        200,
-      useNativeDriver: true,
-    }).start();
-  }, [isExpanded, chevronRotation]);
-
-  const chevronAngle = chevronRotation.interpolate({
-    inputRange:  [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
 
   // Total count for "All" chip
   const totalCount = Object.values(typeCounts).reduce((sum, n) => sum + n, 0);
@@ -175,9 +155,11 @@ const ActivityTypeFilter: React.FC<ActivityTypeFilterProps> = ({
         <Text style={[styles.toggleLabel, { color: c.text.secondary }]}>
           Filter by Activity Type
         </Text>
-        <Animated.View style={{ transform: [{ rotate: chevronAngle }] }}>
-          <Ionicons name="chevron-down-outline" size={14} color={c.text.muted} />
-        </Animated.View>
+        <Ionicons
+          name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+          size={14}
+          color={c.text.muted}
+        />
       </Pressable>
 
       {/* Chips grid (when expanded) */}

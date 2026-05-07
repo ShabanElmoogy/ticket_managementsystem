@@ -35,7 +35,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   Modal,
   View,
@@ -47,9 +47,6 @@ import {
   useWindowDimensions,
   type ViewStyle,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RN = require('react-native') as any;
-const Animated = RN.Animated as any;
 import { Ionicons } from '@expo/vector-icons';
 import {
   Radius,
@@ -213,45 +210,8 @@ const TicketCardOverflowMenu: React.FC<TicketCardOverflowMenuProps> = ({
   onRestore,
   style,
 }) => {
-  // ── Screen dimensions (safe — inside component, not module level) ──────────
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const MAX_SHEET_HEIGHT = SCREEN_HEIGHT * 0.8;
-
-  // ── Slide-up animation ────────────────────────────────────────────────────
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      // Slide up + fade in backdrop
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 1,
-          duration: ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      // Slide down + fade out backdrop
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: SCREEN_HEIGHT,
-          duration: ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 0,
-          duration: ANIMATION_DURATION,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible, slideAnim, backdropAnim]);
 
   // ── Build menu entries via shared helper ──────────────────────────────────
   const menuEntries: OverflowMenuEntry[] = buildOverflowMenuEntries(ticket, {
@@ -287,31 +247,22 @@ const TicketCardOverflowMenu: React.FC<TicketCardOverflowMenuProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="slide"
       onRequestClose={onClose}
       statusBarTranslucent={Platform.OS === 'android'}
       accessibilityViewIsModal
     >
       {/* ── Backdrop ─────────────────────────────────────────────────────── */}
-      <Animated.View
-        style={[styles.backdrop, { opacity: backdropAnim }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      >
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close menu"
-        />
-      </Animated.View>
+      <Pressable
+        style={[styles.backdrop]}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close menu"
+      />
 
       {/* ── Sheet ────────────────────────────────────────────────────────── */}
-      <Animated.View
-        style={[
-          styles.sheetWrapper,
-          { transform: [{ translateY: slideAnim }] },
-        ]}
+      <View
+        style={styles.sheetWrapper}
         accessibilityRole="menu"
         accessibilityLabel="Ticket actions menu"
       >
@@ -427,7 +378,7 @@ const TicketCardOverflowMenu: React.FC<TicketCardOverflowMenuProps> = ({
             <View style={styles.bottomPadding} />
           </ScrollView>
         </View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 };

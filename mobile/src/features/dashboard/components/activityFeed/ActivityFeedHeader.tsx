@@ -15,16 +15,13 @@
  * ✅ Uses `c.*` tokens from `useThemeColors()` — screen only (not Modal-safe).
  */
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RN = require('react-native') as any;
-const Animated = RN.Animated as any;
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -56,33 +53,13 @@ const RainbowLine: React.FC = () => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PulsingBadge: React.FC<{ count: number; color: string }> = ({ count, color }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (count === 0) return;
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.2, duration: 600, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1,   duration: 600, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [count, scale]);
-
   if (count === 0) return null;
-
   return (
-    <Animated.View
-      style={[
-        styles.badge,
-        { backgroundColor: color, transform: [{ scale }] },
-      ]}
-    >
+    <View style={[styles.badge, { backgroundColor: color }]}>
       <Text style={styles.badgeText}>
         {count > 99 ? '99+' : count}
       </Text>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -141,22 +118,6 @@ const ActivityFeedHeader: React.FC<ActivityFeedHeaderProps> = ({
 }) => {
   const c = useThemeColors();
 
-  // Chevron rotation animation
-  const chevronRotation = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(chevronRotation, {
-      toValue:         isExpanded ? 1 : 0,
-      duration:        200,
-      useNativeDriver: true,
-    }).start();
-  }, [isExpanded, chevronRotation]);
-
-  const chevronAngle = chevronRotation.interpolate({
-    inputRange:  [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
   return (
     <View style={[styles.container, { backgroundColor: c.surface.card, borderColor: c.border.primary }]}>
       {/* Rainbow gradient line at top edge (when expanded) */}
@@ -213,9 +174,9 @@ const ActivityFeedHeader: React.FC<ActivityFeedHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={isExpanded ? 'Collapse activity feed' : 'Expand activity feed'}
           >
-            <Animated.View style={{ transform: [{ rotate: chevronAngle }] }}>
+            <View>
               <Ionicons name="chevron-down-outline" size={18} color={c.text.secondary} />
-            </Animated.View>
+            </View>
           </Pressable>
         </View>
       </View>

@@ -21,7 +21,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,6 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native';
-import { Animated } from 'react-native/Libraries/Animated/Animated';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, FontSize, FontWeight, Spacing, Palette } from '@/src/constants/tokens';
 import SlaTimerBadge from '@/src/shared/components/display/SlaTimerBadge';
@@ -109,46 +108,22 @@ const StatusChip: React.FC<ChipProps> = ({ label, color }) => (
   </View>
 );
 
-const OverdueBadge: React.FC<{ resolvedColors: ThemeColors }> = ({ resolvedColors: c }) => {
-  const opacity = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.4,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [opacity]);
-
-  return (
-    <Animated.View
-      style={[
-        styles.chip,
-        {
-          backgroundColor: `${c.intent.error}18`,
-          borderColor: `${c.intent.error}44`,
-          opacity,
-        },
-      ]}
-    >
-      <Ionicons name="warning-outline" size={10} color={c.intent.error} style={styles.chipIcon} />
-      <Text style={[styles.chipText, { color: c.intent.error, fontWeight: FontWeight.bold }]}>
-        OVERDUE
-      </Text>
-    </Animated.View>
-  );
-};
+const OverdueBadge: React.FC<{ resolvedColors: ThemeColors }> = ({ resolvedColors: c }) => (
+  <View
+    style={[
+      styles.chip,
+      {
+        backgroundColor: `${c.intent.error}18`,
+        borderColor: `${c.intent.error}44`,
+      },
+    ]}
+  >
+    <Ionicons name="warning-outline" size={10} color={c.intent.error} style={styles.chipIcon} />
+    <Text style={[styles.chipText, { color: c.intent.error, fontWeight: FontWeight.bold }]}>
+      OVERDUE
+    </Text>
+  </View>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props

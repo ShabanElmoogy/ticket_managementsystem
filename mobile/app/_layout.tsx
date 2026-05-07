@@ -1,6 +1,9 @@
 import '../global.css';
 // react-native-gesture-handler must be imported first on native only
-import { Platform } from 'react-native';
+import { Platform, LogBox } from 'react-native';
+
+// Suppress Expo Go SDK 53 push notification warning — expected in Expo Go, not a crash
+LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 if (Platform.OS !== 'web') {
   require('react-native-gesture-handler');
 }

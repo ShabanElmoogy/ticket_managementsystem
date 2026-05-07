@@ -22,9 +22,9 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
-  FlatList,
-  RefreshControl,
 } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { FlatList, RefreshControl } = require('react-native') as { FlatList: any; RefreshControl: any };
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
@@ -43,7 +43,7 @@ import type { NotificationType } from '@/src/services/api/types/notification';
 // Type icon mapping (per design spec)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+type IoniconName = string;
 
 interface TypeIconConfig {
   icon:  IoniconName;
@@ -86,7 +86,7 @@ const NotificationRow: React.FC<NotificationRowProps> = ({ item, onPress }) => {
   return (
     <Pressable
       onPress={() => onPress(item)}
-      style={({ pressed }) => [
+      style={({ pressed }: { pressed: boolean }) => [
         styles.row,
         {
           backgroundColor:  pressed ? c.interactive.pressed : c.surface.card,
@@ -261,20 +261,20 @@ const styles = StyleSheet.create({
     justifyContent:  'center',
   },
   listContent: {
-    paddingVertical: Spacing[2],
+    paddingVertical: Spacing.sm,
   },
   emptyContainer: {
     flex:            1,
     alignItems:      'center',
     justifyContent:  'center',
-    paddingVertical: Spacing[8],
+    paddingVertical: Spacing['3xl'],
   },
   row: {
     flexDirection:   'row',
     alignItems:      'flex-start',
-    paddingVertical: Spacing[3],
-    paddingEnd:      Spacing[4],
-    paddingStart:    Spacing[4],
+    paddingVertical: Spacing.md,
+    paddingEnd:      Spacing.lg,
+    paddingStart:    Spacing.lg,
     borderLeftWidth: 3,
   },
   iconContainer: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     borderRadius:   Radius.full,
     alignItems:     'center',
     justifyContent: 'center',
-    marginEnd:      Spacing[3],
+    marginEnd:      Spacing.md,
     flexShrink:     0,
   },
   content: {
@@ -293,12 +293,12 @@ const styles = StyleSheet.create({
     flexDirection:  'row',
     alignItems:     'center',
     justifyContent: 'space-between',
-    marginBottom:   Spacing[1],
+    marginBottom:   Spacing.xs,
   },
   title: {
     flex:     1,
     fontSize: FontSize.sm,
-    marginEnd: Spacing[2],
+    marginEnd: Spacing.sm,
   },
   timestamp: {
     fontSize:  FontSize.xs,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height:      StyleSheet.hairlineWidth,
-    marginStart: Spacing[4] + 40 + Spacing[3], // align with content start
+    marginStart: Spacing.lg + 40 + Spacing.md, // align with content start
   },
 });
 

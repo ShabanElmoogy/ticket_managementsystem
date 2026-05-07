@@ -43,7 +43,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -51,7 +51,6 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native';
-import { Animated } from 'react-native/Libraries/Animated/Animated';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, FontSize, FontWeight, Spacing, Palette } from '@/src/constants/tokens';
 import { ACTIVITY_TYPE_CONFIG } from '@/src/features/dashboard/utils/activityConfig';
@@ -208,37 +207,9 @@ export interface ActivityFeedItemProps {
 // Pulsing dot sub-component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PulsingDot: React.FC<{ color: string }> = ({ color }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.4,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [scale]);
-
-  return (
-    <Animated.View
-      style={[
-        styles.pulsingDot,
-        { backgroundColor: color, transform: [{ scale }] },
-      ]}
-    />
-  );
-};
+const PulsingDot: React.FC<{ color: string }> = ({ color }) => (
+  <View style={[styles.pulsingDot, { backgroundColor: color }]} />
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component

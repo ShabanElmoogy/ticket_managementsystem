@@ -497,33 +497,39 @@ class NotificationService {
     if (__DEV__) console.log('[NotificationService] Initializing...');
 
     try {
-      // 1. Android channels (no-op on iOS/web)
-      await this._setupAndroidChannels();
+      const pushSupported = this.isPushSupported();
 
-      // 2. Foreground display config
-      _N().setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert:  true,
-          shouldPlaySound:  true,
-          shouldSetBadge:   true,
-          shouldShowBanner: true,
-          shouldShowList:   true,
-        }),
-      });
+      // Expo Go (SDK 53+) does not support remote push APIs.
+      // Avoid loading expo-notifications module here to prevent noisy runtime errors.
+      if (pushSupported) {
+        // 1. Android channels (no-op on iOS/web)
+        await this._setupAndroidChannels();
 
-      // 3. Register listeners
-      this._foregroundSub = _N().addNotificationReceivedListener(
-        this._handleForegroundNotification
-      );
-      this._responseSub = _N().addNotificationResponseReceivedListener(
-        this._handleNotificationResponse
-      );
+        // 2. Foreground display config
+        _N().setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert:  true,
+            shouldPlaySound:  true,
+            shouldSetBadge:   true,
+            shouldShowBanner: true,
+            shouldShowList:   true,
+          }),
+        });
+
+        // 3. Register listeners
+        this._foregroundSub = _N().addNotificationReceivedListener(
+          this._handleForegroundNotification
+        );
+        this._responseSub = _N().addNotificationResponseReceivedListener(
+          this._handleNotificationResponse
+        );
+      }
 
       // 4. Permissions
       const status = await this.requestPermissions();
 
       // 5. Push token (only when permissions granted and push is supported)
-      if (status === 'granted' && this.isPushSupported()) {
+      if (status === 'granted' && pushSupported) {
         await this.registerPushToken();
       }
 
