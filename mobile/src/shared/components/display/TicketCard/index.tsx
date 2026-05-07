@@ -39,7 +39,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -54,7 +54,7 @@ import TicketCardBadgeRow    from './TicketCardBadgeRow';
 import TicketCardContent     from './TicketCardContent';
 import TicketCardMeta        from './TicketCardMeta';
 import TicketCardActionBar   from './TicketCardActionBar';
-import TicketCardComments    from './TicketCardComments';
+import TicketCardComments, { type TicketCardCommentsHandle } from './TicketCardComments';
 import TicketCardOverflowMenu from './TicketCardOverflowMenu';
 import TicketCardCompact     from './TicketCardCompact';
 import TicketCardGrid        from './TicketCardGrid';
@@ -159,6 +159,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
   /** Whether the overflow menu bottom sheet is open. */
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
 
+  /** Ref to the inline comments section — used to focus the input on open. */
+  const commentsRef = useRef<TicketCardCommentsHandle>(null);
+
   // ── Derived flags ─────────────────────────────────────────────────────────
   const isFeedMode    = viewMode === 'feed';
   const isCompact     = viewMode === 'compact';
@@ -177,6 +180,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
       onPress(ticket);
     }
   }, [isFeedMode, onPress, ticket]);
+
+  // Focus the comment input whenever the comments section opens
+  useEffect(() => {
+    if (commentsExpanded) {
+      commentsRef.current?.focusCommentInput();
+    }
+  }, [commentsExpanded]);
 
   const handleActivityPress = useCallback(() => {
     onActivityPress?.(ticket.id);
@@ -401,6 +411,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
       {/* ── Inline comments (feed mode only, when expanded) ────────────── */}
       {commentsExpanded && (
         <TicketCardComments
+          ref={commentsRef}
           ticketId={ticket.id}
           commentCount={ticket._count?.comments ?? 0}
           resolvedColors={c}
@@ -446,6 +457,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, // Cleaner, thinner border
     overflow: 'hidden',
     marginBottom: Spacing.md, // Consistent margin
+    paddingInline :10
   },
 
   // ── Feed mode ──────────────────────────────────────────────────────────────

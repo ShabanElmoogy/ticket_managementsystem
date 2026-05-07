@@ -44,6 +44,8 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  useImperativeHandle,
+  forwardRef,
 } from 'react';
 import {
   View,
@@ -55,7 +57,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, FontSize, FontWeight, Spacing, Palette } from '@/src/constants/tokens';
-import MentionTextInput from '@/src/shared/components/forms/MentionTextInput';
+import MentionTextInput, { type MentionTextInputHandle } from '@/src/shared/components/forms/MentionTextInput';
 import { getInitials } from '@/src/shared/components/display/Avatar';
 import { ticketsApi } from '@/src/features/tickets/api/tickets';
 import type { ThemeColors } from '@/src/constants/tokens';
@@ -151,6 +153,12 @@ const CommentContent: React.FC<CommentContentProps> = ({
 // Props
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Imperative handle exposed via forwardRef. */
+export interface TicketCardCommentsHandle {
+  /** Focuses the comment text input. */
+  focusCommentInput: () => void;
+}
+
 export interface TicketCardCommentsProps {
   /** The ticket ID to fetch and post comments for. */
   ticketId: string;
@@ -187,7 +195,7 @@ export interface TicketCardCommentsProps {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
+const TicketCardComments = forwardRef<TicketCardCommentsHandle, TicketCardCommentsProps>(({
   ticketId,
   commentCount,
   resolvedColors: c,
@@ -198,7 +206,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
   onCommentAdded,
   onCommentDeleted,
   style,
-}) => {
+}, ref) => {
   // ── State ─────────────────────────────────────────────────────────────────
   const [allComments, setAllComments]     = useState<Comment[]>([]);
   const [visibleCount, setVisibleCount]   = useState(PAGE_SIZE);
@@ -210,6 +218,16 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
 
   // Track whether we've already fetched to avoid duplicate requests
   const hasFetched = useRef(false);
+  // Ref to the MentionTextInput for programmatic focus
+  const mentionInputRef = useRef<MentionTextInputHandle>(null);
+
+  // Expose focusCommentInput() to parent via ref
+  useImperativeHandle(ref, () => ({
+    focusCommentInput: () => {
+      // Small delay to let the component finish mounting/animating before focusing
+      setTimeout(() => mentionInputRef.current?.focus(), 150);
+    },
+  }));
 
   // ── Auto-fetch on mount when there are comments ───────────────────────────
   useEffect(() => {
@@ -421,6 +439,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
       {/* Comment input */}
       <View style={[styles.inputWrapper, { borderTopColor: c.border.primary }]}>
         <MentionTextInput
+          ref={mentionInputRef}
           value={commentText}
           onChange={setCommentText}
           onSubmit={handleSubmitComment}
@@ -436,7 +455,9 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
       </View>
     </View>
   );
-};
+});
+
+TicketCardComments.displayName = 'TicketCardComments';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles

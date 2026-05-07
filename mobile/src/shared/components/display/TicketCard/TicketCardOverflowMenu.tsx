@@ -54,7 +54,6 @@ import {
   FontSize,
   FontWeight,
   Spacing,
-  Palette,
 } from '@/src/constants/tokens';
 import type { ThemeColors } from '@/src/constants/tokens';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
@@ -172,7 +171,7 @@ const MenuItemRow: React.FC<MenuItemRowProps> = ({ item, resolvedColors: c, onPr
         >
           <Ionicons
             name={item.icon as any}
-            size={16}
+            size={20}
             color={isDisabled ? c.text.muted : item.color}
           />
         </View>
@@ -391,6 +390,7 @@ const TicketCardOverflowMenu: React.FC<TicketCardOverflowMenuProps> = ({
                     item={entry}
                     resolvedColors={c}
                     onPress={() => handleItemPress(entry)}
+                   
                   />
                 </View>
               );
@@ -503,30 +503,33 @@ const styles = StyleSheet.create({
   // ── Menu item row ──────────────────────────────────────────────────────────
   menuItem: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: 45, // More vertical space between rows
+    paddingVertical: 80, // Even more vertical spac
   },
   rowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Spacing.md,
-    width: '100%',
+    width: '95%',
+    marginBottom : 7,
+    marginTop : 7,
+    marginStart : 10
   },
   menuItemIconWrapper: {
-    width: 28, // More compact icon container
-    height: 28,
-    borderRadius: Radius.md,
+    width: 36,
+    height: 36,
+    borderRadius: Radius.lg,
     alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+    justifyContent: 'center'
   },
   menuItemLabel: {
-    flex: 1,
-    fontSize: FontSize.base, // More compact text
-    fontWeight: FontWeight.medium,
-    lineHeight: 20,
+  flex: 1,
+  flexShrink: 1,
+  fontSize: FontSize.xl,
+  fontWeight: FontWeight.medium,
+  lineHeight: 25,
   },
   menuItemEndIcon: {
-    flexShrink: 0,
     marginStart: Spacing.xs,
     opacity: 0.6,
   },

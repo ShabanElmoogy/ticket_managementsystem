@@ -47,7 +47,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import {
   View,
   Text,
@@ -68,6 +68,12 @@ import type { ThemeColors } from '@/src/constants/tokens';
 export interface MentionUser {
   id: string;
   name: string;
+}
+
+/** Imperative handle exposed via forwardRef. */
+export interface MentionTextInputHandle {
+  /** Focuses the underlying TextInput. */
+  focus: () => void;
 }
 
 export interface MentionTextInputProps {
@@ -128,7 +134,7 @@ function insertMention(text: string, cursorPos: number, userName: string): strin
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MentionTextInput: React.FC<MentionTextInputProps> = ({
+const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProps>(({
   value,
   onChange,
   onSubmit,
@@ -137,9 +143,16 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
   disabled = false,
   resolvedColors: c,
   style,
-}) => {
+}, ref) => {
   const [cursorPos, setCursorPos] = useState(0);
   const inputRef = useRef<any>(null);
+
+  // Expose focus() to parent via ref
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   // Derive mention query from current cursor position
   const mentionQuery = getMentionQuery(value, cursorPos);
@@ -288,7 +301,9 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
       </View>
     </View>
   );
-};
+});
+
+MentionTextInput.displayName = 'MentionTextInput';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles
