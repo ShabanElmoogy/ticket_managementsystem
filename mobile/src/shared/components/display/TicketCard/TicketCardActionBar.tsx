@@ -33,8 +33,14 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useCallback } from 'react';
-import type { IconProps } from '@expo/vector-icons/build/createIconSet';
+import * as Haptics from 'expo-haptics';
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring, 
+  withSequence,
+  withTiming
+} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -106,11 +112,12 @@ interface ActionButtonProps {
   badgeCount?: number;
   color: string;
   resolvedColors: ThemeColors;
+  active?: boolean;
 }
 
 /**
  * A single action button in the action bar — icon + label, optional count badge.
- * Styled like a social-post reaction button.
+ * Styled like a social-post reaction button (FB/IG style) with Reanimated feedback.
  */
 const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
@@ -120,47 +127,78 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   badgeCount,
   color,
   resolvedColors: c,
-}) => (
-  <Pressable
-    onPress={onPress}
-    disabled={disabled}
-    accessibilityRole="button"
-    accessibilityLabel={label}
-    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-    style={({ pressed }: { pressed: boolean }) => [
-      styles.actionButton,
-      {
-        backgroundColor: pressed && !disabled
-          ? `${color}18`
-          : 'transparent',
-        opacity: disabled ? 0.4 : 1,
-      },
-    ]}
-  >
-    <View style={styles.actionButtonInner}>
-      <View style={styles.iconWrapper}>
-        <Ionicons name={icon as any} size={16} color={disabled ? c.text.muted : color} />
-        {/* Count badge */}
-        {badgeCount !== undefined && badgeCount > 0 && (
-          <View style={[styles.badge, { backgroundColor: color }]}>
-            <Text style={styles.badgeText}>
-              {badgeCount > 99 ? '99+' : String(badgeCount)}
-            </Text>
-          </View>
-        )}
-      </View>
-      <Text
-        style={[
-          styles.actionLabel,
-          { color: disabled ? c.text.muted : color },
+  active = false,
+}) => {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.92, { damping: 12, stiffness: 200 });
+    opacity.value = withTiming(0.8, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    opacity.value = withTiming(1, { duration: 100 });
+  };
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={({ pressed }: { pressed: boolean }) => [
+          styles.actionButton,
+          active && { backgroundColor: `${color}10` },
+          { opacity: disabled ? 0.3 : 1 },
         ]}
-        numberOfLines={1}
       >
-        {label}
-      </Text>
-    </View>
-  </Pressable>
-);
+        <View style={styles.actionButtonInner}>
+          <View style={styles.iconWrapper}>
+            <Ionicons 
+              name={active ? (icon.replace('-outline', '') as any) : icon as any} 
+              size={20} 
+              color={active ? color : c.text.secondary} 
+            />
+            {badgeCount !== undefined && badgeCount > 0 && (
+              <View style={[styles.badge, { backgroundColor: Palette.red500 }]}>
+                <Text style={styles.badgeText}>
+                  {badgeCount > 9 ? '9+' : String(badgeCount)}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text
+            style={[
+              styles.actionLabel,
+              { 
+                color: active ? color : c.text.secondary,
+                fontWeight: active ? FontWeight.bold : FontWeight.semibold
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Overflow menu item types
@@ -253,7 +291,6 @@ const TicketCardActionBar: React.FC<TicketCardActionBarProps> = ({
 }) => {
   const commentCount = ticket._count?.comments ?? 0;
   const ticketIsDeleted = isDeleted(ticket);
-  const canUpdateStatus = canUpdateTicketStatus(ticket, isAdmin, currentUserId);
 
   // ── Show "Take" button: EMPLOYEE role + ticket has no assignee ────────────
   const showTakeButton =
@@ -265,16 +302,11 @@ const TicketCardActionBar: React.FC<TicketCardActionBarProps> = ({
   // ── Show "Share" button: only when sharing is available ──────────────────
   const showShareButton = sharingAvailable && !!onSharePress;
 
-  // ── Overflow menu press handler ───────────────────────────────────────────
-  const handleOverflowPress = useCallback(() => {
-    onOverflowMenuPress();
-  }, [onOverflowMenuPress]);
-
   return (
     <View
       style={[
         styles.container,
-        { backgroundColor: c.surface.elevated, borderTopColor: c.border.primary },
+        { borderTopColor: c.border.primary },
         style,
       ]}
     >
@@ -284,32 +316,32 @@ const TicketCardActionBar: React.FC<TicketCardActionBarProps> = ({
         label={commentCount > 0 ? String(commentCount) : 'Comment'}
         onPress={onCommentPress}
         disabled={tenantSuspended}
-        badgeCount={commentCount > 0 ? commentCount : undefined}
         color={Palette.violet500}
         resolvedColors={c}
+        active={commentCount > 0}
       />
 
       {/* ── Activity button ────────────────────────────────────────────── */}
       <ActionButton
-        icon="bar-chart-outline"
+        icon="pulse-outline"
         label="Activity"
         onPress={onActivityPress}
-        color={Palette.blue500}
+        color={c.interactive.primary}
         resolvedColors={c}
       />
 
-      {/* ── Share button (hidden when unavailable) ─────────────────────── */}
+      {/* ── Share button ───────────────────────────────────────────────── */}
       {showShareButton && (
         <ActionButton
-          icon="share-outline"
+          icon="share-social-outline"
           label="Share"
           onPress={onSharePress!}
-          color={Palette.teal500}
+          color={Palette.blue500}
           resolvedColors={c}
         />
       )}
 
-      {/* ── Take button (EMPLOYEE + unassigned only) ───────────────────── */}
+      {/* ── Take button ────────────────────────────────────────────────── */}
       {showTakeButton && (
         <ActionButton
           icon="checkmark-circle-outline"
@@ -320,29 +352,15 @@ const TicketCardActionBar: React.FC<TicketCardActionBarProps> = ({
         />
       )}
 
-      {/* ── Spacer — pushes overflow menu to the right ─────────────────── */}
       <View style={styles.spacer} />
 
-      {/* ── Three-dot overflow menu trigger ────────────────────────────── */}
+      {/* ── More Options ───────────────────────────────────────────────── */}
       <Pressable
-        onPress={handleOverflowPress}
-        accessibilityRole="button"
-        accessibilityLabel="More ticket actions"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={({ pressed }: { pressed: boolean }) => [
-          styles.overflowButton,
-          {
-            backgroundColor: pressed
-              ? c.surface.elevated
-              : 'transparent',
-          },
-        ]}
+        onPress={onOverflowMenuPress}
+        style={styles.overflowButton}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Ionicons
-          name="ellipsis-horizontal"
-          size={18}
-          color={c.text.secondary}
-        />
+        <Ionicons name="ellipsis-horizontal" size={20} color={c.text.muted} />
       </Pressable>
     </View>
   );
@@ -521,55 +539,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    gap: 2,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
   },
   actionButton: {
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    flexShrink: 0,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: Radius.full,
   },
   actionButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   iconWrapper: {
     position: 'relative',
   },
   badge: {
     position: 'absolute',
-    top: -5,
-    right: -7,
-    minWidth: 14,
-    height: 14,
-    borderRadius: 7,
+    top: -6,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 2,
+    borderWidth: 2,
+    borderColor: '#ffffff',
   },
   badgeText: {
     fontSize: 8,
     fontWeight: FontWeight.bold,
     color: '#ffffff',
-    lineHeight: 10,
+    lineHeight: 12,
   },
   actionLabel: {
     fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
     lineHeight: 16,
   },
   spacer: {
     flex: 1,
   },
   overflowButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.md,
+    width: 36,
+    height: 36,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
 });
 

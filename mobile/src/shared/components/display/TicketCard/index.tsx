@@ -443,20 +443,18 @@ const styles = StyleSheet.create({
   // ── Base card ──────────────────────────────────────────────────────────────
   card: {
     borderRadius: Radius.xl,
-    borderWidth: 3,
+    borderWidth: 1, // Cleaner, thinner border
     overflow: 'hidden',
-    paddingInline : 10,
-    marginBottom : 10
+    marginBottom: Spacing.md, // Consistent margin
   },
 
   // ── Feed mode ──────────────────────────────────────────────────────────────
   feedCard: {
-    // Shadow values (shadowColor overridden inline with c.shadow)
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    // Elevation (Android)
-    elevation: 3,
+    // Premium shadow for depth
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   // ── Section spacing (feed mode) ────────────────────────────────────────────
@@ -468,7 +466,7 @@ const styles = StyleSheet.create({
   badgeRow: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
-    paddingBottom : Spacing.sm
+    paddingBottom: Spacing.xs,
   },
 
   metaRow: {

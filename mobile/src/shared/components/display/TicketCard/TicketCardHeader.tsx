@@ -94,7 +94,7 @@ const TicketCardHeader: React.FC<TicketCardHeaderProps> = ({
       <View
         style={[
           styles.avatar,
-          { backgroundColor: `${avatarColor}22` },
+          { backgroundColor: `${avatarColor}15` },
         ]}
         accessibilityRole="image"
         accessibilityLabel={`${creatorName} avatar`}
@@ -104,7 +104,7 @@ const TicketCardHeader: React.FC<TicketCardHeaderProps> = ({
         </Text>
       </View>
 
-      {/* Creator name + timestamp */}
+      {/* Creator name + timestamp (Stacked) */}
       <View style={styles.nameBlock}>
         <Text
           style={[styles.creatorName, { color: c.text.primary }]}
@@ -112,12 +112,19 @@ const TicketCardHeader: React.FC<TicketCardHeaderProps> = ({
         >
           {creatorName}
         </Text>
-        <Text
-          style={[styles.timestamp, { color: c.text.muted }]}
-          numberOfLines={1}
-        >
-          {relativeTime}
-        </Text>
+        <View style={styles.metaInfo}>
+          <Text style={[styles.timestamp, { color: c.text.muted }]}>
+            {relativeTime}
+          </Text>
+          {ticket.application?.name && (
+            <>
+              <Text style={[styles.dot, { color: c.text.muted }]}>•</Text>
+              <Text style={[styles.appName, { color: c.text.muted }]} numberOfLines={1}>
+                {ticket.application.name}
+              </Text>
+            </>
+          )}
+        </View>
       </View>
 
       {/* Three-dot overflow menu trigger */}
@@ -135,7 +142,7 @@ const TicketCardHeader: React.FC<TicketCardHeaderProps> = ({
       >
         <Ionicons
           name="ellipsis-horizontal"
-          size={18}
+          size={20}
           color={c.text.secondary}
         />
       </Pressable>
@@ -154,34 +161,46 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   avatarText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
   nameBlock: {
     flex: 1,
-    gap: 1,
+    justifyContent: 'center',
   },
   creatorName: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     lineHeight: 18,
+  },
+  metaInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   timestamp: {
     fontSize: FontSize.xs,
     lineHeight: 16,
   },
+  dot: {
+    fontSize: FontSize.xs,
+  },
+  appName: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
   overflowButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.md,
+    width: 36,
+    height: 36,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

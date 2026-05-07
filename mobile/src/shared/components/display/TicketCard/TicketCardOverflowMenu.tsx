@@ -36,6 +36,7 @@
  */
 
 import React, { useCallback } from 'react';
+import * as Haptics from 'expo-haptics';
 import {
   Modal,
   View,
@@ -124,9 +125,14 @@ interface MenuItemRowProps {
 const MenuItemRow: React.FC<MenuItemRowProps> = ({ item, resolvedColors: c, onPress }) => {
   const isDisabled = item.disabled === true;
 
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
     <Pressable
-      onPress={isDisabled ? undefined : onPress}
+      onPress={isDisabled ? undefined : handlePress}
       disabled={isDisabled}
       accessibilityRole="menuitem"
       accessibilityLabel={item.label}
@@ -136,46 +142,51 @@ const MenuItemRow: React.FC<MenuItemRowProps> = ({ item, resolvedColors: c, onPr
         {
           backgroundColor:
             pressed && !isDisabled
-              ? `${item.color}14`
+              ? `${item.color}10`
               : 'transparent',
           opacity: isDisabled ? 0.4 : 1,
         },
       ]}
     >
-      {/* Icon */}
-      <View
-        style={[
-          styles.menuItemIconWrapper,
-          { backgroundColor: `${item.color}18` },
-        ]}
-      >
-        <Ionicons
-          name={item.icon as any}
-          size={16}
-          color={isDisabled ? c.text.muted : item.color}
-        />
+      <View style={styles.rowContainer}>
+        {/* Label */}
+        <Text
+          style={[
+            styles.menuItemLabel,
+            { 
+              color: isDisabled ? c.text.muted : (item.color === c.interactive.primary ? c.text.primary : item.color),
+              fontWeight: item.color === c.interactive.primary ? FontWeight.bold : FontWeight.medium
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {item.label}
+        </Text>
+
+        {/* Icon (Behind Text) */}
+        <View
+          style={[
+            styles.menuItemIconWrapper,
+            { backgroundColor: `${item.color}15` },
+          ]}
+        >
+          <Ionicons
+            name={item.icon as any}
+            size={16}
+            color={isDisabled ? c.text.muted : item.color}
+          />
+        </View>
+
+        {/* Disabled lock icon */}
+        {isDisabled && (
+          <Ionicons
+            name="lock-closed-outline"
+            size={14}
+            color={c.text.muted}
+            style={styles.menuItemEndIcon}
+          />
+        )}
       </View>
-
-      {/* Label */}
-      <Text
-        style={[
-          styles.menuItemLabel,
-          { color: isDisabled ? c.text.muted : item.color },
-        ]}
-        numberOfLines={1}
-      >
-        {item.label}
-      </Text>
-
-      {/* Disabled lock icon */}
-      {isDisabled && (
-        <Ionicons
-          name="lock-closed-outline"
-          size={12}
-          color={c.text.muted}
-          style={styles.menuItemLockIcon}
-        />
-      )}
     </Pressable>
   );
 };
@@ -291,13 +302,24 @@ const TicketCardOverflowMenu: React.FC<TicketCardOverflowMenuProps> = ({
               { borderBottomColor: c.border.primary },
             ]}
           >
-            <Text
-              style={[styles.sheetTitle, { color: c.text.primary }]}
-              numberOfLines={2}
-              accessibilityRole="header"
-            >
-              {ticketTitle}
-            </Text>
+            <View style={styles.headerContent}>
+              <Text
+                style={[styles.sheetTitle, { color: c.text.primary }]}
+                numberOfLines={1}
+                accessibilityRole="header"
+              >
+                {ticketTitle}
+              </Text>
+              <View style={styles.headerSubtitle}>
+                <Text style={[styles.ticketId, { color: c.text.muted }]}>
+                  #{ticket.id.slice(0, 8)}
+                </Text>
+                <Text style={[styles.dot, { color: c.text.muted }]}>•</Text>
+                <Text style={[styles.statusText, { color: c.text.secondary }]}>
+                  {ticket.status.replace(/_/g, ' ')}
+                </Text>
+              </View>
+            </View>
 
             {/* Close button */}
             <Pressable
@@ -480,15 +502,18 @@ const styles = StyleSheet.create({
 
   // ── Menu item row ──────────────────────────────────────────────────────────
   menuItem: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 45, // More vertical space between rows
+  },
+  rowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 13,
     gap: Spacing.md,
+    width: '100%',
   },
   menuItemIconWrapper: {
-    width: 32,
-    height: 32,
+    width: 28, // More compact icon container
+    height: 28,
     borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -496,13 +521,36 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: {
     flex: 1,
-    fontSize: FontSize.base,
+    fontSize: FontSize.base, // More compact text
     fontWeight: FontWeight.medium,
     lineHeight: 20,
   },
-  menuItemLockIcon: {
+  menuItemEndIcon: {
     flexShrink: 0,
     marginStart: Spacing.xs,
+    opacity: 0.6,
+  },
+  headerContent: {
+    flex: 1,
+    gap: 2,
+  },
+  headerSubtitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ticketId: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: FontWeight.semibold,
+    textTransform: 'capitalize',
+  },
+  dot: {
+    fontSize: 10,
   },
 
   // ── Divider ────────────────────────────────────────────────────────────────

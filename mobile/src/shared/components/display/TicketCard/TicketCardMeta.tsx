@@ -116,10 +116,9 @@ const TicketCardMeta: React.FC<TicketCardMetaProps> = ({
         <>
           <View style={styles.metaItem}>
             <Ionicons
-              name="calendar-outline"
-              size={12}
+              name="calendar-clear"
+              size={13}
               color={dueDateColor}
-              style={styles.metaIcon}
             />
             <Text
               style={[styles.metaText, { color: dueDateColor }]}
@@ -140,16 +139,15 @@ const TicketCardMeta: React.FC<TicketCardMetaProps> = ({
       <View style={styles.metaItem}>
         {assigneeName ? (
           <>
-            {/* Initials avatar */}
             <View
               style={[
                 styles.assigneeAvatar,
-                { backgroundColor: `${Palette.blue500}22` },
+                { backgroundColor: `${Palette.indigo500}15` },
               ]}
               accessibilityRole="image"
               accessibilityLabel={`${assigneeName} avatar`}
             >
-              <Text style={[styles.assigneeInitials, { color: Palette.blue500 }]}>
+              <Text style={[styles.assigneeInitials, { color: Palette.indigo500 }]}>
                 {assigneeInitials}
               </Text>
             </View>
@@ -163,10 +161,9 @@ const TicketCardMeta: React.FC<TicketCardMetaProps> = ({
         ) : (
           <>
             <Ionicons
-              name="person-outline"
-              size={12}
+              name="person-circle-outline"
+              size={13}
               color={c.text.muted}
-              style={styles.metaIcon}
             />
             <Text
               style={[styles.metaText, { color: c.text.muted }]}
@@ -187,10 +184,9 @@ const TicketCardMeta: React.FC<TicketCardMetaProps> = ({
       {hasEstimatedHours && (
         <View style={styles.metaItem}>
           <Ionicons
-            name="time-outline"
-            size={12}
+            name="timer-outline"
+            size={13}
             color={c.text.secondary}
-            style={styles.metaIcon}
           />
           <Text
             style={[styles.metaText, { color: c.text.secondary }]}
@@ -218,7 +214,7 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 6,
     flexShrink: 1,
   },
   metaIcon: {
@@ -227,7 +223,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: FontSize.xs,
-    fontWeight: FontWeight.medium,
+    fontWeight: FontWeight.semibold,
     lineHeight: 16,
     flexShrink: 1,
   },
@@ -235,21 +231,21 @@ const styles = StyleSheet.create({
     width: 1,
     height: 12,
     borderRadius: Radius.full,
-    opacity: 0.4,
-    marginHorizontal: 2,
+    opacity: 0.3,
+    marginHorizontal: 4,
   },
   assigneeAvatar: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   assigneeInitials: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: FontWeight.bold,
-    lineHeight: 10,
+    lineHeight: 11,
   },
 });
 

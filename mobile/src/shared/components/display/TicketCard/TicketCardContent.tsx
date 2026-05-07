@@ -23,16 +23,17 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image, type ViewStyle } from 'react-native';
 import { Radius, FontSize, FontWeight, Spacing } from '@/src/constants/tokens';
 import type { ThemeColors } from '@/src/constants/tokens';
 import type { Ticket } from '@/src/services/api/types/ticket';
+import type { Attachment } from '@/src/services/api/types/attachment';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const DESCRIPTION_TRUNCATE_LENGTH = 200;
+const DESCRIPTION_TRUNCATE_LENGTH = 180; // Slightly shorter for feed style
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -65,6 +66,8 @@ export interface TicketCardContentProps {
   descriptionLines?: number;
   /** When true, hides See more/See less toggle. */
   disableToggle?: boolean;
+  /** Optional attachments to show as hero image. */
+  attachments?: Attachment[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,6 +83,7 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
   style,
   descriptionLines,
   disableToggle = false,
+  attachments = [],
 }) => {
   // Internal expanded state — used when the component is uncontrolled
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -97,8 +101,6 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
 
   const handleToggleExpanded = useCallback(
     (e: { stopPropagation?: () => void }) => {
-      // Prevent the press from bubbling up to the content area's onPress
-      // (which would navigate to the detail screen)
       if (e.stopPropagation) e.stopPropagation();
 
       if (isControlled) {
@@ -114,12 +116,14 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
     onPress(ticket);
   }, [onPress, ticket]);
 
+  // Find the first image attachment to show as a hero image
+  const heroImage = attachments.find((a) => a.mimeType.startsWith('image/'));
+
   return (
     <Pressable
       onPress={handleContentPress}
       accessibilityRole="button"
       accessibilityLabel={`View ticket: ${ticket.title}`}
-      accessibilityHint="Double tap to open ticket details"
       style={({ pressed }: { pressed: boolean }) => [
         styles.container,
         pressed && styles.containerPressed,
@@ -129,7 +133,7 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
       {/* Ticket title */}
       <Text
         style={[styles.title, { color: c.text.primary }]}
-        numberOfLines={3}
+        numberOfLines={2}
       >
         {ticket.title}
       </Text>
@@ -147,8 +151,6 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
               <Text
                 onPress={handleToggleExpanded}
                 style={[styles.toggleLink, { color: c.interactive.primary }]}
-                accessibilityRole="button"
-                accessibilityLabel="See more"
               >
                 See more
               </Text>
@@ -160,14 +162,23 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
               <Text
                 onPress={handleToggleExpanded}
                 style={[styles.toggleLink, { color: c.interactive.primary }]}
-                accessibilityRole="button"
-                accessibilityLabel="See less"
               >
                 See less
               </Text>
             </>
           )}
         </Text>
+      )}
+
+      {/* Hero Image support (like FB/IG) */}
+      {heroImage && (
+        <View style={styles.imageWrapper}>
+          <Image
+            source={{ uri: heroImage.url }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+        </View>
       )}
     </Pressable>
   );
@@ -181,23 +192,36 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: Radius.md,
     paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
   },
   containerPressed: {
-    opacity: 0.75,
+    opacity: 0.85,
   },
   title: {
-    fontSize: FontSize.base,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     lineHeight: 22,
+    marginBottom: 4,
   },
   description: {
     fontSize: FontSize.sm,
     lineHeight: 20,
+    marginBottom: Spacing.sm,
   },
   toggleLink: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
+  },
+  imageWrapper: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    marginTop: Spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });
 

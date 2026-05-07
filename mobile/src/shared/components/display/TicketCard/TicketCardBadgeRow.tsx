@@ -21,7 +21,14 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  withSequence 
+} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -89,46 +96,64 @@ function isOverdue(ticket: Ticket): boolean {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface ChipProps {
-  label: string;
-  color: string;
-}
-
-const StatusChip: React.FC<ChipProps> = ({ label, color }) => (
+const StatusChip: React.FC<ChipProps & { icon?: IconProps<string>['name'] }> = ({ label, color, icon }) => (
   <View
     style={[
       styles.chip,
       {
-        backgroundColor: `${color}18`,
-        borderColor: `${color}44`,
+        backgroundColor: `${color}15`,
+        borderColor: `${color}30`,
       },
     ]}
   >
+    {icon && (
+      <Ionicons name={icon as any} size={11} color={color} style={styles.chipIcon} />
+    )}
     <Text style={[styles.chipText, { color }]} numberOfLines={1}>
       {label}
     </Text>
   </View>
 );
 
-const OverdueBadge: React.FC<{ resolvedColors: ThemeColors }> = ({ resolvedColors: c }) => (
-  <View
-    style={[
-      styles.chip,
-      {
-        backgroundColor: `${c.intent.error}18`,
-        borderColor: `${c.intent.error}44`,
-      },
-    ]}
-  >
-    <Ionicons name="warning-outline" size={10} color={c.intent.error} style={styles.chipIcon} />
-    <Text
-      style={[styles.chipText, { color: c.intent.error, fontWeight: FontWeight.bold }]}
-      numberOfLines={1}
+const OverdueBadge: React.FC<{ resolvedColors: ThemeColors }> = ({ resolvedColors: c }) => {
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(0.4, { duration: 800 }),
+        withTiming(1, { duration: 800 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.chip,
+        animatedStyle,
+        {
+          backgroundColor: `${Palette.red500}20`,
+          borderColor: Palette.red500,
+        },
+      ]}
     >
-      OVERDUE
-    </Text>
-  </View>
-);
+      <Ionicons name="alert-circle" size={11} color={Palette.red500} style={styles.chipIcon} />
+      <Text
+        style={[styles.chipText, { color: Palette.red500, fontWeight: FontWeight.bold }]}
+        numberOfLines={1}
+      >
+        OVERDUE
+      </Text>
+    </Animated.View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -168,10 +193,18 @@ const TicketCardBadgeRow: React.FC<TicketCardBadgeRowProps> = ({
       accessibilityRole="scrollbar"
     >
       {/* Status chip */}
-      <StatusChip label={statusLabel} color={statusColor} />
+      <StatusChip 
+        label={statusLabel} 
+        color={statusColor} 
+        icon={ticket.status === 'CLOSED' ? 'checkmark-circle' : 'ellipse'} 
+      />
 
       {/* Priority chip */}
-      <StatusChip label={priorityLabel} color={priorityColor} />
+      <StatusChip 
+        label={priorityLabel} 
+        color={priorityColor} 
+        icon="flag" 
+      />
 
       {/* Overdue badge — animated pulsing */}
       {ticketIsOverdue && <OverdueBadge resolvedColors={c} />}
@@ -264,18 +297,20 @@ const styles = StyleSheet.create({
     alignItems:        'center',
     borderRadius:      Radius.full,
     borderWidth:       1,
-    paddingHorizontal: 7,
-    paddingVertical:   2,
+    paddingHorizontal: 8,
+    paddingVertical:   3,
     flexShrink:        0,
   },
   chipIcon: {
-    marginEnd: 3,
+    marginEnd: 4,
   },
   chipText: {
     fontSize:   10,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     lineHeight: 14,
     flexShrink: 0,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
 });
 
