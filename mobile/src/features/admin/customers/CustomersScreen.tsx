@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, Pressable, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminCrudScreen        from '@/src/features/admin/shared/AdminCrudScreen';
 import { ConfirmDeleteDialog }    from '@/src/shared/components';
@@ -26,6 +27,26 @@ const CustomersScreen: React.FC = () => {
 
   // ── Visits map view ────────────────────────────────────────────────────────
   const [showVisits, setShowVisits] = useState(false);
+
+  // ── Hardware Back Button Handling ──────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (showVisits) {
+          setShowVisits(false);
+          return true;
+        }
+        if (selectedId) {
+          setSelectedId(null);
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [showVisits, selectedId, setSelectedId])
+  );
 
   // ── Detail → Edit state ────────────────────────────────────────────────────
   const [editingFromDetail,  setEditingFromDetail]  = useState<Customer | null>(null);

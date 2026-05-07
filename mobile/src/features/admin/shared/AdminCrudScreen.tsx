@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, BackHandler } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { useThemeColors, FontSize, FontWeight, Radius } from '@/src/constants/theme';
 import { AppScreenHeader, AppDataTable, ConfirmDeleteDialog, DataCard, AppTextInput, type ColDef } from '@/src/shared/components';
 import { useToast } from '@/src/shared/hooks/useToast';
@@ -192,6 +193,22 @@ function AdminCrudScreen<T extends { id: string }>({
   const [deleting,     setDeleting]     = useState(false);
   const [page,         setPage]         = useState(1);
 
+  // ── Hardware Back Button Handling ──────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (formOpen) {
+          setFormOpen(false);
+          return true;
+        }
+        return false;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [formOpen])
+  );
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const targetSnapshot = deleteTarget;
@@ -325,7 +342,6 @@ function AdminCrudScreen<T extends { id: string }>({
           renderCompactItem={(item) =>
             <CompactRow item={item} columns={columns} onView={onRowPress ? () => onRowPress(item) : undefined} onEdit={() => { setFormItem(item); setFormOpen(true); }} onDelete={() => setDeleteTarget(item)} />
           }
-          onDelete={onDelete} getItemName={getItemName} itemType={itemType}
         />
       </View>
 

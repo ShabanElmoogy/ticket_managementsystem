@@ -16,6 +16,8 @@ import TicketsScreen       from '@/src/features/admin/tickets/TicketsScreen';
 import UsersScreen         from '@/src/features/admin/users/UsersScreen';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore }    from '@/src/stores/authStore';
+import { useFocusEffect } from 'expo-router';
+import { BackHandler } from 'react-native';
 import type { IoniconName } from '@/src/components/layout/header/navItems';
 
 // ── Menu config ───────────────────────────────────────────────────────────────
@@ -46,8 +48,24 @@ function AdminPanel() {
   const { user }    = useAuthStore();
   const c           = useThemeColors();
   const { t }       = useTranslation();
-  const paletteOption = useUiStore((s) => s.paletteOption);
   const [selected, setSelected] = React.useState('dashboard');
+  const paletteOption = useUiStore((s) => s.paletteOption);
+
+  // ── Hardware Back Button Handling ──────────────────────────────────────────
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (selected !== 'dashboard') {
+          setSelected('dashboard');
+          return true;
+        }
+        return false; // let the global handler or stack handle it
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [selected])
+  );
 
   // Blue palette: use per-item colors for a colorful multi-hue look.
   // Orange / Green / Black / White palettes: use c.tint so the active tab always matches the palette.

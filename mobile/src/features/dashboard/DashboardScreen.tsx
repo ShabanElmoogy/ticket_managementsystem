@@ -26,7 +26,7 @@ import {
   BackHandler,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
@@ -64,6 +64,7 @@ if (Platform.OS !== 'web') {
 
 const DashboardScreen: React.FC = () => {
   const c = useThemeColors();
+  const router = useRouter();
 
   // ── Dashboard data + filter state ─────────────────────────────────────────
 
@@ -114,8 +115,6 @@ const DashboardScreen: React.FC = () => {
 
   // ── Navigation state ───────────────────────────────────────────────────────
 
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [activityTicketId, setActivityTicketId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -134,14 +133,6 @@ const DashboardScreen: React.FC = () => {
     useCallback(() => {
       const onBackPress = () => {
         // 1. Close overlays first
-        if (selectedTicketId) {
-          setSelectedTicketId(null);
-          return true;
-        }
-        if (activityTicketId) {
-          setActivityTicketId(null);
-          return true;
-        }
         if (showCreateForm) {
           setShowCreateForm(false);
           return true;
@@ -151,17 +142,13 @@ const DashboardScreen: React.FC = () => {
           return true;
         }
 
-        // 2. If on main dashboard, confirm exit
-        Alert.alert('Exit App', 'Are you sure you want to exit the application?', [
-          { text: 'Cancel', style: 'cancel', onPress: () => null },
-          { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() },
-        ]);
-        return true;
+        // Otherwise, let the global handler in _layout.tsx deal with it
+        return false;
       };
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [selectedTicketId, activityTicketId, showCreateForm, panelExpanded, handlePanelCollapse])
+    }, [showCreateForm, panelExpanded, handlePanelCollapse, router])
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -173,14 +160,14 @@ const DashboardScreen: React.FC = () => {
   }, [refetch]);
 
   const handleTicketPress = useCallback((ticket: Ticket) => {
-    setSelectedTicketId(ticket.id);
-  }, []);
+    router.push(`/tickets/${ticket.id}` as any);
+  }, [router]);
 
   const handleActivityPress = useCallback((activity: ActivityItem) => {
     if (activity.data.ticket?.id) {
-      setSelectedTicketId(activity.data.ticket.id);
+      router.push(`/tickets/${activity.data.ticket.id}` as any);
     }
-  }, []);
+  }, [router]);
 
   const handleBulkApply = useCallback(async (status: TicketStatus) => {
     await bulkUpdate(Array.from(selectedIds), status);
@@ -196,33 +183,11 @@ const DashboardScreen: React.FC = () => {
     else handlePanelExpand();
   }, [panelExpanded, handlePanelExpand, handlePanelCollapse]);
 
-  // ── Detail view ────────────────────────────────────────────────────────────
+  const handleTicketActivityOpen = useCallback((ticketId: string) => {
+    router.push(`/ticket-activity/${ticketId}` as any);
+  }, [router]);
 
-  if (selectedTicketId) {
-    return (
-      <FeatureErrorBoundary featureName="TicketDetail">
-        <TicketDetailScreen
-          ticketId={selectedTicketId}
-          onBack={() => setSelectedTicketId(null)}
-        />
-      </FeatureErrorBoundary>
-    );
-  }
-
-  // ── Activity view ──────────────────────────────────────────────────────────
-
-  if (activityTicketId) {
-    return (
-      <FeatureErrorBoundary featureName="TicketActivity">
-        <TicketActivityScreen
-          ticketId={activityTicketId}
-          onBack={() => setActivityTicketId(null)}
-        />
-      </FeatureErrorBoundary>
-    );
-  }
-
-  // ── Create form (admin only) ───────────────────────────────────────────────
+  // ── Render Helpers ─────────────────────────────────────────────────────────
 
   if (showCreateForm && isAdmin) {
     return (
@@ -316,8 +281,8 @@ const DashboardScreen: React.FC = () => {
               onRestore={(id) => restoreTicket(id)}
               onReassign={(_id) => { /* handled via overflow menu */ }}
               onEditDueDate={(id, date) => editDueDate(id, date)}
-              onAssignProgrammer={(id) => setSelectedTicketId(id)}
-              onActivityPress={(id) => setActivityTicketId(id)}
+              onAssignProgrammer={(id) => router.push(`/tickets/${id}` as any)}
+              onActivityPress={(id) => router.push(`/ticket-activity/${id}` as any)}
               onSelect={isAdmin ? toggleSelect : undefined}
               onRefresh={handleRefresh}
               isRefreshing={isRefreshing}
