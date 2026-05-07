@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom:      -Spacing.sm,
   },
   searchInput: {
-    marginBottom: 0,
+    marginBottom: 5,
   },
   filtersRow: {
     paddingHorizontal: Spacing.md,

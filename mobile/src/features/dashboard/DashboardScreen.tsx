@@ -93,7 +93,6 @@ const DashboardScreen: React.FC = () => {
     deleteTicket,
     restoreTicket,
     takeTicket,
-    reassignTicket,
     editDueDate,
     isBulkUpdating,
   } = useDashboard();
@@ -101,24 +100,12 @@ const DashboardScreen: React.FC = () => {
   // ── Activity feed state ────────────────────────────────────────────────────
 
   const {
-    activities,
-    unreadCount,
     loading: activityLoading,
-    typeFilter,
-    setTypeFilter,
     searchQuery: activitySearch,
     setSearchQuery: setActivitySearch,
     panelExpanded,
-    filterExpanded,
-    setFilterExpanded,
     handlePanelExpand,
     handlePanelCollapse,
-    markRead,
-    markUnread,
-    markAllRead,
-    markAllUnread,
-    clearAll,
-    typeCounts,
   } = useActivityFeed();
 
   // ── Navigation state ───────────────────────────────────────────────────────
@@ -313,7 +300,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    flex: 1,
+    flex: 1
   },
   feedContainer: {
     flex: 1,

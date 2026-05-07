@@ -43,11 +43,12 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
+  Pressable,
   StyleSheet,
   type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, Spacing } from '@/src/constants/tokens';
+import { Radius, Spacing, FontSize, FontWeight } from '@/src/constants/tokens';
 import type { ThemeColors } from '@/src/constants/tokens';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
 
@@ -263,33 +264,67 @@ const TicketCard: React.FC<TicketCardProps> = ({
   // Compact mode — dense single-line row
   // ─────────────────────────────────────────────────────────────────────────
   if (isCompact) {
+    const statusColor = STATUS_ICON_MAP[ticket.status] ? c.interactive.primary : c.text.muted;
+    const statusLabel = ticket.status.replace(/_/g, ' ');
+    const priorityColor = ticket.priority === 'URGENT' ? c.intent.error
+      : ticket.priority === 'HIGH' ? c.intent.warning
+      : ticket.priority === 'MEDIUM' ? c.interactive.primary
+      : c.intent.success;
+
     return (
-      <View
-        style={[
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }: { pressed: boolean }) => [
           styles.card,
           styles.compactCard,
           {
             backgroundColor: c.surface.card,
             borderColor: cardBorderColor,
+            opacity: pressed ? 0.85 : 1,
           },
           style,
         ]}
       >
+        {/* Single row: priority dot + title + status badge + overflow */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {/* Priority dot */}
+          <View style={{
+            width: 8, height: 8, borderRadius: 4,
+            backgroundColor: priorityColor,
+            flexShrink: 0,
+          }} />
 
-        {/* Header row only — no badge row, no meta, no action bar */}
-        <TicketCardHeader
-          ticket={ticket}
-          resolvedColors={c}
-          onOverflowPress={handleOverflowMenuPress}
-        />
+          {/* Title */}
+          <Text
+            style={{ flex: 1, fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: c.text.primary }}
+            numberOfLines={1}
+          >
+            {ticket.title}
+          </Text>
 
-        {/* Content — title only, no description */}
-        <TicketCardContent
-          ticket={ticket}
-          resolvedColors={c}
-          onPress={handlePress}
-          expanded={false}
-        />
+          {/* Status badge */}
+          <View style={{
+            paddingHorizontal: 6, paddingVertical: 2,
+            borderRadius: Radius.full,
+            backgroundColor: statusColor + '18',
+            borderWidth: 1,
+            borderColor: statusColor + '44',
+            flexShrink: 0,
+          }}>
+            <Text style={{ fontSize: 9, fontWeight: FontWeight.bold, color: statusColor }}>
+              {statusLabel}
+            </Text>
+          </View>
+
+          {/* Overflow menu trigger */}
+          <Pressable
+            onPress={handleOverflowMenuPress}
+            style={{ padding: 4 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="ellipsis-horizontal" size={14} color={c.text.muted} />
+          </Pressable>
+        </View>
 
         {/* Overflow menu */}
         <TicketCardOverflowMenu
@@ -308,7 +343,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
           onDelete={isAdmin && onDelete ? handleDelete : undefined}
           onRestore={isAdmin && onRestore ? handleRestore : undefined}
         />
-      </View>
+      </Pressable>
     );
   }
 
@@ -547,6 +582,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
+    paddingInline : 10
   },
 
   // ── Feed mode ──────────────────────────────────────────────────────────────
@@ -573,8 +609,8 @@ const styles = StyleSheet.create({
 
   // ── Compact mode ───────────────────────────────────────────────────────────
   compactCard: {
-    padding: Spacing.sm,
-    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical:   Spacing.sm,
   },
   gridTopStrip: {
     minHeight: 30,
