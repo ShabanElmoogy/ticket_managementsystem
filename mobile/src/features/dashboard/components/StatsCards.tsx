@@ -75,7 +75,11 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
       <View style={styles.row}>
         {STAT_CARDS.map((cfg) => (
           <View key={String(cfg.key)} style={styles.cardWrapper}>
-            <SkeletonCard c={c} />
+            <View style={[styles.card, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
+              <View style={[styles.skeletonIcon, { backgroundColor: c.surface.tertiary }]} />
+              <View style={[styles.skeletonValue, { backgroundColor: c.surface.tertiary }]} />
+              <View style={[styles.skeletonLabel, { backgroundColor: c.surface.tertiary }]} />
+            </View>
           </View>
         ))}
       </View>
@@ -87,35 +91,31 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
       {STAT_CARDS.map((cfg) => {
         const value = stats[cfg.key];
         return (
-          <Pressable
-            key={cfg.key}
-            onPress={() => onCardPress?.(cfg.key)}
-            style={({ pressed }: { pressed: boolean }) => [
-              styles.card,
-              {
-                backgroundColor: cfg.bgColor,
-                borderColor:     cfg.color + '33',
-                opacity:         pressed ? 0.8 : 1,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`${cfg.label}: ${value}`}
-          >
-            {/* Icon */}
-            <View style={[styles.iconBadge, { backgroundColor: cfg.color + '22' }]}>
-              <Ionicons name={cfg.icon as any} size={16} color={cfg.color} />
-            </View>
-
-            {/* Value */}
-            <Text style={[styles.value, { color: cfg.color }]} numberOfLines={1}>
-              {value}
-            </Text>
-
-            {/* Label */}
-            <Text style={[styles.label, { color: cfg.color + 'cc' }]} numberOfLines={1}>
-              {cfg.label}
-            </Text>
-          </Pressable>
+          <View key={cfg.key} style={styles.cardWrapper}>
+            <Pressable
+              onPress={() => onCardPress?.(cfg.key)}
+              style={({ pressed }: { pressed: boolean }) => [
+                styles.card,
+                {
+                  backgroundColor: cfg.bgColor,
+                  borderColor:     cfg.color + '33',
+                  opacity:         pressed ? 0.8 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${cfg.label}: ${value}`}
+            >
+              <View style={[styles.iconBadge, { backgroundColor: cfg.color + '22' }]}>
+                <Ionicons name={cfg.icon as any} size={16} color={cfg.color} />
+              </View>
+              <Text style={[styles.value, { color: cfg.color }]} numberOfLines={1} adjustsFontSizeToFit>
+                {value}
+              </Text>
+              <Text style={[styles.label, { color: cfg.color + 'cc' }]} numberOfLines={1} adjustsFontSizeToFit>
+                {cfg.label}
+              </Text>
+            </Pressable>
+          </View>
         );
       })}
     </View>
@@ -129,56 +129,59 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
 const styles = StyleSheet.create({
   row: {
     flexDirection:     'row',
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
     paddingVertical:   Spacing.sm,
     gap:               4,
+    width:             '100%',
   },
   cardWrapper: {
     flex: 1,
   },
   card: {
-    flex:            1,
+    flex:              1,
     paddingVertical:   Spacing.sm,
-    paddingHorizontal: 4,
-    borderRadius:    Radius.lg,
-    borderWidth:     1,
-    alignItems:      'center',
-    gap:             2,
-    elevation:       2,
+    paddingHorizontal: 2,
+    borderRadius:      Radius.lg,
+    borderWidth:       1,
+    alignItems:        'center',
+    gap:               2,
+    elevation:         2,
   },
   iconBadge: {
-    width:          28,
-    height:         28,
-    borderRadius:   14,
+    width:          26,
+    height:         26,
+    borderRadius:   13,
     alignItems:     'center',
     justifyContent: 'center',
     marginBottom:   2,
   },
   value: {
-    fontSize:   FontSize.lg,
+    fontSize:   FontSize.base,
     fontWeight: FontWeight.extrabold,
-    lineHeight: 22,
+    lineHeight: 20,
+    minWidth:   1,
   },
   label: {
-    fontSize:  FontSize['2xs'] ?? 9,
+    fontSize:  9,
     fontWeight: FontWeight.medium,
     textAlign: 'center',
+    minWidth:  1,
   },
   // Skeleton shapes
   skeletonIcon: {
-    width:        28,
-    height:       28,
-    borderRadius: 14,
+    width:        26,
+    height:       26,
+    borderRadius: 13,
     marginBottom: 2,
   },
   skeletonValue: {
-    width:        32,
-    height:       18,
+    width:        28,
+    height:       16,
     borderRadius: Radius.sm,
   },
   skeletonLabel: {
-    width:        40,
-    height:       10,
+    width:        36,
+    height:       9,
     borderRadius: Radius.sm,
     marginTop:    2,
   },
