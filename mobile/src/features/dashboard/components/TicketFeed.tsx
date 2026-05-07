@@ -250,7 +250,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       enableOnAndroid
-      extraScrollHeight={120}
+      extraScrollHeight={90}
     />
   );
 };

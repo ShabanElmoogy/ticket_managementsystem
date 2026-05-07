@@ -229,20 +229,22 @@ const TicketCardComments = forwardRef<TicketCardCommentsHandle, TicketCardCommen
     },
   }));
 
-  // ── Auto-fetch on mount when there are comments ───────────────────────────
+  // ── Auto-fetch on mount ───────────────────────────────────────────────────
   useEffect(() => {
-    if (commentCount > 0 && !hasFetched.current) {
+    if (!hasFetched.current) {
       hasFetched.current = true;
       fetchComments();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketId, commentCount]);
+  }, [ticketId]);
 
   // ── Fetch all comments ────────────────────────────────────────────────────
   const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await ticketsApi.getComments(ticketId);
+      // Comments are embedded in the ticket detail response — no standalone endpoint
+      const ticket = await ticketsApi.getTicket(ticketId);
+      const data: Comment[] = ticket.comments ?? [];
       // Sort newest-first so we show the most recent 3 at the bottom
       const sorted = [...data].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
