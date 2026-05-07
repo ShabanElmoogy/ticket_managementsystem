@@ -23,7 +23,10 @@ import {
   Pressable,
   Text,
   Platform,
+  BackHandler,
+  Alert,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
@@ -125,6 +128,41 @@ const DashboardScreen: React.FC = () => {
     console.log('[Comments] Opening modal for ticket:', ticket.id, ticket.title);
     setCommentsModal({ open: true, id: ticket.id, title: ticket.title });
   }, []);
+
+  // ── Hardware Back Button Handling ──────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // 1. Close overlays first
+        if (selectedTicketId) {
+          setSelectedTicketId(null);
+          return true;
+        }
+        if (activityTicketId) {
+          setActivityTicketId(null);
+          return true;
+        }
+        if (showCreateForm) {
+          setShowCreateForm(false);
+          return true;
+        }
+        if (panelExpanded) {
+          handlePanelCollapse();
+          return true;
+        }
+
+        // 2. If on main dashboard, confirm exit
+        Alert.alert('Exit App', 'Are you sure you want to exit the application?', [
+          { text: 'Cancel', style: 'cancel', onPress: () => null },
+          { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [selectedTicketId, activityTicketId, showCreateForm, panelExpanded, handlePanelCollapse])
+  );
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
