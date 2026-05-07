@@ -9,6 +9,12 @@ import { handleError } from '../../errors/index.js';
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
+export const getComments = async (req, res) => {
+  try {
+    res.json(await commentsService.getComments(req.params.id, req.user));
+  } catch (e) { handleError(res, e, 'Get comments'); }
+};
+
 export const createComment = async (req, res) => {
   try {
     const result = await commentsService.createComment(

@@ -528,3 +528,13 @@ export async function getDelayedTickets(actorId, tenantId, actorRole) {
 
 // Re-export notifyWatchers so tickets.controller.js can import it
 export { notifyWatchers };
+
+export async function getTicketActivities(ticketId, tenantId, actorRole, actorId) {
+  if (isTenantScopedRole(actorRole) && !tenantId) throw fail('Tenant context required', 403);
+
+  // Verify ticket exists
+  const ticket = await repo.findTicketById(ticketId);
+  if (!ticket) throw fail('Ticket not found', 404);
+
+  return repo.findActivitiesByTicketId(ticketId);
+}

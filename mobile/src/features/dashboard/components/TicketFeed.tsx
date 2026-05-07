@@ -20,7 +20,7 @@ import type { ListRenderItem } from 'react-native';
 import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
-import { Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
+import { Spacing, FontSize, FontWeight } from '@/src/constants/tokens';
 import TicketCard from '@/src/shared/components/display/TicketCard/index';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
 import type { ViewMode } from '@/src/features/dashboard/hooks/useDashboard';
@@ -57,6 +57,8 @@ interface TicketFeedProps {
 
   /** Users available for @mention in inline comments */
   mentionUsers?: Array<{ id: string; name: string }>;
+  /** Called when the comment button is pressed — parent owns the modal */
+  onCommentPress?: (ticket: Ticket) => void;
   /** Optional footer rendered below the list (e.g. ActivityFeedPanel) */
   listFooter?: React.ReactNode;
 }
@@ -107,6 +109,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   onRefresh,
   isRefreshing = false,
   mentionUsers = [],
+  onCommentPress,
   listFooter,
 }) => {
   const c = useThemeColors();
@@ -154,6 +157,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
           onEditDueDate={onEditDueDate}
           onAssignProgrammer={onAssignProgrammer}
           onActivityPress={onActivityPress}
+          onCommentPress={onCommentPress}
           canUpdateStatus={getCanUpdateStatus(item)}
           isAdmin={isAdmin}
           isEmployee={isEmployee}
@@ -168,7 +172,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
     );
   }, [
     c, viewMode, selectedIds, isAdmin, isEmployee, currentUserId, tenantSuspended,
-    sharingAvailable, mentionUsers, getCanUpdateStatus,
+    sharingAvailable, mentionUsers, getCanUpdateStatus, onCommentPress,
     onPress, onShare, onTake, onStatusChange, onDelete, onRestore,
     onReassign, onEditDueDate, onAssignProgrammer, onActivityPress, onSelect,
   ]);
@@ -285,6 +289,7 @@ const styles = StyleSheet.create({
   },
   feedCard: {
     marginHorizontal: Spacing.md,
+    borderWidth : 4
   },
   compactCard: {
     marginHorizontal: Spacing.sm,

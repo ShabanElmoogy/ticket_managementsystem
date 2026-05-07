@@ -252,7 +252,7 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
             backgroundColor: disabled ? c.surface.secondary : c.surface.card,
             borderColor: c.border.primary,
             shadowColor: c.shadow,
-            // Force LTR so button never flips to the left in Arabic
+            direction: 'ltr',  // always LTR — send button stays on the right in Arabic
           },
         ]}
       >
@@ -317,7 +317,7 @@ MentionTextInput.displayName = 'MentionTextInput';
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'relative',
+    width: '100%',
   },
   suggestionsContainer: {
     borderRadius: Radius.xl,

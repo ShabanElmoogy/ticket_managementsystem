@@ -274,11 +274,11 @@ const styles = StyleSheet.create({
   // ── Card container ─────────────────────────────────────────────────────────
   card: {
     borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderWidth: 3,
     overflow: 'hidden',
     padding: Spacing.sm,
     gap: Spacing.xs,
-    minHeight: 330,
+    minHeight: 1000,
     // Shadow values (shadowColor overridden inline with c.shadow)
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,

@@ -3,7 +3,10 @@ import '../global.css';
 import { Platform, LogBox } from 'react-native';
 
 // Suppress Expo Go SDK 53 push notification warning — expected in Expo Go, not a crash
-LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications',
+  'expo-notifications: Push notifications',
+]);
 if (Platform.OS !== 'web') {
   require('react-native-gesture-handler');
 }

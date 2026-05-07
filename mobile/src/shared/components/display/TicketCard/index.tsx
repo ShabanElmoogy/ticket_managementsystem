@@ -39,7 +39,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -54,7 +54,6 @@ import TicketCardBadgeRow    from './TicketCardBadgeRow';
 import TicketCardContent     from './TicketCardContent';
 import TicketCardMeta        from './TicketCardMeta';
 import TicketCardActionBar   from './TicketCardActionBar';
-import TicketCardComments, { type TicketCardCommentsHandle } from './TicketCardComments';
 import TicketCardOverflowMenu from './TicketCardOverflowMenu';
 import TicketCardCompact     from './TicketCardCompact';
 import TicketCardGrid        from './TicketCardGrid';
@@ -99,6 +98,8 @@ export interface TicketCardProps {
   onAssignProgrammer?: (id: string) => void;
   /** Called when the Activity button is pressed. */
   onActivityPress?: (id: string) => void;
+  /** Called when the Comment button is pressed — parent owns the modal. */
+  onCommentPress?: (ticket: Ticket) => void;
   /** Whether the current user can update the ticket's status. */
   canUpdateStatus: boolean;
   /** Whether the current user is a TENANT_ADMIN. */
@@ -142,6 +143,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onEditDueDate,
   onAssignProgrammer,
   onActivityPress,
+  onCommentPress: onCommentPressProp,
   canUpdateStatus,
   isAdmin,
   isEmployee = false,
@@ -152,15 +154,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
   style,
 }) => {
   // ── Local state ───────────────────────────────────────────────────────────
-  /** Whether the inline comment section is expanded (feed mode only). */
-  const [commentsExpanded, setCommentsExpanded] = useState(false);
   /** Whether the description "See more" is expanded. */
   const [seeMoreExpanded, setSeeMoreExpanded] = useState(false);
   /** Whether the overflow menu bottom sheet is open. */
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
-
-  /** Ref to the inline comments section — used to focus the input on open. */
-  const commentsRef = useRef<TicketCardCommentsHandle>(null);
 
   // ── Derived flags ─────────────────────────────────────────────────────────
   const isFeedMode    = viewMode === 'feed';
@@ -174,19 +171,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
   const handleCommentPress = useCallback(() => {
     if (isFeedMode) {
-      setCommentsExpanded((prev) => !prev);
+      onCommentPressProp?.(ticket);
     } else {
-      // In grid/compact mode, navigate to detail instead
       onPress(ticket);
     }
-  }, [isFeedMode, onPress, ticket]);
-
-  // Focus the comment input whenever the comments section opens
-  useEffect(() => {
-    if (commentsExpanded) {
-      commentsRef.current?.focusCommentInput();
-    }
-  }, [commentsExpanded]);
+  }, [isFeedMode, onCommentPressProp, onPress, ticket]);
 
   const handleActivityPress = useCallback(() => {
     onActivityPress?.(ticket.id);
@@ -408,23 +397,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
         tenantSuspended={tenantSuspended}
       />
 
-      {/* ── Inline comments (feed mode only, when expanded) ────────────── */}
-      {commentsExpanded && (
-        <TicketCardComments
-          ref={commentsRef}
-          ticketId={ticket.id}
-          commentCount={ticket._count?.comments ?? 0}
-          resolvedColors={c}
-          currentUserId={currentUserId}
-          isAdmin={isAdmin}
-          tenantSuspended={tenantSuspended}
-          mentionUsers={mentionUsers}
-          onCommentAdded={handleCommentAdded}
-          onCommentDeleted={handleCommentDeleted}
-          style={styles.commentsSection}
-        />
-      )}
-
       {/* ── Overflow menu bottom sheet ──────────────────────────────────── */}
       <TicketCardOverflowMenu
         visible={overflowMenuOpen}
@@ -492,5 +464,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TicketCard;
 
+export default TicketCard;

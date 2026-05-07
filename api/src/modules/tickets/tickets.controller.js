@@ -101,3 +101,9 @@ export const getDelayedTickets = async (req, res) => {
     res.json(await ticketsService.getDelayedTickets(actorId(req), tenantId(req), req.user?.role));
   } catch (e) { handleError(res, e, 'Get delayed tickets'); }
 };
+
+export const getTicketActivities = async (req, res) => {
+  try {
+    res.json(await ticketsService.getTicketActivities(req.params.id, tenantId(req), req.user?.role, actorId(req)));
+  } catch (e) { handleError(res, e, 'Get ticket activities'); }
+};

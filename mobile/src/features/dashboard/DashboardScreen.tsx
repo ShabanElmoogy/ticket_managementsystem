@@ -37,6 +37,7 @@ import TicketFeed from './components/TicketFeed';
 import BulkActionBar from './components/BulkActionBar';
 import TicketDetailScreen from '@/src/features/tickets/components/TicketDetailScreen';
 import TicketForm from '@/src/features/tickets/components/TicketForm';
+import TicketCommentsModal from '@/src/shared/components/display/TicketCard/TicketCommentsModal';
 import { ticketsApi } from '@/src/features/tickets/api/tickets';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
 import type { ActivityItem } from '@/src/services/api/types/notification';
@@ -112,6 +113,16 @@ const DashboardScreen: React.FC = () => {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ── Comments modal state ───────────────────────────────────────────────────
+  const [commentsModal, setCommentsModal] = useState<{ open: boolean; id: string; title: string }>({
+    open: false, id: '', title: '',
+  });
+
+  const handleCommentPress = useCallback((ticket: Ticket) => {
+    console.log('[Comments] Opening modal for ticket:', ticket.id, ticket.title);
+    setCommentsModal({ open: true, id: ticket.id, title: ticket.title });
+  }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -194,11 +205,10 @@ const DashboardScreen: React.FC = () => {
                 resolved: 'RESOLVED',
                 closed: 'CLOSED',
               };
-              return (Object.keys(statusMap).find(k => statusMap[k] === filters.status) || 
+              return (Object.keys(statusMap).find(k => statusMap[k] === filters.status) ||
                      (filters.status === '' ? 'total' : null)) as any;
             })()}
             onCardPress={(key) => {
-              // Map stat key to status filter
               const statusMap: Record<string, string> = {
                 open: 'OPEN',
                 inProgress: 'IN_PROGRESS',
@@ -206,10 +216,7 @@ const DashboardScreen: React.FC = () => {
                 resolved: 'RESOLVED',
                 closed: 'CLOSED',
               };
-              if (key === 'total') {
-                setStatus('');
-                return;
-              }
+              if (key === 'total') { setStatus(''); return; }
               const status = statusMap[key];
               if (status) setStatus(status === filters.status ? '' : status);
             }}
@@ -254,22 +261,18 @@ const DashboardScreen: React.FC = () => {
               onStatusChange={(id, status) => updateStatus(id, status)}
               onDelete={(id) => deleteTicket(id)}
               onRestore={(id) => restoreTicket(id)}
-              onReassign={(id) => {
-                // Reassign handled via overflow menu — no-op here
-              }}
+              onReassign={(_id) => { /* handled via overflow menu */ }}
               onEditDueDate={(id, date) => editDueDate(id, date)}
-              onAssignProgrammer={(id) => {
-                // Navigate to detail for programmer assignment
-                setSelectedTicketId(id);
-              }}
+              onAssignProgrammer={(id) => setSelectedTicketId(id)}
               onActivityPress={(id) => setSelectedTicketId(id)}
               onSelect={isAdmin ? toggleSelect : undefined}
               onRefresh={handleRefresh}
               isRefreshing={isRefreshing}
+              onCommentPress={handleCommentPress}
             />
           </View>
 
-          {/* ── Bulk action bar (admin, when tickets selected) ───────────── */}
+          {/* ── Bulk action bar ──────────────────────────────────────────── */}
           {isAdmin && selectedIds.size > 0 && (
             <BulkActionBar
               selectedCount={selectedIds.size}
@@ -279,16 +282,14 @@ const DashboardScreen: React.FC = () => {
             />
           )}
 
-          {/* ── Create ticket FAB (admin only) ───────────────────────────── */}
+          {/* ── Create ticket FAB ────────────────────────────────────────── */}
           {isAdmin && (
             <Pressable
               onPress={() => setShowCreateForm(true)}
               style={({ pressed }: { pressed: boolean }) => [
                 styles.fab,
                 {
-                  backgroundColor: pressed
-                    ? c.interactive.primaryPressed
-                    : c.interactive.primary,
+                  backgroundColor: pressed ? c.interactive.primaryPressed : c.interactive.primary,
                   shadowColor: c.shadow,
                 },
               ]}
@@ -298,9 +299,29 @@ const DashboardScreen: React.FC = () => {
               <Ionicons name="add" size={28} color={c.text.inverse} />
             </Pressable>
           )}
+
+          {/*
+            ── Comments modal ────────────────────────────────────────────────
+            Rendered here — inside the screen View but outside any FlatList.
+            React Native Modal renders in its own native window regardless of
+            where it appears in the tree, so nesting doesn't matter for display.
+            What matters is that the state (commentsModal) lives in this stable
+            component and is never reset by list re-renders.
+          */}
+          <TicketCommentsModal
+            visible={commentsModal.open}
+            onClose={() => setCommentsModal({ open: false, id: '', title: '' })}
+            ticketId={commentsModal.id}
+            ticketTitle={commentsModal.title}
+            commentCount={0}
+            resolvedColors={c}
+            currentUserId={currentUser?.id ?? ''}
+            isAdmin={isAdmin}
+            tenantSuspended={tenantSuspended}
+          />
+
         </View>
       </View>
-
     </FeatureErrorBoundary>
   );
 };

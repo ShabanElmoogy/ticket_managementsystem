@@ -20,6 +20,7 @@ router.get('/delayed', enforceTenantScope, ticketController.getDelayedTickets);
 router.use('/', watchersRouter);
 
 router.get('/:id',    enforceTenantScope, ticketController.getTicketById);
+router.get('/:id/activities', enforceTenantScope, ticketController.getTicketActivities);
 router.post('/',      requireTenantScopeMiddleware, requireTenantAdmin, validate(createTicketSchema), ticketController.createTicket);
 router.put('/:id',    enforceTenantScope, validate(updateTicketSchema), ticketController.updateTicket);
 router.delete('/:id', requireTenantScopeMiddleware, requireTenantAdmin, ticketController.deleteTicket);

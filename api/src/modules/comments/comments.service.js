@@ -29,6 +29,19 @@ function isTenantScoped(role) {
 
 // ── Operations ────────────────────────────────────────────────────────────────
 
+export async function getComments(ticketId, user) {
+  const tenantId = isTenantScoped(user.role) ? (user.tenantId ?? null) : null;
+
+  // Verify ticket access
+  const ticket = tenantId
+    ? await repo.findTicketInTenant(ticketId, tenantId)
+    : await repo.findTicketById(ticketId);
+
+  if (!ticket) throw fail('Ticket not found', 404);
+
+  return repo.findCommentsByTicketId(ticketId);
+}
+
 export async function createComment(ticketId, content, user, emitNotification) {
   // Validate content at service level
   if (!content || typeof content !== 'string') throw fail('Content is required', 400);

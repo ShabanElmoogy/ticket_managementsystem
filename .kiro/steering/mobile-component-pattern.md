@@ -162,6 +162,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `TicketCardOverflowMenu` | `display/TicketCard/TicketCardOverflowMenu.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; rendered via `Modal`, consumes `buildOverflowMenuEntries` from `TicketCardActionBar` for role/state guards | `TicketCard/index.tsx` |
 | `TicketCardCompact` | `display/TicketCard/TicketCardCompact.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; single-row layout with priority dot, title, status badge, and overflow menu trigger | `TicketCard/index.tsx` (when `viewMode === 'compact'`) |
 | `TicketCardGrid` | `display/TicketCard/TicketCardGrid.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; 2-column compact card layout (no share, no inline comments) | `TicketCard/index.tsx` (when `viewMode === 'grid'`) |
+| `TicketCommentsModal` | `display/TicketCard/TicketCommentsModal.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal theme/context hook calls; full-screen slide-up Modal with scrollable comment list, `@mention`-aware input pinned above keyboard (auto-scrolls to bottom on keyboard show), and per-comment delete; fetches comments via `ticketsApi.getTicket` on open | `TicketCard/index.tsx` (comment button in feed mode) |
 
 ---
 
@@ -482,6 +483,54 @@ const c = useThemeColors();
   tenantSuspended={tenantSuspended}
   mentionUsers={ticketUsers}
   sharingAvailable={sharingAvailable}
+/>
+```
+
+---
+
+## TicketCommentsModal — component note
+
+`TicketCommentsModal` (`mobile/src/shared/components/display/TicketCard/TicketCommentsModal.tsx`) is a full-screen slide-up comments modal, Facebook-style.
+
+**Behavior:**
+- Opens as a `<Modal animationType="slide" presentationStyle="pageSheet">` covering the full screen
+- Fetches all comments via `ticketsApi.getTicket(ticketId)` every time the modal opens; resets comment list and input text on each open
+- Comments are sorted oldest-first and rendered as chat bubbles with colored initials avatars
+- `@mention` tokens are highlighted inline using `parseCommentSegments`
+- `MentionTextInput` is pinned above the keyboard via `KeyboardAvoidingView`; auto-focuses on open
+- Automatically scrolls to the bottom of the comment list when the keyboard opens (`Keyboard.addListener` on `keyboardWillShow` / `keyboardDidShow`)
+- Per-comment delete button visible to admins and the comment's own author
+- Applies `direction: 'ltr'` on the root `View` — Modal sits outside `DirectionProvider`
+
+**Props:**
+- `visible: boolean` + `onClose()` — controlled visibility
+- `ticketId: string` + `ticketTitle: string` — identifies the ticket
+- `commentCount: number` — initial count (display only; actual list is fetched)
+- `currentUserId: string` — used to show delete button on own comments
+- `isAdmin: boolean` — allows deleting any comment
+- `tenantSuspended?: boolean` — disables the input when true
+- `mentionUsers?` — `{ id, name }[]` passed to `MentionTextInput` for suggestions
+- `onCommentAdded?()` / `onCommentDeleted?()` — callbacks to notify parent of count changes
+
+**Current usages:**
+1. `TicketCard/index.tsx` — opened when the comment button is pressed in feed mode
+
+**⚠️ Modal rule:** `TicketCommentsModal` is Modal-safe — receives `resolvedColors` prop, no internal theme/context hook calls. Uses `Keyboard` listener and `useEffect` for scroll-to-bottom on keyboard show, but these are React/RN built-ins, not context-dependent.
+
+```tsx
+<TicketCommentsModal
+  visible={commentsModalOpen}
+  onClose={() => setCommentsModalOpen(false)}
+  ticketId={ticket.id}
+  ticketTitle={ticket.title}
+  commentCount={ticket._count?.comments ?? 0}
+  resolvedColors={c}
+  currentUserId={currentUserId}
+  isAdmin={isAdmin}
+  tenantSuspended={tenantSuspended}
+  mentionUsers={mentionUsers}
+  onCommentAdded={() => { /* refresh parent count if needed */ }}
+  onCommentDeleted={() => { /* refresh parent count if needed */ }}
 />
 ```
 

@@ -95,6 +95,29 @@ export async function insertComment(values) {
   return comment;
 }
 
+/** Get all comments for a ticket, with author info, ordered oldest-first. */
+export async function findCommentsByTicketId(ticketId) {
+  const rows = await db
+    .select({
+      id:        comments.id,
+      content:   comments.content,
+      ticketId:  comments.ticketId,
+      userId:    comments.userId,
+      createdAt: comments.createdAt,
+      updatedAt: comments.updatedAt,
+      user: {
+        id:    users.id,
+        name:  users.name,
+        email: users.email,
+      },
+    })
+    .from(comments)
+    .leftJoin(users, eq(comments.userId, users.id))
+    .where(eq(comments.ticketId, ticketId))
+    .orderBy(comments.createdAt);
+  return rows;
+}
+
 /** Delete a comment by ID. */
 export async function deleteCommentById(commentId) {
   await db.delete(comments).where(eq(comments.id, commentId));

@@ -322,7 +322,9 @@ class NotificationService {
 
       // Update badge count
       const { unreadCount } = useNotificationStore.getState();
-      _N().setBadgeCountAsync(unreadCount).catch(() => {});
+      if (this.isPushSupported()) {
+        _N().setBadgeCountAsync(unreadCount).catch(() => {});
+      }
 
       // Show in-app toast
       Toast.show({
@@ -536,8 +538,10 @@ class NotificationService {
       // 6. Sync unread count
       await this._syncUnreadCount();
 
-      // 7. Handle killed-app tap
-      await this._checkInitialNotification();
+      // 7. Handle killed-app tap (only when push is supported — requires expo-notifications)
+      if (pushSupported) {
+        await this._checkInitialNotification();
+      }
 
       if (__DEV__) console.log('[NotificationService] Initialized successfully');
     } catch (err) {
@@ -570,7 +574,9 @@ class NotificationService {
     try {
       await notificationsApi.markAllAsRead();
       useNotificationStore.getState().markAllAsRead();
-      await _N().setBadgeCountAsync(0);
+      if (this.isPushSupported()) {
+        await _N().setBadgeCountAsync(0);
+      }
     } catch (err) {
       if (__DEV__) console.error('[NotificationService] markAllAsRead() failed:', err);
     }
