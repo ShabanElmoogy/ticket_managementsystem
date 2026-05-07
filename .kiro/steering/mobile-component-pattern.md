@@ -160,6 +160,8 @@ Keep this table updated whenever a component is added or its usage changes.
 | `TicketCardActionBar` | `display/TicketCard/TicketCardActionBar.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
 | `TicketCardComments` | `display/TicketCard/TicketCardComments.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; calls `ticketsApi` directly for comment CRUD | `TicketCard/index.tsx` |
 | `TicketCardOverflowMenu` | `display/TicketCard/TicketCardOverflowMenu.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; rendered via `Modal`, consumes `buildOverflowMenuEntries` from `TicketCardActionBar` for role/state guards | `TicketCard/index.tsx` |
+| `TicketCardCompact` | `display/TicketCard/TicketCardCompact.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; single-row layout with priority dot, title, status badge, and overflow menu trigger | `TicketCard/index.tsx` (when `viewMode === 'compact'`) |
+| `TicketCardGrid` | `display/TicketCard/TicketCardGrid.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; 2-column compact card layout (no share, no inline comments) | `TicketCard/index.tsx` (when `viewMode === 'grid'`) |
 
 ---
 

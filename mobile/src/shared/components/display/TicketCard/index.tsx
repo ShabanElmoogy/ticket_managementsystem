@@ -42,13 +42,10 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
-  Text,
-  Pressable,
   StyleSheet,
   type ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Radius, Spacing, FontSize, FontWeight } from '@/src/constants/tokens';
+import { Radius, Spacing } from '@/src/constants/tokens';
 import type { ThemeColors } from '@/src/constants/tokens';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
 
@@ -59,17 +56,8 @@ import TicketCardMeta        from './TicketCardMeta';
 import TicketCardActionBar   from './TicketCardActionBar';
 import TicketCardComments    from './TicketCardComments';
 import TicketCardOverflowMenu from './TicketCardOverflowMenu';
-
-const STATUS_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  OPEN: 'radio-button-on-outline',
-  IN_PROGRESS: 'sync-outline',
-  PROGRAMMING: 'code-slash-outline',
-  UNDER_DEVELOPMENT: 'hammer-outline',
-  CODE_REVIEW: 'git-compare-outline',
-  TESTING: 'flask-outline',
-  RESOLVED: 'checkmark-circle-outline',
-  CLOSED: 'lock-closed-outline',
-};
+import TicketCardCompact     from './TicketCardCompact';
+import TicketCardGrid        from './TicketCardGrid';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -264,86 +252,29 @@ const TicketCard: React.FC<TicketCardProps> = ({
   // Compact mode — dense single-line row
   // ─────────────────────────────────────────────────────────────────────────
   if (isCompact) {
-    const statusColor = STATUS_ICON_MAP[ticket.status] ? c.interactive.primary : c.text.muted;
-    const statusLabel = ticket.status.replace(/_/g, ' ');
-    const priorityColor = ticket.priority === 'URGENT' ? c.intent.error
-      : ticket.priority === 'HIGH' ? c.intent.warning
-      : ticket.priority === 'MEDIUM' ? c.interactive.primary
-      : c.intent.success;
-
     return (
-      <Pressable
+      <TicketCardCompact
+        ticket={ticket}
+        resolvedColors={c}
         onPress={handlePress}
-        style={({ pressed }: { pressed: boolean }) => [
-          styles.card,
-          styles.compactCard,
-          {
-            backgroundColor: c.surface.card,
-            borderColor: cardBorderColor,
-            opacity: pressed ? 0.85 : 1,
-          },
-          style,
-        ]}
-      >
-        {/* Single row: priority dot + title + status badge + overflow */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          {/* Priority dot */}
-          <View style={{
-            width: 8, height: 8, borderRadius: 4,
-            backgroundColor: priorityColor,
-            flexShrink: 0,
-          }} />
-
-          {/* Title */}
-          <Text
-            style={{ flex: 1, fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: c.text.primary }}
-            numberOfLines={1}
-          >
-            {ticket.title}
-          </Text>
-
-          {/* Status badge */}
-          <View style={{
-            paddingHorizontal: 6, paddingVertical: 2,
-            borderRadius: Radius.full,
-            backgroundColor: statusColor + '18',
-            borderWidth: 1,
-            borderColor: statusColor + '44',
-            flexShrink: 0,
-          }}>
-            <Text style={{ fontSize: 9, fontWeight: FontWeight.bold, color: statusColor }}>
-              {statusLabel}
-            </Text>
-          </View>
-
-          {/* Overflow menu trigger */}
-          <Pressable
-            onPress={handleOverflowMenuPress}
-            style={{ padding: 4 }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="ellipsis-horizontal" size={14} color={c.text.muted} />
-          </Pressable>
-        </View>
-
-        {/* Overflow menu */}
-        <TicketCardOverflowMenu
-          visible={overflowMenuOpen}
-          onClose={handleOverflowMenuClose}
-          ticket={ticket}
-          resolvedColors={c}
-          isAdmin={isAdmin}
-          currentUserId={currentUserId}
-          tenantSuspended={tenantSuspended}
-          onViewDetails={handleViewDetails}
-          onStatusChange={canUpdateStatus ? handleStatusChange : undefined}
-          onEditDueDate={isAdmin && onEditDueDate ? handleEditDueDate : undefined}
-          onReassign={isAdmin && onReassign ? handleReassign : undefined}
-          onAssignProgrammer={isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined}
-          onDelete={isAdmin && onDelete ? handleDelete : undefined}
-          onRestore={isAdmin && onRestore ? handleRestore : undefined}
-        />
-      </Pressable>
+        onOverflowMenuPress={handleOverflowMenuPress}
+        overflowMenuOpen={overflowMenuOpen}
+        onOverflowMenuClose={handleOverflowMenuClose}
+        cardBorderColor={cardBorderColor}
+        style={style}
+        overflowMenuProps={{
+          isAdmin,
+          currentUserId,
+          tenantSuspended,
+          onViewDetails: handleViewDetails,
+          onStatusChange: canUpdateStatus ? handleStatusChange : undefined,
+          onEditDueDate: isAdmin && onEditDueDate ? handleEditDueDate : undefined,
+          onReassign: isAdmin && onReassign ? handleReassign : undefined,
+          onAssignProgrammer: isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined,
+          onDelete: isAdmin && onDelete ? handleDelete : undefined,
+          onRestore: isAdmin && onRestore ? handleRestore : undefined,
+        }}
+      />
     );
   }
 
@@ -351,113 +282,45 @@ const TicketCard: React.FC<TicketCardProps> = ({
   // Grid mode — 2-column compact card (no share, no inline comments)
   // ─────────────────────────────────────────────────────────────────────────
   if (viewMode === 'grid') {
-    const statusIcon = STATUS_ICON_MAP[ticket.status] ?? 'information-circle-outline';
-    const statusLabel = ticket.status.replace(/_/g, ' ');
-
     return (
-      <View
-        style={[
-          styles.card,
-          styles.gridCard,
-          {
-            backgroundColor: c.surface.card,
-            borderColor: cardBorderColor,
-            shadowColor: c.shadow,
-          },
-          style,
-        ]}
-      >
-        <View style={[styles.gridTopStrip, { borderBottomColor: c.border.primary, backgroundColor: c.surface.elevated }]}>
-          <View style={[styles.gridStatusBadge, { borderColor: c.border.primary, backgroundColor: c.surface.card }]}>
-            <Ionicons name={statusIcon} size={13} color={c.interactive.primary} />
-          </View>
-          <View style={[styles.gridStatusPill, { backgroundColor: `${c.interactive.primary}22` }]}>
-            <View style={[styles.gridStatusDot, { backgroundColor: c.interactive.primary }]} />
-            <Ionicons name="pricetag-outline" size={10} color={c.interactive.primary} />
-          </View>
-          <View style={styles.gridStatusLabelWrap}>
-            <Text style={[styles.gridStatusLabel, { color: c.text.secondary }]} numberOfLines={1}>
-              {statusLabel}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.gridBody}>
-          {/* Header */}
-          <TicketCardHeader
-            ticket={ticket}
-            resolvedColors={c}
-            onOverflowPress={handleOverflowMenuPress}
-          />
-
-          {/* Badge row */}
-          <TicketCardBadgeRow
-            ticket={ticket}
-            resolvedColors={c}
-            style={styles.badgeRow}
-          />
-
-          {/* Content */}
-          <TicketCardContent
-            ticket={ticket}
-            resolvedColors={c}
-            onPress={handlePress}
-            expanded={false}
-            disableToggle
-            descriptionLines={3}
-          />
-        </View>
-
-        <View style={styles.gridBottom}>
-          {/* Meta */}
-          <TicketCardMeta
-            ticket={ticket}
-            resolvedColors={c}
-            style={styles.metaRow}
-          />
-
-          {/* Action bar — no Share (onSharePress omitted), no inline comments */}
-          <TicketCardActionBar
-            ticket={ticket}
-            resolvedColors={c}
-            onCommentPress={handleCommentPress}
-            onActivityPress={handleActivityPress}
-            // onSharePress intentionally omitted — grid mode hides Share
-            sharingAvailable={false}
-            onTakePress={onTake ? handleTakePress : undefined}
-            onViewDetails={handleViewDetails}
-            onStatusChange={canUpdateStatus ? handleStatusChange : undefined}
-            onEditDueDate={isAdmin && onEditDueDate ? handleEditDueDate : undefined}
-            onReassign={isAdmin && onReassign ? handleReassign : undefined}
-            onAssignProgrammer={isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined}
-            onDelete={isAdmin && onDelete ? handleDelete : undefined}
-            onRestore={isAdmin && onRestore ? handleRestore : undefined}
-            onOverflowMenuPress={handleOverflowMenuPress}
-            isAdmin={isAdmin}
-            isEmployee={isEmployee}
-            currentUserId={currentUserId}
-            tenantSuspended={tenantSuspended}
-          />
-        </View>
-
-        {/* Overflow menu */}
-        <TicketCardOverflowMenu
-          visible={overflowMenuOpen}
-          onClose={handleOverflowMenuClose}
-          ticket={ticket}
-          resolvedColors={c}
-          isAdmin={isAdmin}
-          currentUserId={currentUserId}
-          tenantSuspended={tenantSuspended}
-          onViewDetails={handleViewDetails}
-          onStatusChange={canUpdateStatus ? handleStatusChange : undefined}
-          onEditDueDate={isAdmin && onEditDueDate ? handleEditDueDate : undefined}
-          onReassign={isAdmin && onReassign ? handleReassign : undefined}
-          onAssignProgrammer={isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined}
-          onDelete={isAdmin && onDelete ? handleDelete : undefined}
-          onRestore={isAdmin && onRestore ? handleRestore : undefined}
-        />
-      </View>
+      <TicketCardGrid
+        ticket={ticket}
+        resolvedColors={c}
+        onPress={handlePress}
+        onCommentPress={handleCommentPress}
+        onActivityPress={handleActivityPress}
+        onOverflowMenuPress={handleOverflowMenuPress}
+        overflowMenuOpen={overflowMenuOpen}
+        onOverflowMenuClose={handleOverflowMenuClose}
+        cardBorderColor={cardBorderColor}
+        style={style}
+        actionBarProps={{
+          onTakePress: onTake ? handleTakePress : undefined,
+          onViewDetails: handleViewDetails,
+          onStatusChange: canUpdateStatus ? handleStatusChange : undefined,
+          onEditDueDate: isAdmin && onEditDueDate ? handleEditDueDate : undefined,
+          onReassign: isAdmin && onReassign ? handleReassign : undefined,
+          onAssignProgrammer: isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined,
+          onDelete: isAdmin && onDelete ? handleDelete : undefined,
+          onRestore: isAdmin && onRestore ? handleRestore : undefined,
+          isAdmin,
+          isEmployee,
+          currentUserId,
+          tenantSuspended,
+        }}
+        overflowMenuProps={{
+          isAdmin,
+          currentUserId,
+          tenantSuspended,
+          onViewDetails: handleViewDetails,
+          onStatusChange: canUpdateStatus ? handleStatusChange : undefined,
+          onEditDueDate: isAdmin && onEditDueDate ? handleEditDueDate : undefined,
+          onReassign: isAdmin && onReassign ? handleReassign : undefined,
+          onAssignProgrammer: isAdmin && onAssignProgrammer ? handleAssignProgrammer : undefined,
+          onDelete: isAdmin && onDelete ? handleDelete : undefined,
+          onRestore: isAdmin && onRestore ? handleRestore : undefined,
+        }}
+      />
     );
   }
 
@@ -593,71 +456,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     // Elevation (Android)
     elevation: 3,
-  },
-
-  // ── Grid mode ──────────────────────────────────────────────────────────────
-  gridCard: {
-    padding: Spacing.sm,
-    gap: Spacing.xs,
-    minHeight: 330,
-    // Shadow values (shadowColor overridden inline with c.shadow)
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-
-  // ── Compact mode ───────────────────────────────────────────────────────────
-  compactCard: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical:   Spacing.sm,
-  },
-  gridTopStrip: {
-    minHeight: 30,
-    marginHorizontal: -Spacing.sm,
-    marginTop: -Spacing.sm,
-    marginBottom: 4,
-    paddingHorizontal: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-  },
-  gridStatusBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridStatusPill: {
-    marginStart: 8,
-    borderRadius: Radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  gridStatusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  gridStatusLabelWrap: {
-    marginStart: 8,
-    flex: 1,
-  },
-  gridStatusLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  gridBody: {
-    flex: 1,
-  },
-  gridBottom: {
-    marginTop: 'auto',
   },
 
   // ── Section spacing (feed mode) ────────────────────────────────────────────
