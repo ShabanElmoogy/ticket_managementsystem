@@ -1,57 +1,37 @@
 /**
- * StatsCards — Full-width row of stat cards for the Dashboard.
+ * StatsCards — Compact full-width stat cards row for the Dashboard.
  *
- * Cards fill the full screen width evenly (flex: 1 each).
- * Colors: Palette.* constants — no hardcoded hex.
- * Loading: skeleton placeholders while data is fetching.
- *
- * ✅ Uses `c.*` tokens from `useThemeColors()` — not Modal-safe (screen only).
+ * 6 cards in one row, each taking equal width.
+ * Styled to match AdminStatCard but compact enough for 6 columns.
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
 import type { ComputedStats } from '@/src/features/dashboard/utils/computeStats';
+import type { IoniconName } from '@/src/components/layout/header/navItems';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Card config
+// Config
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface StatCardConfig {
-  key:     keyof ComputedStats;
-  label:   string;
-  color:   string;
-  bgColor: string;
-  icon:    string;
+  key:   keyof ComputedStats;
+  label: string;
+  color: string;
+  icon:  IoniconName;
 }
 
 const STAT_CARDS: StatCardConfig[] = [
-  { key: 'total',       label: 'Total',       color: Palette.blue600,    bgColor: Palette.blue50,    icon: 'ticket-outline'           },
-  { key: 'open',        label: 'Open',        color: Palette.amber600,   bgColor: Palette.amber50,   icon: 'alert-circle-outline'     },
-  { key: 'inProgress',  label: 'In Progress', color: Palette.violet600,  bgColor: Palette.violet50,  icon: 'time-outline'             },
-  { key: 'programming', label: 'Dev',         color: Palette.indigo600,  bgColor: Palette.indigo50,  icon: 'code-slash-outline'       },
-  { key: 'resolved',    label: 'Resolved',    color: Palette.emerald600, bgColor: Palette.emerald50, icon: 'checkmark-circle-outline' },
-  { key: 'closed',      label: 'Closed',      color: Palette.zinc500,    bgColor: Palette.zinc100,   icon: 'lock-closed-outline'      },
+  { key: 'total',       label: 'Total',    color: Palette.blue500,    icon: 'ticket'         },
+  { key: 'open',        label: 'Open',     color: Palette.amber500,   icon: 'lock-open'      },
+  { key: 'inProgress',  label: 'Progress', color: Palette.violet500,  icon: 'flash'          },
+  { key: 'programming', label: 'Dev',      color: Palette.indigo500,  icon: 'code-slash'     },
+  { key: 'resolved',    label: 'Resolved', color: Palette.emerald500, icon: 'checkmark-done' },
+  { key: 'closed',      label: 'Closed',   color: Palette.zinc500,    icon: 'lock-closed'    },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Skeleton card
-// ─────────────────────────────────────────────────────────────────────────────
-
-const SkeletonCard: React.FC<{ c: ReturnType<typeof useThemeColors> }> = ({ c }) => (
-  <View style={[styles.card, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
-    <View style={[styles.skeletonIcon, { backgroundColor: c.surface.tertiary }]} />
-    <View style={[styles.skeletonValue, { backgroundColor: c.surface.tertiary }]} />
-    <View style={[styles.skeletonLabel, { backgroundColor: c.surface.tertiary }]} />
-  </View>
-);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -64,127 +44,141 @@ interface StatsCardsProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Single card
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface CardProps {
+  cfg:       StatCardConfig;
+  value:     number;
+  cardWidth: number;
+  onPress?:  () => void;
+  c:         ReturnType<typeof useThemeColors>;
+}
+
+const StatCard: React.FC<CardProps> = ({ cfg, value, cardWidth, onPress, c }) => (
+  <Pressable
+    onPress={onPress}
+    style={({ pressed }) => ({
+      width:           cardWidth,
+      borderRadius:    Radius.lg,
+      padding:         8,
+      backgroundColor: c.surface.primary,
+      shadowColor:     c.shadow,
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   1,
+      shadowRadius:    4,
+      elevation:       3,
+      opacity:         pressed ? 0.85 : 1,
+    })}
+  >
+    {/* Icon + dot row */}
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+      <View style={{
+        width:           28,
+        height:          28,
+        borderRadius:    Radius.md,
+        backgroundColor: cfg.color + '20',
+        alignItems:      'center',
+        justifyContent:  'center',
+      }}>
+        <Ionicons name={cfg.icon} size={14} color={cfg.color} />
+      </View>
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: cfg.color }} />
+    </View>
+
+    {/* Value */}
+    <Text
+      style={{
+        fontSize:   FontSize.xl,
+        fontWeight: FontWeight.extrabold,
+        color:      c.text.primary,
+        lineHeight: 24,
+      }}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.6}
+    >
+      {value.toLocaleString()}
+    </Text>
+
+    {/* Label */}
+    <Text
+      style={{
+        fontSize:   FontSize.xs,
+        fontWeight: FontWeight.medium,
+        color:      c.text.secondary,
+        marginTop:  2,
+      }}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.7}
+    >
+      {cfg.label}
+    </Text>
+
+    {/* Progress bar */}
+    <View style={{ height: 2, borderRadius: 1, marginTop: 6, backgroundColor: cfg.color + '25' }}>
+      <View style={{ height: '100%', borderRadius: 1, backgroundColor: cfg.color, width: '60%' }} />
+    </View>
+  </Pressable>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton card
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SkeletonCard: React.FC<{ cardWidth: number; c: ReturnType<typeof useThemeColors> }> = ({ cardWidth, c }) => (
+  <View style={{
+    width:           cardWidth,
+    borderRadius:    Radius.lg,
+    padding:         8,
+    backgroundColor: c.surface.primary,
+    elevation:       3,
+  }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+      <View style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.surface.elevated }} />
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.surface.elevated }} />
+    </View>
+    <View style={{ width: '70%', height: 18, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 4 }} />
+    <View style={{ width: '90%', height: 10, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 6 }} />
+    <View style={{ height: 2, borderRadius: 1, backgroundColor: c.surface.elevated }} />
+  </View>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }) => {
-  const c = useThemeColors();
-
-  if (isLoading) {
-    return (
-      <View style={styles.row}>
-        {STAT_CARDS.map((cfg) => (
-          <View key={String(cfg.key)} style={styles.cardWrapper}>
-            <View style={[styles.card, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
-              <View style={[styles.skeletonIcon, { backgroundColor: c.surface.tertiary }]} />
-              <View style={[styles.skeletonValue, { backgroundColor: c.surface.tertiary }]} />
-              <View style={[styles.skeletonLabel, { backgroundColor: c.surface.tertiary }]} />
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  }
+  const c             = useThemeColors();
+  const { width }     = useWindowDimensions();
+  const GAP           = 6;
+  const PADDING       = Spacing.sm * 2;
+  const cardWidth     = (width - PADDING - GAP * (STAT_CARDS.length - 1)) / STAT_CARDS.length;
 
   return (
-    <View style={styles.row}>
-      {STAT_CARDS.map((cfg) => {
-        const value = stats[cfg.key];
-        return (
-          <View key={cfg.key} style={styles.cardWrapper}>
-            <Pressable
-              onPress={() => onCardPress?.(cfg.key)}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.card,
-                {
-                  backgroundColor: cfg.bgColor,
-                  borderColor:     cfg.color + '33',
-                  opacity:         pressed ? 0.8 : 1,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`${cfg.label}: ${value}`}
-            >
-              <View style={[styles.iconBadge, { backgroundColor: cfg.color + '22' }]}>
-                <Ionicons name={cfg.icon as any} size={16} color={cfg.color} />
-              </View>
-              <Text style={[styles.value, { color: cfg.color }]} numberOfLines={1} adjustsFontSizeToFit>
-                {value}
-              </Text>
-              <Text style={[styles.label, { color: cfg.color + 'cc' }]} numberOfLines={1} adjustsFontSizeToFit>
-                {cfg.label}
-              </Text>
-            </Pressable>
-          </View>
-        );
-      })}
+    <View style={{
+      flexDirection:     'row',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical:   Spacing.sm,
+      gap:               GAP,
+    }}>
+      {STAT_CARDS.map((cfg) =>
+        isLoading ? (
+          <SkeletonCard key={cfg.key} cardWidth={cardWidth} c={c} />
+        ) : (
+          <StatCard
+            key={cfg.key}
+            cfg={cfg}
+            value={stats[cfg.key]}
+            cardWidth={cardWidth}
+            onPress={() => onCardPress?.(cfg.key)}
+            c={c}
+          />
+        )
+      )}
     </View>
   );
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection:     'row',
-    paddingHorizontal: Spacing.xs,
-    paddingVertical:   Spacing.sm,
-    gap:               4,
-    width:             '100%',
-  },
-  cardWrapper: {
-    flex: 1,
-  },
-  card: {
-    flex:              1,
-    paddingVertical:   Spacing.sm,
-    paddingHorizontal: 2,
-    borderRadius:      Radius.lg,
-    borderWidth:       1,
-    alignItems:        'center',
-    gap:               2,
-    elevation:         2,
-  },
-  iconBadge: {
-    width:          26,
-    height:         26,
-    borderRadius:   13,
-    alignItems:     'center',
-    justifyContent: 'center',
-    marginBottom:   2,
-  },
-  value: {
-    fontSize:   FontSize.base,
-    fontWeight: FontWeight.extrabold,
-    lineHeight: 20,
-    minWidth:   1,
-  },
-  label: {
-    fontSize:  9,
-    fontWeight: FontWeight.medium,
-    textAlign: 'center',
-    minWidth:  1,
-  },
-  // Skeleton shapes
-  skeletonIcon: {
-    width:        26,
-    height:       26,
-    borderRadius: 13,
-    marginBottom: 2,
-  },
-  skeletonValue: {
-    width:        28,
-    height:       16,
-    borderRadius: Radius.sm,
-  },
-  skeletonLabel: {
-    width:        36,
-    height:       9,
-    borderRadius: Radius.sm,
-    marginTop:    2,
-  },
-});
 
 export default StatsCards;
