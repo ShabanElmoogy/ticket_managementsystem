@@ -186,6 +186,17 @@ const DashboardScreen: React.FC = () => {
           <StatsCards
             stats={stats}
             isLoading={isLoading}
+            activeKey={(() => {
+              const statusMap: Record<string, string> = {
+                open: 'OPEN',
+                inProgress: 'IN_PROGRESS',
+                programming: 'PROGRAMMING',
+                resolved: 'RESOLVED',
+                closed: 'CLOSED',
+              };
+              return (Object.keys(statusMap).find(k => statusMap[k] === filters.status) || 
+                     (filters.status === '' ? 'total' : null)) as any;
+            })()}
             onCardPress={(key) => {
               // Map stat key to status filter
               const statusMap: Record<string, string> = {
@@ -195,6 +206,10 @@ const DashboardScreen: React.FC = () => {
                 resolved: 'RESOLVED',
                 closed: 'CLOSED',
               };
+              if (key === 'total') {
+                setStatus('');
+                return;
+              }
               const status = statusMap[key];
               if (status) setStatus(status === filters.status ? '' : status);
             }}

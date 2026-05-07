@@ -6,8 +6,16 @@
  */
 
 import React from 'react';
-import { View, Text, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  withTiming,
+  interpolateColor
+} from 'react-native-reanimated';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
 import type { ComputedStats } from '@/src/features/dashboard/utils/computeStats';
@@ -41,6 +49,7 @@ interface StatsCardsProps {
   stats: ComputedStats;
   isLoading: boolean;
   onCardPress?: (key: keyof ComputedStats) => void;
+  activeKey?: keyof ComputedStats | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,101 +59,99 @@ interface StatsCardsProps {
 interface CardProps {
   cfg: StatCardConfig;
   value: number;
-  cardWidth: number;
   onPress?: () => void;
+  isActive: boolean;
   c: ReturnType<typeof useThemeColors>;
 }
 
-const StatCard: React.FC<CardProps> = ({ cfg, value, cardWidth, onPress, c }) => (
-  <Pressable
-    onPress={onPress}
-    style={({ pressed }) => ({
-      flex: 1,
-      borderRadius: Radius.lg,
-      padding: 8,
-      backgroundColor: c.surface.primary,
-      alignItems: 'center',
-      shadowColor: c.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
-      opacity: pressed ? 0.85 : 1,
-    })}
-  >
-      {/* Icon + dot row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <View style={{
-          width: 28,
-          height: 28,
-          borderRadius: Radius.md,
-          backgroundColor: cfg.color + '20',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Ionicons name={cfg.icon} size={14} color={cfg.color} />
+const StatCard: React.FC<CardProps> = ({ cfg, value, onPress, isActive, c }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress?.();
+  };
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          {
+            backgroundColor: c.surface.primary,
+            borderColor: isActive ? cfg.color : c.border.primary,
+            borderWidth: isActive ? 1.5 : 1,
+            shadowColor: c.shadow,
+          },
+          isActive && {
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 4,
+          }
+        ]}
+      >
+        {/* Icon container */}
+        <View style={[
+          styles.iconContainer,
+          { backgroundColor: cfg.color + '15' }
+        ]}>
+          <Ionicons name={cfg.icon} size={16} color={cfg.color} />
         </View>
-      </View>
 
-      {/* Value */}
-      <Text
-        style={{
-          fontSize: FontSize.xl,
-          alignSelf: 'center',
-          fontWeight: FontWeight.extrabold,
-          color: c.text.primary,
-          lineHeight: 24,
-          marginInline: 'auto'
-        }}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.6}
-      >
-        {value.toLocaleString()}
-      </Text>
+        {/* Value */}
+        <Text
+          style={[styles.valueText, { color: c.text.primary }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.6}
+        >
+          {value.toLocaleString()}
+        </Text>
 
-      {/* Label */}
-      <Text
-        style={{
-          fontSize: FontSize.xs,
-          alignSelf: 'center',
-          fontWeight: FontWeight.medium,
-          color: c.text.secondary,
-          marginTop: 2,
-        }}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-      >
-        {cfg.label}
-      </Text>
+        {/* Label */}
+        <Text
+          style={[styles.labelText, { color: c.text.secondary }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
+          {cfg.label}
+        </Text>
 
-    {/* Progress bar */}
-    <View style={{ height: 2, borderRadius: 1, marginTop: 6, backgroundColor: cfg.color + '25' }}>
-      <View style={{ height: '100%', borderRadius: 1, backgroundColor: cfg.color, width: '60%' }} />
-    </View>
-  </Pressable>
-);
+        {/* Progress bar accent */}
+        <View style={[styles.progressBase, { backgroundColor: cfg.color + '20' }]}>
+          <View style={[styles.progressFill, { backgroundColor: cfg.color, width: isActive ? '100%' : '60%' }]} />
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton card
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SkeletonCard: React.FC<{ cardWidth: number; c: ReturnType<typeof useThemeColors> }> = ({ cardWidth, c }) => (
-  <View style={{
-    flex: 1,
-    borderRadius: Radius.lg,
-    padding: 8,
-    backgroundColor: c.surface.primary,
-    elevation: 3,
-  }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-      <View style={{ width: 28, height: 28, borderRadius: Radius.md, backgroundColor: c.surface.elevated }} />
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.surface.elevated }} />
-    </View>
-    <View style={{ width: '70%', height: 18, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 4 }} />
-    <View style={{ width: '90%', height: 10, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 6 }} />
-    <View style={{ height: 2, borderRadius: 1, backgroundColor: c.surface.elevated }} />
+const SkeletonCard: React.FC<{ c: ReturnType<typeof useThemeColors> }> = ({ c }) => (
+  <View style={[styles.card, { backgroundColor: c.surface.primary, borderColor: c.border.primary, borderWidth: 1 }]}>
+    <View style={[styles.iconContainer, { backgroundColor: c.surface.elevated }]} />
+    <View style={{ width: '60%', height: 20, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 4 }} />
+    <View style={{ width: '80%', height: 12, borderRadius: Radius.sm, backgroundColor: c.surface.elevated, marginBottom: 8 }} />
+    <View style={[styles.progressBase, { backgroundColor: c.surface.elevated }]} />
   </View>
 );
 
@@ -152,32 +159,86 @@ const SkeletonCard: React.FC<{ cardWidth: number; c: ReturnType<typeof useThemeC
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }) => {
+const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress, activeKey }) => {
   const c = useThemeColors();
   return (
-    <View style={{
-      display: 'flex',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: Spacing.sm,
-      paddingVertical: Spacing.sm
-    }}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContainer}
+      style={styles.scrollBase}
+      decelerationRate="fast"
+    >
       {STAT_CARDS.map((cfg) =>
         isLoading ? (
-          <SkeletonCard key={cfg.key} cardWidth={0} c={c} />
+          <SkeletonCard key={cfg.key} c={c} />
         ) : (
           <StatCard
             key={cfg.key}
             cfg={cfg}
             value={stats[cfg.key]}
-            cardWidth={0}
+            isActive={activeKey === cfg.key}
             onPress={() => onCardPress?.(cfg.key)}
             c={c}
           />
         )
       )}
-    </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  scrollContainer: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: 0,
+    paddingBottom: 0,
+    gap: Spacing.sm,
+    marginBottom : 10
+  },
+  scrollBase: {
+    flexGrow: 0,
+  },
+  card: {
+    width: 90,
+    borderRadius: Radius.xl,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs, // Reduced from sm
+  },
+  valueText: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.extrabold,
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  labelText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  progressBase: {
+    height: 3,
+    width: '100%',
+    borderRadius: 1.5,
+    marginTop: Spacing.xs, // Reduced from sm
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 1.5,
+  },
+});
 
 export default StatsCards;

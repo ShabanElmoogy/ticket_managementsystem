@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     alignItems:        'center',
     justifyContent:    'space-between',
     paddingHorizontal: Spacing.md,
-    paddingTop:        Spacing.md,
+    paddingTop:        0,
     paddingBottom:     Spacing.sm,
   },
   headerLeft: {
