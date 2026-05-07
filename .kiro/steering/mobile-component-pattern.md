@@ -147,6 +147,19 @@ Keep this table updated whenever a component is added or its usage changes.
 | `IconButton` | `navigation/IconButton.tsx` | ❌ No | ✅ Yes | `AppHeaderBar` |
 | `HapticTab` | `platform/HapticTab.tsx` | ❌ No | ✅ Yes | Bottom tab navigator via `tabBarButton` screen option |
 | `IconSymbol` (iOS) | `platform/IconSymbol.ios.tsx` | ❌ No | ✅ Yes | Any component needing an icon on iOS — Metro auto-selects over `IconSymbol.tsx` |
+| `SlaTimerBadge` | `display/SlaTimerBadge.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; uses `setInterval` for live countdown | `TicketCardBadgeRow` (badge row chip), `TicketDetailScreen` (header area) |
+| `ActivityFeedItem` | `display/ActivityFeedItem.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; uses `ACTIVITY_TYPE_CONFIG` for type→color/icon mapping | `ActivityFeedPanel` (Dashboard), `ActivityTab` (Ticket Detail) |
+| `ChecklistItem` | `display/ChecklistItem.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `SolutionChecklistSection` (Programming Panel) |
+| `FileAttachmentList` | `display/FileAttachmentList.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; uses `expo-document-picker` for file selection | `AttachmentsTab` (Ticket Detail) |
+| `MentionTextInput` | `forms/MentionTextInput.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; shows suggestion overlay when `@` is typed | `CommentsTab` (Ticket Detail), `TicketCardComments` (inline feed comments) |
+| `TicketCard` | `display/TicketCard/index.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; composes all TicketCard sub-components; manages `commentsExpanded`, `seeMoreExpanded`, `overflowMenuOpen` local state; supports `viewMode: 'feed' \| 'grid' \| 'compact'` | `DashboardScreen` (TicketFeed), `TicketsScreen` (AdminCrudScreen row renderer) |
+| `TicketCardHeader` | `display/TicketCard/TicketCardHeader.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
+| `TicketCardBadgeRow` | `display/TicketCard/TicketCardBadgeRow.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
+| `TicketCardContent` | `display/TicketCard/TicketCardContent.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
+| `TicketCardMeta` | `display/TicketCard/TicketCardMeta.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
+| `TicketCardActionBar` | `display/TicketCard/TicketCardActionBar.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls | `TicketCard/index.tsx` |
+| `TicketCardComments` | `display/TicketCard/TicketCardComments.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; calls `ticketsApi` directly for comment CRUD | `TicketCard/index.tsx` |
+| `TicketCardOverflowMenu` | `display/TicketCard/TicketCardOverflowMenu.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; rendered via `Modal`, consumes `buildOverflowMenuEntries` from `TicketCardActionBar` for role/state guards | `TicketCard/index.tsx` |
 
 ---
 
@@ -206,6 +219,267 @@ Keep this table updated whenever a component is added or its usage changes.
   icon="📭"
   message={t('customers.emptyMessage')}
   fill
+/>
+```
+
+---
+
+## SlaTimerBadge — component note
+
+`SlaTimerBadge` (`mobile/src/shared/components/display/SlaTimerBadge.tsx`) is a live SLA countdown/elapsed chip.
+
+**Behavior:**
+- Calls `computeSlaState(ticket, now)` to derive display text and color token
+- Updates every 60 seconds via `setInterval` for a live countdown
+- Returns `null` when no `slaDeadline` is set
+- Color tokens: `'error'` → `c.intent.error` (red), `'warning'` → `c.intent.warning` (amber), `'success'` → `c.intent.success` (green)
+- Icon: `warning-outline` when overdue, `time-outline` otherwise
+
+**Sizes:**
+- `'sm'` — compact chip (10px icon, `FontSize.xs` text, 6px horizontal padding) — used in badge rows
+- `'md'` — standard chip (12px icon, `FontSize.sm` text, 8px horizontal padding) — default
+
+**Current usages:**
+1. `TicketCardBadgeRow` — badge row chip showing SLA time remaining or overdue
+2. `TicketDetailScreen` — header area SLA indicator
+
+**⚠️ Modal rule:** `SlaTimerBadge` is Modal-safe — receives `resolvedColors` prop, no internal hook calls.
+
+```tsx
+// In a ticket card badge row
+{ticket.slaDeadline && (
+  <SlaTimerBadge
+    slaDeadline={ticket.slaDeadline}
+    status={ticket.status}
+    resolvedColors={c}
+    size="sm"
+  />
+)}
+```
+
+---
+
+## ActivityFeedItem — component note
+
+`ActivityFeedItem` (`mobile/src/shared/components/display/ActivityFeedItem.tsx`) is a single activity item in the real-time activity feed.
+
+**Layout:**
+- 4px left accent bar (colored by type, visible for unread items only)
+- Colored circular avatar with type-specific Ionicons icon
+- Primary text: type-specific message (e.g. "New ticket: Login crash")
+- Secondary text: actor name + "•" + relative timestamp
+- Chips row: priority chip + status chip when ticket data is present; `@mentioned you` chip for `COMMENT_MENTION`
+- Pulsing dot (8px, type accent color) for unread items
+- Read items rendered at 0.7 opacity
+
+**Interactions:**
+- Press → calls `onPress(activity)` and marks item as read (if unread and has `ticketId`)
+- Long press → toggles read/unread state
+
+**Loading state:** Pass `isLoading={true}` to show a skeleton placeholder row.
+
+**Current usages:**
+1. `ActivityFeedPanel` — FlatList of activity items in the Dashboard
+2. `ActivityTab` — Timeline list in the Ticket Detail screen
+
+**⚠️ Modal rule:** `ActivityFeedItem` is Modal-safe — receives `resolvedColors` prop, no internal hook calls. Uses `ACTIVITY_TYPE_CONFIG` (module-level map) for type→color/icon resolution.
+
+```tsx
+<ActivityFeedItem
+  activity={item}
+  resolvedColors={c}
+  onPress={(activity) => navigateToTicket(activity.data.ticket?.id)}
+  onMarkRead={(id) => markRead(id)}
+  onMarkUnread={(id) => markUnread(id)}
+/>
+```
+
+---
+
+## ChecklistItem — component note
+
+`ChecklistItem` (`mobile/src/shared/components/display/ChecklistItem.tsx`) is a solution step row with checkbox, strikethrough text, and optional delete button.
+
+**Layout:**
+- Step number badge (order + 1, tinted with `c.interactive.primary`)
+- Checkbox (filled green when done, outlined when pending)
+- Step text (strikethrough + muted when done)
+- Delete button (trash icon, shown only when `canEdit && onDelete` provided)
+
+**Props:**
+- `step: SolutionStep` — `{ order: number; text: string; done: boolean }`
+- `canEdit: boolean` — disables toggle and hides delete when false
+- `onToggle(order)` — called when checkbox is pressed
+- `onDelete?(order)` — called when delete button is pressed
+
+**Current usages:**
+1. `SolutionChecklistSection` — list of solution steps in the Programming Panel
+
+**⚠️ Modal rule:** `ChecklistItem` is Modal-safe — receives `resolvedColors` prop, no internal hook calls.
+
+```tsx
+// Editable step
+<ChecklistItem
+  step={{ order: 0, text: 'Write unit tests', done: false }}
+  canEdit
+  onToggle={(order) => handleToggle(order)}
+  onDelete={(order) => handleDelete(order)}
+  resolvedColors={c}
+/>
+
+// Read-only step
+<ChecklistItem
+  step={{ order: 1, text: 'Deploy to staging', done: true }}
+  canEdit={false}
+  onToggle={() => {}}
+  resolvedColors={c}
+/>
+```
+
+---
+
+## FileAttachmentList — component note
+
+`FileAttachmentList` (`mobile/src/shared/components/display/FileAttachmentList.tsx`) is a file list panel with an upload zone and file rows.
+
+**Layout:**
+- "Files (N)" header with count badge
+- Dashed upload zone (hidden in `readonly` mode) — uses `expo-document-picker`
+- Linear progress bar during upload
+- Scrollable list of file rows: thumbnail (image preview or type icon), file name, file size, delete button
+- Empty state when no files attached
+
+**Constraints:**
+- Max 5 files per upload
+- Max 10 MB per file
+- Files exceeding size limit are silently filtered out
+
+**Props:**
+- `readonly: boolean` — hides upload zone and delete buttons
+- `uploading?: boolean` — shows progress bar
+- `uploadProgress?: number` — 0–100 for the progress bar
+- `onUpload?(files)` — called with `DocumentPickerAsset[]` after file selection
+- `onDelete?(attachmentId)` — called when delete button is pressed
+- `onSelect(attachment)` — called when a file row is pressed (for preview)
+- `selectedId?: string` — highlights the selected file with a left accent border
+
+**Current usages:**
+1. `AttachmentsTab` — file list panel in the Ticket Detail screen
+
+**⚠️ Modal rule:** `FileAttachmentList` is Modal-safe — receives `resolvedColors` prop, no internal hook calls.
+
+```tsx
+<FileAttachmentList
+  attachments={attachments}
+  onUpload={handleUpload}
+  onDelete={handleDelete}
+  onSelect={setSelectedAttachment}
+  selectedId={selectedAttachment?.id}
+  readonly={false}
+  uploading={isUploading}
+  uploadProgress={uploadProgress}
+  resolvedColors={c}
+/>
+```
+
+---
+
+## MentionTextInput — component note
+
+`MentionTextInput` (`mobile/src/shared/components/forms/MentionTextInput.tsx`) is an `@name` mention-aware text input with a suggestion list overlay.
+
+**Behavior:**
+- Detects `@` prefix in the current word being typed
+- Shows a suggestion list overlay (max 6 users) filtered by the typed prefix
+- Tapping a suggestion inserts `@name ` at the cursor position
+- Send button submits when `value.trim().length > 0` and not disabled
+- Disabled state shows a read-only placeholder
+
+**Props:**
+- `value: string` + `onChange(text)` — controlled input
+- `onSubmit()` — called when send button is pressed or Enter is triggered
+- `users: MentionUser[]` — `{ id: string; name: string }[]` for suggestions
+- `disabled?: boolean` — disables input and send button
+- `placeholder?: string` — defaults to "Write a comment... use @ to mention someone"
+
+**Current usages:**
+1. `CommentsTab` — comment input with @mention support in Ticket Detail
+2. `TicketCardComments` — inline comment input in the feed card
+
+**⚠️ Modal rule:** `MentionTextInput` is Modal-safe — receives `resolvedColors` prop, no internal hook calls.
+
+```tsx
+<MentionTextInput
+  value={commentText}
+  onChange={setCommentText}
+  onSubmit={handleSubmitComment}
+  users={ticketUsers}
+  placeholder="Write a comment... use @ to mention someone"
+  resolvedColors={c}
+/>
+
+// Disabled (suspended tenant)
+<MentionTextInput
+  value=""
+  onChange={() => {}}
+  onSubmit={() => {}}
+  users={[]}
+  placeholder="Subscription ended — read only"
+  disabled
+  resolvedColors={c}
+/>
+```
+
+---
+
+## TicketCard — component note
+
+`TicketCard` (`mobile/src/shared/components/display/TicketCard/index.tsx`) is the root social-post style ticket card component.
+
+**View modes:**
+- `'feed'` — Full social-post layout (default). Shows Share button and inline expandable comments.
+- `'grid'` — 2-column compact card. No share, no inline comments.
+- `'compact'` — Dense single-line row. Header + title only.
+
+**Local state managed internally:**
+- `commentsExpanded` — whether the inline comment section is open (feed mode only)
+- `seeMoreExpanded` — whether the description "See more" is expanded
+- `overflowMenuOpen` — whether the `TicketCardOverflowMenu` bottom sheet is open
+
+**Key props:**
+- `viewMode: 'feed' | 'grid' | 'compact'`
+- `canUpdateStatus: boolean` — controls which status options appear in the overflow menu
+- `isAdmin: boolean` — shows admin-only actions (delete, reassign, edit due date, assign programmer)
+- `isEmployee?: boolean` — shows the "Take" button when ticket is unassigned
+- `tenantSuspended?: boolean` — disables all write actions
+- `isSelected?: boolean` + `onSelect?` — bulk selection support (admin only)
+- `mentionUsers?` — users available for @mention in inline comments
+- `sharingAvailable?` — hides Share button when `expo-sharing` is unavailable
+
+**Current usages:**
+1. `DashboardScreen` — `TicketFeed` component (Feed/Grid/Compact modes)
+2. `TicketsScreen` — `AdminCrudScreen` row renderer (Feed mode)
+
+**⚠️ Modal rule:** `TicketCard` is Modal-safe — receives `resolvedColors` prop, no internal hook calls. The `TicketCardOverflowMenu` it renders is a `<Modal>` — all color resolution happens in the parent before passing `resolvedColors` down.
+
+```tsx
+const c = useThemeColors();
+
+<TicketCard
+  ticket={ticket}
+  resolvedColors={c}
+  viewMode="feed"
+  onPress={(t) => navigateToDetail(t.id)}
+  onShare={(t) => handleShare(t)}
+  onStatusChange={(id, status) => updateStatus(id, status)}
+  onDelete={(id) => deleteTicket(id)}
+  canUpdateStatus={canUpdateStatus}
+  isAdmin={isAdmin}
+  isEmployee={isEmployee}
+  currentUserId={currentUser.id}
+  tenantSuspended={tenantSuspended}
+  mentionUsers={ticketUsers}
+  sharingAvailable={sharingAvailable}
 />
 ```
 

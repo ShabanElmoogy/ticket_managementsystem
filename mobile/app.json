@@ -32,7 +32,11 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.mobile",
       "softwareKeyboardLayoutMode": "adjustNothing",
-      "permissions": ["ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -55,22 +59,22 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      ["expo-location", {
-        "locationWhenInUsePermission": "This app uses your location to record the customer's address."
-      }],
       [
-        "expo-notifications",
+        "expo-location",
         {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#6366f1",
-          "sounds": [],
-          "androidMode": "default"
+          "locationWhenInUsePermission": "This app uses your location to record the customer's address."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d7841819-85a2-46f3-ba2a-5a43f147e39b"
+      }
     }
   }
 }

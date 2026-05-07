@@ -205,7 +205,8 @@ export const DOCS = {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export const DASHBOARD = {
-  STATS: '/dashboard',
+  STATS:      '/dashboard',
+  ACTIVITIES: '/dashboard/activities',
 } as const;
 
 // ── Settings ──────────────────────────────────────────────────────────────────
@@ -233,7 +234,21 @@ export const API = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const QUERY_KEYS = {
-  TICKETS:      { all: ['tickets']                      as const, detail: (id: string) => ['tickets', id]      as const },
+  TICKETS: {
+    all:         ['tickets']                                          as const,
+    detail:      (id: string)                    => ['tickets', id]  as const,
+    comments:    (id: string)                    => ['tickets', id, 'comments']    as const,
+    attachments: (id: string)                    => ['tickets', id, 'attachments'] as const,
+    activities:  (id: string)                    => ['tickets', id, 'activities']  as const,
+    watchers:    (id: string)                    => ['tickets', id, 'watchers']    as const,
+    programming: (id: string)                    => ['tickets', id, 'programming'] as const,
+  },
+  PROGRAMMING: {
+    detail: (id: string) => ['programming', id] as const,
+  },
+  ACTIVITIES: {
+    recent: ['activities', 'recent'] as const,
+  },
   CUSTOMERS:    { all: ['customers']                    as const, detail: (id: string) => ['customers', id]    as const, visits: (id: string) => ['customers', id, 'visits'] as const },
   APPLICATIONS: { all: ['applications']                 as const, detail: (id: string) => ['applications', id] as const },
   USERS:        { all: ['users']                        as const, detail: (id: string) => ['users', id]        as const },
@@ -245,7 +260,7 @@ export const QUERY_KEYS = {
   TASKS:        { all: ['tasks']                        as const, detail: (id: string) => ['tasks', id]        as const },
   DOCS:         { all: ['docs']                         as const, detail: (id: string) => ['docs', id]         as const },
   NOTIFICATIONS:{ all: ['notifications']                as const },
-  DASHBOARD:    { stats: ['dashboard', 'stats']         as const },
+  DASHBOARD:    { stats: ['dashboard', 'stats']         as const, activities: ['dashboard', 'activities'] as const },
   SETTINGS:     {
     sla:        ['settings', 'sla']         as const,
     escalation: ['settings', 'escalation']  as const,

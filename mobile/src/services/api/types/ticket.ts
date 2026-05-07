@@ -70,10 +70,17 @@ export interface CreateTicketData {
   title: string;
   description: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status?: TicketStatus;          // edit mode only
   assignedToId?: string;
   customerId?: string;
   applicationId?: string;
   boardId?: string;
   dueDate?: string;
   estimatedHours?: number;
+  templateId?: string;            // for template pre-fill
+}
+
+export interface BulkUpdateData {
+  ids: string[];
+  status: TicketStatus;
 }

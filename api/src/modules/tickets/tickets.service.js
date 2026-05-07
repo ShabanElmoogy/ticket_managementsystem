@@ -272,15 +272,43 @@ export async function createTicket(tenantId, body, actorId, emitFn) {
     labels:      labelsData,
   };
 
-  const payload = {
-    type: assignedToId ? 'TICKET_ASSIGNED' : 'TICKET_CREATED',
-    data: {
-      ticket:     { id: ticket.id, title: ticket.title, priority: ticket.priority, status: ticket.status },
-      createdBy:  createdUser[0]?.name,
-      assignedTo: assignedUser[0]?.name ?? null,
-    },
-  };
-  await emitToTenant(tenantId ?? null, payload, emitFn);
+  // ── Notifications ─────────────────────────────────────────────────────────
+  // Build a fake req-like object so createNotification can emit via socket.
+  const reqLike = emitFn ? { emitNotification: emitFn } : null;
+
+  if (assignedToId) {
+    // Notify the assigned user (push + socket + DB persist)
+    const notifyIds = [...new Set([assignedToId, actorId].filter(Boolean))];
+    for (const userId of notifyIds) {
+      await createNotification({
+        userId,
+        ticketId:  ticket.id,
+        type:      'TICKET_ASSIGNED',
+        title:     'Ticket Assigned',
+        message:   `"${title}" has been assigned to ${assignedUser[0]?.name ?? 'you'}`,
+        assigneeName: assignedUser[0]?.name,
+      }, reqLike);
+    }
+  } else {
+    // No assignee — notify the creator and broadcast to tenant via socket only
+    await createNotification({
+      userId:    actorId,
+      ticketId:  ticket.id,
+      type:      'TICKET_CREATED',
+      title:     'Ticket Created',
+      message:   `"${title}" was created by ${createdUser[0]?.name ?? 'someone'}`,
+    }, reqLike);
+
+    // Also broadcast raw socket event to all tenant users (for live feed updates)
+    const payload = {
+      type: 'TICKET_CREATED',
+      data: {
+        ticket:    { id: ticket.id, title: ticket.title, priority: ticket.priority, status: ticket.status },
+        createdBy: createdUser[0]?.name,
+      },
+    };
+    await emitToTenant(tenantId ?? null, payload, emitFn);
+  }
 
   return fullTicket;
 }

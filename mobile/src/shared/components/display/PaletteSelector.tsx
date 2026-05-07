@@ -68,7 +68,7 @@ const PaletteSelector: React.FC<PaletteSelectorProps> = ({ resolvedColors: c }) 
             accessibilityState={{ checked: isActive }}
             accessibilityLabel={`${swatch.label} palette${isActive ? ', selected' : ''}`}
             onPress={() => setPaletteOption(swatch.option)}
-            style={({ pressed }) => [
+            style={({ pressed }: { pressed: boolean }) => [
               styles.swatch,
               {
                 backgroundColor: isActive

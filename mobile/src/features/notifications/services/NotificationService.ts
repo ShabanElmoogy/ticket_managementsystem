@@ -16,7 +16,10 @@
  *   notificationService.cleanup().catch(() => {});
  */
 
-import * as Notifications from 'expo-notifications';
+// ⚠️  expo-notifications is NOT imported at the top level.
+// Importing it unconditionally causes Expo Go (SDK 53+) to log a hard error
+// at module load time — before any isExpoGo() guard can run.
+// All calls to expo-notifications go through the lazy `_N()` accessor below.
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,6 +37,28 @@ import type {
 } from '../types/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Lazy expo-notifications accessor
+// ─────────────────────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NotificationsModule = typeof import('expo-notifications');
+
+let _notificationsModule: NotificationsModule | null = null;
+
+/**
+ * Returns the expo-notifications module, loading it lazily on first call.
+ * This prevents the module from being evaluated at import time in Expo Go,
+ * which would trigger the "remote notifications removed from Expo Go" warning.
+ */
+function _N(): NotificationsModule {
+  if (!_notificationsModule) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    _notificationsModule = require('expo-notifications') as NotificationsModule;
+  }
+  return _notificationsModule;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -49,8 +74,12 @@ class NotificationService {
 
   private _initialized: boolean = false;
 
-  private _foregroundSub: Notifications.EventSubscription | null = null;
-  private _responseSub:   Notifications.EventSubscription | null = null;
+  // Typed as `any` to avoid importing EventSubscription at module level
+  // (importing expo-notifications at module level triggers the Expo Go warning)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _foregroundSub: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _responseSub:   any = null;
 
   /** Stores a pending deep-link target when the app is cold-started via a
    *  notification tap and the navigation stack is not yet ready. */
@@ -106,11 +135,11 @@ class NotificationService {
       let status: NotificationPermissionStatus;
 
       if (Platform.OS === 'ios') {
-        const result = await Notifications.requestPermissionsAsync();
+        const result = await _N().requestPermissionsAsync();
         status = result.status as NotificationPermissionStatus;
       } else {
         // Android — permissions are requested automatically by Expo
-        const result = await Notifications.getPermissionsAsync();
+        const result = await _N().getPermissionsAsync();
         status = result.status as NotificationPermissionStatus;
       }
 
@@ -137,11 +166,11 @@ class NotificationService {
   private async _setupAndroidChannels(): Promise<void> {
     if (Platform.OS !== 'android') return;
 
-    const channels: Array<{ id: AndroidChannelId } & Notifications.NotificationChannelInput> = [
+    const channels: Array<{ id: AndroidChannelId; name: string; importance: number; vibrationPattern: number[] | null; sound: string | null; enableVibrate: boolean }> = [
       {
         id:               'ticket-updates',
         name:             'Ticket Updates',
-        importance:       Notifications.AndroidImportance.HIGH,
+        importance:       _N().AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         sound:            'default',
         enableVibrate:    true,
@@ -149,7 +178,7 @@ class NotificationService {
       {
         id:               'mentions',
         name:             'Mentions & Comments',
-        importance:       Notifications.AndroidImportance.HIGH,
+        importance:       _N().AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         sound:            'default',
         enableVibrate:    true,
@@ -157,7 +186,7 @@ class NotificationService {
       {
         id:               'reminders',
         name:             'Reminders',
-        importance:       Notifications.AndroidImportance.DEFAULT,
+        importance:       _N().AndroidImportance.DEFAULT,
         vibrationPattern: null,
         sound:            null,
         enableVibrate:    false,
@@ -165,7 +194,7 @@ class NotificationService {
       {
         id:               'general',
         name:             'General',
-        importance:       Notifications.AndroidImportance.LOW,
+        importance:       _N().AndroidImportance.LOW,
         vibrationPattern: null,
         sound:            null,
         enableVibrate:    false,
@@ -173,7 +202,7 @@ class NotificationService {
     ];
 
     for (const channel of channels) {
-      await Notifications.setNotificationChannelAsync(channel.id, channel);
+      await _N().setNotificationChannelAsync(channel.id, channel);
     }
   }
 
@@ -201,7 +230,7 @@ class NotificationService {
         return;
       }
 
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      const tokenData = await _N().getExpoPushTokenAsync({ projectId });
       const token     = tokenData.data; // Extract the string from ExpoPushToken object
 
       // Store token string only — never the full ExpoPushToken object
@@ -265,9 +294,8 @@ class NotificationService {
    * - Updates the badge count.
    * - Shows a toast with the notification title and body.
    */
-  private _handleForegroundNotification = (
-    notification: Notifications.Notification
-  ): void => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _handleForegroundNotification = (notification: any): void => {
     try {
       const { title, body, data } = notification.request.content;
 
@@ -294,7 +322,7 @@ class NotificationService {
 
       // Update badge count
       const { unreadCount } = useNotificationStore.getState();
-      Notifications.setBadgeCountAsync(unreadCount).catch(() => {});
+      _N().setBadgeCountAsync(unreadCount).catch(() => {});
 
       // Show in-app toast
       Toast.show({
@@ -317,9 +345,8 @@ class NotificationService {
    * - Marks the notification as read on the backend.
    * - Navigates to the deep-link target.
    */
-  private _handleNotificationResponse = (
-    response: Notifications.NotificationResponse
-  ): void => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _handleNotificationResponse = (response: any): void => {
     try {
       const { identifier, content } = response.notification.request;
       const data = content.data ?? {};
@@ -363,7 +390,7 @@ class NotificationService {
         case 'ticket-detail':
           if (params?.ticketId) {
             router.push({
-              pathname: '/(app)/ticket/[id]',
+              pathname: '/(app)/tickets' as any,
               params:   { id: params.ticketId },
             });
           } else {
@@ -401,7 +428,7 @@ class NotificationService {
    */
   private async _checkInitialNotification(): Promise<void> {
     try {
-      const response = await Notifications.getLastNotificationResponseAsync();
+      const response = await _N().getLastNotificationResponseAsync();
       if (!response) return;
 
       const data   = response.notification.request.content.data ?? {};
@@ -474,19 +501,21 @@ class NotificationService {
       await this._setupAndroidChannels();
 
       // 2. Foreground display config
-      Notifications.setNotificationHandler({
+      _N().setNotificationHandler({
         handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge:  true,
+          shouldShowAlert:  true,
+          shouldPlaySound:  true,
+          shouldSetBadge:   true,
+          shouldShowBanner: true,
+          shouldShowList:   true,
         }),
       });
 
       // 3. Register listeners
-      this._foregroundSub = Notifications.addNotificationReceivedListener(
+      this._foregroundSub = _N().addNotificationReceivedListener(
         this._handleForegroundNotification
       );
-      this._responseSub = Notifications.addNotificationResponseReceivedListener(
+      this._responseSub = _N().addNotificationResponseReceivedListener(
         this._handleNotificationResponse
       );
 
@@ -535,7 +564,7 @@ class NotificationService {
     try {
       await notificationsApi.markAllAsRead();
       useNotificationStore.getState().markAllAsRead();
-      await Notifications.setBadgeCountAsync(0);
+      await _N().setBadgeCountAsync(0);
     } catch (err) {
       if (__DEV__) console.error('[NotificationService] markAllAsRead() failed:', err);
     }
@@ -565,7 +594,7 @@ class NotificationService {
       throw new Error('Trigger date must be in the future');
     }
 
-    const identifier = await Notifications.scheduleNotificationAsync({
+    const identifier = await _N().scheduleNotificationAsync({
       content: {
         title,
         body,
@@ -574,7 +603,7 @@ class NotificationService {
         ...(Platform.OS === 'android' && { channelId: channelId ?? 'reminders' }),
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        type: _N().SchedulableTriggerInputTypes.DATE,
         date: triggerDate,
       },
     });
@@ -587,7 +616,7 @@ class NotificationService {
    */
   async cancelLocalNotification(identifier: string): Promise<void> {
     try {
-      await Notifications.cancelScheduledNotificationAsync(identifier);
+      await _N().cancelScheduledNotificationAsync(identifier);
     } catch (err) {
       if (__DEV__) console.error('[NotificationService] cancelLocalNotification() failed:', err);
     }
@@ -598,7 +627,7 @@ class NotificationService {
    */
   async cancelAllLocalNotifications(): Promise<void> {
     try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      await _N().cancelAllScheduledNotificationsAsync();
     } catch (err) {
       if (__DEV__) console.error('[NotificationService] cancelAllLocalNotifications() failed:', err);
     }

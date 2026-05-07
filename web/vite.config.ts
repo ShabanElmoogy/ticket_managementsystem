@@ -68,10 +68,17 @@ export default defineConfig(({ mode }) => {
     },
     server: isDev
       ? {
-          https: {
-            key: fs.readFileSync("./.cert/key.pem"),
-            cert: fs.readFileSync("./.cert/cert.pem"),
-          },
+          // HTTPS is optional — only enabled when cert files exist.
+          // To generate certs: run `npm run generate-cert` (or see README).
+          // Without certs the dev server runs on plain HTTP (http://localhost:5173).
+          ...(fs.existsSync("./.cert/key.pem") && fs.existsSync("./.cert/cert.pem")
+            ? {
+                https: {
+                  key:  fs.readFileSync("./.cert/key.pem"),
+                  cert: fs.readFileSync("./.cert/cert.pem"),
+                },
+              }
+            : {}),
           host: "localhost",
           port: 5173,
           proxy: {

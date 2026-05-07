@@ -535,3 +535,73 @@ Icons: `add-circle-outline`, `document-outline`, `refresh-outline`, `ellipsis-ho
 - [ ] Domain status/priority/role/subscription colors from token maps — not hardcoded
 - [ ] `Pressable` style callbacks typed: `({ pressed }: { pressed: boolean }) => ...`
 - [ ] If inside `<Modal>`: pass `resolvedColors={c}`, use `useUiStore(s => s.direction)`
+
+---
+
+## React Native Import Rules
+
+When working with React Native + TypeScript, always verify imports against the actual package exports.
+
+### The Problem
+
+This project's TypeScript setup does **not** expose all React Native members as named exports from `'react-native'`. Members like `FlatList`, `Animated`, `Alert`, `ScrollView` may cause `Module '"react-native"' has no exported member` errors when imported the standard way.
+
+### The Pattern — Use `require` for Problematic Members
+
+```ts
+// ❌ May fail with TS error
+import { FlatList, Animated, Alert } from 'react-native';
+
+// ✅ Correct — use require for members that cause TS errors
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const RN = require('react-native') as any;
+const FlatList  = RN.FlatList  as any;
+const Animated  = RN.Animated  as any;
+const Alert     = RN.Alert     as { alert: (title: string, message?: string, buttons?: any[]) => void };
+```
+
+### Members That Need `require` in This Project
+
+| Member | Import pattern |
+|---|---|
+| `FlatList` | `const FlatList = RN.FlatList as any` |
+| `Animated` | `const { Animated } = require('react-native') as { Animated: any }` |
+| `Alert` | `const Alert = RN.Alert as { alert: (...) => void }` |
+| `ScrollView` (in some files) | `const ScrollView = RN.ScrollView as any` |
+
+### Members That Import Fine as Named Exports
+
+These work with the standard `import { ... } from 'react-native'` pattern:
+
+`View`, `Text`, `Pressable`, `TextInput`, `Modal`, `StyleSheet`, `ActivityIndicator`, `Image`, `TouchableOpacity`, `Platform`, `Dimensions`, `useWindowDimensions`, `AppState`, `SafeAreaView`
+
+### When Adding `renderItem` Callbacks to `FlatList`
+
+Since `FlatList` is typed as `any`, the `renderItem` callback loses type inference. Always add explicit types:
+
+```ts
+// ❌ item is implicitly any
+renderItem={({ item }) => ...}
+
+// ✅ Explicit type
+renderItem={({ item }: { item: MyType }) => ...}
+keyExtractor={(item: MyType) => item.id}
+```
+
+### Never Import from Internal Paths
+
+```ts
+// ❌ Never import from internal library paths
+import { Alert } from 'react-native/Libraries/Alert/Alert';
+
+// ✅ Always use the package root
+const RN = require('react-native') as any;
+const Alert = RN.Alert as { alert: (...) => void };
+```
+
+### Before Writing Any Import
+
+1. Check if the member is in the "works fine" list above
+2. If not listed, use the `require` pattern
+3. Never blindly trust IDE auto-import suggestions for `react-native` members
+4. If uncertain, check `mobile/node_modules/react-native/index.js` exports

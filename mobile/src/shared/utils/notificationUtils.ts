@@ -12,6 +12,8 @@ export interface SocketNotificationPayload {
     updatedBy?: string;
     assignedTo?: string;
     commentBy?: string;
+    mentionedBy?: string;
+    mentionedUsers?: string[];
     comment?: { content?: string };
     newStatus?: string;
   };
@@ -68,6 +70,16 @@ export const createNotificationFromSocketData = (raw: SocketNotificationPayload)
     case 'EPIC_FEATURE_STATUS_CHANGED':
       title = raw.title ?? 'Feature status updated';
       message = raw.message ?? 'A linked feature status changed';
+      break;
+    case 'COMMENT_MENTION': {
+      const mentionedBy = safeData.mentionedBy ?? 'Someone';
+      title = 'You were mentioned';
+      message = `${mentionedBy} mentioned you on ${safeTicket.title}`;
+      break;
+    }
+    case 'PRIORITY_ESCALATED':
+      title = 'Priority Escalated';
+      message = raw.message ?? `${safeTicket.title} priority was auto-escalated`;
       break;
     default:
       title = 'New Notification';

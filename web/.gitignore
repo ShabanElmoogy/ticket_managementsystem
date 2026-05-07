@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 *.cert
 
+# SSL certs (generated locally — never commit private keys)
+.cert/
+
 node_modules
 dist
 dist-ssr
@@ -23,7 +26,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-git rm -r --cached node_modules/
-git add .gitignore
-git commit -m "Remove node_modules from tracking and add to .gitignore"
