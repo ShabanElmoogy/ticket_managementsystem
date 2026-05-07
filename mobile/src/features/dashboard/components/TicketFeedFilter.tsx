@@ -174,8 +174,6 @@ interface TicketFeedFilterProps {
 
 const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
   filters,
-  hasActiveFilters,
-  ticketCount,
   viewMode,
   isAdmin,
   isRefreshing,
@@ -320,40 +318,6 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
         </Pressable>
       </View>
 
-      {/* ── Quick chips / summary bar ────────────────────────────────────────── */}
-      {!hasActiveFilters ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickChipsRow}
-        >
-          {QUICK_STATUS_CHIPS.map((chip) => (
-            <Pressable
-              key={chip.value}
-              onPress={() => onStatusChange(chip.value)}
-              style={[styles.quickChip, { backgroundColor: chip.color + '18', borderColor: chip.color + '44' }]}
-              accessibilityRole="button"
-            >
-              <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
-              <Text style={[styles.quickChipText, { color: chip.color }]}>{chip.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      ) : (
-        <View style={[styles.summaryBar, { backgroundColor: c.surface.secondary }]}>
-          <Text style={[styles.summaryText, { color: c.text.secondary }]}>
-            {ticketCount} ticket{ticketCount !== 1 ? 's' : ''} found
-          </Text>
-          <Pressable
-            onPress={onClearFilters}
-            style={[styles.clearBtn, { backgroundColor: c.interactive.primary + '18' }]}
-            accessibilityRole="button"
-          >
-            <Ionicons name="close-outline" size={14} color={c.interactive.primary} />
-            <Text style={[styles.clearBtnText, { color: c.interactive.primary }]}>Clear all</Text>
-          </Pressable>
-        </View>
-      )}
 
       {/* ── Filter Modal ─────────────────────────────────────────────────────── */}
       <Modal
@@ -571,7 +535,7 @@ const styles = StyleSheet.create({
     alignItems:        'center',
     paddingHorizontal: Spacing.md,
     gap:               Spacing.sm,
-    marginBottom:      Spacing.xs,
+    marginBottom : -15
   },
   searchWrap: {
     flex: 1,
