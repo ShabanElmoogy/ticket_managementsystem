@@ -474,16 +474,16 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
-    paddingTop: Spacing.sm,
-    gap: Spacing.sm,
+    borderTopWidth: 10,
+    paddingTop: Spacing.xl,
+    gap: Spacing.xl,
   },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.xs,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xl,
   },
   loadingText: {
     fontSize: FontSize.sm,

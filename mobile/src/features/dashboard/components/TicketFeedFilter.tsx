@@ -1,17 +1,21 @@
 /**
- * TicketFeedFilter — Filter bar for the Dashboard ticket feed.
+ * TicketFeedFilter — Simplified filter bar for the Dashboard ticket feed.
  *
- * Header row: "📋 Ticket Feed" title + view toggle (Feed/Grid/Compact) + Refresh button.
+ * Header row: "Ticket Feed" title + view toggle + Refresh button.
  *
- * Filter controls:
- *   - AppTextInput (search) with 400ms debounce (handled by useDashboard)
- *   - Status selector (All / Open / In Progress / Resolved / Closed)
- *   - Priority selector (All / Low / Medium / High / Urgent)
- *   - User selector (TENANT_ADMIN only) — with ticket-count badges
- *   - Customer selector (TENANT_ADMIN only)
- *   - Application selector (TENANT_ADMIN only)
- *   - Overdue toggle button
- *   - Deleted toggle (TENANT_ADMIN only)
+ * Filter bar:
+ *   - Search input (always visible)
+ *   - "Filters" button — opens a bottom sheet modal with ALL filter controls
+ *   - Active filter count badge on the Filters button
+ *
+ * Filter modal contains:
+ *   - Status selector
+ *   - Priority selector
+ *   - User selector (admin only)
+ *   - Customer selector (admin only)
+ *   - Application selector (admin only)
+ *   - Overdue toggle
+ *   - Deleted toggle (admin only)
  *
  * When no filters active: quick status chips row.
  * When filters active: results summary bar with "Clear all" button.
@@ -25,8 +29,10 @@ import {
   Text,
   ScrollView,
   Pressable,
+  Modal,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -37,16 +43,19 @@ import type { Customer } from '@/src/services/api/types/customer';
 import type { Application } from '@/src/services/api/types/application';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Status / Priority options
+// Options
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = [
-  { value: '',            label: 'All Statuses',  color: undefined },
-  { value: 'OPEN',        label: 'Open',          color: Palette.amber500 },
-  { value: 'IN_PROGRESS', label: 'In Progress',   color: Palette.violet500 },
-  { value: 'PROGRAMMING', label: 'Programming',   color: Palette.indigo500 },
-  { value: 'RESOLVED',    label: 'Resolved',      color: Palette.emerald500 },
-  { value: 'CLOSED',      label: 'Closed',        color: Palette.zinc500 },
+  { value: '',                  label: 'All Statuses',  color: undefined },
+  { value: 'OPEN',              label: 'Open',          color: Palette.amber500 },
+  { value: 'IN_PROGRESS',       label: 'In Progress',   color: Palette.violet500 },
+  { value: 'PROGRAMMING',       label: 'Programming',   color: Palette.indigo500 },
+  { value: 'UNDER_DEVELOPMENT', label: 'Under Dev',     color: Palette.blue500 },
+  { value: 'CODE_REVIEW',       label: 'Code Review',   color: Palette.purple500 },
+  { value: 'TESTING',           label: 'Testing',       color: Palette.cyan500 },
+  { value: 'RESOLVED',          label: 'Resolved',      color: Palette.emerald500 },
+  { value: 'CLOSED',            label: 'Closed',        color: Palette.zinc500 },
 ];
 
 const PRIORITY_OPTIONS = [
@@ -58,86 +67,75 @@ const PRIORITY_OPTIONS = [
 ];
 
 const QUICK_STATUS_CHIPS = [
-  { value: 'OPEN',        label: 'Open',      color: Palette.amber500 },
+  { value: 'OPEN',        label: 'Open',       color: Palette.amber500 },
   { value: 'IN_PROGRESS', label: 'In Progress', color: Palette.violet500 },
-  { value: 'RESOLVED',    label: 'Resolved',  color: Palette.emerald500 },
-  { value: 'CLOSED',      label: 'Closed',    color: Palette.zinc500 },
+  { value: 'RESOLVED',    label: 'Resolved',   color: Palette.emerald500 },
+  { value: 'CLOSED',      label: 'Closed',     color: Palette.zinc500 },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Simple inline select dropdown
+// FilterSection — labeled group inside the modal
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface InlineSelectProps {
-  label:    string;
-  value:    string;
+const FilterSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  c: ReturnType<typeof useThemeColors>;
+}> = ({ title, children, c }) => (
+  <View style={styles.section}>
+    <Text style={[styles.sectionTitle, { color: c.text.muted }]}>{title}</Text>
+    {children}
+  </View>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ChipGroup — horizontal wrap of selectable chips
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ChipGroupProps {
   options:  { value: string; label: string; color?: string }[];
+  value:    string;
   onChange: (v: string) => void;
+  c:        ReturnType<typeof useThemeColors>;
 }
 
-const InlineSelect: React.FC<InlineSelectProps> = ({ label, value, options, onChange }) => {
-  const c = useThemeColors();
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.value === value) ?? options[0];
-
-  return (
-    <View style={{ position: 'relative' }}>
-      <Pressable
-        onPress={() => setOpen((v) => !v)}
-        style={[
-          styles.selectTrigger,
-          {
-            backgroundColor: c.surface.elevated,
-            borderColor:     value ? c.interactive.primary : c.border.primary,
-            borderWidth:     value ? 1.5 : 1,
-          },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`${label}: ${selected.label}`}
-      >
-        {selected.color && (
-          <View style={[styles.colorDot, { backgroundColor: selected.color }]} />
-        )}
-        <Text style={[styles.selectText, { color: value ? c.interactive.primary : c.text.secondary }]}>
-          {selected.label}
-        </Text>
-        <Ionicons
-          name={open ? 'chevron-up' : 'chevron-down'}
-          size={12}
-          color={c.text.muted}
-        />
-      </Pressable>
-
-      {open && (
-        <View style={[styles.dropdown, { backgroundColor: c.surface.card, borderColor: c.border.primary }]}>
-          {options.map((opt) => (
-            <Pressable
-              key={opt.value}
-              onPress={() => { onChange(opt.value); setOpen(false); }}
-              style={[
-                styles.dropdownItem,
-                opt.value === value && { backgroundColor: c.interactive.primary + '18' },
-              ]}
-            >
-              {opt.color && (
-                <View style={[styles.colorDot, { backgroundColor: opt.color }]} />
-              )}
-              <Text style={[
-                styles.dropdownText,
-                { color: opt.value === value ? c.interactive.primary : c.text.primary },
-              ]}>
-                {opt.label}
-              </Text>
-              {opt.value === value && (
-                <Ionicons name="checkmark" size={14} color={c.interactive.primary} />
-              )}
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-};
+const ChipGroup: React.FC<ChipGroupProps> = ({ options, value, onChange, c }) => (
+  <View style={styles.chipGroup}>
+    {options.map((opt) => {
+      const isActive = opt.value === value;
+      const color    = opt.color ?? c.interactive.primary;
+      return (
+        <Pressable
+          key={opt.value}
+          onPress={() => onChange(opt.value)}
+          style={[
+            styles.filterChip,
+            {
+              backgroundColor: isActive ? color + '22' : c.surface.elevated,
+              borderColor:     isActive ? color        : c.border.primary,
+              borderWidth:     isActive ? 1.5          : 1,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={opt.label}
+        >
+          {opt.color && (
+            <View style={[styles.chipDot, { backgroundColor: opt.color }]} />
+          )}
+          <Text style={[
+            styles.filterChipText,
+            { color: isActive ? color : c.text.secondary, fontWeight: isActive ? FontWeight.bold : FontWeight.medium },
+          ]}>
+            {opt.label}
+          </Text>
+          {isActive && (
+            <Ionicons name="checkmark" size={11} color={color} />
+          )}
+        </Pressable>
+      );
+    })}
+  </View>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -152,24 +150,21 @@ interface TicketFeedFilterProps {
   isEmployee:       boolean;
   isRefreshing:     boolean;
 
-  // Filter setters
-  onSearchChange:        (v: string) => void;
-  onStatusChange:        (v: string) => void;
-  onPriorityChange:      (v: string) => void;
-  onUserChange:          (v: string) => void;
-  onCustomerChange:      (v: string) => void;
-  onApplicationChange:   (v: string) => void;
-  onToggleOverdue:       () => void;
-  onToggleDeleted:       () => void;
-  onClearFilters:        () => void;
-  onViewModeChange:      (mode: ViewMode) => void;
-  onRefresh:             () => void;
+  onSearchChange:      (v: string) => void;
+  onStatusChange:      (v: string) => void;
+  onPriorityChange:    (v: string) => void;
+  onUserChange:        (v: string) => void;
+  onCustomerChange:    (v: string) => void;
+  onApplicationChange: (v: string) => void;
+  onToggleOverdue:     () => void;
+  onToggleDeleted:     () => void;
+  onClearFilters:      () => void;
+  onViewModeChange:    (mode: ViewMode) => void;
+  onRefresh:           () => void;
 
-  // Aux data for selectors
-  users?:        User[];
-  customers?:    Customer[];
-  applications?: Application[];
-  /** Ticket counts per user ID for the count badge */
+  users?:            User[];
+  customers?:        Customer[];
+  applications?:     Application[];
   userTicketCounts?: Record<string, number>;
 }
 
@@ -183,7 +178,6 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
   ticketCount,
   viewMode,
   isAdmin,
-  isEmployee,
   isRefreshing,
   onSearchChange,
   onStatusChange,
@@ -202,30 +196,37 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
   userTicketCounts = {},
 }) => {
   const c = useThemeColors();
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
 
-  // ── User options with count badges ────────────────────────────────────────
+  // Count active filters for badge
+  const activeFilterCount = [
+    filters.status,
+    filters.priority,
+    filters.userId,
+    filters.customerId,
+    filters.applicationId,
+    filters.overdue ? 'overdue' : '',
+    filters.deleted ? 'deleted' : '',
+  ].filter(Boolean).length;
 
   const userOptions = [
     { value: '', label: 'All Users' },
-    { value: 'UNASSIGNED', label: 'New Tickets (Unassigned)' },
+    { value: 'UNASSIGNED', label: 'Unassigned' },
     ...users.map((u) => ({
       value: u.id,
-      label: u.name,
-      count: userTicketCounts[u.id] ?? 0,
+      label: `${u.name}${userTicketCounts[u.id] ? ` (${userTicketCounts[u.id]})` : ''}`,
     })),
   ];
 
   const customerOptions = [
     { value: '', label: 'All Customers' },
-    ...customers.map((c) => ({ value: c.id, label: c.name })),
+    ...customers.map((cu) => ({ value: cu.id, label: cu.name })),
   ];
 
   const applicationOptions = [
     { value: '', label: 'All Applications' },
     ...applications.map((a) => ({ value: a.id, label: a.name })),
   ];
-
-  // ── View mode icons ────────────────────────────────────────────────────────
 
   const VIEW_MODES: { mode: ViewMode; icon: string }[] = [
     { mode: 'feed',    icon: 'list-outline' },
@@ -240,9 +241,7 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Ionicons name="ticket-outline" size={16} color={c.interactive.primary} />
-          <Text style={[styles.headerTitle, { color: c.text.primary }]}>
-            Ticket Feed
-          </Text>
+          <Text style={[styles.headerTitle, { color: c.text.primary }]}>Ticket Feed</Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -268,143 +267,60 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
             ))}
           </View>
 
-          {/* Refresh button */}
+          {/* Refresh */}
           <Pressable
             onPress={onRefresh}
-            style={[styles.refreshBtn, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}
+            style={[styles.iconBtn, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}
             accessibilityRole="button"
             accessibilityLabel="Refresh"
           >
-            <Ionicons
-              name="refresh-outline"
-              size={16}
-              color={isRefreshing ? c.interactive.primary : c.text.secondary}
-            />
+            <Ionicons name="refresh-outline" size={16} color={isRefreshing ? c.interactive.primary : c.text.secondary} />
           </Pressable>
         </View>
       </View>
 
-      {/* ── Search input ────────────────────────────────────────────────────── */}
-      <View style={styles.searchRow}>
-        <AppTextInput
-          fieldType="search"
-          value={filters.search}
-          onChangeText={onSearchChange}
-          placeholder="Search tickets, users, customers..."
-          showClearButton
-          onClear={() => onSearchChange('')}
-          containerStyle={styles.searchInput}
-        />
-      </View>
-
-      {/* ── Filter selectors ────────────────────────────────────────────────── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}
-      >
-        {/* Status */}
-        <InlineSelect
-          label="Status"
-          value={filters.status}
-          options={STATUS_OPTIONS}
-          onChange={onStatusChange}
-        />
-
-        {/* Priority */}
-        <InlineSelect
-          label="Priority"
-          value={filters.priority}
-          options={PRIORITY_OPTIONS}
-          onChange={onPriorityChange}
-        />
-
-        {/* User (admin only) */}
-        {isAdmin && (
-          <InlineSelect
-            label="User"
-            value={filters.userId}
-            options={userOptions}
-            onChange={onUserChange}
+      {/* ── Search + Filters button row ─────────────────────────────────────── */}
+      <View style={styles.searchFilterRow}>
+        <View style={styles.searchWrap}>
+          <AppTextInput
+            fieldType="search"
+            value={filters.search}
+            onChangeText={onSearchChange}
+            placeholder="Search tickets, users, customers..."
+            showClearButton
+            onClear={() => onSearchChange('')}
           />
-        )}
+        </View>
 
-        {/* Customer (admin only) */}
-        {isAdmin && (
-          <InlineSelect
-            label="Customer"
-            value={filters.customerId}
-            options={customerOptions}
-            onChange={onCustomerChange}
-          />
-        )}
-
-        {/* Application (admin only) */}
-        {isAdmin && (
-          <InlineSelect
-            label="Application"
-            value={filters.applicationId}
-            options={applicationOptions}
-            onChange={onApplicationChange}
-          />
-        )}
-
-        {/* Overdue toggle */}
+        {/* Filters button */}
         <Pressable
-          onPress={onToggleOverdue}
+          onPress={() => setFilterModalOpen(true)}
           style={[
-            styles.toggleBtn,
+            styles.filtersBtn,
             {
-              backgroundColor: filters.overdue ? Palette.red500 : c.surface.elevated,
-              borderColor:     filters.overdue ? Palette.red600 : c.border.primary,
+              backgroundColor: activeFilterCount > 0 ? c.interactive.primary : c.surface.elevated,
+              borderColor:     activeFilterCount > 0 ? c.interactive.primary : c.border.primary,
             },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Overdue filter"
+          accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
         >
           <Ionicons
-            name="warning-outline"
-            size={13}
-            color={filters.overdue ? Palette.white : c.text.secondary}
+            name="options-outline"
+            size={16}
+            color={activeFilterCount > 0 ? c.text.inverse : c.text.secondary}
           />
-          <Text style={[
-            styles.toggleText,
-            { color: filters.overdue ? Palette.white : c.text.secondary },
-          ]}>
-            Overdue
-          </Text>
+          {activeFilterCount > 0 && (
+            <View style={[styles.filterBadge, { backgroundColor: c.text.inverse }]}>
+              <Text style={[styles.filterBadgeText, { color: c.interactive.primary }]}>
+                {activeFilterCount}
+              </Text>
+            </View>
+          )}
         </Pressable>
+      </View>
 
-        {/* Deleted toggle (admin only) */}
-        {isAdmin && (
-          <Pressable
-            onPress={onToggleDeleted}
-            style={[
-              styles.toggleBtn,
-              {
-                backgroundColor: filters.deleted ? Palette.zinc600 : c.surface.elevated,
-                borderColor:     filters.deleted ? Palette.zinc700 : c.border.primary,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Show deleted tickets"
-          >
-            <Ionicons
-              name="trash-outline"
-              size={13}
-              color={filters.deleted ? Palette.white : c.text.secondary}
-            />
-            <Text style={[
-              styles.toggleText,
-              { color: filters.deleted ? Palette.white : c.text.secondary },
-            ]}>
-              Deleted
-            </Text>
-          </Pressable>
-        )}
-      </ScrollView>
-
-      {/* ── Quick chips (no filters) OR results summary (filters active) ────── */}
+      {/* ── Quick chips / summary bar ────────────────────────────────────────── */}
       {!hasActiveFilters ? (
         <ScrollView
           horizontal
@@ -415,19 +331,11 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
             <Pressable
               key={chip.value}
               onPress={() => onStatusChange(chip.value)}
-              style={[
-                styles.quickChip,
-                {
-                  backgroundColor: chip.color + '18',
-                  borderColor:     chip.color + '44',
-                },
-              ]}
+              style={[styles.quickChip, { backgroundColor: chip.color + '18', borderColor: chip.color + '44' }]}
               accessibilityRole="button"
             >
               <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
-              <Text style={[styles.quickChipText, { color: chip.color }]}>
-                {chip.label}
-              </Text>
+              <Text style={[styles.quickChipText, { color: chip.color }]}>{chip.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -442,12 +350,165 @@ const TicketFeedFilter: React.FC<TicketFeedFilterProps> = ({
             accessibilityRole="button"
           >
             <Ionicons name="close-outline" size={14} color={c.interactive.primary} />
-            <Text style={[styles.clearBtnText, { color: c.interactive.primary }]}>
-              Clear all
-            </Text>
+            <Text style={[styles.clearBtnText, { color: c.interactive.primary }]}>Clear all</Text>
           </Pressable>
         </View>
       )}
+
+      {/* ── Filter Modal ─────────────────────────────────────────────────────── */}
+      <Modal
+        visible={filterModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFilterModalOpen(false)}
+      >
+        {/* Backdrop */}
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setFilterModalOpen(false)}
+        />
+
+        {/* Sheet */}
+        <View style={[styles.sheet, { backgroundColor: c.surface.primary }]}>
+          <SafeAreaView edges={['bottom']}>
+            {/* Handle */}
+            <View style={styles.handleRow}>
+              <View style={[styles.handle, { backgroundColor: c.border.primary }]} />
+            </View>
+
+            {/* Modal header */}
+            <View style={[styles.modalHeader, { borderBottomColor: c.border.primary }]}>
+              <Text style={[styles.modalTitle, { color: c.text.primary }]}>Filters</Text>
+              <View style={styles.modalHeaderRight}>
+                {activeFilterCount > 0 && (
+                  <Pressable
+                    onPress={() => { onClearFilters(); setFilterModalOpen(false); }}
+                    style={[styles.clearAllBtn, { borderColor: c.intent.error + '44' }]}
+                  >
+                    <Text style={[styles.clearAllText, { color: c.intent.error }]}>Clear all</Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  onPress={() => setFilterModalOpen(false)}
+                  style={[styles.doneBtn, { backgroundColor: c.interactive.primary }]}
+                >
+                  <Text style={[styles.doneBtnText, { color: c.text.inverse }]}>Done</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Scrollable filter content */}
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Status */}
+              <FilterSection title="STATUS" c={c}>
+                <ChipGroup
+                  options={STATUS_OPTIONS}
+                  value={filters.status}
+                  onChange={onStatusChange}
+                  c={c}
+                />
+              </FilterSection>
+
+              {/* Priority */}
+              <FilterSection title="PRIORITY" c={c}>
+                <ChipGroup
+                  options={PRIORITY_OPTIONS}
+                  value={filters.priority}
+                  onChange={onPriorityChange}
+                  c={c}
+                />
+              </FilterSection>
+
+              {/* User (admin only) */}
+              {isAdmin && users.length > 0 && (
+                <FilterSection title="ASSIGNED TO" c={c}>
+                  <ChipGroup
+                    options={userOptions}
+                    value={filters.userId}
+                    onChange={onUserChange}
+                    c={c}
+                  />
+                </FilterSection>
+              )}
+
+              {/* Customer (admin only) */}
+              {isAdmin && customers.length > 0 && (
+                <FilterSection title="CUSTOMER" c={c}>
+                  <ChipGroup
+                    options={customerOptions}
+                    value={filters.customerId}
+                    onChange={onCustomerChange}
+                    c={c}
+                  />
+                </FilterSection>
+              )}
+
+              {/* Application (admin only) */}
+              {isAdmin && applications.length > 0 && (
+                <FilterSection title="APPLICATION" c={c}>
+                  <ChipGroup
+                    options={applicationOptions}
+                    value={filters.applicationId}
+                    onChange={onApplicationChange}
+                    c={c}
+                  />
+                </FilterSection>
+              )}
+
+              {/* Toggles */}
+              <FilterSection title="OTHER" c={c}>
+                <View style={styles.toggleRow}>
+                  {/* Overdue */}
+                  <Pressable
+                    onPress={onToggleOverdue}
+                    style={[
+                      styles.toggleChip,
+                      {
+                        backgroundColor: filters.overdue ? Palette.red500 + '22' : c.surface.elevated,
+                        borderColor:     filters.overdue ? Palette.red500        : c.border.primary,
+                        borderWidth:     filters.overdue ? 1.5                   : 1,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="warning-outline" size={14} color={filters.overdue ? Palette.red500 : c.text.secondary} />
+                    <Text style={[styles.toggleChipText, { color: filters.overdue ? Palette.red500 : c.text.secondary }]}>
+                      Overdue only
+                    </Text>
+                    {filters.overdue && <Ionicons name="checkmark" size={12} color={Palette.red500} />}
+                  </Pressable>
+
+                  {/* Deleted (admin only) */}
+                  {isAdmin && (
+                    <Pressable
+                      onPress={onToggleDeleted}
+                      style={[
+                        styles.toggleChip,
+                        {
+                          backgroundColor: filters.deleted ? Palette.zinc600 + '22' : c.surface.elevated,
+                          borderColor:     filters.deleted ? Palette.zinc600        : c.border.primary,
+                          borderWidth:     filters.deleted ? 1.5                    : 1,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="trash-outline" size={14} color={filters.deleted ? Palette.zinc500 : c.text.secondary} />
+                      <Text style={[styles.toggleChipText, { color: filters.deleted ? Palette.zinc500 : c.text.secondary }]}>
+                        Show deleted
+                      </Text>
+                      {filters.deleted && <Ionicons name="checkmark" size={12} color={Palette.zinc500} />}
+                    </Pressable>
+                  )}
+                </View>
+              </FilterSection>
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -461,6 +522,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingBottom:     Spacing.sm,
   },
+
+  // ── Header ─────────────────────────────────────────────────────────────────
   headerRow: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -493,7 +556,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical:   Spacing.xs,
   },
-  refreshBtn: {
+  iconBtn: {
     width:          32,
     height:         32,
     borderRadius:   Radius.lg,
@@ -501,80 +564,42 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
   },
-  searchRow: {
+
+  // ── Search + Filters row ───────────────────────────────────────────────────
+  searchFilterRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
     paddingHorizontal: Spacing.md,
-    marginBottom:      -Spacing.sm,
-  },
-  searchInput: {
-    marginBottom: 5,
-  },
-  filtersRow: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical:   Spacing.sm,
     gap:               Spacing.sm,
-    alignItems:        'center',
+    marginBottom:      Spacing.xs,
   },
-  // InlineSelect
-  selectTrigger: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               Spacing.xs,
+  searchWrap: {
+    flex: 1,
+  },
+  filtersBtn: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            Spacing.xs,
     paddingHorizontal: Spacing.md,
-    paddingVertical:   Spacing.sm,
-    borderRadius:      Radius.full,
-    borderWidth:       1,
+    height:         45,
+    borderRadius:   Radius.lg,
+    borderWidth:    1,
+    marginBottom : 15
   },
-  selectText: {
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  colorDot: {
-    width:        8,
-    height:       8,
-    borderRadius: 4,
-  },
-  dropdown: {
-    position:     'absolute',
-    top:          '100%',
-    left:         0,
-    minWidth:     160,
-    borderRadius: Radius.xl,
-    borderWidth:  1,
-    zIndex:       100,
-    shadowColor:  'rgba(0,0,0,0.15)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation:    8,
-    marginTop:    Spacing.xs,
-  },
-  dropdownItem: {
-    flexDirection:     'row',
+  filterBadge: {
+    minWidth:          16,
+    height:            16,
+    borderRadius:      8,
     alignItems:        'center',
-    gap:               Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical:   Spacing.sm,
+    justifyContent:    'center',
+    paddingHorizontal: 3,
   },
-  dropdownText: {
-    flex:       1,
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
+  filterBadgeText: {
+    fontSize:   9,
+    fontWeight: FontWeight.bold,
   },
-  // Toggle buttons
-  toggleBtn: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical:   Spacing.sm,
-    borderRadius:      Radius.full,
-    borderWidth:       1,
-  },
-  toggleText: {
-    fontSize:   FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  // Quick chips
+
+  // ── Quick chips ────────────────────────────────────────────────────────────
   quickChipsRow: {
     paddingHorizontal: Spacing.md,
     paddingVertical:   Spacing.xs,
@@ -598,7 +623,8 @@ const styles = StyleSheet.create({
     fontSize:   FontSize.xs,
     fontWeight: FontWeight.semibold,
   },
-  // Summary bar
+
+  // ── Summary bar ────────────────────────────────────────────────────────────
   summaryBar: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -623,6 +649,119 @@ const styles = StyleSheet.create({
   clearBtnText: {
     fontSize:   FontSize.xs,
     fontWeight: FontWeight.semibold,
+  },
+
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  backdrop: {
+    flex:            1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    position:             'absolute',
+    bottom:               0,
+    left:                 0,
+    right:                0,
+    maxHeight:            '85%',
+    borderTopLeftRadius:  Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    overflow:             'hidden',
+  },
+  handleRow: {
+    alignItems:    'center',
+    paddingTop:    Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  handle: {
+    width:        40,
+    height:       4,
+    borderRadius: 2,
+  },
+  modalHeader: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical:   Spacing.sm,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize:   FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  modalHeaderRight: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           Spacing.sm,
+  },
+  clearAllBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical:   Spacing.xs,
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+  },
+  clearAllText: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
+  doneBtn: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical:   Spacing.xs,
+    borderRadius:      Radius.full,
+  },
+  doneBtnText: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  modalScroll: {
+    maxHeight: 500,
+  },
+  modalContent: {
+    paddingBottom: Spacing.xl,
+  },
+
+  // ── Filter sections ────────────────────────────────────────────────────────
+  section: {
+    paddingHorizontal: Spacing.md,
+    paddingTop:        Spacing.md,
+    gap:               Spacing.sm,
+  },
+  sectionTitle: {
+    fontSize:      FontSize.xs,
+    fontWeight:    FontWeight.bold,
+    letterSpacing: 0.8,
+  },
+  chipGroup: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           Spacing.sm,
+  },
+  filterChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical:   Spacing.sm,
+    borderRadius:      Radius.full,
+  },
+  filterChipText: {
+    fontSize: FontSize.sm,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:           Spacing.sm,
+  },
+  toggleChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical:   Spacing.sm,
+    borderRadius:      Radius.full,
+  },
+  toggleChipText: {
+    fontSize:   FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
 });
 

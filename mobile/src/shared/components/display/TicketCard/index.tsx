@@ -445,7 +445,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
-    paddingInline : 10
+    paddingInline : 10,
+    marginBottom : 10
   },
 
   // ── Feed mode ──────────────────────────────────────────────────────────────
@@ -466,7 +467,8 @@ const styles = StyleSheet.create({
 
   badgeRow: {
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.xs,
+    paddingTop: Spacing.sm,
+    paddingBottom : Spacing.sm
   },
 
   metaRow: {
