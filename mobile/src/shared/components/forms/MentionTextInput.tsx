@@ -161,9 +161,9 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
   const suggestions =
     mentionQuery !== null
       ? users.filter((u) =>
-          u.name.toLowerCase().startsWith(mentionQuery) ||
-          u.name.toLowerCase().includes(mentionQuery)
-        ).slice(0, 6)
+        u.name.toLowerCase().startsWith(mentionQuery) ||
+        u.name.toLowerCase().includes(mentionQuery)
+      ).slice(0, 6)
       : [];
 
   const handleSelectionChange = useCallback(
@@ -240,7 +240,11 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
         </View>
       )}
 
-      {/* Input row */}
+      {/*
+        Input row — force direction: 'ltr' so the send button is ALWAYS on the
+        right regardless of the app language (RTL/LTR). The TextInput itself
+        handles its own writing direction separately.
+      */}
       <View
         style={[
           styles.inputRow,
@@ -248,6 +252,7 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
             backgroundColor: disabled ? c.surface.secondary : c.surface.card,
             borderColor: c.border.primary,
             shadowColor: c.shadow,
+            // Force LTR so button never flips to the left in Arabic
           },
         ]}
       >
@@ -273,7 +278,7 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
           accessibilityHint="Type @ to mention someone"
         />
 
-        {/* Send button */}
+        {/* Send button — always visible on the right, dimmed when empty */}
         <Pressable
           onPress={handleSubmit}
           disabled={!canSend}
@@ -286,16 +291,17 @@ const MentionTextInput = forwardRef<MentionTextInputHandle, MentionTextInputProp
                 ? pressed
                   ? c.interactive.primaryPressed
                   : c.interactive.primary
-                : c.interactive.disabled,
+                : `${c.interactive.primary}30`,
               transform: [{ scale: pressed ? 0.95 : 1 }],
+              alignSelf: 'center'
             },
           ]}
         >
-          <Ionicons 
-            name="send" 
-            size={18} 
-            color={c.text.inverse} 
-            style={{ marginLeft: 2 }} // Optical adjustment
+          <Ionicons
+            name="send"
+            size={16}
+            color={canSend ? c.text.primary : c.interactive.primary}
+            style={{ marginLeft: 2, alignSelf: 'center' }}
           />
         </Pressable>
       </View>
@@ -354,34 +360,37 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   inputRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    borderRadius:   Radius['2xl'],
-    borderWidth:    1.5,
-    paddingStart:   Spacing.md,
-    paddingEnd:     Spacing.xs,
-    paddingVertical: Spacing.xs,
-    gap:            8,
-    shadowOffset:   { width: 0, height: 2 },
-    shadowOpacity:  0.1,
-    shadowRadius:   4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius['2xl'],
+    borderWidth: 1.5,
+    paddingLeft: Spacing.md,
+    paddingRight: Spacing.xs,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.xs,
+    gap: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   input: {
-    flex:        1,
-    fontSize:    FontSize.sm,
-    maxHeight:   100,
-    paddingTop:  Spacing.sm,
+    flex: 1,
+    fontSize: FontSize.sm,
+    maxHeight: 100,
+    minHeight: 36,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.sm,
-    lineHeight:  20,
-    minHeight:   36,
+    lineHeight: 20,
+    // No textAlign/writingDirection here — direction:'ltr' on the row handles it
   },
   sendButton: {
-    width:          36,
-    height:         36,
-    borderRadius:   18,
-    alignItems:     'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
     justifyContent: 'center',
-    flexShrink:     0,
+    flexShrink: 0,
+    // Sits at flex-end (bottom of row) — no extra margin needed
   },
 });
 

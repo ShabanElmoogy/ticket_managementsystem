@@ -454,10 +454,9 @@ const styles = StyleSheet.create({
   // ── Base card ──────────────────────────────────────────────────────────────
   card: {
     borderRadius: Radius.xl,
-    borderWidth: 1, // Cleaner, thinner border
-    overflow: 'hidden',
-    marginBottom: Spacing.md, // Consistent margin
-    paddingInline :10
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    paddingInline: 10,
   },
 
   // ── Feed mode ──────────────────────────────────────────────────────────────

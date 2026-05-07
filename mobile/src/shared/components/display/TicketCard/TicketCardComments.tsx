@@ -615,6 +615,7 @@ const styles = StyleSheet.create({
   // ── Input ──────────────────────────────────────────────────────────────────
   inputWrapper: {
     paddingTop:      Spacing.sm,
+    paddingBottom:   Spacing.sm,
     borderTopWidth:  1,
     marginTop:       Spacing.xs,
   },
