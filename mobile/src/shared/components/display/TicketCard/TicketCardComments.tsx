@@ -290,8 +290,6 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
   const remainingCount = allComments.length - visibleCount;
   const hasMore = remainingCount > 0;
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <View
       style={[
@@ -314,46 +312,35 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
       {!loading && visibleComments.length > 0 && (
         <View style={styles.commentList}>
           {visibleComments.map((comment) => {
-            const canDelete =
-              isAdmin || comment.userId === currentUserId;
-            const isDeleting = deletingId === comment.id;
-            const authorName = comment.user?.name ?? 'Unknown';
-            const avatarColor = Palette.violet500;
+            const canDelete   = isAdmin || comment.userId === currentUserId;
+            const isDeleting  = deletingId === comment.id;
+            const authorName  = comment.user?.name ?? 'Unknown';
+            const avatarColor = stringToColor(authorName);
 
             return (
               <View
                 key={comment.id}
-                style={[
-                  styles.commentRow,
-                  { opacity: isDeleting ? 0.5 : 1 },
-                ]}
+                style={[styles.commentRow, { opacity: isDeleting ? 0.5 : 1 }]}
               >
                 {/* Author avatar */}
                 <View
-                  style={[
-                    styles.commentAvatar,
-                    { backgroundColor: `${avatarColor}22` },
-                  ]}
+                  style={[styles.commentAvatar, { backgroundColor: avatarColor }]}
                   accessibilityRole="image"
                   accessibilityLabel={`${authorName} avatar`}
                 >
-                  <Text style={[styles.commentAvatarText, { color: avatarColor }]}>
+                  <Text style={styles.commentAvatarText}>
                     {getInitials(authorName)}
                   </Text>
                 </View>
 
-                {/* Comment body */}
-                <View style={styles.commentBody}>
+                {/* Comment Bubble */}
+                <View style={[styles.commentBubble, { backgroundColor: c.surface.secondary }]}>
                   {/* Author name + timestamp */}
                   <View style={styles.commentMeta}>
-                    <Text
-                      style={[styles.commentAuthor, { color: c.text.primary }]}
-                      numberOfLines={1}
-                    >
+                    <Text style={[styles.commentAuthor, { color: avatarColor }]} numberOfLines={1}>
                       {authorName}
                     </Text>
                     <Text style={[styles.commentTimestamp, { color: c.text.muted }]}>
-                      {' • '}
                       {formatRelativeTime(comment.createdAt)}
                     </Text>
                   </View>
@@ -366,7 +353,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
                   />
                 </View>
 
-                {/* Delete button — own comments or admin only */}
+                {/* Delete button */}
                 {canDelete && (
                   <Pressable
                     onPress={() => handleDeleteComment(comment.id)}
@@ -377,9 +364,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
                     style={({ pressed }: { pressed: boolean }) => [
                       styles.deleteButton,
                       {
-                        backgroundColor: pressed
-                          ? `${c.intent.error}18`
-                          : 'transparent',
+                        backgroundColor: pressed ? `${c.intent.error}18` : 'transparent',
                         opacity: isDeleting ? 0.4 : 1,
                       },
                     ]}
@@ -387,11 +372,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
                     {isDeleting ? (
                       <ActivityIndicator size="small" color={c.intent.error} />
                     ) : (
-                      <Ionicons
-                        name="trash-outline"
-                        size={14}
-                        color={c.intent.error}
-                      />
+                      <Ionicons name="trash-outline" size={13} color={c.intent.error} />
                     )}
                   </Pressable>
                 )}
@@ -401,17 +382,11 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
         </View>
       )}
 
-      {/* Empty state — no comments yet (and not loading) */}
+      {/* Empty state */}
       {!loading && allComments.length === 0 && commentCount === 0 && (
         <View style={styles.emptyState}>
-          <Ionicons
-            name="chatbubble-outline"
-            size={20}
-            color={c.text.muted}
-          />
-          <Text style={[styles.emptyText, { color: c.text.muted }]}>
-            No comments yet
-          </Text>
+          <Ionicons name="chatbubble-outline" size={18} color={c.text.muted} />
+          <Text style={[styles.emptyText, { color: c.text.muted }]}>No comments yet</Text>
         </View>
       )}
 
@@ -425,9 +400,8 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
           style={({ pressed }: { pressed: boolean }) => [
             styles.seeMoreButton,
             {
-              backgroundColor: pressed
-                ? c.surface.elevated
-                : 'transparent',
+              backgroundColor: pressed ? c.surface.elevated : 'transparent',
+              borderColor:     c.border.primary,
             },
           ]}
         >
@@ -435,13 +409,9 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
             <ActivityIndicator size="small" color={c.interactive.primary} />
           ) : (
             <>
-              <Ionicons
-                name="chevron-down-outline"
-                size={14}
-                color={c.interactive.primary}
-              />
+              <Ionicons name="chevron-down-outline" size={13} color={c.interactive.primary} />
               <Text style={[styles.seeMoreText, { color: c.interactive.primary }]}>
-                See {remainingCount} more comment{remainingCount !== 1 ? 's' : ''}
+                {remainingCount} more comment{remainingCount !== 1 ? 's' : ''}
               </Text>
             </>
           )}
@@ -449,7 +419,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
       )}
 
       {/* Comment input */}
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, { borderTopColor: c.border.primary }]}>
         <MentionTextInput
           value={commentText}
           onChange={setCommentText}
@@ -458,7 +428,7 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
           placeholder={
             tenantSuspended
               ? 'Subscription ended — read only'
-              : 'Write a comment... use @ to mention someone'
+              : 'Write a comment... use @ to mention'
           }
           disabled={tenantSuspended || submitting}
           resolvedColors={c}
@@ -472,105 +442,158 @@ const TicketCardComments: React.FC<TicketCardCommentsProps> = ({
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Deterministic color from a string — gives each user a consistent avatar color */
+function stringToColor(str: string): string {
+  const COLORS = [
+    Palette.violet500, Palette.blue500, Palette.emerald500,
+    Palette.amber500,  Palette.rose500, Palette.teal500,
+    Palette.indigo500, Palette.cyan500,
+  ];
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return COLORS[Math.abs(hash) % COLORS.length];
+}
+
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 10,
-    paddingTop: Spacing.xl,
-    gap: Spacing.xl,
+    paddingTop: Spacing.sm,
+    gap:        Spacing.sm,
   },
+
+  // ── Section header ─────────────────────────────────────────────────────────
+  sectionHeader: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            Spacing.xs,
+    paddingBottom:  Spacing.xs,
+    borderBottomWidth: 1,
+    marginBottom:   Spacing.xs,
+  },
+  sectionHeaderText: {
+    fontSize:   FontSize.xs,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+  },
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingVertical: Spacing.xl,
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             Spacing.xs,
+    paddingVertical: Spacing.md,
   },
   loadingText: {
     fontSize: FontSize.sm,
   },
+
+  // ── Comment list ───────────────────────────────────────────────────────────
   commentList: {
     gap: Spacing.sm,
   },
   commentRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
+    alignItems:    'flex-start',
+    gap:           Spacing.sm,
   },
+
+  // ── Avatar ─────────────────────────────────────────────────────────────────
   commentAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
+    width:          30,
+    height:         30,
+    borderRadius:   15,
+    alignItems:     'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 1,
+    flexShrink:     0,
+    marginTop:      2,
   },
   commentAvatarText: {
-    fontSize: 10,
+    fontSize:   10,
     fontWeight: FontWeight.bold,
+    color:      '#ffffff',
   },
-  commentBody: {
-    flex: 1,
-    gap: 2,
+
+  // ── Bubble ─────────────────────────────────────────────────────────────────
+  commentBubble: {
+    flex:                1,
+    paddingHorizontal:   Spacing.md,
+    paddingVertical:     Spacing.sm,
+    borderRadius:        Radius.xl,
+    borderTopLeftRadius: Radius.xs,
+    gap:                 2,
   },
   commentMeta: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    alignItems:    'center',
+    gap:           4,
+    marginBottom:  2,
   },
   commentAuthor: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
+    fontSize:   FontSize.xs,
+    fontWeight: FontWeight.bold,
     lineHeight: 16,
   },
   commentTimestamp: {
-    fontSize: FontSize.xs,
+    fontSize:  9,
     lineHeight: 16,
+    opacity:   0.7,
   },
   commentText: {
-    fontSize: FontSize.sm,
-    lineHeight: 18,
+    fontSize:   FontSize.sm,
+    lineHeight: 19,
   },
   mentionToken: {
-    fontWeight: FontWeight.semibold,
-    borderRadius: Radius.sm,
+    fontWeight:    FontWeight.semibold,
+    borderRadius:  Radius.xs,
     paddingHorizontal: 2,
   },
+
+  // ── Delete button ──────────────────────────────────────────────────────────
   deleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: Radius.md,
-    alignItems: 'center',
+    width:          26,
+    height:         26,
+    borderRadius:   Radius.md,
+    alignItems:     'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 1,
+    flexShrink:     0,
+    marginTop:      4,
   },
+
+  // ── Empty state ────────────────────────────────────────────────────────────
   emptyState: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingVertical: Spacing.sm,
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'center',
+    gap:             Spacing.xs,
+    paddingVertical: Spacing.md,
   },
   emptyText: {
     fontSize: FontSize.sm,
   },
+
+  // ── See more ───────────────────────────────────────────────────────────────
   seeMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radius.md,
-    alignSelf: 'flex-start',
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'center',
+    gap:               6,
+    paddingVertical:   Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius:      Radius.full,
+    alignSelf:         'center',
+    borderWidth:       1,
   },
   seeMoreText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontSize:      FontSize.xs,
+    fontWeight:    FontWeight.semibold,
+    letterSpacing: 0.3,
   },
+
+  // ── Input ──────────────────────────────────────────────────────────────────
   inputWrapper: {
-    paddingTop: Spacing.xs,
+    paddingTop:      Spacing.sm,
+    borderTopWidth:  1,
+    marginTop:       Spacing.xs,
   },
 });
 

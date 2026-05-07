@@ -51,16 +51,12 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  ScrollView,
   Pressable,
   StyleSheet,
   type ViewStyle,
 } from 'react-native';
-import type { TextInputProps } from 'react-native/Libraries/Components/TextInput/TextInput';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { TextInput, FlatList } = require('react-native') as {
-  TextInput: (props: TextInputProps & { ref?: any }) => React.ReactElement | null;
-  FlatList: any;
-};
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, FontSize, FontWeight, Spacing } from '@/src/constants/tokens';
 import type { ThemeColors } from '@/src/constants/tokens';
@@ -200,35 +196,22 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
             },
           ]}
         >
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item: { id: string; name: string }) => item.id}
+          <ScrollView
             keyboardShouldPersistTaps="always"
-            renderItem={({ item }: { item: { id: string; name: string } }) => (
+            style={{ maxHeight: 200 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {suggestions.map((item) => (
               <Pressable
+                key={item.id}
                 onPress={() => handleSelectUser(item)}
                 style={({ pressed }: { pressed: boolean }) => [
                   styles.suggestionItem,
-                  {
-                    backgroundColor: pressed
-                      ? c.interactive.pressed
-                      : 'transparent',
-                  },
+                  { backgroundColor: pressed ? c.interactive.pressed : 'transparent' },
                 ]}
               >
-                {/* Initials avatar */}
-                <View
-                  style={[
-                    styles.suggestionAvatar,
-                    { backgroundColor: `${c.interactive.primary}22` },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.suggestionAvatarText,
-                      { color: c.interactive.primary },
-                    ]}
-                  >
+                <View style={[styles.suggestionAvatar, { backgroundColor: `${c.interactive.primary}22` }]}>
+                  <Text style={[styles.suggestionAvatarText, { color: c.interactive.primary }]}>
                     {item.name.charAt(0).toUpperCase()}
                   </Text>
                 </View>
@@ -239,8 +222,8 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
                   @{item.name.toLowerCase().replace(/\s+/g, '')}
                 </Text>
               </Pressable>
-            )}
-          />
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -251,6 +234,7 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
           {
             backgroundColor: disabled ? c.surface.secondary : c.surface.card,
             borderColor: c.border.primary,
+            shadowColor: c.shadow,
           },
         ]}
       >
@@ -263,6 +247,9 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
           placeholderTextColor={c.text.muted}
           multiline
           editable={!disabled}
+          returnKeyType="send"
+          blurOnSubmit={false}
+          onSubmitEditing={handleSubmit}
           style={[
             styles.input,
             {
@@ -287,10 +274,16 @@ const MentionTextInput: React.FC<MentionTextInputProps> = ({
                   ? c.interactive.primaryPressed
                   : c.interactive.primary
                 : c.interactive.disabled,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
             },
           ]}
         >
-          <Ionicons name="send" size={16} color={c.text.inverse} />
+          <Ionicons 
+            name="send" 
+            size={18} 
+            color={c.text.inverse} 
+            style={{ marginLeft: 2 }} // Optical adjustment
+          />
         </Pressable>
       </View>
     </View>
@@ -306,28 +299,31 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   suggestionsContainer: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    marginBottom: 4,
-    maxHeight: 200,
-    shadowOffset: { width: 0, height: -2 },
+    marginBottom: 8,
+    maxHeight: 240,
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
   },
   suggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: 8,
+    paddingVertical: Spacing.md,
+    gap: 12,
   },
   suggestionAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   suggestionAvatarText: {
     fontSize: FontSize.xs,
@@ -336,35 +332,41 @@ const styles = StyleSheet.create({
   suggestionName: {
     flex: 1,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
+    fontWeight: FontWeight.semibold,
   },
   suggestionAt: {
     fontSize: FontSize.xs,
+    opacity: 0.7,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    paddingStart: Spacing.md,
-    paddingEnd: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    gap: 8,
+    flexDirection:  'row',
+    alignItems:     'center',
+    borderRadius:   Radius['2xl'],
+    borderWidth:    1.5,
+    paddingStart:   Spacing.md,
+    paddingEnd:     Spacing.xs,
+    paddingVertical: Spacing.xs,
+    gap:            8,
+    shadowOffset:   { width: 0, height: 2 },
+    shadowOpacity:  0.1,
+    shadowRadius:   4,
   },
   input: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    maxHeight: 100,
-    paddingTop: 0,
-    paddingBottom: 0,
+    flex:        1,
+    fontSize:    FontSize.sm,
+    maxHeight:   100,
+    paddingTop:  Spacing.sm,
+    paddingBottom: Spacing.sm,
+    lineHeight:  20,
+    minHeight:   36,
   },
   sendButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
+    width:          36,
+    height:         36,
+    borderRadius:   18,
+    alignItems:     'center',
     justifyContent: 'center',
-    flexShrink: 0,
+    flexShrink:     0,
   },
 });
 

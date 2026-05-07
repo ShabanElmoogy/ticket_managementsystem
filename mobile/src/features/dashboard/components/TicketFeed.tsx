@@ -16,6 +16,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import type { ListRenderItem } from 'react-native';
+// @ts-ignore — keyboard-aware-scroll-view types may be stale
+import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -228,7 +230,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   // ── Feed / Compact layout ──────────────────────────────────────────────────
 
   return (
-    <FlatList
+    <KeyboardAwareFlatList
       key={`tickets-${viewMode}-1-col`}
       data={tickets}
       renderItem={renderItem}
@@ -245,6 +247,10 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
       removeClippedSubviews
       maxToRenderPerBatch={10}
       windowSize={10}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      enableOnAndroid
+      extraScrollHeight={80}
     />
   );
 };

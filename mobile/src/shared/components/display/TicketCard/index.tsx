@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   // ── Base card ──────────────────────────────────────────────────────────────
   card: {
     borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderWidth: 3,
     overflow: 'hidden',
     paddingInline : 10,
     marginBottom : 10

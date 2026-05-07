@@ -35,7 +35,6 @@ import StatsCards from './components/StatsCards';
 import TicketFeedFilter from './components/TicketFeedFilter';
 import TicketFeed from './components/TicketFeed';
 import BulkActionBar from './components/BulkActionBar';
-import ActivityFeedPanel from './components/ActivityFeedPanel';
 import TicketDetailScreen from '@/src/features/tickets/components/TicketDetailScreen';
 import TicketForm from '@/src/features/tickets/components/TicketForm';
 import { ticketsApi } from '@/src/features/tickets/api/tickets';
@@ -48,7 +47,7 @@ let sharingAvailable = true;
 if (Platform.OS !== 'web') {
   try {
     const Sharing = require('expo-sharing');
-    Sharing.isAvailableAsync().then((v: boolean) => { sharingAvailable = v; }).catch(() => {});
+    Sharing.isAvailableAsync().then((v: boolean) => { sharingAvailable = v; }).catch(() => { });
   } catch {
     sharingAvailable = false;
   }
@@ -111,8 +110,8 @@ const DashboardScreen: React.FC = () => {
   // ── Navigation state ───────────────────────────────────────────────────────
 
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [showCreateForm,   setShowCreateForm]   = useState(false);
-  const [isRefreshing,     setIsRefreshing]     = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -190,11 +189,11 @@ const DashboardScreen: React.FC = () => {
             onCardPress={(key) => {
               // Map stat key to status filter
               const statusMap: Record<string, string> = {
-                open:        'OPEN',
-                inProgress:  'IN_PROGRESS',
+                open: 'OPEN',
+                inProgress: 'IN_PROGRESS',
                 programming: 'PROGRAMMING',
-                resolved:    'RESOLVED',
-                closed:      'CLOSED',
+                resolved: 'RESOLVED',
+                closed: 'CLOSED',
               };
               const status = statusMap[key];
               if (status) setStatus(status === filters.status ? '' : status);
@@ -285,7 +284,7 @@ const DashboardScreen: React.FC = () => {
             </Pressable>
           )}
         </View>
-        </View>
+      </View>
 
     </FeatureErrorBoundary>
   );
@@ -306,18 +305,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fab: {
-    position:       'absolute',
-    bottom:         Spacing.lg,
-    right:          Spacing.md,
-    width:          56,
-    height:         56,
-    borderRadius:   28,
-    alignItems:     'center',
+    position: 'absolute',
+    bottom: Spacing.lg,
+    right: Spacing.md,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset:   { width: 0, height: 4 },
-    shadowOpacity:  1,
-    shadowRadius:   12,
-    elevation:      8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
 
