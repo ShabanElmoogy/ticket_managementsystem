@@ -33,6 +33,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import React from 'react';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
   useAnimatedStyle, 
@@ -105,7 +106,7 @@ function isDeleted(ticket: Ticket): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ActionButtonProps {
-  icon: IconProps<string>['name'];
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   onPress: () => void;
   disabled?: boolean;
@@ -168,14 +169,14 @@ const ActionButton: React.FC<ActionButtonProps> = ({
         ]}
       >
         <View style={styles.actionButtonInner}>
-          <View style={styles.iconWrapper}>
+          <View style={[styles.iconWrapper, { backgroundColor: active ? `${color}15` : 'transparent', padding: 6, borderRadius: 12 }]}>
             <Ionicons 
               name={active ? (icon.replace('-outline', '') as any) : icon as any} 
-              size={20} 
+              size={18} 
               color={active ? color : c.text.secondary} 
             />
             {badgeCount !== undefined && badgeCount > 0 && (
-              <View style={[styles.badge, { backgroundColor: Palette.red500 }]}>
+              <View style={[styles.badge, { backgroundColor: Palette.red500, borderColor: c.surface.card }]}>
                 <Text style={styles.badgeText}>
                   {badgeCount > 9 ? '9+' : String(badgeCount)}
                 </Text>
@@ -187,7 +188,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
               styles.actionLabel,
               { 
                 color: active ? color : c.text.secondary,
-                fontWeight: active ? FontWeight.bold : FontWeight.semibold
+                fontWeight: active ? FontWeight.bold : FontWeight.medium
               },
             ]}
             numberOfLines={1}
@@ -208,7 +209,7 @@ type OverflowMenuDivider = { type: 'divider'; key: string };
 type OverflowMenuItem = {
   type: 'item';
   key: string;
-  icon: IconProps<string>['name'];
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   color: string;
   onPress: () => void;
@@ -538,52 +539,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    gap: Spacing.xs,
   },
   actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: Radius.full,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: Radius.xl,
   },
   actionButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   iconWrapper: {
     position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -8,
+    top: -4,
+    right: -4,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    borderWidth: 1.5,
   },
   badgeText: {
     fontSize: 8,
     fontWeight: FontWeight.bold,
     color: '#ffffff',
-    lineHeight: 12,
+    lineHeight: 10,
   },
   actionLabel: {
     fontSize: FontSize.xs,
     lineHeight: 16,
+    letterSpacing: 0.2,
   },
   spacer: {
     flex: 1,
   },
   overflowButton: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.full,
+    width: 40,
+    height: 40,
+    borderRadius: Radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },

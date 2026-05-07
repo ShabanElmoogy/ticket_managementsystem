@@ -53,7 +53,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Radius, FontSize, FontWeight, Spacing, Palette } from '@/src/constants/tokens';
-import { ACTIVITY_TYPE_CONFIG } from '@/src/features/dashboard/utils/activityConfig';
+import { ACTIVITY_TYPE_CONFIG, getActivityConfig } from '@/src/features/dashboard/utils/activityConfig';
 import type { ThemeColors } from '@/src/constants/tokens';
 import type { ActivityItem } from '@/src/services/api/types/notification';
 
@@ -224,9 +224,9 @@ const ActivityFeedItem: React.FC<ActivityFeedItemProps> = ({
   isLoading = false,
   style,
 }) => {
-  const config = ACTIVITY_TYPE_CONFIG[activity.type];
-  const accentColor = config?.color ?? Palette.zinc500;
-  const iconName = (config?.icon ?? 'notifications-outline') as any;
+  const config = getActivityConfig(activity.type, activity.data.description, activity.id);
+  const accentColor = config.color;
+  const iconName = (config.icon ?? 'notifications-outline') as any;
   const isUnread = !activity.read;
 
   const { primary, secondary } = getActivityMessage(activity);

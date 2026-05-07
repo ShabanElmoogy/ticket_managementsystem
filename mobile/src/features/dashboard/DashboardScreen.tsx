@@ -38,6 +38,7 @@ import BulkActionBar from './components/BulkActionBar';
 import TicketDetailScreen from '@/src/features/tickets/components/TicketDetailScreen';
 import TicketForm from '@/src/features/tickets/components/TicketForm';
 import TicketCommentsModal from '@/src/shared/components/display/TicketCard/TicketCommentsModal';
+import TicketActivityScreen from '@/src/features/tickets/components/TicketActivityScreen';
 import { ticketsApi } from '@/src/features/tickets/api/tickets';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
 import type { ActivityItem } from '@/src/services/api/types/notification';
@@ -111,6 +112,7 @@ const DashboardScreen: React.FC = () => {
   // ── Navigation state ───────────────────────────────────────────────────────
 
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [activityTicketId, setActivityTicketId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -164,6 +166,19 @@ const DashboardScreen: React.FC = () => {
         <TicketDetailScreen
           ticketId={selectedTicketId}
           onBack={() => setSelectedTicketId(null)}
+        />
+      </FeatureErrorBoundary>
+    );
+  }
+
+  // ── Activity view ──────────────────────────────────────────────────────────
+
+  if (activityTicketId) {
+    return (
+      <FeatureErrorBoundary featureName="TicketActivity">
+        <TicketActivityScreen
+          ticketId={activityTicketId}
+          onBack={() => setActivityTicketId(null)}
         />
       </FeatureErrorBoundary>
     );
@@ -264,7 +279,7 @@ const DashboardScreen: React.FC = () => {
               onReassign={(_id) => { /* handled via overflow menu */ }}
               onEditDueDate={(id, date) => editDueDate(id, date)}
               onAssignProgrammer={(id) => setSelectedTicketId(id)}
-              onActivityPress={(id) => setSelectedTicketId(id)}
+              onActivityPress={(id) => setActivityTicketId(id)}
               onSelect={isAdmin ? toggleSelect : undefined}
               onRefresh={handleRefresh}
               isRefreshing={isRefreshing}
