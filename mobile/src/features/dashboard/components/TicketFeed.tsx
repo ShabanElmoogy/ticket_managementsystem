@@ -127,6 +127,14 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   // ── Render item ────────────────────────────────────────────────────────────
 
   const renderItem = useCallback(({ item }: { item: Ticket }) => {
+    const cardStyle = viewMode === 'grid'
+      ? styles.gridCardFill
+      : viewMode === 'feed'
+        ? styles.feedCard
+        : viewMode === 'compact'
+          ? styles.compactCard
+          : undefined;
+
     return (
       <View style={viewMode === 'grid' ? styles.gridItem : undefined}>
         <TicketCard
@@ -153,7 +161,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
           showCheckbox={isAdmin && selectedIds.size > 0}
           mentionUsers={mentionUsers}
           sharingAvailable={sharingAvailable}
-          style={viewMode === 'feed' ? styles.feedCard : viewMode === 'compact' ? styles.compactCard : undefined}
+          style={cardStyle}
         />
       </View>
     );
@@ -199,6 +207,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   if (viewMode === 'grid') {
     return (
       <FlatList
+        key="tickets-grid-2-cols"
         data={tickets}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
@@ -221,6 +230,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
 
   return (
     <FlatList
+      key={`tickets-${viewMode}-1-col`}
       data={tickets}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
@@ -258,6 +268,10 @@ const styles = StyleSheet.create({
     marginBottom:  Spacing.sm,
   },
   gridItem: {
+    flex: 1,
+    alignSelf: 'stretch',
+  },
+  gridCardFill: {
     flex: 1,
   },
   emptyContent: {
