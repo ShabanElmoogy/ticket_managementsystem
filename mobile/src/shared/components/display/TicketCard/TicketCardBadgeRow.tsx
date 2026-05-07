@@ -104,7 +104,9 @@ const StatusChip: React.FC<ChipProps> = ({ label, color }) => (
       },
     ]}
   >
-    <Text style={[styles.chipText, { color }]}>{label}</Text>
+    <Text style={[styles.chipText, { color }]} numberOfLines={1}>
+      {label}
+    </Text>
   </View>
 );
 
@@ -119,7 +121,10 @@ const OverdueBadge: React.FC<{ resolvedColors: ThemeColors }> = ({ resolvedColor
     ]}
   >
     <Ionicons name="warning-outline" size={10} color={c.intent.error} style={styles.chipIcon} />
-    <Text style={[styles.chipText, { color: c.intent.error, fontWeight: FontWeight.bold }]}>
+    <Text
+      style={[styles.chipText, { color: c.intent.error, fontWeight: FontWeight.bold }]}
+      numberOfLines={1}
+    >
       OVERDUE
     </Text>
   </View>
@@ -155,9 +160,11 @@ const TicketCardBadgeRow: React.FC<TicketCardBadgeRowProps> = ({
 
   return (
     <ScrollView
+      style={[styles.scrollContainer, style]}
       horizontal
+      nestedScrollEnabled
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.scrollContent, style]}
+      contentContainerStyle={styles.scrollContent}
       accessibilityRole="scrollbar"
     >
       {/* Status chip */}
@@ -191,7 +198,9 @@ const TicketCardBadgeRow: React.FC<TicketCardBadgeRowProps> = ({
           ]}
         >
           <Ionicons name="mail-outline" size={10} color={Palette.sky500} style={styles.chipIcon} />
-          <Text style={[styles.chipText, { color: Palette.sky500 }]}>Email</Text>
+          <Text style={[styles.chipText, { color: Palette.sky500 }]} numberOfLines={1}>
+            Email
+          </Text>
         </View>
       )}
 
@@ -239,28 +248,34 @@ const TicketCardBadgeRow: React.FC<TicketCardBadgeRowProps> = ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexShrink: 1,       // allow shrinking within parent
+    flexGrow:   0,       // don't grow beyond content
+    overflow:   'hidden', // clip to bounds
+  },
   scrollContent: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingEnd: Spacing.sm,
+    alignItems:    'center',
+    gap:           Spacing.xs,
+    paddingEnd:    Spacing.sm,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: Radius.full,
-    borderWidth: 1,
+    flexDirection:     'row',
+    alignItems:        'center',
+    borderRadius:      Radius.full,
+    borderWidth:       1,
     paddingHorizontal: 7,
-    paddingVertical: 2,
-    flexShrink: 0,
+    paddingVertical:   2,
+    flexShrink:        0,
   },
   chipIcon: {
     marginEnd: 3,
   },
   chipText: {
-    fontSize: 10,
+    fontSize:   10,
     fontWeight: FontWeight.semibold,
     lineHeight: 14,
+    flexShrink: 0,
   },
 });
 

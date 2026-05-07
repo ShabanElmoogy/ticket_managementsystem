@@ -11,12 +11,11 @@ import React, { useCallback } from 'react';
 import {
   View,
   Text,
+  FlatList,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RN = require('react-native') as any;
-const FlatList = RN.FlatList as any;
+import type { ListRenderItem } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -126,7 +125,7 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
 
   // ── Render item ────────────────────────────────────────────────────────────
 
-  const renderItem = useCallback(({ item }: { item: Ticket }) => {
+  const renderItem: ListRenderItem<Ticket> = useCallback(({ item }) => {
     const cardStyle = viewMode === 'grid'
       ? styles.gridCardFill
       : viewMode === 'feed'

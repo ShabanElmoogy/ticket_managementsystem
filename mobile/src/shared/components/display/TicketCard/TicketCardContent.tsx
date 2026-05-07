@@ -61,6 +61,10 @@ export interface TicketCardContentProps {
   onToggleExpanded?: () => void;
   /** Extra style merged onto the root container. */
   style?: ViewStyle;
+  /** Optional hard line clamp for description text. */
+  descriptionLines?: number;
+  /** When true, hides See more/See less toggle. */
+  disableToggle?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +78,8 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
   expanded: controlledExpanded,
   onToggleExpanded,
   style,
+  descriptionLines,
+  disableToggle = false,
 }) => {
   // Internal expanded state — used when the component is uncontrolled
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -123,16 +129,19 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
       {/* Ticket title */}
       <Text
         style={[styles.title, { color: c.text.primary }]}
-        numberOfLines={2}
+        numberOfLines={3}
       >
         {ticket.title}
       </Text>
 
       {/* Description + inline "See more" toggle */}
       {description.length > 0 && (
-        <Text style={[styles.description, { color: c.text.secondary }]}>
+        <Text
+          style={[styles.description, { color: c.text.secondary }]}
+          numberOfLines={!isExpanded ? descriptionLines : undefined}
+        >
           {displayedDescription}
-          {isTruncatable && !isExpanded && (
+          {isTruncatable && !isExpanded && !disableToggle && (
             <>
               {'… '}
               <Text
@@ -145,7 +154,7 @@ const TicketCardContent: React.FC<TicketCardContentProps> = ({
               </Text>
             </>
           )}
-          {isTruncatable && isExpanded && (
+          {isTruncatable && isExpanded && !disableToggle && (
             <>
               {' '}
               <Text
