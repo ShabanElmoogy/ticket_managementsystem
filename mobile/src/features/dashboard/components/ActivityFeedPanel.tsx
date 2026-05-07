@@ -1,16 +1,14 @@
 
 import React, { useCallback } from 'react';
-
+// @ts-ignore — FlatList, TextInput, ListRenderItem exist at runtime
 import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   TextInput,
-  ListRenderItem,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const RN = require('react-native') as any;
-const FlatList = RN.FlatList as any;
+import type { ListRenderItem } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 

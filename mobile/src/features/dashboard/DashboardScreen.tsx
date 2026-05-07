@@ -191,8 +191,8 @@ const DashboardScreen: React.FC = () => {
 
   return (
     <FeatureErrorBoundary featureName="Dashboard">
-      <SafeAreaView edges={['top']}>
-        <View style={[styles.safeArea, { backgroundColor: c.surface.primary }]}>
+      <View style={[styles.safeArea, { backgroundColor: c.surface.primary }]}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: c.surface.primary }} />
         <View style={[styles.container, { backgroundColor: c.surface.primary }]}>
 
           {/* ── Stats cards ─────────────────────────────────────────────── */}
@@ -320,7 +320,6 @@ const DashboardScreen: React.FC = () => {
           )}
         </View>
         </View>
-      </SafeAreaView>
     </FeatureErrorBoundary>
   );
 };

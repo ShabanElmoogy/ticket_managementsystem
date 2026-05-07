@@ -1,23 +1,20 @@
 /**
- * StatsCards — Horizontal scroll row of stat cards for the Dashboard.
+ * StatsCards — Full-width row of stat cards for the Dashboard.
  *
- * Cards: Total, Open, In Progress, Programming, Resolved, Closed
+ * Cards fill the full screen width evenly (flex: 1 each).
  * Colors: Palette.* constants — no hardcoded hex.
- * Loading: animated skeleton placeholders while data is fetching.
+ * Loading: skeleton placeholders while data is fetching.
  *
  * ✅ Uses `c.*` tokens from `useThemeColors()` — not Modal-safe (screen only).
  */
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   Pressable,
 } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Animated } = require('react-native') as { Animated: any };
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { Palette, Spacing, Radius, FontSize, FontWeight } from '@/src/constants/tokens';
@@ -36,87 +33,25 @@ interface StatCardConfig {
 }
 
 const STAT_CARDS: StatCardConfig[] = [
-  {
-    key:     'total',
-    label:   'Total',
-    color:   Palette.blue600,
-    bgColor: Palette.blue50,
-    icon:    'ticket-outline',
-  },
-  {
-    key:     'open',
-    label:   'Open',
-    color:   Palette.amber600,
-    bgColor: Palette.amber50,
-    icon:    'alert-circle-outline',
-  },
-  {
-    key:     'inProgress',
-    label:   'In Progress',
-    color:   Palette.violet600,
-    bgColor: Palette.violet50,
-    icon:    'time-outline',
-  },
-  {
-    key:     'programming',
-    label:   'Programming',
-    color:   Palette.indigo600,
-    bgColor: Palette.indigo50,
-    icon:    'code-slash-outline',
-  },
-  {
-    key:     'resolved',
-    label:   'Resolved',
-    color:   Palette.emerald600,
-    bgColor: Palette.emerald50,
-    icon:    'checkmark-circle-outline',
-  },
-  {
-    key:     'closed',
-    label:   'Closed',
-    color:   Palette.zinc500,
-    bgColor: Palette.zinc100,
-    icon:    'lock-closed-outline',
-  },
+  { key: 'total',       label: 'Total',       color: Palette.blue600,    bgColor: Palette.blue50,    icon: 'ticket-outline'           },
+  { key: 'open',        label: 'Open',        color: Palette.amber600,   bgColor: Palette.amber50,   icon: 'alert-circle-outline'     },
+  { key: 'inProgress',  label: 'In Progress', color: Palette.violet600,  bgColor: Palette.violet50,  icon: 'time-outline'             },
+  { key: 'programming', label: 'Dev',         color: Palette.indigo600,  bgColor: Palette.indigo50,  icon: 'code-slash-outline'       },
+  { key: 'resolved',    label: 'Resolved',    color: Palette.emerald600, bgColor: Palette.emerald50, icon: 'checkmark-circle-outline' },
+  { key: 'closed',      label: 'Closed',      color: Palette.zinc500,    bgColor: Palette.zinc100,   icon: 'lock-closed-outline'      },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton card
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SkeletonCard: React.FC<{ c: ReturnType<typeof useThemeColors> }> = ({ c }) => {
-  const opacity = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1,   duration: 700, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [opacity]);
-
-  const AnimatedView = Animated.View as any;
-
-  return (
-    <AnimatedView
-      style={[
-        styles.card,
-        {
-          backgroundColor: c.surface.elevated,
-          borderColor:     c.border.primary,
-          opacity,
-        },
-      ]}
-    >
-      <View style={[styles.skeletonIcon, { backgroundColor: c.surface.tertiary }]} />
-      <View style={[styles.skeletonValue, { backgroundColor: c.surface.tertiary }]} />
-      <View style={[styles.skeletonLabel, { backgroundColor: c.surface.tertiary }]} />
-    </AnimatedView>
-  );
-};
+const SkeletonCard: React.FC<{ c: ReturnType<typeof useThemeColors> }> = ({ c }) => (
+  <View style={[styles.card, { backgroundColor: c.surface.elevated, borderColor: c.border.primary }]}>
+    <View style={[styles.skeletonIcon, { backgroundColor: c.surface.tertiary }]} />
+    <View style={[styles.skeletonValue, { backgroundColor: c.surface.tertiary }]} />
+    <View style={[styles.skeletonLabel, { backgroundColor: c.surface.tertiary }]} />
+  </View>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -137,28 +72,18 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
 
   if (isLoading) {
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        style={styles.scroll}
-      >
+      <View style={styles.row}>
         {STAT_CARDS.map((cfg) => (
-          <View key={String(cfg.key)}>
+          <View key={String(cfg.key)} style={styles.cardWrapper}>
             <SkeletonCard c={c} />
           </View>
         ))}
-      </ScrollView>
+      </View>
     );
   }
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}
-      style={styles.scroll}
-    >
+    <View style={styles.row}>
       {STAT_CARDS.map((cfg) => {
         const value = stats[cfg.key];
         return (
@@ -170,30 +95,30 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
               {
                 backgroundColor: cfg.bgColor,
                 borderColor:     cfg.color + '33',
-                opacity:         pressed ? 0.85 : 1,
+                opacity:         pressed ? 0.8 : 1,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel={`${cfg.label}: ${value}`}
           >
-            {/* Icon badge */}
+            {/* Icon */}
             <View style={[styles.iconBadge, { backgroundColor: cfg.color + '22' }]}>
-              <Ionicons name={cfg.icon as any} size={18} color={cfg.color} />
+              <Ionicons name={cfg.icon as any} size={16} color={cfg.color} />
             </View>
 
             {/* Value */}
-            <Text style={[styles.value, { color: cfg.color }]}>
+            <Text style={[styles.value, { color: cfg.color }]} numberOfLines={1}>
               {value}
             </Text>
 
             {/* Label */}
-            <Text style={[styles.label, { color: cfg.color + 'cc' }]}>
+            <Text style={[styles.label, { color: cfg.color + 'cc' }]} numberOfLines={1}>
               {cfg.label}
             </Text>
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 };
 
@@ -201,66 +126,61 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, isLoading, onCardPress }
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CARD_WIDTH = 100;
-
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 0,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.md,
+  row: {
+    flexDirection:     'row',
+    paddingHorizontal: Spacing.sm,
     paddingVertical:   Spacing.sm,
-    gap:               Spacing.sm,
+    gap:               4,
+  },
+  cardWrapper: {
+    flex: 1,
   },
   card: {
-    width:             CARD_WIDTH,
-    paddingVertical:   Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    borderRadius:      Radius.xl,
-    borderWidth:       1,
-    alignItems:        'center',
-    gap:               Spacing.xs,
-    shadowColor:       'rgba(0,0,0,0.06)',
-    shadowOffset:      { width: 0, height: 2 },
-    shadowOpacity:     1,
-    shadowRadius:      4,
-    elevation:         2,
+    flex:            1,
+    paddingVertical:   Spacing.sm,
+    paddingHorizontal: 4,
+    borderRadius:    Radius.lg,
+    borderWidth:     1,
+    alignItems:      'center',
+    gap:             2,
+    elevation:       2,
   },
   iconBadge: {
-    width:          36,
-    height:         36,
-    borderRadius:   18,
+    width:          28,
+    height:         28,
+    borderRadius:   14,
     alignItems:     'center',
     justifyContent: 'center',
-    marginBottom:   Spacing.xs,
+    marginBottom:   2,
   },
   value: {
-    fontSize:   FontSize['2xl'],
+    fontSize:   FontSize.lg,
     fontWeight: FontWeight.extrabold,
-    lineHeight: 28,
+    lineHeight: 22,
   },
   label: {
-    fontSize:  FontSize.xs,
+    fontSize:  FontSize['2xs'] ?? 9,
     fontWeight: FontWeight.medium,
     textAlign: 'center',
   },
   // Skeleton shapes
   skeletonIcon: {
-    width:        36,
-    height:       36,
-    borderRadius: 18,
-    marginBottom: Spacing.xs,
+    width:        28,
+    height:       28,
+    borderRadius: 14,
+    marginBottom: 2,
   },
   skeletonValue: {
-    width:        40,
-    height:       24,
-    borderRadius: Radius.md,
+    width:        32,
+    height:       18,
+    borderRadius: Radius.sm,
   },
   skeletonLabel: {
-    width:        60,
-    height:       12,
+    width:        40,
+    height:       10,
     borderRadius: Radius.sm,
-    marginTop:    Spacing.xs,
+    marginTop:    2,
   },
 });
 
