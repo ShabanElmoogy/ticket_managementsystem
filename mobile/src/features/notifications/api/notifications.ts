@@ -12,9 +12,13 @@ export class NotificationsApiService extends BaseApiService {
   getNotifications = () =>
     this.get<NotificationItem[]>(API.NOTIFICATIONS.LIST);
 
+  /** GET /notifications/feed — fetch all notifications for the tenant (activity feed) */
+  getTenantFeed = () =>
+    this.get<NotificationItem[]>(API.NOTIFICATIONS.FEED);
+
   /** GET /notifications/count — fetch the current unread count */
   getUnreadCount = () =>
-    this.get<{ count: number }>(API.NOTIFICATIONS.COUNT);
+    this.get<{ unreadCount: number }>(API.NOTIFICATIONS.COUNT);
 
   /** PATCH /notifications/:id/read — mark a single notification as read */
   markAsRead = (id: string) =>

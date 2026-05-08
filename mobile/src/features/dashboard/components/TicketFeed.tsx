@@ -7,7 +7,7 @@
  * ✅ Uses `c.*` tokens from `useThemeColors()` — screen only (not Modal-safe).
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -114,11 +114,17 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
 }) => {
   const c = useThemeColors();
 
-  // ── canUpdateStatus helper ─────────────────────────────────────────────────
+  // ── Stable selected IDs string — avoids Set identity churn ───────────────
+  // Convert Set → sorted string so selectedIds changes only when content changes
+  const selectedIdsKey = useMemo(
+    () => Array.from(selectedIds).sort().join(','),
+    [selectedIds]
+  );
 
-  const PROGRAMMING_STATUSES = [
+  // ── canUpdateStatus helper ─────────────────────────────────────────────────
+  const PROGRAMMING_STATUSES = useMemo(() => [
     'PROGRAMMING', 'UNDER_DEVELOPMENT', 'CODE_REVIEW', 'TESTING',
-  ];
+  ], []);
 
   const getCanUpdateStatus = useCallback((ticket: Ticket): boolean => {
     if (isAdmin) return true;
@@ -126,10 +132,9 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
       return !PROGRAMMING_STATUSES.includes(ticket.status);
     }
     return false;
-  }, [isAdmin, currentUserId]);
+  }, [isAdmin, currentUserId, PROGRAMMING_STATUSES]);
 
   // ── Render item ────────────────────────────────────────────────────────────
-
   const renderItem: ListRenderItem<Ticket> = useCallback(({ item }) => {
     const cardStyle = viewMode === 'grid'
       ? styles.gridCardFill
@@ -139,13 +144,16 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
           ? styles.compactCard
           : undefined;
 
+    // Recompute isSelected from the stable key string
+    const isSelected = selectedIdsKey.split(',').includes(item.id);
+
     return (
       <View style={viewMode === 'grid' ? styles.gridItem : undefined}>
         <TicketCard
           ticket={item}
           resolvedColors={c}
           viewMode={viewMode}
-          isSelected={selectedIds.has(item.id)}
+          isSelected={isSelected}
           onSelect={isAdmin ? onSelect : undefined}
           onPress={onPress}
           onShare={onShare}
@@ -171,19 +179,18 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
       </View>
     );
   }, [
-    c, viewMode, selectedIds, isAdmin, isEmployee, currentUserId, tenantSuspended,
+    c, viewMode, selectedIdsKey, isAdmin, isEmployee, currentUserId, tenantSuspended,
     sharingAvailable, mentionUsers, getCanUpdateStatus, onCommentPress,
     onPress, onShare, onTake, onStatusChange, onDelete, onRestore,
     onReassign, onEditDueDate, onAssignProgrammer, onActivityPress, onSelect,
+    selectedIds.size,
   ]);
 
   // ── Key extractor ──────────────────────────────────────────────────────────
-
   const keyExtractor = useCallback((item: Ticket) => item.id, []);
 
-  // ── Loading footer ─────────────────────────────────────────────────────────
-
-  const ListFooter = (
+  // ── Loading footer — memoized so it doesn't recreate on every render ───────
+  const ListFooterComponent = useMemo(() => (
     <>
       {isLoading && tickets.length > 0 && (
         <View style={styles.footer}>
@@ -192,10 +199,9 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
       )}
       {listFooter}
     </>
-  );
+  ), [isLoading, tickets.length, listFooter, c.interactive.primary]);
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
-
   if (isLoading && tickets.length === 0) {
     return (
       <View style={styles.loadingContainer}>
@@ -208,7 +214,6 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
   }
 
   // ── Grid layout wrapper ────────────────────────────────────────────────────
-
   if (viewMode === 'grid') {
     return (
       <FlatList
@@ -223,16 +228,19 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
           tickets.length === 0 && styles.emptyContent,
         ]}
         ListEmptyComponent={<EmptyState c={c} />}
-        ListFooterComponent={ListFooter}
+        ListFooterComponent={ListFooterComponent}
         onRefresh={onRefresh}
         refreshing={isRefreshing}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+        maxToRenderPerBatch={5}
+        windowSize={7}
+        initialNumToRender={6}
       />
     );
   }
 
   // ── Feed / Compact layout ──────────────────────────────────────────────────
-
   return (
     <KeyboardAwareFlatList
       key={`tickets-${viewMode}-1-col`}
@@ -244,13 +252,14 @@ const TicketFeed: React.FC<TicketFeedProps> = ({
         tickets.length === 0 && styles.emptyContent,
       ]}
       ListEmptyComponent={<EmptyState c={c} />}
-      ListFooterComponent={ListFooter}
+      ListFooterComponent={ListFooterComponent}
       onRefresh={onRefresh}
       refreshing={isRefreshing}
       showsVerticalScrollIndicator={false}
       removeClippedSubviews
-      maxToRenderPerBatch={10}
-      windowSize={10}
+      maxToRenderPerBatch={5}
+      windowSize={7}
+      initialNumToRender={6}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       enableOnAndroid
@@ -289,7 +298,6 @@ const styles = StyleSheet.create({
   },
   feedCard: {
     marginHorizontal: Spacing.md,
-    borderWidth : 4
   },
   compactCard: {
     marginHorizontal: Spacing.sm,

@@ -18,6 +18,24 @@ const tenantId = (req) => req.tenantScope?.type === 'TENANT' ? req.tenantScope.t
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
+/**
+ * GET /notifications/feed — all notifications for the tenant (activity feed).
+ * Shows every notification in the tenant regardless of which user it belongs to.
+ * Requires X-Tenant-Slug header.
+ */
+export const getTenantFeed = async (req, res) => {
+  try {
+    const tid = tenantId(req);
+    if (!tid) return res.status(403).json({ error: 'Tenant context required' });
+    const result = await notificationsService.listTenantNotifications(tid, {
+      limit:      req.query.limit,
+      unreadOnly: req.query.unreadOnly,
+    });
+    res.set('Cache-Control', 'private, max-age=15');
+    res.json(result);
+  } catch (e) { handleError(res, e, 'Get tenant feed'); }
+};
+
 export const getNotifications = async (req, res) => {
   try {
     if (req.query.page && isNaN(parseInt(req.query.page))) {

@@ -468,9 +468,16 @@ class NotificationService {
   private async _syncUnreadCount(): Promise<void> {
     try {
       const result = await notificationsApi.getUnreadCount();
-      useNotificationStore.getState().setUnreadCount(result.count);
-    } catch (err) {
-      if (__DEV__) console.error('[NotificationService] _syncUnreadCount() failed:', err);
+      // API returns { unreadCount: number }
+      const count = (result as any).unreadCount ?? (result as any).count ?? 0;
+      useNotificationStore.getState().setUnreadCount(count);
+    } catch (err: any) {
+      // Network errors during bootstrap are expected (device may be offline).
+      // Silently skip — the count will sync when the activity feed loads.
+      const isNetworkError = err?.status === 0 || !err?.status;
+      if (__DEV__ && !isNetworkError) {
+        console.error('[NotificationService] _syncUnreadCount() failed:', err);
+      }
     }
   }
 
@@ -672,8 +679,12 @@ class NotificationService {
     try {
       // Delete push token from backend
       await notificationsApi.deletePushToken();
-    } catch (err) {
-      if (__DEV__) console.error('[NotificationService] cleanup() — deletePushToken failed:', err);
+    } catch (err: any) {
+      // Network errors on logout are expected — device may be offline or token already cleared.
+      const isNetworkError = err?.status === 0 || !err?.status;
+      if (__DEV__ && !isNetworkError) {
+        console.error('[NotificationService] cleanup() — deletePushToken failed:', err);
+      }
     }
 
     try {

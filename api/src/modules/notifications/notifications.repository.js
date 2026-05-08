@@ -6,8 +6,9 @@
 
 import { db } from '../../config/database.js';
 import { notifications } from './notifications.schema.js';
+import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, and, desc, count, isNull } from 'drizzle-orm';
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,74 @@ export async function countUnreadByUserId(userId, tenantId) {
     .where(and(...conditions));
 
   return Number(result.count);
+}
+
+/**
+ * List ALL notifications for a tenant (all users in the tenant).
+ * Used for the activity feed — shows everything happening in the tenant.
+ * Falls back to user-scoped query when tenant_id is NULL on rows (pre-migration data).
+ */
+export async function findNotificationsByTenantId(tenantId, { limit = 500, offset, unreadOnly = false } = {}) {
+  const conditions = [eq(notifications.tenantId, tenantId)];
+  if (unreadOnly) conditions.push(eq(notifications.isRead, false));
+
+  let query = db
+    .select({
+      id:        notifications.id,
+      title:     notifications.title,
+      message:   notifications.message,
+      type:      notifications.type,
+      isRead:    notifications.isRead,
+      createdAt: notifications.createdAt,
+      userId:    notifications.userId,
+      ticket: {
+        id:    tickets.id,
+        title: tickets.title,
+      },
+    })
+    .from(notifications)
+    .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
+    .where(and(...conditions))
+    .orderBy(desc(notifications.createdAt));
+
+  if (limit !== undefined) query = query.limit(limit);
+  if (offset !== undefined) query = query.offset(offset);
+
+  return query;
+}
+
+/**
+ * List notifications for all users in a tenant by joining with users table.
+ * Used as fallback when tenant_id column is not yet populated on old rows.
+ */
+export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500, offset, unreadOnly = false } = {}) {
+  const conditions = [eq(users.tenantId, tenantId)];
+  if (unreadOnly) conditions.push(eq(notifications.isRead, false));
+
+  let query = db
+    .select({
+      id:        notifications.id,
+      title:     notifications.title,
+      message:   notifications.message,
+      type:      notifications.type,
+      isRead:    notifications.isRead,
+      createdAt: notifications.createdAt,
+      userId:    notifications.userId,
+      ticket: {
+        id:    tickets.id,
+        title: tickets.title,
+      },
+    })
+    .from(notifications)
+    .innerJoin(users, eq(notifications.userId, users.id))
+    .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
+    .where(and(...conditions))
+    .orderBy(desc(notifications.createdAt));
+
+  if (limit !== undefined) query = query.limit(limit);
+  if (offset !== undefined) query = query.offset(offset);
+
+  return query;
 }
 
 /** Find a notification by ID, scoped to a user (ownership check). */

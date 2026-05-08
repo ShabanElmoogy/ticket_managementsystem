@@ -465,4 +465,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default TicketCard;
+export default React.memo(TicketCard);

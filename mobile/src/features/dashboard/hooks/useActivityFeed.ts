@@ -78,7 +78,7 @@ export function useActivityFeed() {
   const loadActivities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const response = await notificationsApi.getNotifications();
+      const response = await notificationsApi.getTenantFeed();
       if (__DEV__) console.log('[ActivityFeed] Raw response:', JSON.stringify(response)?.slice(0, 300));
 
       // Handle both array response and paginated { data: [...] } response
