@@ -176,23 +176,51 @@ async function drainQueue(): Promise<void> {
   if (!retryCallback || queue.length === 0) return;
 
   const pending = queue.splice(0, queue.length); // take all, clear queue
+
+  // ── Deduplicate by method + url ───────────────────────────────────────────
+  // If the same request was queued multiple times while offline, only execute
+  // it once. All duplicate entries share the same resolve/reject so they all
+  // settle when the single request completes.
+  const seen = new Map<string, QueuedRequest>();
+  const duplicates: Array<{ key: string; entry: QueuedRequest }> = [];
+
+  for (const entry of pending) {
+    const key = `${entry.config.method?.toUpperCase()}:${entry.config.url}`;
+    if (seen.has(key)) {
+      duplicates.push({ key, entry });
+    } else {
+      seen.set(key, entry);
+    }
+  }
+
+  const unique = Array.from(seen.values());
+
   if (__DEV__) {
-    console.log(`🔄 [RetryQueue] Draining ${pending.length} queued request(s)…`);
+    console.log(
+      `🔄 [RetryQueue] Draining ${unique.length} unique request(s)` +
+      (duplicates.length > 0 ? ` (${duplicates.length} duplicate(s) merged)` : '') + '…'
+    );
   }
 
   let successCount = 0;
 
   await Promise.allSettled(
-    pending.map(async ({ config, resolve, reject }) => {
+    unique.map(async ({ config, resolve, reject }) => {
+      // Find all duplicate entries for this key so we can settle them too
+      const key = `${config.method?.toUpperCase()}:${config.url}`;
+      const dupes = duplicates.filter((d) => d.key === key).map((d) => d.entry);
+
       try {
         const result = await retryCallback!(config);
         resolve(result);
+        dupes.forEach((d) => d.resolve(result)); // settle all duplicates
         successCount++;
         if (__DEV__) {
           console.log(`✅ [RetryQueue] Retried: ${config.method?.toUpperCase()} ${config.url}`);
         }
       } catch (err) {
         reject(err);
+        dupes.forEach((d) => d.reject(err)); // reject all duplicates
         if (__DEV__) {
           console.warn(`❌ [RetryQueue] Retry failed: ${config.method?.toUpperCase()} ${config.url}`, err);
         }

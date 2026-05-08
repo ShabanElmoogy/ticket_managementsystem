@@ -163,6 +163,7 @@ Keep this table updated whenever a component is added or its usage changes.
 | `TicketCardCompact` | `display/TicketCard/TicketCardCompact.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; single-row layout with priority dot, title, status badge, and overflow menu trigger | `TicketCard/index.tsx` (when `viewMode === 'compact'`) |
 | `TicketCardGrid` | `display/TicketCard/TicketCardGrid.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal hook calls; 2-column compact card layout (no share, no inline comments) | `TicketCard/index.tsx` (when `viewMode === 'grid'`) |
 | `TicketCommentsModal` | `display/TicketCard/TicketCommentsModal.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal theme/context hook calls; full-screen slide-up Modal with scrollable comment list, `@mention`-aware input pinned above keyboard (auto-scrolls to bottom on keyboard show), and per-comment delete; fetches comments via `ticketsApi.getTicket` on open | `TicketCard/index.tsx` (comment button in feed mode) |
+| `TicketActivityModal` | `display/TicketCard/TicketActivityModal.tsx` | ❌ No | ✅ Yes — receives `resolvedColors` prop, no internal theme/context hook calls; full-screen slide-up Modal with timeline activity feed; fetches activities via `ticketsApi.getActivities` on open; applies `direction: 'ltr'` on root View (outside `DirectionProvider`) | Not yet used — available for activity button in `TicketCard` |
 
 ---
 

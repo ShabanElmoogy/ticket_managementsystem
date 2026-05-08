@@ -41,6 +41,7 @@ import BulkActionBar from './components/BulkActionBar';
 import TicketDetailScreen from '@/src/features/tickets/components/TicketDetailScreen';
 import TicketForm from '@/src/features/tickets/components/TicketForm';
 import TicketCommentsModal from '@/src/shared/components/display/TicketCard/TicketCommentsModal';
+import TicketActivityModal from '@/src/shared/components/display/TicketCard/TicketActivityModal';
 import TicketActivityScreen from '@/src/features/tickets/components/TicketActivityScreen';
 import { ticketsApi } from '@/src/features/tickets/api/tickets';
 import type { Ticket, TicketStatus } from '@/src/services/api/types/ticket';
@@ -127,6 +128,16 @@ const DashboardScreen: React.FC = () => {
     console.log('[Comments] Opening modal for ticket:', ticket.id, ticket.title);
     setCommentsModal({ open: true, id: ticket.id, title: ticket.title });
   }, []);
+
+  // ── Activity modal state ───────────────────────────────────────────────────
+  const [activityModal, setActivityModal] = useState<{ open: boolean; id: string; title: string }>({
+    open: false, id: '', title: '',
+  });
+
+  const handleActivityPress = useCallback((ticketId: string) => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    setActivityModal({ open: true, id: ticketId, title: ticket?.title ?? '' });
+  }, [tickets]);
 
   // ── Hardware Back Button Handling ──────────────────────────────────────────
   useFocusEffect(
@@ -282,7 +293,7 @@ const DashboardScreen: React.FC = () => {
               onReassign={(_id) => { /* handled via overflow menu */ }}
               onEditDueDate={(id, date) => editDueDate(id, date)}
               onAssignProgrammer={(id) => router.push(`/tickets/${id}` as any)}
-              onActivityPress={(id) => router.push(`/ticket-activity/${id}` as any)}
+              onActivityPress={handleActivityPress}
               onSelect={isAdmin ? toggleSelect : undefined}
               onRefresh={handleRefresh}
               isRefreshing={isRefreshing}
@@ -336,6 +347,14 @@ const DashboardScreen: React.FC = () => {
             currentUserId={currentUser?.id ?? ''}
             isAdmin={isAdmin}
             tenantSuspended={tenantSuspended}
+          />
+
+          <TicketActivityModal
+            visible={activityModal.open}
+            onClose={() => setActivityModal({ open: false, id: '', title: '' })}
+            ticketId={activityModal.id}
+            ticketTitle={activityModal.title}
+            resolvedColors={c}
           />
 
         </View>

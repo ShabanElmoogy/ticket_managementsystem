@@ -1,6 +1,14 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { http, type ApiError } from './httpClient';
 import { requestDeduplicator } from './requestDeduplicator';
+import { networkEvents } from './networkEvents';
+
+// Register the retry callback once — networkEvents uses this to re-execute
+// queued requests when connectivity is restored.
+networkEvents.setRetryCallback(async (config: AxiosRequestConfig) => {
+  const response = await http.request(config);
+  return response.data;
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Retry config
@@ -44,6 +52,16 @@ async function retryRequest<T>(config: AxiosRequestConfig, attempt = 0): Promise
     return response.data;
   } catch (error) {
     const apiError = error as ApiError;
+
+    // Network error (device offline) — enqueue for retry when connectivity returns.
+    // Only enqueue on the first attempt to avoid duplicate queue entries.
+    const isNetworkError = !apiError.status && apiError.isRetryable;
+    if (isNetworkError && attempt === 0 && !networkEvents.isOnline()) {
+      if (__DEV__) {
+        console.log(`📥 [RetryQueue] Device offline — queuing ${config.method?.toUpperCase()} ${config.url}`);
+      }
+      return networkEvents.enqueue(config) as Promise<T>;
+    }
 
     // Don't retry if: max attempts reached, or error is not retryable
     if (attempt + 1 >= MAX_ATTEMPTS || !apiError.isRetryable) {
