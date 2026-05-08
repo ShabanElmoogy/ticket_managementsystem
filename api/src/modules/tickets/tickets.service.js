@@ -6,7 +6,7 @@
 
 import * as repo from './tickets.repository.js';
 import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
-import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
+import { logActivityAndNotify } from '../../utils/activityUtils.js';
 import { getSlaHours, computeSlaDeadline } from '../../utils/slaUtils.js';
 import { isTenantScopedRole } from '../../middleware/auth.js';
 import { isNull, isNotNull, eq, or, and, ilike } from 'drizzle-orm';

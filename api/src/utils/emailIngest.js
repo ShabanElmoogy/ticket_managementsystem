@@ -6,7 +6,7 @@ import { users } from '../modules/users/users.schema.js';
 import { customers } from '../modules/customers/customers.schema.js';
 import { tenants } from '../modules/tenants/tenants.schema.js';
 import { eq, and } from 'drizzle-orm';
-import { logActivity, logActivityAndNotify } from './activityUtils.js';
+import { logActivityAndNotify } from './activityUtils.js';
 import { getSlaHours, computeSlaDeadline } from './slaUtils.js';
 
 let pollerInterval = null;

@@ -5,7 +5,7 @@
  */
 
 import * as repo from './programming.repository.js';
-import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
+import { logActivityAndNotify } from '../../utils/activityUtils.js';
 import { Role } from '../../constants/roles.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────

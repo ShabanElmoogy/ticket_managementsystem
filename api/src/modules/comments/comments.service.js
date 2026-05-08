@@ -4,7 +4,7 @@
  * Orchestrates repository calls, enforces rules, throws descriptive errors.
  */
 
-import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
+import { logActivityAndNotify } from '../../utils/activityUtils.js';
 import * as repo from './comments.repository.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────

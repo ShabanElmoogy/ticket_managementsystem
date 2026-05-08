@@ -78,29 +78,36 @@ export function useActivityFeed() {
   const loadActivities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const items = await notificationsApi.getNotifications();
-      if (__DEV__) {
-        console.log(`[ActivityFeed] Loaded ${items.length} notifications`);
-        if (items.length > 0) console.log('[ActivityFeed] Sample:', JSON.stringify(items[0]));
-      }
-      // Map NotificationItem → ActivityItem
+      const response = await notificationsApi.getNotifications();
+      if (__DEV__) console.log('[ActivityFeed] Raw response:', JSON.stringify(response)?.slice(0, 300));
+
+      // Handle both array response and paginated { data: [...] } response
+      const items: any[] = Array.isArray(response)
+        ? response
+        : Array.isArray((response as any)?.data)
+          ? (response as any).data
+          : [];
+
+      if (__DEV__) console.log(`[ActivityFeed] ${items.length} items after normalization`);
+
       const mapped: ActivityItem[] = items.map((n) => ({
         id:             n.id,
         notificationId: n.id,
-        type:           n.type,
+        type:           n.type as NotificationType,
         data: {
           ticket:      n.data?.ticketId
-            ? { id: n.data.ticketId, title: (n.data as any).ticketTitle ?? n.title }
+            ? { id: n.data.ticketId, title: n.data.ticketTitle ?? n.title }
             : undefined,
           description: n.message,
         },
         timestamp: n.createdAt,
-        read:      n.read,
+        read:      n.read ?? false,
       }));
+
       setActivities(mapped);
       setUnreadCount(mapped.filter((a) => !a.read).length);
-    } catch {
-      // NetworkErrorDialog handles API errors automatically
+    } catch (err) {
+      if (__DEV__) console.error('[ActivityFeed] ❌ loadActivities failed:', err);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -111,6 +118,7 @@ export function useActivityFeed() {
   useEffect(() => {
     if (!initialLoadDone.current) {
       initialLoadDone.current = true;
+      if (__DEV__) console.log('[ActivityFeed] Initial load triggered');
       loadActivities();
     }
   }, [loadActivities]);

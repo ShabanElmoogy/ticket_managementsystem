@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { isTenantScopedRole } from '../../middleware/auth.js';
-import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
+import { logActivityAndNotify } from '../../utils/activityUtils.js';
 import { UPLOADS_DIR } from './attachments.upload.js';
 import * as repo from './attachments.repository.js';
 

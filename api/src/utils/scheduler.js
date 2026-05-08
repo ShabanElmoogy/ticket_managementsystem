@@ -3,7 +3,7 @@ import { db } from '../config/database.js';
 import { tickets, notifications, users } from '../modules/schema.js';
 import { tenants } from '../modules/tenants/tenants.schema.js';
 import { eq, and, lt, isNull, isNotNull, inArray, or, lte } from 'drizzle-orm';
-import { logActivity, logActivityAndNotify } from './activityUtils.js';
+import { logActivityAndNotify } from './activityUtils.js';
 
 const PRIORITY_LADDER = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
