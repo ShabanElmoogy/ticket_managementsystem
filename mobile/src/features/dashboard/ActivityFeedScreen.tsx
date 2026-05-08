@@ -2,11 +2,11 @@
  * ActivityFeedScreen — Full-screen activity feed with fixed header.
  *
  * Opened when the user taps the bell icon in the app header.
- * Fixed header with back button + title + unread count badge.
- * Scrollable list of ActivityFeedItem below.
+ * Auto-marks all notifications as read when opened.
+ * Each item can be individually marked read/unread via long-press.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,19 +20,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/src/constants/theme';
 import { useUiStore } from '@/src/stores/uiStore';
-import { Spacing, Radius, FontSize, FontWeight, Palette } from '@/src/constants/tokens';
+import { Spacing, FontSize, FontWeight } from '@/src/constants/tokens';
 import { useActivityFeed } from './hooks/useActivityFeed';
 import ActivityFeedPanel from './components/ActivityFeedPanel';
+import type { ActivityItem } from '@/src/services/api/types/notification';
 
 const ActivityFeedScreen: React.FC = () => {
-  const c         = useThemeColors();
-  const router    = useRouter();
+  const c           = useThemeColors();
+  const router      = useRouter();
   const clearUnread = useUiStore((s) => s.clearUnread);
-
-  // Clear the bell badge when this screen opens
-  useEffect(() => {
-    clearUnread();
-  }, [clearUnread]);
 
   const {
     activities,
@@ -52,25 +48,33 @@ const ActivityFeedScreen: React.FC = () => {
     typeCounts,
   } = useActivityFeed();
 
-  const handleItemPress = (activity: any) => {
+  // Clear bell badge when screen opens
+  useEffect(() => {
+    clearUnread();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleItemPress = useCallback((activity: ActivityItem) => {
+    // Mark as read on press
+    if (activity?.id) markRead(activity.id);
+    // Navigate to ticket detail if available
     if (activity?.data?.ticket?.id) {
       router.back();
-      // Navigate to ticket detail after going back
     }
-  };
+  }, [markRead, router]);
 
   return (
     <View style={[styles.root, { backgroundColor: c.surface.primary }]}>
 
       {/* ── Fixed header ──────────────────────────────────────────────── */}
-      <SafeAreaView style={[styles.headerSafe, { backgroundColor: c.surface.header }]}>
+      <SafeAreaView style={{ backgroundColor: c.surface.header }}>
         <View style={[styles.header, { backgroundColor: c.surface.header }]}>
 
           {/* Back button */}
           <Pressable
             onPress={() => router.back()}
             style={({ pressed }) => [
-              styles.backBtn,
+              styles.iconBtn,
               { backgroundColor: pressed ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)' },
             ]}
             accessibilityRole="button"
@@ -79,17 +83,24 @@ const ActivityFeedScreen: React.FC = () => {
             <Ionicons name="arrow-back-outline" size={20} color="#ffffff" />
           </Pressable>
 
-          {/* Title */}
+          {/* Title + unread badge */}
           <View style={styles.titleRow}>
             <Ionicons name="notifications-outline" size={18} color="#ffffff" style={{ marginEnd: 6 }} />
             <Text style={styles.title}>Activity Feed</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : String(unreadCount)}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Mark all read */}
           <Pressable
             onPress={markAllRead}
             style={({ pressed }) => [
-              styles.backBtn,
+              styles.iconBtn,
               { backgroundColor: pressed ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.1)' },
             ]}
             accessibilityRole="button"
@@ -135,9 +146,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  headerSafe: {
-    // SafeAreaView handles top inset
-  },
   header: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -145,7 +153,7 @@ const styles = StyleSheet.create({
     paddingVertical:   Spacing.sm,
     gap:               Spacing.sm,
   },
-  backBtn: {
+  iconBtn: {
     width:          36,
     height:         36,
     borderRadius:   18,
@@ -153,9 +161,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   titleRow: {
-    flex:        1,
+    flex:          1,
     flexDirection: 'row',
-    alignItems:  'center',
+    alignItems:    'center',
   },
   title: {
     fontSize:   FontSize.lg,
@@ -170,6 +178,7 @@ const styles = StyleSheet.create({
     alignItems:        'center',
     justifyContent:    'center',
     paddingHorizontal: 5,
+    backgroundColor:   '#ef4444',
   },
   badgeText: {
     fontSize:   10,

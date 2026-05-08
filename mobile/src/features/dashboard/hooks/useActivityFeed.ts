@@ -215,10 +215,14 @@ export function useActivityFeed() {
       prev.map((a) => (a.id === id ? { ...a, read: true } : a))
     );
     setUnreadCount((c) => Math.max(0, c - 1));
-    // Only call API if this is a real persisted notification (has a DB UUID)
     const item = activities.find((a) => a.id === id);
     const notifId = item?.notificationId ?? (isUUID(id) ? id : null);
-    if (notifId) notificationsApi.markAsRead(notifId).catch(() => {});
+    if (__DEV__) console.log('[markRead] id:', id, '| notifId:', notifId, '| item:', item?.id);
+    if (notifId) {
+      notificationsApi.markAsRead(notifId)
+        .then(() => { if (__DEV__) console.log('[markRead] ✅ API success for', notifId); })
+        .catch((err) => { if (__DEV__) console.error('[markRead] ❌ API failed:', err); });
+    }
   }, [activities]);
 
   const markUnread = useCallback((id: string) => {

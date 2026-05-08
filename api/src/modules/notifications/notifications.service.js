@@ -81,45 +81,54 @@ export async function listNotifications(userId, { limit, unreadOnly, tenantId, q
 }
 
 export async function getUnreadCount(userId, tenantId) {
-  const unreadCount = await repo.countUnreadByUserId(userId, tenantId ?? null);
+  if (tenantId) {
+    const unreadCount = await repo.countUnreadForUser(userId, tenantId);
+    return { unreadCount };
+  }
+  const unreadCount = await repo.countUnreadByUserId(userId, null);
   return { unreadCount };
 }
 
 /**
- * List all notifications for a tenant (activity feed — all users).
- * Uses user-join approach so it works for both old rows (tenant_id=NULL)
- * and new rows (tenant_id set). Returns newest-first.
+ * List all notifications for a tenant with per-user read state.
+ * Each user sees the same notifications but with their own read/unread state.
  */
-export async function listTenantNotifications(tenantId, { limit, unreadOnly } = {}) {
+export async function listTenantNotifications(tenantId, userId, { limit, unreadOnly } = {}) {
   const rows = await repo.findNotificationsByTenantViaUsers(tenantId, {
-    limit:      limit ?? 500,
-    unreadOnly: unreadOnly === true || unreadOnly === 'true',
+    limit:         limit ?? 500,
+    unreadOnly:    unreadOnly === true || unreadOnly === 'true',
+    currentUserId: userId,
   });
   return rows.map(normalizeNotification);
 }
 
 export async function markAsRead(id, userId) {
-  // No ownership check — any tenant user can mark any notification as read
-  // (the activity feed shows tenant-wide notifications, not just the current user's)
-  const updated = await repo.markOneAsRead(id);
-  if (!updated) throw fail('Notification not found', 404);
-  return updated;
+  // Upsert a read receipt for this user — no ownership check needed
+  await repo.markReadForUser(id, userId);
+  return { message: 'Marked as read' };
 }
 
-export async function markAllAsRead(userId) {
-  await repo.markAllAsReadByUserId(userId);
+export async function markAllAsRead(userId, tenantId) {
+  if (tenantId) {
+    await repo.markAllReadForUser(userId, tenantId);
+  } else {
+    await repo.markAllAsReadByUserId(userId);
+  }
   return { message: 'All notifications marked as read' };
 }
 
 export async function markAsUnread(id, userId) {
-  // No ownership check — same reasoning as markAsRead
-  const updated = await repo.markOneAsUnread(id);
-  if (!updated) throw fail('Notification not found', 404);
-  return updated;
+  // Delete the read receipt for this user
+  await repo.markUnreadForUser(id, userId);
+  return { message: 'Marked as unread' };
 }
 
-export async function markAllAsUnread(userId) {
-  await repo.markAllAsUnreadByUserId(userId);
+export async function markAllAsUnread(userId, tenantId) {
+  if (tenantId) {
+    await repo.markAllUnreadForUser(userId, tenantId);
+  } else {
+    await repo.markAllAsUnreadByUserId(userId);
+  }
   return { message: 'All notifications marked as unread' };
 }
 

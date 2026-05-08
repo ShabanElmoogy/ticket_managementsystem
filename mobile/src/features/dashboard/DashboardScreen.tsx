@@ -40,6 +40,8 @@ import TicketFeed from './components/TicketFeed';
 import BulkActionBar from './components/BulkActionBar';
 import TicketDetailScreen from '@/src/features/tickets/components/TicketDetailScreen';
 import TicketForm from '@/src/features/tickets/components/TicketForm';
+import TicketFormFB from '@/src/features/tickets/components/TicketFormFB';
+import Avatar from '@/src/shared/components/display/Avatar';
 import TicketCommentsModal from '@/src/shared/components/display/TicketCard/TicketCommentsModal';
 import TicketActivityModal from '@/src/shared/components/display/TicketCard/TicketActivityModal';
 import TicketActivityScreen from '@/src/features/tickets/components/TicketActivityScreen';
@@ -197,7 +199,7 @@ const DashboardScreen: React.FC = () => {
   if (showCreateForm && isAdmin) {
     return (
       <FeatureErrorBoundary featureName="CreateTicket">
-        <TicketForm
+        <TicketFormFB
           item={null}
           onClose={() => setShowCreateForm(false)}
           onSave={handleCreateTicket}
@@ -215,6 +217,28 @@ const DashboardScreen: React.FC = () => {
       <View style={[styles.safeArea, { backgroundColor: c.surface.primary }]}>
         <SafeAreaView edges={['top']} style={{ backgroundColor: c.surface.primary }} />
         <View style={[styles.container, { backgroundColor: c.surface.primary }]}>
+
+          {/* ── FB-style Create Post Bar ────────────────────────────────── */}
+          {isAdmin && (
+            <Pressable
+              onPress={() => setShowCreateForm(true)}
+              style={[styles.createBar, { borderBottomColor: c.border.primary }]}
+            >
+              <Avatar
+                text={currentUser?.name ?? 'U'}
+                size={40}
+                backgroundColor={c.interactive.primary}
+              />
+              <View style={[styles.createInput, { backgroundColor: c.surface.tertiary, borderColor: c.border.primary }]}>
+                <Text style={[styles.createPlaceholder, { color: c.text.muted }]}>
+                  What's the issue?
+                </Text>
+              </View>
+              <View style={[styles.createIconBtn, { backgroundColor: c.interactive.primary + '15' }]}>
+                <Ionicons name="create-outline" size={22} color={c.interactive.primary} />
+              </View>
+            </Pressable>
+          )}
 
           {/* ── Stats cards ─────────────────────────────────────────────── */}
           <StatsCards
@@ -305,23 +329,7 @@ const DashboardScreen: React.FC = () => {
             />
           )}
 
-          {/* ── Create ticket FAB ────────────────────────────────────────── */}
-          {isAdmin && (
-            <Pressable
-              onPress={() => setShowCreateForm(true)}
-              style={({ pressed }: { pressed: boolean }) => [
-                styles.fab,
-                {
-                  backgroundColor: pressed ? c.interactive.primaryPressed : c.interactive.primary,
-                  shadowColor: c.shadow,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Create new ticket"
-            >
-              <Ionicons name="add" size={28} color={c.text.inverse} />
-            </Pressable>
-          )}
+          {/* FAB removed — replaced by FB-style create bar at top */}
 
           {/*
             ── Comments modal ────────────────────────────────────────────────
@@ -371,19 +379,33 @@ const styles = StyleSheet.create({
   feedContainer: {
     flex: 1,
   },
-  fab: {
-    position: 'absolute',
-    bottom: Spacing.lg,
-    right: Spacing.md,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  // FB-style create post bar
+  createBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 0.5,
+  },
+  createInput: {
+    flex: 1,
+    height: 40,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  createPlaceholder: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.normal,
+  },
+  createIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 8,
   },
 });
 

@@ -1,11 +1,15 @@
 // vite.config.js
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import fs from "fs";
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === "development";
+
+  // Load .env, .env.local, .env.[mode], .env.[mode].local
+  const env = loadEnv(mode, process.cwd(), '');
+  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:3001';
 
   return {
     plugins: [
@@ -83,17 +87,17 @@ export default defineConfig(({ mode }) => {
           port: 5173,
           proxy: {
             '/api': {
-              target: process.env.VITE_BACKEND_URL || 'http://localhost:3001',
+              target: backendUrl,
               changeOrigin: true,
               secure: false,
             },
             '/uploads': {
-              target: process.env.VITE_BACKEND_URL || 'http://localhost:3001',
+              target: backendUrl,
               changeOrigin: true,
               secure: false,
             },
             '/socket.io': {
-              target: process.env.VITE_BACKEND_URL || 'http://localhost:3001',
+              target: backendUrl,
               changeOrigin: true,
               secure: false,
               ws: true,

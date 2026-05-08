@@ -27,7 +27,7 @@ export const getTenantFeed = async (req, res) => {
   try {
     const tid = tenantId(req);
     if (!tid) return res.status(403).json({ error: 'Tenant context required' });
-    const result = await notificationsService.listTenantNotifications(tid, {
+    const result = await notificationsService.listTenantNotifications(tid, userId(req), {
       limit:      req.query.limit,
       unreadOnly: req.query.unreadOnly,
     });
@@ -60,20 +60,20 @@ export const getNotifications = async (req, res) => {
 
 export const getNotificationCount = async (req, res) => {
   try {
-    // No tenantId — count all unread for this user
-    res.json(await notificationsService.getUnreadCount(userId(req), null));
+    res.json(await notificationsService.getUnreadCount(userId(req), tenantId(req)));
   } catch (e) { handleError(res, e, 'Get notification count'); }
 };
 
 export const markAsRead = async (req, res) => {
   try {
+    console.log('[markAsRead] id:', req.params.id, '| userId:', userId(req));
     res.json(await notificationsService.markAsRead(req.params.id, userId(req)));
   } catch (e) { handleError(res, e, 'Mark notification as read'); }
 };
 
 export const markAllAsRead = async (req, res) => {
   try {
-    res.json(await notificationsService.markAllAsRead(userId(req)));
+    res.json(await notificationsService.markAllAsRead(userId(req), tenantId(req)));
   } catch (e) { handleError(res, e, 'Mark all notifications as read'); }
 };
 
@@ -85,7 +85,7 @@ export const markAsUnread = async (req, res) => {
 
 export const markAllAsUnread = async (req, res) => {
   try {
-    res.json(await notificationsService.markAllAsUnread(userId(req)));
+    res.json(await notificationsService.markAllAsUnread(userId(req), tenantId(req)));
   } catch (e) { handleError(res, e, 'Mark all notifications as unread'); }
 };
 

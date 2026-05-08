@@ -6,9 +6,10 @@
 
 import { db } from '../../config/database.js';
 import { notifications } from './notifications.schema.js';
+import { notificationReads } from './notificationReads.schema.js';
 import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
-import { eq, and, desc, count, isNull } from 'drizzle-orm';
+import { eq, and, desc, count, isNull, isNotNull } from 'drizzle-orm';
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
@@ -116,9 +117,13 @@ export async function findNotificationsByTenantId(tenantId, { limit = 500, offse
  * List notifications for all users in a tenant by joining with users table.
  * Used as fallback when tenant_id column is not yet populated on old rows.
  */
-export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500, offset, unreadOnly = false } = {}) {
+/**
+ * List ALL notifications for a tenant with per-user read state.
+ * LEFT JOINs notification_reads for the requesting user — if a row exists, it's read.
+ */
+export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500, offset, unreadOnly = false, currentUserId = null } = {}) {
   const conditions = [eq(users.tenantId, tenantId)];
-  if (unreadOnly) conditions.push(eq(notifications.isRead, false));
+  if (unreadOnly) conditions.push(isNull(notificationReads.readAt));
 
   let query = db
     .select({
@@ -126,7 +131,8 @@ export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500,
       title:     notifications.title,
       message:   notifications.message,
       type:      notifications.type,
-      isRead:    notifications.isRead,
+      // isRead = true when a read receipt exists for this user
+      isRead:    isNotNull(notificationReads.readAt),
       createdAt: notifications.createdAt,
       userId:    notifications.userId,
       ticket: {
@@ -135,7 +141,14 @@ export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500,
       },
     })
     .from(notifications)
-    .innerJoin(users, eq(notifications.userId, users.id))
+    .innerJoin(users,   eq(notifications.userId, users.id))
+    .leftJoin(
+      notificationReads,
+      and(
+        eq(notificationReads.notificationId, notifications.id),
+        currentUserId ? eq(notificationReads.userId, currentUserId) : eq(notificationReads.userId, notifications.userId),
+      )
+    )
     .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
     .where(and(...conditions))
     .orderBy(desc(notifications.createdAt));
@@ -144,6 +157,95 @@ export async function findNotificationsByTenantViaUsers(tenantId, { limit = 500,
   if (offset !== undefined) query = query.offset(offset);
 
   return query;
+}
+
+/** Mark a notification as read for a specific user (upsert read receipt). */
+export async function markReadForUser(notificationId, userId) {
+  console.log('[markReadForUser] notificationId:', notificationId, '| userId:', userId);
+  try {
+    const result = await db
+      .insert(notificationReads)
+      .values({ notificationId, userId })
+      .onConflictDoNothing()
+      .returning();
+    console.log('[markReadForUser] inserted:', result.length, 'row(s)');
+  } catch (err) {
+    console.error('[markReadForUser] ERROR:', err.message, err);
+    throw err;
+  }
+}
+
+/** Mark a notification as unread for a specific user (delete read receipt). */
+export async function markUnreadForUser(notificationId, userId) {
+  await db
+    .delete(notificationReads)
+    .where(and(
+      eq(notificationReads.notificationId, notificationId),
+      eq(notificationReads.userId, userId),
+    ));
+}
+
+/** Mark all notifications in a tenant as read for a specific user. */
+export async function markAllReadForUser(userId, tenantId) {
+  // Find all notification IDs for this tenant that the user hasn't read yet
+  const unread = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .innerJoin(users, eq(notifications.userId, users.id))
+    .leftJoin(
+      notificationReads,
+      and(
+        eq(notificationReads.notificationId, notifications.id),
+        eq(notificationReads.userId, userId),
+      )
+    )
+    .where(and(eq(users.tenantId, tenantId), isNull(notificationReads.readAt)));
+
+  if (!unread.length) return;
+
+  await db
+    .insert(notificationReads)
+    .values(unread.map((n) => ({ notificationId: n.id, userId })))
+    .onConflictDoNothing();
+}
+
+/** Mark all notifications in a tenant as unread for a specific user. */
+export async function markAllUnreadForUser(userId, tenantId) {
+  // Delete all read receipts for this user's tenant notifications
+  const notifIds = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .innerJoin(users, eq(notifications.userId, users.id))
+    .where(eq(users.tenantId, tenantId));
+
+  if (!notifIds.length) return;
+
+  for (const { id } of notifIds) {
+    await db
+      .delete(notificationReads)
+      .where(and(
+        eq(notificationReads.notificationId, id),
+        eq(notificationReads.userId, userId),
+      ));
+  }
+}
+
+/** Count unread notifications for a user in a tenant. */
+export async function countUnreadForUser(userId, tenantId) {
+  const [result] = await db
+    .select({ count: count() })
+    .from(notifications)
+    .innerJoin(users, eq(notifications.userId, users.id))
+    .leftJoin(
+      notificationReads,
+      and(
+        eq(notificationReads.notificationId, notifications.id),
+        eq(notificationReads.userId, userId),
+      )
+    )
+    .where(and(eq(users.tenantId, tenantId), isNull(notificationReads.readAt)));
+
+  return Number(result.count);
 }
 
 /** Find a notification by ID, scoped to a user (ownership check). */

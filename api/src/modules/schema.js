@@ -7,6 +7,7 @@ export * from './labels/labels.schema.js';
 export * from './comments/comments.schema.js';
 export * from './kanban/kanban.schema.js';
 export * from './notifications/notifications.schema.js';
+export * from './notifications/notificationReads.schema.js';
 export * from './notifications/pushTokens/pushTokens.schema.js';
 export * from './tasks/tasks.schema.js';
 export * from './users/users.schema.js';
