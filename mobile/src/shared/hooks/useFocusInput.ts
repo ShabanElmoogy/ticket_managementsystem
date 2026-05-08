@@ -51,10 +51,10 @@ interface Focusable {
  *   // Only when creating (not editing)
  *   const ref = useFocusInput({ enabled: item === null });
  */
-export function useFocusInput(options: Options = {}) {
+export function useFocusInput(options: Options = {}): React.RefObject<any> {
   const { delay, inModal = false, enabled = true } = options;
 
-  const ref       = useRef<Focusable | null>(null);
+  const ref = useRef<Focusable | null>(null) as React.RefObject<any>;
   const mounted   = useRef(true);
   const attempted = useRef(false);
 

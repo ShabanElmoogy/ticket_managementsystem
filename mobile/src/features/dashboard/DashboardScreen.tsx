@@ -174,12 +174,6 @@ const DashboardScreen: React.FC = () => {
     router.push(`/tickets/${ticket.id}` as any);
   }, [router]);
 
-  const handleActivityPress = useCallback((activity: ActivityItem) => {
-    if (activity.data.ticket?.id) {
-      router.push(`/tickets/${activity.data.ticket.id}` as any);
-    }
-  }, [router]);
-
   const handleBulkApply = useCallback(async (status: TicketStatus) => {
     await bulkUpdate(Array.from(selectedIds), status);
   }, [bulkUpdate, selectedIds]);

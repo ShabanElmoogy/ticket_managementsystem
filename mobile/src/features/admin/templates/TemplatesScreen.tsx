@@ -80,7 +80,8 @@ const TemplateForm: React.FC<{
         toast.error(t('templates.duplicateError.title'), t('templates.duplicateError.message'));
         return;
       }
-      // All other errors: NetworkErrorDialog handles automatically
+      // Re-throw so react-hook-form resets isSubmitting → button becomes active again
+      throw err;
     }
   };
 

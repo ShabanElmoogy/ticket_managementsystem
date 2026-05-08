@@ -13,6 +13,22 @@ function fail(message, status = 400) {
   return Object.assign(new Error(message), { status });
 }
 
+// ── Response normalizer ───────────────────────────────────────────────────────
+// The DB column is `is_read` → Drizzle returns `isRead`.
+// The mobile client and web client expect `read: boolean`.
+
+function normalizeNotification(row) {
+  const { isRead, ticket, ...rest } = row;
+  return {
+    ...rest,
+    read: isRead ?? false,
+    // Always include data — with ticket info when available
+    data: ticket?.id
+      ? { ticketId: ticket.id, ticketTitle: ticket.title }
+      : {},
+  };
+}
+
 // ── Operations ────────────────────────────────────────────────────────────────
 
 /**
@@ -26,12 +42,13 @@ export async function listNotifications(userId, { limit, unreadOnly, tenantId, q
   const hasPagination = 'page' in query || 'limit' in query;
   
   if (!hasPagination) {
-    // Legacy behavior - return notifications with limit
-    return repo.findNotificationsByUserId(userId, {
-      limit:      limit ?? 50,
+    // Non-paginated — return all notifications up to the limit (no cap)
+    const rows = await repo.findNotificationsByUserId(userId, {
+      limit:      limit ?? 500,
       unreadOnly: unreadOnly === true || unreadOnly === 'true',
       tenantId:   tenantId ?? null,
     });
+    return rows.map(normalizeNotification);
   }
 
   // Paginated response with validation
@@ -60,7 +77,7 @@ export async function listNotifications(userId, { limit, unreadOnly, tenantId, q
     }),
   ]);
 
-  return buildPaginatedResponse(data, total, page, finalLimit);
+  return buildPaginatedResponse(data.map(normalizeNotification), total, page, finalLimit);
 }
 
 export async function getUnreadCount(userId, tenantId) {
@@ -79,6 +96,18 @@ export async function markAsRead(id, userId) {
 export async function markAllAsRead(userId) {
   await repo.markAllAsReadByUserId(userId);
   return { message: 'All notifications marked as read' };
+}
+
+export async function markAsUnread(id, userId) {
+  const notification = await repo.findNotificationByIdAndUser(id, userId);
+  if (!notification) throw fail('Notification not found', 404);
+  const updated = await repo.markOneAsUnread(id);
+  return updated;
+}
+
+export async function markAllAsUnread(userId) {
+  await repo.markAllAsUnreadByUserId(userId);
+  return { message: 'All notifications marked as unread' };
 }
 
 export async function deleteNotification(id, userId) {

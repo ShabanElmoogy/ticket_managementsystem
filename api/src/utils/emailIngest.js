@@ -6,7 +6,7 @@ import { users } from '../modules/users/users.schema.js';
 import { customers } from '../modules/customers/customers.schema.js';
 import { tenants } from '../modules/tenants/tenants.schema.js';
 import { eq, and } from 'drizzle-orm';
-import { logActivity } from './activityUtils.js';
+import { logActivity, logActivityAndNotify } from './activityUtils.js';
 import { getSlaHours, computeSlaDeadline } from './slaUtils.js';
 
 let pollerInterval = null;
@@ -130,11 +130,12 @@ export const runEmailIngest = async (emitNotification) => {
               })
               .returning({ id: tickets.id, title: tickets.title });
 
-            await logActivity({
-              ticketId: ticket.id,
-              userId: adminUser.id,
-              action: 'CREATED',
+            await logActivityAndNotify({
+              ticketId:    ticket.id,
+              actorId:     adminUser.id,
+              action:      'CREATED',
               description: `Ticket created from email: ${fromEmail}`,
+              tenantId:    tenant.id,
             });
 
             await client.messageFlagsAdd({ uid: msg.uid }, ['\\Seen'], { uid: true });

@@ -52,7 +52,7 @@ import {
 } from 'react-hook-form';
 import { useFormFocus } from './FormFocusContext';
 
-type FocusableRef = React.RefObject<{ focus(): void }>;
+type FocusableRef = React.RefObject<{ focus(): void } | null>;
 
 export interface AppFormFieldProps<T extends FieldValues> {
   /** RHF field name — must match a key in the form schema */
@@ -81,7 +81,7 @@ function AppFormField<T extends FieldValues>({
   // Read from children.props inside the effect — avoids re-running when
   // children identity changes due to inline JSX re-creation.
   useEffect(() => {
-    const childInputRef = (children?.props as Record<string, unknown>)?.inputRef as FocusableRef | undefined;
+    const childInputRef = (children?.props as Record<string, unknown>)?.inputRef as React.RefObject<any> | undefined;
     if (childInputRef) registerRef(String(name), childInputRef);
     return () => unregisterField(String(name));
   // eslint-disable-next-line react-hooks/exhaustive-deps

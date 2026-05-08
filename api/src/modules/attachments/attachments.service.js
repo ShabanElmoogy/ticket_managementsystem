@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { isTenantScopedRole } from '../../middleware/auth.js';
-import { logActivity } from '../../utils/activityUtils.js';
+import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
 import { UPLOADS_DIR } from './attachments.upload.js';
 import * as repo from './attachments.repository.js';
 
@@ -49,12 +49,13 @@ export async function uploadAttachments(ticketId, files, user, tenantId) {
 
   const inserted = await repo.insertAttachments(rows);
 
-  // Fire-and-forget activity log — don't block the response
-  logActivity({
+  // Fire-and-forget activity log + notify
+  logActivityAndNotify({
     ticketId,
-    userId:      user.userId,
+    actorId:     user.userId,
     action:      'UPDATED',
     description: `Attached ${files.length} file(s): ${files.map((f) => f.originalname).join(', ')}`,
+    tenantId:    tenantId ?? null,
   }).catch((e) => console.error('Activity log error:', e));
 
   return inserted.map(formatAttachment);
@@ -82,10 +83,10 @@ export async function deleteAttachment(ticketId, attachmentId, user) {
 
   await repo.deleteAttachmentById(attachmentId);
 
-  // Fire-and-forget activity log
-  logActivity({
+  // Fire-and-forget activity log + notify
+  logActivityAndNotify({
     ticketId,
-    userId:      user.userId,
+    actorId:     user.userId,
     action:      'UPDATED',
     description: `Deleted attachment: ${attachment.originalName}`,
   }).catch((e) => console.error('Activity log error:', e));

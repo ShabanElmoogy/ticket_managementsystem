@@ -104,7 +104,8 @@ const ApplicationForm: React.FC<Props> = ({ item, onClose, onSave, submitting, m
         toast.error(t('applications.duplicateError.title'), t('applications.duplicateError.message'));
         return;
       }
-      // All other errors: NetworkErrorDialog handles automatically
+      // Re-throw so react-hook-form resets isSubmitting → button becomes active again
+      throw err;
     }
   };
 

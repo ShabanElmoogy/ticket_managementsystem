@@ -309,6 +309,20 @@
       "when": 1778086735848,
       "tag": "0045_aspiring_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1778300000000,
+      "tag": "0046_notification_tenant_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1778247804454,
+      "tag": "0047_complete_alex_power",
+      "breakpoints": true
     }
   ]
 }

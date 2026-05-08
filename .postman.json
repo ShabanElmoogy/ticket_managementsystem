@@ -18,7 +18,8 @@
     { "key": "ticketId",      "value": "" },
     { "key": "commentId",     "value": "" },
     { "key": "visitId",       "value": "" },
-    { "key": "notificationId", "value": "" }
+    { "key": "notificationId", "value": "" },
+    { "key": "attachmentId",   "value": "" }
   ],
   "item": [
     {
@@ -1598,7 +1599,7 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "Get Notifications",
+          "name": "Get Notifications (default — no limit, returns up to 500)",
           "event": [
             {
               "listen": "test",
@@ -1606,9 +1607,13 @@
                 "exec": [
                   "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
                   "const json = pm.response.json();",
-                  "pm.test('Response is array or paginated object', () => {",
-                  "  pm.expect(Array.isArray(json) || (typeof json === 'object' && json !== null)).to.be.true;",
-                  "});"
+                  "pm.test('Response is array', () => pm.expect(Array.isArray(json)).to.be.true);",
+                  "pm.test('Default non-paginated limit is 500 (array length <= 500)', () => {",
+                  "  pm.expect(json.length).to.be.at.most(500);",
+                  "});",
+                  "if (json.length > 0) {",
+                  "  pm.collectionVariables.set('notificationId', json[0].id);",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -1624,6 +1629,38 @@
               "raw": "{{baseUrl}}/notifications",
               "host": ["{{baseUrl}}"],
               "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications (explicit limit=200) ★ UPDATED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response is array', () => pm.expect(Array.isArray(json)).to.be.true);",
+                  "pm.test('Explicit limit=200 respected (array length <= 200)', () => {",
+                  "  pm.expect(json.length).to.be.at.most(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?limit=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [{ "key": "limit", "value": "200" }]
             }
           }
         },
@@ -1914,6 +1951,60 @@
               "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
               "host": ["{{baseUrl}}"],
               "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark Single Notification as Unread ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('isRead is false', () => pm.expect(json.isRead).to.equal(false));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/unread",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "unread"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Unread ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has message', () => pm.expect(json.message).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-all"]
             }
           }
         },
@@ -2532,6 +2623,73 @@
               "raw": "{{baseUrl}}/tickets/{{ticketId}}/attachments",
               "host": ["{{baseUrl}}"],
               "path": ["tickets", "{{ticketId}}", "attachments"]
+            }
+          }
+        },
+        {
+          "name": "Upload Ticket Attachments ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.expect(pm.response.code).to.equal(201));",
+                  "pm.test('Response is array', () => pm.expect(Array.isArray(pm.response.json())).to.be.true);",
+                  "const json = pm.response.json();",
+                  "if (json.length > 0 && json[0].id) pm.collectionVariables.set('attachmentId', json[0].id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select one or more files to upload (max 5)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}", "attachments"]
+            }
+          }
+        },
+        {
+          "name": "Delete Ticket Attachment ★ NEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.expect(pm.response.code).to.equal(200));",
+                  "pm.test('Returns message', () => pm.expect(pm.response.json()).to.have.property('message'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "x-tenant-slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tickets/{{ticketId}}/attachments/{{attachmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "{{ticketId}}", "attachments", "{{attachmentId}}"]
             }
           }
         },

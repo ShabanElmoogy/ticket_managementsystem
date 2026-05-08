@@ -6,8 +6,7 @@
 
 import * as repo from './tickets.repository.js';
 import { parsePaginationParams, buildPaginatedResponse, parseSearchParam } from '../../utils/pagination.js';
-import { logActivity } from '../../utils/activityUtils.js';
-import { createNotification } from '../../utils/notificationUtils.js';
+import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
 import { getSlaHours, computeSlaDeadline } from '../../utils/slaUtils.js';
 import { isTenantScopedRole } from '../../middleware/auth.js';
 import { isNull, isNotNull, eq, or, and, ilike } from 'drizzle-orm';
@@ -248,13 +247,6 @@ export async function createTicket(tenantId, body, actorId, emitFn) {
 
   await repo.insertTicketLabels(ticket.id, labelIds);
 
-  await logActivity({
-    ticketId:    ticket.id,
-    userId:      actorId,
-    action:      'CREATED',
-    description: `Created ticket: ${title}`,
-  });
-
   const [assignedUser, createdUser, customer, application, labelsData] = await Promise.all([
     assignedToId  ? repo.findUsersByIds([assignedToId])  : Promise.resolve([]),
     repo.findUsersByIds([actorId]),
@@ -272,43 +264,27 @@ export async function createTicket(tenantId, body, actorId, emitFn) {
     labels:      labelsData,
   };
 
-  // ── Notifications ─────────────────────────────────────────────────────────
-  // Build a fake req-like object so createNotification can emit via socket.
-  const reqLike = emitFn ? { emitNotification: emitFn } : null;
+  // Log activity + notify all relevant users in one call
+  await logActivityAndNotify({
+    ticketId:      ticket.id,
+    actorId,
+    action:        'CREATED',
+    description:   `Created ticket: ${title}`,
+    tenantId:      tenantId ?? null,
+    notifyUserIds: [...new Set([actorId, assignedToId].filter(Boolean))],
+    assigneeName:  assignedUser[0]?.name,
+  }, emitFn ? { emitNotification: emitFn } : null);
 
-  if (assignedToId) {
-    // Notify the assigned user (push + socket + DB persist)
-    const notifyIds = [...new Set([assignedToId, actorId].filter(Boolean))];
-    for (const userId of notifyIds) {
-      await createNotification({
-        userId,
-        ticketId:  ticket.id,
-        type:      'TICKET_ASSIGNED',
-        title:     'Ticket Assigned',
-        message:   `"${title}" has been assigned to ${assignedUser[0]?.name ?? 'you'}`,
-        assigneeName: assignedUser[0]?.name,
-      }, reqLike);
-    }
-  } else {
-    // No assignee — notify the creator and broadcast to tenant via socket only
-    await createNotification({
-      userId:    actorId,
-      ticketId:  ticket.id,
-      type:      'TICKET_CREATED',
-      title:     'Ticket Created',
-      message:   `"${title}" was created by ${createdUser[0]?.name ?? 'someone'}`,
-    }, reqLike);
-
-    // Also broadcast raw socket event to all tenant users (for live feed updates)
-    const payload = {
-      type: 'TICKET_CREATED',
-      data: {
-        ticket:    { id: ticket.id, title: ticket.title, priority: ticket.priority, status: ticket.status },
-        createdBy: createdUser[0]?.name,
-      },
-    };
-    await emitToTenant(tenantId ?? null, payload, emitFn);
-  }
+  // Broadcast raw socket event to all tenant users for live feed updates
+  const payload = {
+    type: assignedToId ? 'TICKET_ASSIGNED' : 'TICKET_CREATED',
+    data: {
+      ticket:     { id: ticket.id, title: ticket.title, priority: ticket.priority, status: ticket.status },
+      createdBy:  createdUser[0]?.name,
+      assignedTo: assignedUser[0]?.name,
+    },
+  };
+  await emitToTenant(tenantId ?? null, payload, emitFn);
 
   return fullTicket;
 }
@@ -359,17 +335,17 @@ export async function updateTicket(ticketId, tenantId, body, actorId, actorRole,
 
   const updated = await repo.updateTicketById(ticketId, data);
 
-  // Activity log
+  // Activity log + notifications
   if (status && status !== oldTicket.status) {
-    await logActivity({ ticketId, userId: actorId, action: 'STATUS_CHANGED', description: `Status changed to ${status}`, oldValue: oldTicket.status, newValue: status });
+    await logActivityAndNotify({ ticketId, actorId, action: 'STATUS_CHANGED', description: `Status changed to ${status}`, oldValue: oldTicket.status, newValue: status, tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
   } else if (priority && priority !== oldTicket.priority) {
-    await logActivity({ ticketId, userId: actorId, action: 'PRIORITY_CHANGED', description: `Priority changed to ${priority}`, oldValue: oldTicket.priority, newValue: priority });
+    await logActivityAndNotify({ ticketId, actorId, action: 'PRIORITY_CHANGED', description: `Priority changed to ${priority}`, oldValue: oldTicket.priority, newValue: priority, tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
   } else if (dueDate !== undefined) {
     const oldDate = oldTicket.dueDate ? new Date(oldTicket.dueDate).toLocaleDateString('en-GB') : 'none';
     const newDate = dueDate ? new Date(dueDate).toLocaleDateString('en-GB') : 'none';
-    await logActivity({ ticketId, userId: actorId, action: 'UPDATED', description: `Due date changed from ${oldDate} to ${newDate}`, oldValue: oldTicket.dueDate?.toISOString() ?? null, newValue: dueDate || null });
+    await logActivityAndNotify({ ticketId, actorId, action: 'UPDATED', description: `Due date changed from ${oldDate} to ${newDate}`, oldValue: oldTicket.dueDate?.toISOString() ?? null, newValue: dueDate || null, tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
   } else {
-    await logActivity({ ticketId, userId: actorId, action: 'UPDATED', description: 'Ticket updated' });
+    await logActivityAndNotify({ ticketId, actorId, action: 'UPDATED', description: 'Ticket updated', tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
   }
 
   const actor = await repo.findUserById(actorId);
@@ -399,7 +375,7 @@ export async function deleteTicket(ticketId, tenantId, actorId, actorRole, emitF
     repo.findUserById(actorId),
   ]);
 
-  await logActivity({ ticketId, userId: actorId, action: 'DELETED', description: 'Ticket deleted' });
+  await logActivityAndNotify({ ticketId, actorId, action: 'DELETED', description: 'Ticket deleted', tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
 
   const payload = { type: 'TICKET_UPDATED', data: { ticket: { id: ticketId, title: ticket?.title }, updatedBy: actor?.name, newStatus: 'DELETED' } };
   const notifyTenantId = tenantId ?? actor?.tenantId ?? null;
@@ -422,7 +398,7 @@ export async function restoreTicket(ticketId, tenantId, actorId, actorRole, emit
     repo.findUserById(actorId),
   ]);
 
-  await logActivity({ ticketId, userId: actorId, action: 'RESTORED', description: 'Ticket restored' });
+  await logActivityAndNotify({ ticketId, actorId, action: 'RESTORED', description: 'Ticket restored', tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
 
   const payload = { type: 'TICKET_UPDATED', data: { ticket: { id: ticketId, title: ticket?.title }, updatedBy: actor?.name, newStatus: 'RESTORED' } };
   const notifyTenantId = tenantId ?? actor?.tenantId ?? null;
@@ -443,7 +419,7 @@ export async function takeTicket(ticketId, tenantId, actorId, actorRole, emitFn)
 
   const updated = await repo.updateTicketById(ticketId, { assignedToId: actorId, status: 'IN_PROGRESS' });
 
-  await logActivity({ ticketId, userId: actorId, action: 'ASSIGNED', description: 'Ticket taken and assigned to self', newValue: actorId });
+  await logActivityAndNotify({ ticketId, actorId, action: 'ASSIGNED', description: 'Ticket taken and assigned to self', newValue: actorId, tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null);
 
   return updated;
 }
@@ -454,7 +430,7 @@ export async function bulkUpdateStatus(ids, status, actorId, tenantId, emitFn) {
   await repo.bulkUpdateTicketStatus(ids, status);
 
   await Promise.all(ids.map((id) =>
-    logActivity({ ticketId: id, userId: actorId, action: 'STATUS_CHANGED', description: `Status changed to ${status}`, newValue: status }),
+    logActivityAndNotify({ ticketId: id, actorId, action: 'STATUS_CHANGED', description: `Status changed to ${status}`, newValue: status, tenantId: tenantId ?? null }, emitFn ? { emitNotification: emitFn } : null),
   ));
 
   const actor = await repo.findUserById(actorId);
@@ -478,12 +454,15 @@ export async function reassignTicket(ticketId, tenantId, assignedToId, actorId, 
     repo.findUsersByIds([assignedToId]),
   ]);
 
-  await logActivity({
-    ticketId, userId: actorId, action: 'REASSIGNED',
+  await logActivityAndNotify({
+    ticketId, actorId, action: 'REASSIGNED',
     description: `Reassigned from ${oldAssignee[0]?.name ?? 'unassigned'} to ${newAssignee[0]?.name}`,
-    oldValue: oldTicket.assignedToId ?? null,
-    newValue: assignedToId,
-  });
+    oldValue:      oldTicket.assignedToId ?? null,
+    newValue:      assignedToId,
+    tenantId:      tenantId ?? null,
+    notifyUserIds: [...new Set([assignedToId, oldTicket.assignedToId, actorId].filter(Boolean))],
+    assigneeName:  newAssignee[0]?.name,
+  }, emitFn ? { emitNotification: emitFn } : null);
 
   const payload = {
     type: 'TICKET_ASSIGNED',

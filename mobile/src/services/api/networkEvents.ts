@@ -94,9 +94,21 @@ export const networkEvents = {
    */
   enqueue: (config: AxiosRequestConfig): Promise<unknown> => {
     return new Promise((resolve, reject) => {
+      const key = `${config.method?.toUpperCase()}:${config.url}`;
+      const isDuplicate = queue.some(
+        (q) => `${q.config.method?.toUpperCase()}:${q.config.url}` === key
+      );
       queue.push({ config, resolve, reject });
       if (__DEV__) {
-        console.log(`📥 [RetryQueue] Queued: ${config.method?.toUpperCase()} ${config.url} (${queue.length} total)`);
+        console.log(
+          `\n📥 [RetryQueue] ─────────────────────────────────────`,
+          `\n   Action  : ENQUEUE`,
+          `\n   Request : ${config.method?.toUpperCase()} ${config.url}`,
+          `\n   Duplicate: ${isDuplicate ? 'YES — will be merged on drain' : 'no'}`,
+          `\n   Queue   : ${queue.length} pending`,
+          `\n   Online  : ${isOnline}`,
+          `\n─────────────────────────────────────────────────────\n`,
+        );
       }
     });
   },
@@ -148,13 +160,27 @@ export const networkEvents = {
 
     networkSub = Network.addNetworkStateListener((state) => {
       const wasOffline = !isOnline;
+      const prevOnline = isOnline;
       isOnline = !!(state.isConnected && state.isInternetReachable);
 
-      if (__DEV__) console.log(`🌐 Network: ${isOnline ? 'online' : 'offline'}`);
+      if (__DEV__) {
+        console.log(
+          `\n🌐 [Network] ─────────────────────────────────────────`,
+          `\n   Status  : ${isOnline ? '🟢 ONLINE' : '🔴 OFFLINE'}`,
+          `\n   Previous: ${prevOnline ? 'online' : 'offline'}`,
+          `\n   Transition: ${wasOffline && isOnline ? '⬆️  OFFLINE → ONLINE (will drain queue)' : !wasOffline && !isOnline ? '⬇️  ONLINE → OFFLINE (requests will queue)' : 'no change'}`,
+          `\n   Queue   : ${queue.length} pending`,
+          `\n─────────────────────────────────────────────────────\n`,
+        );
+      }
 
       if (wasOffline && isOnline) {
         connectivityCallback?.();
-        if (queue.length > 0) drainQueue();
+        if (queue.length > 0) {
+          drainQueue();
+        } else if (__DEV__) {
+          console.log('🌐 [Network] Back online — queue is empty, nothing to drain.');
+        }
       }
     });
   },
@@ -173,14 +199,18 @@ export const networkEvents = {
 // ── Queue drain ───────────────────────────────────────────────────────────────
 
 async function drainQueue(): Promise<void> {
-  if (!retryCallback || queue.length === 0) return;
+  if (!retryCallback) {
+    if (__DEV__) console.warn('⚠️  [RetryQueue] drainQueue called but retryCallback is null — did you call setRetryCallback?');
+    return;
+  }
+  if (queue.length === 0) {
+    if (__DEV__) console.log('🔄 [RetryQueue] drainQueue called but queue is empty.');
+    return;
+  }
 
-  const pending = queue.splice(0, queue.length); // take all, clear queue
+  const pending = queue.splice(0, queue.length); // take all, clear queue atomically
 
   // ── Deduplicate by method + url ───────────────────────────────────────────
-  // If the same request was queued multiple times while offline, only execute
-  // it once. All duplicate entries share the same resolve/reject so they all
-  // settle when the single request completes.
   const seen = new Map<string, QueuedRequest>();
   const duplicates: Array<{ key: string; entry: QueuedRequest }> = [];
 
@@ -197,38 +227,68 @@ async function drainQueue(): Promise<void> {
 
   if (__DEV__) {
     console.log(
-      `🔄 [RetryQueue] Draining ${unique.length} unique request(s)` +
-      (duplicates.length > 0 ? ` (${duplicates.length} duplicate(s) merged)` : '') + '…'
+      `\n🔄 [RetryQueue] ─────────────────────────────────────`,
+      `\n   Action   : DRAIN START`,
+      `\n   Total    : ${pending.length} queued`,
+      `\n   Unique   : ${unique.length} will execute`,
+      `\n   Merged   : ${duplicates.length} duplicates (same result, no extra request)`,
+      `\n   Requests :`,
+      ...unique.map((u, i) =>
+        `\n     ${i + 1}. ${u.config.method?.toUpperCase()} ${u.config.url}`
+      ),
+      duplicates.length > 0
+        ? `\n   Duplicates:` + duplicates.map((d) => `\n     • ${d.key}`).join('')
+        : '',
+      `\n─────────────────────────────────────────────────────\n`,
     );
   }
 
   let successCount = 0;
+  let failCount    = 0;
 
   await Promise.allSettled(
     unique.map(async ({ config, resolve, reject }) => {
-      // Find all duplicate entries for this key so we can settle them too
-      const key = `${config.method?.toUpperCase()}:${config.url}`;
+      const key   = `${config.method?.toUpperCase()}:${config.url}`;
       const dupes = duplicates.filter((d) => d.key === key).map((d) => d.entry);
+
+      if (__DEV__) {
+        console.log(`   ⏳ [RetryQueue] Retrying: ${key}${dupes.length > 0 ? ` (+${dupes.length} merged)` : ''}`);
+      }
 
       try {
         const result = await retryCallback!(config);
         resolve(result);
-        dupes.forEach((d) => d.resolve(result)); // settle all duplicates
+        dupes.forEach((d) => d.resolve(result));
         successCount++;
-        if (__DEV__) {
-          console.log(`✅ [RetryQueue] Retried: ${config.method?.toUpperCase()} ${config.url}`);
-        }
-      } catch (err) {
+        if (__DEV__) console.log(`   ✅ [RetryQueue] Success : ${key}`);
+      } catch (err: any) {
         reject(err);
-        dupes.forEach((d) => d.reject(err)); // reject all duplicates
-        if (__DEV__) {
-          console.warn(`❌ [RetryQueue] Retry failed: ${config.method?.toUpperCase()} ${config.url}`, err);
-        }
+        dupes.forEach((d) => d.reject(err));
+        failCount++;
+        if (__DEV__) console.warn(`   ❌ [RetryQueue] Failed  : ${key} — ${err?.message ?? err}`);
       }
     }),
   );
 
+  if (__DEV__) {
+    console.log(
+      `\n🔄 [RetryQueue] ─────────────────────────────────────`,
+      `\n   Action   : DRAIN COMPLETE`,
+      `\n   Success  : ${successCount}`,
+      `\n   Failed   : ${failCount}`,
+      `\n   Remaining: ${queue.length} (new requests queued during drain)`,
+      `\n─────────────────────────────────────────────────────\n`,
+    );
+  }
+
   if (successCount > 0) {
     retrySuccessListeners.forEach((fn) => fn(successCount));
+  }
+
+  // If new requests were queued during the drain (e.g. from retry callbacks),
+  // drain again immediately.
+  if (queue.length > 0 && isOnline) {
+    if (__DEV__) console.log('🔄 [RetryQueue] New items queued during drain — draining again…');
+    drainQueue();
   }
 }

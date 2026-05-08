@@ -44,13 +44,13 @@ interface ScrollTarget {
 }
 
 interface FieldEntry {
-  ref?: React.RefObject<Focusable>;
+  ref?: React.RefObject<any>;
   y:    number;
 }
 
 interface FormFocusContextValue {
   /** Register a field's inputRef so focusFirst can focus it */
-  registerRef:     (name: string, ref: React.RefObject<Focusable>) => void;
+  registerRef:     (name: string, ref: React.RefObject<any>) => void;
   /** Register a field's Y position so focusFirst can scroll to it */
   registerY:       (name: string, y: number) => void;
   /** Remove a field's entry — call on unmount for conditional fields */
@@ -92,7 +92,7 @@ export function useFormFocus(): FormFocusContextValue {
 export const FormFocusProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const fields = useRef<Map<string, FieldEntry>>(new Map());
 
-  const registerRef = useCallback((name: string, ref: React.RefObject<Focusable>) => {
+  const registerRef = useCallback((name: string, ref: React.RefObject<any>) => {
     const existing = fields.current.get(name) ?? { y: 0 };
     fields.current.set(name, { ...existing, ref });
   }, []);

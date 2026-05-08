@@ -313,7 +313,9 @@ const doSave = async (data: any) => {
       toast.error(t('entity.duplicateError.title'), t('entity.duplicateError.message'));
       return;
     }
-    // All other errors: NetworkErrorDialog handles automatically — do NOT add more code
+    // Re-throw so react-hook-form resets isSubmitting → submit button becomes active again
+    // NetworkErrorDialog handles display automatically — do NOT toast here
+    throw err;
   }
 };
 ```

@@ -3,7 +3,7 @@ import { db } from '../config/database.js';
 import { tickets, notifications, users } from '../modules/schema.js';
 import { tenants } from '../modules/tenants/tenants.schema.js';
 import { eq, and, lt, isNull, isNotNull, inArray, or, lte } from 'drizzle-orm';
-import { logActivity } from './activityUtils.js';
+import { logActivity, logActivityAndNotify } from './activityUtils.js';
 
 const PRIORITY_LADDER = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
@@ -89,13 +89,15 @@ export const escalatePriorities = async () => {
         .set({ priority: newPriority, lastEscalatedAt: now, updatedAt: now })
         .where(eq(tickets.id, ticket.id));
 
-      await logActivity({
-        ticketId: ticket.id,
-        userId: ticket.createdById,
-        action: 'PRIORITY_CHANGED',
+      await logActivityAndNotify({
+        ticketId:    ticket.id,
+        actorId:     ticket.createdById,
+        action:      'PRIORITY_CHANGED',
         description: `Auto-escalated: overdue (${ticket.priority} → ${newPriority})`,
-        oldValue: ticket.priority,
-        newValue: newPriority,
+        oldValue:    ticket.priority,
+        newValue:    newPriority,
+        tenantId:    tenantId ?? null,
+        notifyUserIds: ticket.assignedToId ? [ticket.assignedToId] : [],
       });
 
       escalated.push({ ...ticket, newPriority, tenantId });

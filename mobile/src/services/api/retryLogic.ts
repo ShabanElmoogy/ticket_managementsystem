@@ -58,7 +58,13 @@ async function retryRequest<T>(config: AxiosRequestConfig, attempt = 0): Promise
     const isNetworkError = !apiError.status && apiError.isRetryable;
     if (isNetworkError && attempt === 0 && !networkEvents.isOnline()) {
       if (__DEV__) {
-        console.log(`📥 [RetryQueue] Device offline — queuing ${config.method?.toUpperCase()} ${config.url}`);
+        console.log(
+          `\n📵 [RetryLogic] ─────────────────────────────────────`,
+          `\n   Device is OFFLINE`,
+          `\n   Request: ${config.method?.toUpperCase()} ${config.url}`,
+          `\n   Action : Enqueuing for retry when connectivity returns`,
+          `\n─────────────────────────────────────────────────────\n`,
+        );
       }
       return networkEvents.enqueue(config) as Promise<T>;
     }

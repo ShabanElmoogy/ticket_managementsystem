@@ -16,7 +16,7 @@ import { Platform } from 'react-native';
 const RN = require('react-native') as any;
 const AppState = RN.AppState as any;
 type AppStateStatus = 'active' | 'background' | 'inactive' | 'unknown' | 'extension';
-import { dashboardApi } from '@/src/features/dashboard/api/dashboard';
+import { notificationsApi } from '@/src/features/notifications/api/notifications';
 import { SOCKET } from '@/src/constants/api';
 import type { ActivityItem } from '@/src/services/api/types/notification';
 import type { NotificationType } from '@/src/services/api/types/notification';
@@ -30,6 +30,16 @@ export type ActivityTypeFilter =
   | 'TICKET_DELETED'
   | 'TICKET_RESTORED'
   | NotificationType;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Returns true if the string is a valid UUID v4 — i.e. a real DB notification ID */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isUUID(id: string): boolean {
+  return UUID_RE.test(id);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline types — prepended directly without a DB refetch
@@ -62,13 +72,33 @@ export function useActivityFeed() {
   const initialLoadDone = useRef(false);
 
   // ── Load activities from API ───────────────────────────────────────────────
+  // Uses GET /notifications — the only source that has real read/unread state.
+  // GET /dashboard/activities returns ticket activities with no read field.
 
   const loadActivities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const items = await dashboardApi.getActivities(20);
-      setActivities(items);
-      setUnreadCount(items.filter((a) => !a.read).length);
+      const items = await notificationsApi.getNotifications();
+      if (__DEV__) {
+        console.log(`[ActivityFeed] Loaded ${items.length} notifications`);
+        if (items.length > 0) console.log('[ActivityFeed] Sample:', JSON.stringify(items[0]));
+      }
+      // Map NotificationItem → ActivityItem
+      const mapped: ActivityItem[] = items.map((n) => ({
+        id:             n.id,
+        notificationId: n.id,
+        type:           n.type,
+        data: {
+          ticket:      n.data?.ticketId
+            ? { id: n.data.ticketId, title: (n.data as any).ticketTitle ?? n.title }
+            : undefined,
+          description: n.message,
+        },
+        timestamp: n.createdAt,
+        read:      n.read,
+      }));
+      setActivities(mapped);
+      setUnreadCount(mapped.filter((a) => !a.read).length);
     } catch {
       // NetworkErrorDialog handles API errors automatically
     } finally {
@@ -122,6 +152,8 @@ export function useActivityFeed() {
         // Prepend inline — no DB refetch needed
         const item: ActivityItem = {
           id: `${raw.id || raw.type}-${Date.now()}`,
+          // Store the real DB notification ID separately — used for markAsRead API calls
+          notificationId: raw.id ?? undefined,
           type: raw.type as NotificationType,
           data: {
             ticket:        raw.data?.ticket,
@@ -159,6 +191,8 @@ export function useActivityFeed() {
     setTimeout(() => {
       setActivities((prev) => prev.map((a) => ({ ...a, read: true })));
       setUnreadCount(0);
+      // Persist to DB
+      notificationsApi.markAllAsRead().catch(() => {});
     }, 500);
   }, []);
 
@@ -173,26 +207,41 @@ export function useActivityFeed() {
       prev.map((a) => (a.id === id ? { ...a, read: true } : a))
     );
     setUnreadCount((c) => Math.max(0, c - 1));
-  }, []);
+    // Only call API if this is a real persisted notification (has a DB UUID)
+    const item = activities.find((a) => a.id === id);
+    const notifId = item?.notificationId ?? (isUUID(id) ? id : null);
+    if (notifId) notificationsApi.markAsRead(notifId).catch(() => {});
+  }, [activities]);
 
   const markUnread = useCallback((id: string) => {
     setActivities((prev) =>
       prev.map((a) => (a.id === id ? { ...a, read: false } : a))
     );
     setUnreadCount((c) => c + 1);
-  }, []);
+    // Only call API if this is a real persisted notification
+    const item = activities.find((a) => a.id === id);
+    const notifId = item?.notificationId ?? (isUUID(id) ? id : null);
+    if (notifId) notificationsApi.markAsUnread(notifId).catch(() => {});
+  }, [activities]);
 
   const markAllRead = useCallback(() => {
+    // Optimistic update
     setActivities((prev) => prev.map((a) => ({ ...a, read: true })));
     setUnreadCount(0);
+    // Persist to DB
+    notificationsApi.markAllAsRead().catch(() => {});
   }, []);
 
   const markAllUnread = useCallback(() => {
+    // Optimistic update
     setActivities((prev) => prev.map((a) => ({ ...a, read: false })));
     setUnreadCount(activities.length);
+    // Persist to DB
+    notificationsApi.markAllAsUnread().catch(() => {});
   }, [activities.length]);
 
   const clearAll = useCallback(() => {
+    // Local only — no backend endpoint for clear-all
     setActivities([]);
     setUnreadCount(0);
   }, []);

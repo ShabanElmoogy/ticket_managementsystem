@@ -54,11 +54,12 @@ function getChannelId(type) {
   }
 }
 
-export const createNotification = async ({ userId, ticketId, type, title, message, assigneeName }, req = null) => {
+export const createNotification = async ({ userId, ticketId, tenantId, type, title, message, assigneeName }, req = null) => {
   try {
     const [notification] = await db.insert(notifications).values({
       userId,
       ticketId,
+      tenantId: tenantId ?? null,
       type,
       title,
       message

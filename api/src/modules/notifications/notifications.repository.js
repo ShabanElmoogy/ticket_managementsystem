@@ -6,9 +6,8 @@
 
 import { db } from '../../config/database.js';
 import { notifications } from './notifications.schema.js';
-import { users } from '../users/users.schema.js';
 import { tickets } from '../tickets/tickets.schema.js';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
@@ -19,7 +18,8 @@ import { eq, and, desc, count, sql } from 'drizzle-orm';
 export async function findNotificationsByUserId(userId, { limit = 50, offset, unreadOnly = false, tenantId = null } = {}) {
   const conditions = [eq(notifications.userId, userId)];
   if (unreadOnly) conditions.push(eq(notifications.isRead, false));
-  if (tenantId)   conditions.push(eq(users.tenantId, tenantId));
+  // Use notifications.tenantId directly — no join with users needed
+  if (tenantId)   conditions.push(eq(notifications.tenantId, tenantId));
 
   let query = db
     .select({
@@ -35,17 +35,12 @@ export async function findNotificationsByUserId(userId, { limit = 50, offset, un
       },
     })
     .from(notifications)
-    .leftJoin(users,   eq(notifications.userId,   users.id))
     .leftJoin(tickets, eq(notifications.ticketId, tickets.id))
     .where(and(...conditions))
     .orderBy(desc(notifications.createdAt));
 
-  if (limit !== undefined) {
-    query = query.limit(limit);
-  }
-  if (offset !== undefined) {
-    query = query.offset(offset);
-  }
+  if (limit !== undefined) query = query.limit(limit);
+  if (offset !== undefined) query = query.offset(offset);
 
   return query;
 }
@@ -56,36 +51,28 @@ export async function findNotificationsByUserId(userId, { limit = 50, offset, un
 export async function countNotificationsByUserId(userId, { unreadOnly = false, tenantId = null } = {}) {
   const conditions = [eq(notifications.userId, userId)];
   if (unreadOnly) conditions.push(eq(notifications.isRead, false));
-  if (tenantId)   conditions.push(eq(users.tenantId, tenantId));
+  if (tenantId)   conditions.push(eq(notifications.tenantId, tenantId));
 
-  const [result] = tenantId
-    ? await db
-        .select({ count: count() })
-        .from(notifications)
-        .leftJoin(users, eq(notifications.userId, users.id))
-        .where(and(...conditions))
-    : await db
-        .select({ count: count() })
-        .from(notifications)
-        .where(and(...conditions));
+  const [result] = await db
+    .select({ count: count() })
+    .from(notifications)
+    .where(and(...conditions));
 
   return Number(result.count);
 }
 
 /** Count unread notifications for a user, optionally tenant-scoped. */
 export async function countUnreadByUserId(userId, tenantId) {
-  const baseWhere = and(eq(notifications.userId, userId), eq(notifications.isRead, false));
+  const conditions = [
+    eq(notifications.userId, userId),
+    eq(notifications.isRead, false),
+  ];
+  if (tenantId) conditions.push(eq(notifications.tenantId, tenantId));
 
-  const [result] = tenantId
-    ? await db
-        .select({ count: count() })
-        .from(notifications)
-        .leftJoin(users, eq(notifications.userId, users.id))
-        .where(and(baseWhere, eq(users.tenantId, tenantId)))
-    : await db
-        .select({ count: count() })
-        .from(notifications)
-        .where(baseWhere);
+  const [result] = await db
+    .select({ count: count() })
+    .from(notifications)
+    .where(and(...conditions));
 
   return Number(result.count);
 }
@@ -110,12 +97,30 @@ export async function markOneAsRead(id) {
   return row ?? null;
 }
 
+/** Mark a single notification as unread, returns the updated row. */
+export async function markOneAsUnread(id) {
+  const [row] = await db
+    .update(notifications)
+    .set({ isRead: false })
+    .where(eq(notifications.id, id))
+    .returning();
+  return row ?? null;
+}
+
 /** Mark all unread notifications for a user as read. */
 export async function markAllAsReadByUserId(userId) {
   await db
     .update(notifications)
     .set({ isRead: true })
     .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+}
+
+/** Mark all read notifications for a user as unread. */
+export async function markAllAsUnreadByUserId(userId) {
+  await db
+    .update(notifications)
+    .set({ isRead: false })
+    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, true)));
 }
 
 /** Delete a notification by ID. */

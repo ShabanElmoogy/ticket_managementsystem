@@ -103,15 +103,21 @@ const CustomerForm: React.FC<Props> = ({
       onClose();
     } catch (err: any) {
       // NetworkErrorDialog handles all API errors automatically via httpClient interceptor.
-      // For duplicate email specifically, flag it so the Cancel button closes the form.
       const serverMsg: string =
         err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? '';
+
       if (serverMsg.toLowerCase().includes('already exists')) {
+        // Duplicate email — flag so Cancel on NetworkErrorDialog closes the form
         isDuplicateError.current = true;
-        // ✅ Show a specific toast for duplicate so the user knows what happened
         toast.error(t('customers.duplicateEmail.title'), t('customers.duplicateEmail.message'));
+        // Don't re-throw — NetworkErrorDialog already shows, we just added a toast
+        return;
       }
-      // All other errors are shown by NetworkErrorDialog — do not toast here
+
+      // For ALL other errors (network, server, etc.):
+      // Re-throw so react-hook-form resets isSubmitting → button becomes active again.
+      // NetworkErrorDialog is already shown by the httpClient interceptor.
+      throw err;
     }
   };
 

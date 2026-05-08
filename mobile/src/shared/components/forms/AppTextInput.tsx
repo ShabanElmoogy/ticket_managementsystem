@@ -96,8 +96,8 @@ export interface AppTextInputProps {
   max?:             number;
   step?:            number;
   // Refs
-  inputRef?:        React.RefObject<{ focus: () => void }>;
-  nextRef?:         React.RefObject<{ focus: () => void }>;
+  inputRef?:        React.RefObject<{ focus: () => void } | null>;
+  nextRef?:         React.RefObject<{ focus: () => void } | null>;
   // TextInput passthrough
   autoCapitalize?:  'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?:     boolean;

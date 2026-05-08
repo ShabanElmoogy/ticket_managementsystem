@@ -90,7 +90,8 @@ const TenantForm: React.FC<{
         toast.error(t('tenants.duplicateError.title'), t('tenants.duplicateError.message'));
         return;
       }
-      // All other errors: NetworkErrorDialog handles automatically
+      // Re-throw so react-hook-form resets isSubmitting → button becomes active again
+      throw err;
     }
   };
 

@@ -5,7 +5,7 @@
  */
 
 import * as repo from './programming.repository.js';
-import { logActivity } from '../../utils/activityUtils.js';
+import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
 import { Role } from '../../constants/roles.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
@@ -70,11 +70,12 @@ export async function upsertProgrammingDetails(ticketId, tenantId, body, actorId
     ? await repo.updateProgrammingDetails(ticketId, payload)
     : await repo.insertProgrammingDetails(payload);
 
-  await logActivity({
+  await logActivityAndNotify({
     ticketId,
-    userId:      actorId,
+    actorId:     actorId,
     action:      'PROGRAMMING_UPDATED',
     description: 'Programming details updated',
+    tenantId:    tenantId ?? null,
   });
 
   return toCamel(result);
@@ -92,13 +93,16 @@ export async function assignProgrammer(ticketId, tenantId, programmerId, actorId
   const updated = await repo.assignProgrammerToTicket(ticketId, programmerId);
   if (!updated) throw fail('Ticket not found', 404);
 
-  await logActivity({
+  await logActivityAndNotify({
     ticketId,
-    userId:      actorId,
-    action:      'PROGRAMMER_ASSIGNED',
-    description: `Assigned to programmer: ${programmer.name}`,
-    newValue:    programmerId,
-  });
+    actorId:      actorId,
+    action:       'PROGRAMMER_ASSIGNED',
+    description:  `Assigned to programmer: ${programmer.name}`,
+    newValue:     programmerId,
+    tenantId:     tenantId ?? null,
+    notifyUserIds: [programmerId, actorId],
+    assigneeName: programmer.name,
+  }, safeEmit ? { emitNotification: safeEmit } : null);
 
   // Notify all tenant users so the activity feed updates for everyone
   if (safeEmit) {

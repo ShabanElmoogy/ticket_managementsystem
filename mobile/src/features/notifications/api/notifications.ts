@@ -8,7 +8,7 @@ import type { NotificationItem, PushTokenRegistration } from '../types/types';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class NotificationsApiService extends BaseApiService {
-  /** GET /notifications — fetch the full notification list for the current user */
+  /** GET /notifications — fetch all notifications for the current user (no pagination) */
   getNotifications = () =>
     this.get<NotificationItem[]>(API.NOTIFICATIONS.LIST);
 
@@ -20,9 +20,17 @@ export class NotificationsApiService extends BaseApiService {
   markAsRead = (id: string) =>
     this.patch<{ message: string }>(API.NOTIFICATIONS.READ(id), {});
 
+  /** PATCH /notifications/:id/unread — mark a single notification as unread */
+  markAsUnread = (id: string) =>
+    this.patch<{ message: string }>(API.NOTIFICATIONS.UNREAD(id), {});
+
   /** POST /notifications/read-all — mark all notifications as read */
   markAllAsRead = () =>
     this.post<{ message: string }>(API.NOTIFICATIONS.READ_ALL, {});
+
+  /** POST /notifications/unread-all — mark all notifications as unread */
+  markAllAsUnread = () =>
+    this.post<{ message: string }>(API.NOTIFICATIONS.UNREAD_ALL, {});
 
   /** POST /notifications/push-token — register a push token for the current user */
   registerPushToken = (data: PushTokenRegistration) =>

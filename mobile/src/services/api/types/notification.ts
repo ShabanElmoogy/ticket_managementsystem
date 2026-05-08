@@ -29,7 +29,10 @@ export interface Notification {
 }
 
 export interface ActivityItem {
+  /** Display ID — may be synthetic for socket-injected items */
   id: string;
+  /** Real notification UUID from the DB — only present for persisted notifications */
+  notificationId?: string;
   type: NotificationType;
   data: {
     ticket?: { id: string; title: string; priority?: string; status?: string };

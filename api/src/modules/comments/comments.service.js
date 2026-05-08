@@ -4,7 +4,7 @@
  * Orchestrates repository calls, enforces rules, throws descriptive errors.
  */
 
-import { logActivity } from '../../utils/activityUtils.js';
+import { logActivity, logActivityAndNotify } from '../../utils/activityUtils.js';
 import * as repo from './comments.repository.js';
 
 // ── Error helper ──────────────────────────────────────────────────────────────
@@ -84,21 +84,28 @@ export async function createComment(ticketId, content, user, emitNotification) {
   // Fire-and-forget: activity log + notifications
   (async () => {
     try {
-      await logActivity({
-        ticketId,
-        userId:      user.userId,
-        action:      'COMMENTED',
-        description: 'Commented on ticket',
-        newValue:    trimmed.substring(0, 100),
-      });
+      const reqLike = { emitNotification: safeEmit };
 
-      // Broadcast COMMENT_ADDED to all tenant users
+      // Notify assignee + creator + mentioned users
+      const notifyIds = [...new Set([ticket.assignedToId, ticket.createdById, ticket.programmerId].filter(Boolean))];
+
+      await logActivityAndNotify({
+        ticketId,
+        actorId:      user.userId,
+        action:       'COMMENTED',
+        description:  'Commented on ticket',
+        newValue:     trimmed.substring(0, 100),
+        tenantId:     tenantId ?? null,
+        notifyUserIds: notifyIds,
+      }, reqLike);
+
+      // Broadcast COMMENT_ADDED socket event to all tenant users
       const commentPayload = {
         type: 'COMMENT_ADDED',
         data: {
-          ticket:        { id: ticket.id, title: ticket.title },
-          commentBy:     commentUser?.name,
-          comment:       trimmed.substring(0, 100),
+          ticket:         { id: ticket.id, title: ticket.title },
+          commentBy:      commentUser?.name,
+          comment:        trimmed.substring(0, 100),
           mentionedUsers: extractMentions(trimmed),
         },
       };
@@ -110,7 +117,7 @@ export async function createComment(ticketId, content, user, emitNotification) {
         safeEmit('broadcast', commentPayload);
       }
 
-      // Send COMMENT_MENTION to each mentioned user
+      // Send COMMENT_MENTION notifications to mentioned users
       const mentionedNames = extractMentions(trimmed);
       if (mentionedNames.length > 0) {
         const allUsers    = await repo.findUsersForMentions(tenantId);
@@ -163,30 +170,14 @@ export async function deleteComment(ticketId, commentId, user, emitNotification)
 
   await repo.deleteCommentById(commentId);
 
-  // Activity log + notification (not fire-and-forget — delete is synchronous)
-  await logActivity({
+  await logActivityAndNotify({
     ticketId,
-    userId:      user.userId,
-    action:      'COMMENT_DELETED',
-    description: 'Deleted a comment',
-  });
-
-  const notificationPayload = {
-    type: 'COMMENT_DELETED',
-    data: {
-      ticket:    { id: ticketId, title: ticket.title },
-      commentBy: actor?.name,
-    },
-  };
-
-  const tenantId = isTenantScoped(user.role) ? (user.tenantId ?? null) : null;
-
-  if (tenantId) {
-    const ids = await repo.findTenantUserIds(tenantId);
-    ids.forEach((uid) => safeEmit(uid, notificationPayload));
-  } else {
-    safeEmit('broadcast', notificationPayload);
-  }
+    actorId:      user.userId,
+    action:       'COMMENT_DELETED',
+    description:  'Deleted a comment',
+    tenantId:     tenantId ?? null,
+    notifyUserIds: [...new Set([ticket.assignedToId, ticket.createdById].filter(Boolean))],
+  }, { emitNotification: safeEmit });
 
   return { message: 'Comment deleted' };
 }

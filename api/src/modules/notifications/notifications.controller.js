@@ -20,7 +20,6 @@ const tenantId = (req) => req.tenantScope?.type === 'TENANT' ? req.tenantScope.t
 
 export const getNotifications = async (req, res) => {
   try {
-    // Validate query parameters early
     if (req.query.page && isNaN(parseInt(req.query.page))) {
       return res.status(400).json({ error: 'Page must be a number' });
     }
@@ -28,30 +27,23 @@ export const getNotifications = async (req, res) => {
       return res.status(400).json({ error: 'Limit must be a number' });
     }
 
-    // Call service with all query parameters
+    // No tenantId — notifications are scoped by userId only
     const result = await notificationsService.listNotifications(userId(req), {
       limit:      req.query.limit,
       unreadOnly: req.query.unreadOnly,
-      tenantId:   tenantId(req),
+      tenantId:   null,
       query:      req.query,
     });
-    
-    // Set appropriate cache headers based on response type
-    if (Array.isArray(result)) {
-      // Legacy array response - shorter cache for dynamic data
-      res.set('Cache-Control', 'private, max-age=60');
-    } else {
-      // Paginated response - can cache longer due to pagination metadata
-      res.set('Cache-Control', 'private, max-age=300');
-    }
 
+    res.set('Cache-Control', 'private, max-age=30');
     res.json(result);
   } catch (e) { handleError(res, e, 'Get notifications'); }
 };
 
 export const getNotificationCount = async (req, res) => {
   try {
-    res.json(await notificationsService.getUnreadCount(userId(req), tenantId(req)));
+    // No tenantId — count all unread for this user
+    res.json(await notificationsService.getUnreadCount(userId(req), null));
   } catch (e) { handleError(res, e, 'Get notification count'); }
 };
 
@@ -65,6 +57,18 @@ export const markAllAsRead = async (req, res) => {
   try {
     res.json(await notificationsService.markAllAsRead(userId(req)));
   } catch (e) { handleError(res, e, 'Mark all notifications as read'); }
+};
+
+export const markAsUnread = async (req, res) => {
+  try {
+    res.json(await notificationsService.markAsUnread(req.params.id, userId(req)));
+  } catch (e) { handleError(res, e, 'Mark notification as unread'); }
+};
+
+export const markAllAsUnread = async (req, res) => {
+  try {
+    res.json(await notificationsService.markAllAsUnread(userId(req)));
+  } catch (e) { handleError(res, e, 'Mark all notifications as unread'); }
 };
 
 export const deleteNotification = async (req, res) => {
