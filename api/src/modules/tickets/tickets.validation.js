@@ -4,6 +4,13 @@ const ticketStatus   = z.enum(['OPEN', 'IN_PROGRESS', 'PROGRAMMING', 'UNDER_DEVE
 const ticketPriority = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 const uuidOpt        = z.string().uuid().nullable().optional();
 
+// Accept both YYYY-MM-DD and full ISO datetime strings
+const dueDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]*)?$/, 'Invalid date format')
+  .nullable()
+  .optional();
+
 export const createTicketSchema = z.object({
   title:          z.string().trim().min(1, 'title is required').max(255),
   description:    z.string().trim().max(10000).optional(),
@@ -12,7 +19,7 @@ export const createTicketSchema = z.object({
   customerId:     uuidOpt,
   applicationId:  uuidOpt,
   boardId:        uuidOpt,
-  dueDate:        z.string().datetime().nullable().optional(),
+  dueDate:        dueDateField,
   estimatedHours: z.number().positive().nullable().optional(),
   labels:         z.array(z.string().uuid()).optional(),
 });
@@ -26,7 +33,7 @@ export const updateTicketSchema = z.object({
   customerId:     uuidOpt,
   applicationId:  uuidOpt,
   boardId:        uuidOpt,
-  dueDate:        z.string().datetime().nullable().optional(),
+  dueDate:        dueDateField,
   estimatedHours: z.number().positive().nullable().optional(),
   actualHours:    z.number().positive().nullable().optional(),
   labels:         z.array(z.string().uuid()).optional(),
@@ -41,6 +48,8 @@ export const ticketQuerySchema = z.object({
   customerId:    z.string().uuid().optional(),
   applicationId: z.string().uuid().optional(),
   userId:        z.string().uuid().optional(),
+  page:          z.coerce.number().int().min(1).optional(),
+  limit:         z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const bulkUpdateStatusSchema = z.object({

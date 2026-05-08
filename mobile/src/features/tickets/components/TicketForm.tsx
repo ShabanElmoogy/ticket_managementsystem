@@ -171,7 +171,10 @@ const TicketForm: React.FC<Props> = ({
         assignedToId:   data.assignedToId   ?? undefined,
         customerId:     data.customerId     ?? undefined,
         applicationId:  data.applicationId  ?? undefined,
-        dueDate:        data.dueDate        ?? undefined,
+        // Convert YYYY-MM-DD → ISO datetime (backend expects datetime string)
+        dueDate:        data.dueDate
+          ? (data.dueDate.includes('T') ? data.dueDate : `${data.dueDate}T00:00:00.000Z`)
+          : undefined,
         estimatedHours: data.estimatedHours ?? undefined,
       } as CreateTicketData);
 

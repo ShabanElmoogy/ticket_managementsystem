@@ -154,7 +154,9 @@ const TicketFormFB: React.FC<Props> = ({ item, onClose, onSave, submitting, mode
         title: data.title, description: data.description, priority: data.priority,
         status: data.status, assignedToId: data.assignedToId ?? undefined,
         customerId: data.customerId ?? undefined, applicationId: data.applicationId ?? undefined,
-        dueDate: data.dueDate ? data.dueDate : undefined, estimatedHours: data.estimatedHours ?? undefined,
+        dueDate: data.dueDate
+          ? (data.dueDate.includes('T') ? data.dueDate : `${data.dueDate}T00:00:00.000Z`)
+          : undefined, estimatedHours: data.estimatedHours ?? undefined,
       } as CreateTicketData);
       toast.success(isEdit ? t('tickets.messages.updated') : t('tickets.messages.created'));
       onClose();
