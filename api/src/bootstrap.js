@@ -86,7 +86,7 @@ export async function startServer() {
   }));
 
   // Serve static web files
-  const publicDir = path.join(__dirname, '../../public');
+  const publicDir = path.join(__dirname, '../public');
   app.use(express.static(publicDir));
 
   registerRoutes(app);

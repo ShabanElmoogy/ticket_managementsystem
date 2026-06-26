@@ -33,8 +33,6 @@ export function registerRoutes(app) {
   // Legacy health check redirect for backward compatibility
   app.get('/api/health', (req, res) => res.redirect('/api/v1/health'));
 
-  // Redirect root to Swagger docs
-  app.get('/', (req, res) => res.redirect('/api/docs'));
 
   // All API routes under /api/v1
   app.use('/api/v1', moduleRoutes);
@@ -50,11 +48,4 @@ export function registerRoutes(app) {
     res.status(301).header('X-API-Deprecation', 'This endpoint is deprecated. Use /api/v1/ instead.').redirect(newUrl);
   });
 
-  // Non-API paths redirect to docs — API 404s are handled by the global
-  // error handler in errors/index.js (registerErrorHandlers)
-  app.get('*', (req, res) => {
-    if (!req.originalUrl.startsWith('/api')) {
-      res.redirect('/api/docs');
-    }
-  });
 }
