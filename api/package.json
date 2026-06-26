@@ -20,7 +20,9 @@
     "db:reset": "drizzle-kit drop && drizzle-kit push && node drizzle/seed.js",
     "script:check-superadmin": "node scripts/check-superadmin.js",
     "script:reset-password": "node scripts/reset-password.js",
-    "script:add-programmer": "node scripts/add-programmer.js"
+    "script:add-programmer": "node scripts/add-programmer.js",
+    "build:web": "node scripts/build.js",
+    "build": "npm run build:web"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

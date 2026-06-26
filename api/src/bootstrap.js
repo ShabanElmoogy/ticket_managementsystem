@@ -5,6 +5,7 @@ import 'dotenv/config';
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createHttpOrHttpsServer, detectProtocol } from './config/httpServer.js';
 import { setupSocket } from './sockets/io.js';
@@ -84,7 +85,25 @@ export async function startServer() {
     },
   }));
 
+  // Serve static web files
+  const publicDir = path.join(__dirname, '../../public');
+  app.use(express.static(publicDir));
+
   registerRoutes(app);
+
+  // SPA fallback for non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    const indexHtml = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexHtml)) {
+      res.sendFile(indexHtml);
+    } else {
+      next(); // Let error handlers catch it if index.html is missing
+    }
+  });
+
   registerErrorHandlers(app);
 
   startNotificationScheduler(notificationEmitter);
